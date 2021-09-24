@@ -4,8 +4,8 @@
 
 #include <ntddk.h>
 
-static  BOOLEAN g_monitorprocess = FALSE;
-static  KSPIN_LOCK g_monitorlock = NULL;
+static  BOOLEAN g_proc_monitorprocess = FALSE;
+static  KSPIN_LOCK g_proc_monitorlock = NULL;
 
 static KSPIN_LOCK               g_processlock = NULL;
 static NPAGED_LOOKASIDE_LIST    g_processList;
@@ -44,7 +44,7 @@ PROCESSDATA* processcxt_get()
 int Process_Init(void) {
 
     sl_init(&g_processlock);
-    sl_init(&g_monitorlock);
+    sl_init(&g_proc_monitorlock);
 
     ExInitializeNPagedLookasideList(
         &g_processList,
@@ -72,7 +72,7 @@ void Process_Free(void)
     // Set Close Monitro
 
     Process_Clean();
-
+    ExDeleteNPagedLookasideList(&g_processList);
     PsSetCreateProcessNotifyRoutineEx(Process_NotifyProcessEx, TRUE);
 }
 
@@ -80,8 +80,8 @@ void Process_SetMonitor(BOOLEAN code)
 {
     KSPIN_LOCK_QUEUE lh;
 
-    sl_lock(&g_monitorlock, &lh);
-    g_monitorprocess = code;
+    sl_lock(&g_proc_monitorlock, &lh);
+    g_proc_monitorprocess = code;
     sl_unlock(&lh);
 }
 
@@ -112,7 +112,7 @@ VOID Process_NotifyProcessEx(
     UNREFERENCED_PARAMETER(Process);
 
     // ¹Ø±Õ¼à¿Ø
-    if (FALSE == g_monitorprocess)
+    if (FALSE == g_proc_monitorprocess)
     {
         return;
     }

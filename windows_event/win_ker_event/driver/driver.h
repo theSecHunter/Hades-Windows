@@ -14,7 +14,5 @@ typedef struct _COMAND_MESSAGE
 extern unsigned short*	g_processname;
 extern unsigned int		g_processnamelen;
 
-NTSTATUS driver_free();
-
 #endif // !MY_DRIVER_H
 

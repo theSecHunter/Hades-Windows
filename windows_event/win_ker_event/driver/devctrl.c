@@ -347,6 +347,8 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	UNREFERENCED_PARAMETER(irpSp);
 
 	// cloes需要清理 - 关闭共享内存
+	Process_SetMonitor(FALSE);
+	Process_Clean();
 	devctrl_clean();
 
 	irp->IoStatus.Information = 0;
@@ -372,24 +374,21 @@ VOID devctrl_clean()
 	}
 	sl_unlock(&lh);
 
-	Process_Clean();
-
 	devctrl_freeSharedMemory(&g_inBuf);
 	devctrl_freeSharedMemory(&g_outBuf);
 }
 
 VOID devctrl_free()
 {
-	// 设置关机
+	if (g_deviceControl)
+	{
+		IoDeleteDevice(g_deviceControl);
+		g_deviceControl = NULL;
+		IoDeleteSymbolicLink(&g_devicesyslink);
+	}
 	devctrl_setShutdown();
-
-	devctrl_clean();
-
+	devctrl_setMonitor(FALSE);
 	Process_Free();
-
-	IoDeleteDevice(g_deviceControl);
-	g_deviceControl = NULL;
-	IoDeleteSymbolicLink(&g_devicesyslink);
 }
 
 VOID devctrl_setShutdown()
@@ -555,6 +554,9 @@ NTSTATUS devctrl_ioInit(PDRIVER_OBJECT DriverObject) {
 }
 
 void devctrl_ioThreadFree() {
+	devctrl_clean();
+
+	ExDeleteNPagedLookasideList(&g_IoQueryList);
 
 	// clsoe process callback
 	if (g_ioThreadObject) {
@@ -571,7 +573,6 @@ void devctrl_ioThreadFree() {
 
 		ObDereferenceObject(g_ioThreadObject);
 		g_ioThreadObject = NULL;
-
 	}
 
 	return STATUS_SUCCESS;

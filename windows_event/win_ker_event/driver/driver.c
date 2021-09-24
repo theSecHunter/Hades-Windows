@@ -71,6 +71,7 @@ VOID driverUnload(
 
     DbgBreakPoint();
 
+    devctrl_free();
     devctrl_ioThreadFree();
     return STATUS_SUCCESS;
 }
@@ -126,10 +127,4 @@ NTSTATUS
     } while (0);
 
 	return status;
-}
-
-
-NTSTATUS driver_free()
-{
-    devctrl_free();
 }
