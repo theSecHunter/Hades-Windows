@@ -10,7 +10,7 @@
 
 Windows覆盖WFP，回调，Minifilter探针驱动，各自工作独立，通过数据库来完整监视系统安全状态。
 
-![image-20210923092521040](C:\Users\zy.chen\AppData\Roaming\Typora\typora-user-images\image-20210923092521040.png)
+![image](https://github.com/theSecHunter/Hades/blob/main/windows_event/image-20210923092521040.png)
 
 ##### WFP：
 
