@@ -21,9 +21,10 @@ typedef struct _THREADDATA
 	LIST_ENTRY thread_pending;
 }THREADDATA, * PTHREADDATA;
 
-void thread_init();
-void trhead_clean();
-void thread_free();
+NTSTATUS Thread_Init();
+void Thread_Clean();
+void Thread_Free();
+void Thread_SetMonitor(BOOLEAN code);
 
 PTHREADBUFFER Thread_PacketAllocate(int lens);
 void Thread_PacketFree(PTHREADBUFFER packet);

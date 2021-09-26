@@ -2,6 +2,7 @@
 #include "devctrl.h"
 #include "process.h"
 #include "thread.h"
+#include "imagemod.h"
 
 #include <ntddk.h>
 
@@ -347,9 +348,10 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 
 	UNREFERENCED_PARAMETER(irpSp);
 
-	// cloes需要清理 - 关闭共享内存
-	Process_SetMonitor(FALSE);
+	devctrl_setMonitor(FALSE);
 	Process_Clean();
+	Thread_Clean();
+	Imagemod_Clean();
 	devctrl_clean();
 
 	irp->IoStatus.Information = 0;
@@ -390,6 +392,8 @@ VOID devctrl_free()
 	devctrl_setShutdown();
 	devctrl_setMonitor(FALSE);
 	Process_Free();
+	Thread_Free();
+	Imagemod_Free();
 }
 
 VOID devctrl_setShutdown()
@@ -423,6 +427,8 @@ VOID devctrl_setMonitor(BOOLEAN code)
 
 	// estable monitor
 	Process_SetMonitor(code);
+	Thread_SetMonitor(code);
+	Imagemod_SetMonitor(code);
 }
 
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
@@ -555,8 +561,8 @@ NTSTATUS devctrl_ioInit(PDRIVER_OBJECT DriverObject) {
 }
 
 void devctrl_ioThreadFree() {
-	devctrl_clean();
 
+	devctrl_clean();
 	ExDeleteNPagedLookasideList(&g_IoQueryList);
 
 	// clsoe process callback
@@ -593,7 +599,7 @@ NTSTATUS devctrl_popprocessinfo(UINT64* pOffset)
 	UINT64		dataSize = 0;
 	ULONG		pPacketlens = 0;
 
-	processdata = processcxt_get();
+	processdata = processctx_get();
 	if (!processdata)
 		return STATUS_UNSUCCESSFUL;
 
@@ -861,6 +867,7 @@ void devctrl_pushinfo(int code)
 	{
 	case NF_PROCESS_INFO:
 	case NF_THREAD_INFO:
+	case NF_IMAGEMODE_INFO:
 	{
 		pQuery = (PNF_QUEUE_ENTRY)ExAllocateFromNPagedLookasideList(&g_IoQueryList);
 		if (!pQuery)

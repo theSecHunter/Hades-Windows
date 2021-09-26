@@ -2,6 +2,8 @@
 #include "devctrl.h"
 #include "driver.h"
 #include "process.h"
+#include "thread.h"
+#include "imagemod.h"
 
 #include <fltKernel.h>
 #include <dontuse.h>
@@ -121,8 +123,14 @@ NTSTATUS
         // Register registry_tab Monito
 
         // Register Thread Monitot
+        status = Thread_Init();
+        if (!NT_SUCCESS(status))
+            return status;
 
         // Register DLL Monitor
+        status = Imagemod_Init();
+        if (!NT_SUCCESS(status))
+            return status;
 
     } while (0);
 

@@ -78,7 +78,7 @@ void Process_Free(void)
 
 void Process_SetMonitor(BOOLEAN code)
 {
-    KSPIN_LOCK_QUEUE lh;
+    KLOCK_QUEUE_HANDLE lh;
 
     sl_lock(&g_proc_monitorlock, &lh);
     g_proc_monitorprocess = code;

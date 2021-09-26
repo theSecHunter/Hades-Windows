@@ -112,6 +112,11 @@ class EventHandler : public NF_EventHandler
 		OutputDebugString(info);
 	}
 
+	void imagemodPacket(const char* buf, int len) override
+	{
+	
+	}
+
 };
 
 static DevctrlIoct devobj;

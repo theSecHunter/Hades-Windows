@@ -3,7 +3,7 @@
 
 #include "devctrl.h"
 
-static  BOOLEAN					g_thr_monitorprocess = FALSE;
+static  BOOLEAN					g_thr_monitor = FALSE;
 static  KSPIN_LOCK				g_thr_monitorlock = NULL;
 
 static KSPIN_LOCK               g_threadlock = NULL;
@@ -16,12 +16,15 @@ THREADDATA* threadctx_get()
 	return &g_threadQueryhead;
 }
 
-VOID Thread_Notify(
+VOID Process_NotifyThread(
 	_In_ HANDLE ProcessId,
 	_In_ HANDLE ThreadId,
 	_In_ BOOLEAN Create
 	)
 {
+	if (!g_thr_monitor)
+		return;
+
 	// Create: delete (FLASE)
 	KLOCK_QUEUE_HANDLE lh;
 	PTHREADBUFFER threadbuf = NULL;
@@ -48,7 +51,7 @@ VOID Thread_Notify(
 	devctrl_pushinfo(NF_THREAD_INFO);
 }
 
-void thread_init()
+NTSTATUS Thread_Init()
 {
 	sl_init(&g_thr_monitorlock);
 	sl_init(&g_threadlock);
@@ -66,17 +69,43 @@ void thread_init()
 	InitializeListHead(&g_threadQueryhead.thread_pending);
 
 	// Set Calloutback
-	PsSetCreateThreadNotifyRoutine(Thread_Notify);
+	PsSetCreateThreadNotifyRoutine(Process_NotifyThread);
 }
 
-void trhead_clean()
+void Thread_Clean()
 {
+	KLOCK_QUEUE_HANDLE lh;
+	THREADBUFFER* pData = NULL;
 
+	// Distable ProcessMon
+	sl_lock(&g_threadQueryhead.thread_lock, &lh);
+
+	while (!IsListEmpty(&g_threadQueryhead.thread_pending))
+	{
+		// BUG¹Ø»úÀ¶ÆÁ
+		pData = RemoveEntryList(&g_threadQueryhead.thread_pending);
+		sl_unlock(&lh);
+		Thread_PacketFree(pData);
+		pData = NULL;
+		sl_lock(&g_threadQueryhead.thread_lock, &lh);
+	}
+
+	sl_unlock(&lh);
 }
 
-void thread_free()
+void Thread_Free()
 {
+	Thread_Clean();
+	ExDeleteNPagedLookasideList(&g_threadlist);
+	PsRemoveCreateThreadNotifyRoutine(Process_NotifyThread);
+}
 
+void Thread_SetMonitor(BOOLEAN code)
+{
+	KLOCK_QUEUE_HANDLE lh;
+	sl_lock(&g_thr_monitorlock, &lh);
+	g_thr_monitor = code;
+	sl_unlock(&lh);
 }
 
 PTHREADBUFFER Thread_PacketAllocate(int lens)
