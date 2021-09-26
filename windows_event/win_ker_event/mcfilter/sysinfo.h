@@ -10,4 +10,11 @@ typedef struct _PROCESSINFO
 	wchar_t queryprocesspath[260 * 2];
 }PROCESSINFO, * PPROCESSINFO;
 
+typedef struct _THREADINFO
+{
+	int processid;
+	int threadid;
+	int createid;
+}THREADINFO, * PTHREADINFO;
+
 #endif // !_SYSINFO_H

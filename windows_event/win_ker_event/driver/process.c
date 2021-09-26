@@ -36,7 +36,7 @@ void InitGloableFunction_Process()
         (PfnNtQueryInformationProcess)MmGetSystemRoutineAddress(&UtrZwQueryInformationProcessName);
 }
 
-PROCESSDATA* processcxt_get()
+PROCESSDATA* processctx_get()
 {
     return &g_processQueryhead;
 }
@@ -166,7 +166,7 @@ VOID Process_NotifyProcessEx(
     sl_unlock(&lh);
 
     // push_devctrl
-    devctrl_pushprocessinfo(NF_PROCESS_INFO);
+    devctrl_pushinfo(NF_PROCESS_INFO);
 
     return;
 }

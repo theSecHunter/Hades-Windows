@@ -1,6 +1,7 @@
 #include "public.h"
 #include "devctrl.h"
 #include "process.h"
+#include "thread.h"
 
 #include <ntddk.h>
 
@@ -646,14 +647,69 @@ NTSTATUS devctrl_popprocessinfo(UINT64* pOffset)
 
 NTSTATUS devctrl_popthreadinfo(UINT64* pOffset)
 {
+	NTSTATUS status = STATUS_SUCCESS;
+	KLOCK_QUEUE_HANDLE lh;
+	THREADBUFFER* threadbuffer = NULL;
+	THREADDATA* threaddata = NULL;
+	PNF_DATA	pData;
+	UINT64		dataSize = 0;
+	ULONG		pPacketlens = 0;
 
+	threaddata = threadctx_get();
+	if (!threaddata)
+		return STATUS_UNSUCCESSFUL;
+
+	sl_lock(&threaddata->thread_lock, &lh);
+
+	while (!IsListEmpty(&threaddata->thread_pending))
+	{
+		threadbuffer = (THREADBUFFER*)RemoveHeadList(&threaddata->thread_pending);
+
+		pPacketlens = threadbuffer->dataLength;
+
+		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
+
+		if ((g_inBuf.bufferLength - *pOffset - 1) < dataSize)
+		{
+			status = STATUS_NO_MEMORY;
+			break;
+		}
+
+		pData = (PNF_DATA)((char*)g_inBuf.kernelVa + *pOffset);
+
+		pData->code = NF_THREAD_INFO;
+		pData->id = 1;
+		pData->bufferSize = threadbuffer->dataLength;
+
+		if (threadbuffer->dataBuffer) {
+			memcpy(pData->buffer, threadbuffer->dataBuffer, threadbuffer->dataLength);
+		}
+
+		*pOffset += dataSize;
+
+	}
+
+	sl_unlock(&lh);
+
+	if (threadbuffer)
+	{
+		if (NT_SUCCESS(status))
+		{
+			Thread_PacketFree(threadbuffer);
+		}
+		else
+		{
+			sl_lock(&threaddata->thread_lock, &lh);
+			InsertHeadList(&threaddata->thread_pending, &threadbuffer->pEntry);
+			sl_unlock(&lh);
+		}
+	}
 }
 
 NTSTATUS devctrl_popimagemodinfo(UINT64* pOffset)
 {
 
 }
-
 
 
 UINT64 devctrl_fillBuffer()
@@ -680,6 +736,7 @@ UINT64 devctrl_fillBuffer()
 		break;
 		case NF_THREAD_INFO:
 		{
+			status = devctrl_popthreadinfo(&offset);
 		}
 		break;
 		default:
@@ -794,7 +851,7 @@ void devctrl_ioThread(void* StartContext)
 /*
 * push 
 */
-void devctrl_pushprocessinfo(int code)
+void devctrl_pushinfo(int code)
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	PNF_QUEUE_ENTRY pQuery = NULL;
@@ -803,6 +860,7 @@ void devctrl_pushprocessinfo(int code)
 	switch (code)
 	{
 	case NF_PROCESS_INFO:
+	case NF_THREAD_INFO:
 	{
 		pQuery = (PNF_QUEUE_ENTRY)ExAllocateFromNPagedLookasideList(&g_IoQueryList);
 		if (!pQuery)
@@ -823,14 +881,3 @@ void devctrl_pushprocessinfo(int code)
 	KeSetEvent(&g_ioThreadEvent, IO_NO_INCREMENT, FALSE);
 	return status;
 }
-
-void devctrl_pushthreadinfo(int code)
-{
-
-}
-
-void devctrl_pushimagemodinfo(int code)
-{
-
-}
-

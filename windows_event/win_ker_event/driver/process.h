@@ -31,7 +31,7 @@ void Process_SetMonitor(BOOLEAN code);
 PROCESSBUFFER* Process_PacketAllocate(int lens);
 void Process_PacketFree(PROCESSBUFFER* packet);
 
-PROCESSDATA* processcxt_get();
+PROCESSDATA* processctx_get();
 
 #endif // !MY_PROCESS_H
 

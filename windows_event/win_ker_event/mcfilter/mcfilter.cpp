@@ -68,9 +68,9 @@ class EventHandler : public NF_EventHandler
 		RtlCopyMemory(&processinfo, buf, len);
 
 		wstring wstr;
-		WCHAR info[sizeof(int)] = { 0, };
+		WCHAR info[MAX_PATH] = { 0, };
 
-		swprintf(info, sizeof(int), L"Pid: %d\t", processinfo.processid);
+		swprintf(info, MAX_PATH, L"Pid: %d\t", processinfo.processid);
 		if (processinfo.endprocess)
 		{
 			wstr = info;
@@ -103,6 +103,13 @@ class EventHandler : public NF_EventHandler
 	// sys_thread_info
 	void threadPacket(const char* buf, int len) override
 	{
+		THREADINFO threadinfo;
+		RtlSecureZeroMemory(&threadinfo, sizeof(THREADINFO));
+		RtlCopyMemory(&threadinfo, buf, len);
+
+		WCHAR info[MAX_PATH] = { 0, };
+		swprintf(info, MAX_PATH, L"Pid: %d Threadid: %d ExitStatus: %d", threadinfo.processid, threadinfo.threadid, threadinfo.createid);
+		OutputDebugString(info);
 	}
 
 };
