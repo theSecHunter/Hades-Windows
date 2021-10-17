@@ -589,7 +589,8 @@ helper_callout_classFn_connectredirect(
 		flowContextLocal->toRemotePort =
 			inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_REMOTE_PORT].value.uint16;
 	}
-	DbgBreakPoint();
+
+	// DbgBreakPoint();
 	flowContextLocal->processId = inMetaValues->processId;
 	flowContextLocal->processPathSize = inMetaValues->processPath->size;
 	RtlCopyMemory(flowContextLocal->processPath, inMetaValues->processPath->data, inMetaValues->processPath->size);

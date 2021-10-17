@@ -369,6 +369,9 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	datalinkctx_clean();
 	devctrl_clean();
 
+	devctrl_freeSharedMemory(&g_inBuf);
+	devctrl_freeSharedMemory(&g_outBuf);
+
 	irp->IoStatus.Information = 0;
 	irp->IoStatus.Status = status;
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
@@ -512,9 +515,6 @@ VOID devctrl_clean()
 		sl_lock(&g_sIolock, &lh);
 	}
 	sl_unlock(&lh);
-
-	devctrl_freeSharedMemory(&g_inBuf);
-	devctrl_freeSharedMemory(&g_outBuf);
 }
 
 VOID devctrl_free()
@@ -731,6 +731,8 @@ NTSTATUS devtrl_popFlowestablishedData(UINT64* pOffset)
 		}
 
 		*pOffset += dataSize;
+
+		break;
 	}
 
 	sl_unlock(&lh);

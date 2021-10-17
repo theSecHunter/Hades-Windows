@@ -351,8 +351,11 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	devctrl_setMonitor(FALSE);
 	Process_Clean();
 	Thread_Clean();
-	Imagemod_Clean();
+	// Imagemod_Clean();
 	devctrl_clean();
+
+	devctrl_freeSharedMemory(&g_inBuf);
+	devctrl_freeSharedMemory(&g_outBuf);
 
 	irp->IoStatus.Information = 0;
 	irp->IoStatus.Status = status;
@@ -376,9 +379,6 @@ VOID devctrl_clean()
 		sl_lock(&g_IoQueryLock, &lh);
 	}
 	sl_unlock(&lh);
-
-	devctrl_freeSharedMemory(&g_inBuf);
-	devctrl_freeSharedMemory(&g_outBuf);
 }
 
 VOID devctrl_free()
@@ -393,7 +393,7 @@ VOID devctrl_free()
 	devctrl_setMonitor(FALSE);
 	Process_Free();
 	Thread_Free();
-	Imagemod_Free();
+	// Imagemod_Free();
 }
 
 VOID devctrl_setShutdown()
@@ -568,7 +568,7 @@ void devctrl_ioThreadFree() {
 	// clsoe process callback
 	if (g_ioThreadObject) {
 		// 标记卸载驱动-跳出循环
-		KeSetEvent(&g_ioThreadObject, IO_NO_INCREMENT, FALSE);
+		KeSetEvent(&g_ioThreadEvent, IO_NO_INCREMENT, FALSE);
 
 		KeWaitForSingleObject(
 			g_ioThreadObject,
@@ -631,6 +631,7 @@ NTSTATUS devctrl_popprocessinfo(UINT64* pOffset)
 
 		*pOffset += dataSize;
 
+		break;
 	}
 
 	sl_unlock(&lh);
@@ -640,6 +641,7 @@ NTSTATUS devctrl_popprocessinfo(UINT64* pOffset)
 		if (NT_SUCCESS(status))
 		{
 			Process_PacketFree(processbuffer);
+			processbuffer = NULL;
 		}
 		else
 		{
@@ -666,7 +668,7 @@ NTSTATUS devctrl_popthreadinfo(UINT64* pOffset)
 		return STATUS_UNSUCCESSFUL;
 
 	sl_lock(&threaddata->thread_lock, &lh);
-
+	
 	while (!IsListEmpty(&threaddata->thread_pending))
 	{
 		threadbuffer = (THREADBUFFER*)RemoveHeadList(&threaddata->thread_pending);
@@ -674,7 +676,7 @@ NTSTATUS devctrl_popthreadinfo(UINT64* pOffset)
 		pPacketlens = threadbuffer->dataLength;
 
 		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
-
+		
 		if ((g_inBuf.bufferLength - *pOffset - 1) < dataSize)
 		{
 			status = STATUS_NO_MEMORY;
@@ -693,6 +695,7 @@ NTSTATUS devctrl_popthreadinfo(UINT64* pOffset)
 
 		*pOffset += dataSize;
 
+		break;
 	}
 
 	sl_unlock(&lh);

@@ -70,7 +70,6 @@ int Process_Init(void) {
 void Process_Free(void)
 {
     // Set Close Monitro
-
     Process_Clean();
     ExDeleteNPagedLookasideList(&g_processList);
     PsSetCreateProcessNotifyRoutineEx(Process_NotifyProcessEx, TRUE);
@@ -213,8 +212,7 @@ void Process_Clean(void)
 
     while (!IsListEmpty(&g_processQueryhead.process_pending))
     {
-        // BUG¹Ø»úÀ¶ÆÁ
-        pData = RemoveEntryList(&g_processQueryhead.process_pending);
+        pData = (PROCESSBUFFER*)RemoveHeadList(&g_processQueryhead.process_pending);
         sl_unlock(&lh);
         Process_PacketFree(pData);
         pData = NULL;

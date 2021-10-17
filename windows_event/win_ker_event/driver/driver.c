@@ -71,8 +71,6 @@ VOID driverUnload(
         g_processname = NULL;
     }
 
-    DbgBreakPoint();
-
     devctrl_free();
     devctrl_ioThreadFree();
     return STATUS_SUCCESS;
@@ -128,9 +126,9 @@ NTSTATUS
             return status;
 
         // Register DLL Monitor
-        status = Imagemod_Init();
-        if (!NT_SUCCESS(status))
-            return status;
+        //status = Imagemod_Init();
+        //if (!NT_SUCCESS(status))
+        //    return status;
 
     } while (0);
 

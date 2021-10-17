@@ -124,7 +124,7 @@ static EventHandler eventobj;
 
 int main(int argc, char* argv[])
 {
-	getchar();
+	// getchar();
 	int status = 0;
 	// Init devctrl
 	status = devobj.devctrl_init();

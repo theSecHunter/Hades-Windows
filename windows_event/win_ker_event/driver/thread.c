@@ -82,8 +82,7 @@ void Thread_Clean()
 
 	while (!IsListEmpty(&g_threadQueryhead.thread_pending))
 	{
-		// BUG¹Ø»úÀ¶ÆÁ
-		pData = RemoveEntryList(&g_threadQueryhead.thread_pending);
+		pData = RemoveHeadList(&g_threadQueryhead.thread_pending);
 		sl_unlock(&lh);
 		Thread_PacketFree(pData);
 		pData = NULL;
@@ -118,7 +117,7 @@ PTHREADBUFFER Thread_PacketAllocate(int lens)
 	
 	if (lens > 0)
 	{
-		threadbuf->dataBuffer = (char*)ExAllocatePoolWithTag(lens, sizeof(THREADINFO), 'THMM');
+		threadbuf->dataBuffer = (char*)ExAllocatePoolWithTag(NonPagedPool, lens, 'THMM');
 		if (!threadbuf->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_threadlist, threadbuf);

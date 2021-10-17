@@ -91,7 +91,7 @@ void Imagemod_Clean(void)
 
 	while (!IsListEmpty(&g_imagemodQueryhead.imagemod_pending))
 	{
-		pData = RemoveEntryList(&g_imagemodQueryhead.imagemod_pending);
+		pData = RemoveHeadList(&g_imagemodQueryhead.imagemod_pending);
 		sl_unlock(&lh);
 		Imagemod_PacketFree(pData);
 		pData = NULL;
