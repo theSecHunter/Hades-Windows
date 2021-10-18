@@ -126,9 +126,9 @@ NTSTATUS
             return status;
 
         // Register DLL Monitor
-        //status = Imagemod_Init();
-        //if (!NT_SUCCESS(status))
-        //    return status;
+        status = Imagemod_Init();
+        if (!NT_SUCCESS(status))
+            return status;
 
     } while (0);
 

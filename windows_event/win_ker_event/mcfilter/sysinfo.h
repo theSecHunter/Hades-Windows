@@ -17,4 +17,12 @@ typedef struct _THREADINFO
 	int createid;
 }THREADINFO, * PTHREADINFO;
 
+typedef struct _IMAGEMODINFO
+{
+	int		processid;
+	__int64 imagebase;
+	__int64	imagesize;
+	wchar_t	imagename[260 * 2];
+}IMAGEMODINFO, * PIMAGEMODINFO;
+
 #endif // !_SYSINFO_H

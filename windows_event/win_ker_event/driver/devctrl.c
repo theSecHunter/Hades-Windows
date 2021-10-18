@@ -351,7 +351,7 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	devctrl_setMonitor(FALSE);
 	Process_Clean();
 	Thread_Clean();
-	// Imagemod_Clean();
+	Imagemod_Clean();
 	devctrl_clean();
 
 	devctrl_freeSharedMemory(&g_inBuf);
@@ -393,7 +393,7 @@ VOID devctrl_free()
 	devctrl_setMonitor(FALSE);
 	Process_Free();
 	Thread_Free();
-	// Imagemod_Free();
+	Imagemod_Free();
 }
 
 VOID devctrl_setShutdown()
@@ -717,7 +717,66 @@ NTSTATUS devctrl_popthreadinfo(UINT64* pOffset)
 
 NTSTATUS devctrl_popimagemodinfo(UINT64* pOffset)
 {
+	NTSTATUS status = STATUS_SUCCESS;
+	KLOCK_QUEUE_HANDLE lh;
+	THREADBUFFER* imageBufEntry = NULL;
+	THREADDATA* imagedata = NULL;
+	PNF_DATA	pData;
+	UINT64		dataSize = 0;
+	ULONG		pPacketlens = 0;
 
+
+	imagedata = (THREADDATA*)imagemodctx_get();
+	if (!imagedata)
+		return STATUS_UNSUCCESSFUL;
+
+	sl_lock(&imagedata->thread_lock, &lh);
+
+	do
+	{
+		imageBufEntry = (THREADBUFFER*)RemoveHeadList(&imagedata->thread_pending);
+
+		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
+
+		if ((g_inBuf.bufferLength - *pOffset - 1) < dataSize)
+		{
+			status = STATUS_NO_MEMORY;
+			break;
+		}
+
+		pData = (PNF_DATA)((char*)g_inBuf.kernelVa + *pOffset);
+		if (!pData)
+		{
+			status = STATUS_UNSUCCESSFUL;
+			break;
+		}
+
+		pData->code = NF_IMAGEMODE_INFO;
+		pData->id = 0;
+		pData->bufferSize = imageBufEntry->dataLength;
+		memcpy(pData->buffer, imageBufEntry->dataBuffer, imageBufEntry->dataLength);
+
+		*pOffset += dataSize;
+
+	} while (FALSE);
+
+	sl_unlock(&lh);
+
+	if (imageBufEntry)
+	{
+		if (NT_SUCCESS(status))
+		{
+			Imagemod_PacketFree(imageBufEntry);
+		}
+		else
+		{
+			sl_lock(&imagedata->thread_lock, &lh);
+			InsertHeadList(&imagedata->thread_pending, &imageBufEntry->pEntry);
+			sl_unlock(&lh);
+		}
+	}
+
+	return status;
 }
 
 
@@ -746,6 +805,11 @@ UINT64 devctrl_fillBuffer()
 		case NF_THREAD_INFO:
 		{
 			status = devctrl_popthreadinfo(&offset);
+		}
+		break;
+		case NF_IMAGEMODE_INFO:
+		{
+			status = devctrl_popimagemodinfo(&offset);
 		}
 		break;
 		default:

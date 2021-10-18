@@ -3,10 +3,11 @@
 
 typedef struct _IMAGEMODINFO
 {
-	PVOID ImageBase;
-	DWORD ImageSize;
-	WCHAR ImageName[260 * 2];
-}IMAGEMODINFO, *PIMAGEMODINFO;
+	int		processid;
+	__int64 imagebase;
+	__int64	imagesize;
+	wchar_t	imagename[260 * 2];
+}IMAGEMODINFO, * PIMAGEMODINFO;
 
 typedef struct _IMAGEMODBUFFER
 {

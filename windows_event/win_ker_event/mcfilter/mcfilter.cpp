@@ -114,7 +114,13 @@ class EventHandler : public NF_EventHandler
 
 	void imagemodPacket(const char* buf, int len) override
 	{
-	
+		IMAGEMODINFO imageinfo;
+		RtlSecureZeroMemory(&imageinfo, sizeof(IMAGEMODINFO));
+		RtlCopyMemory(&imageinfo, buf, len);
+
+		WCHAR info[MAX_PATH] = { 0, };
+		swprintf(info, MAX_PATH, L"Pid: %d ImageBase: %p ImageSize: %d \n ImageBasePath: %s", imageinfo.processid, imageinfo.imagebase, imageinfo.imagesize, imageinfo.imagename);
+		OutputDebugString(info);
 	}
 
 };

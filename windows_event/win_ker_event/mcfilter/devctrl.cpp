@@ -249,6 +249,11 @@ static void handleEventDispath(PNF_DATA pData)
 		// push datalink - event
 	}
 	break;
+	case NF_IMAGEGMOD_INFO:
+	{
+		g_pEventHandler->imagemodPacket(pData->buffer, pData->bufferSize);
+	}
+	break;
 	}
 }
 

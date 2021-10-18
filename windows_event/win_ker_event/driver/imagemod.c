@@ -26,23 +26,27 @@ void Process_NotifyImage(
 	RtlSecureZeroMemory(&imagemodinfo,sizeof(IMAGEMODINFO));
 
 	// Get ImageName
-	if (FullImageName->Length > 19 * sizeof(WCHAR)) {
+	//if (FullImageName->Length > 19 * sizeof(WCHAR)) {
 
-		WCHAR* path = FullImageName->Buffer
-			+ FullImageName->Length / sizeof(WCHAR)
-			- 19;
+	//	WCHAR* path = FullImageName->Buffer
+	//		+ FullImageName->Length / sizeof(WCHAR)
+	//		- 19;
 
-	}
+	//}
 
-	// PVOID       ImageBase
-	imagemodinfo.ImageBase = ImageInfo->ImageBase;
-	// SIZE_T      ImageSize;
-	imagemodinfo.ImageSize = ImageInfo->ImageSize;
+	imagemodinfo.processid = (int)ProcessId;
+	imagemodinfo.imagebase = (__int64)ImageInfo->ImageBase;
+	imagemodinfo.imagesize = (__int64)ImageInfo->ImageSize;
+	memcpy(imagemodinfo.imagename, FullImageName->Buffer, FullImageName->Length);
 
 	PIMAGEMODBUFFER pimagebuf = NULL;
 	pimagebuf = Imagemod_PacketAllocate(sizeof(IMAGEMODINFO));
 	if (!pimagebuf)
 		return;
+
+
+	pimagebuf->dataLength = sizeof(IMAGEMODINFO);
+	memcpy(pimagebuf->dataBuffer, &imagemodinfo, sizeof(IMAGEMODINFO));
 
 	sl_lock(&g_imagemodQueryhead.imagemod_lock, &lh);
 	InsertHeadList(&g_imagemodQueryhead.imagemod_pending, &pimagebuf->pEntry);
