@@ -254,6 +254,11 @@ static void handleEventDispath(PNF_DATA pData)
 		g_pEventHandler->imagemodPacket(pData->buffer, pData->bufferSize);
 	}
 	break;
+	case NF_REGISTERTAB_INFO:
+	{
+		g_pEventHandler->registerPacket(pData->buffer, pData->bufferSize);
+	}
+	break;
 	}
 }
 

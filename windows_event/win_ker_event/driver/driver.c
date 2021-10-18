@@ -4,6 +4,7 @@
 #include "process.h"
 #include "thread.h"
 #include "imagemod.h"
+#include "register.h"
 
 #include <fltKernel.h>
 #include <dontuse.h>
@@ -127,6 +128,10 @@ NTSTATUS
 
         // Register DLL Monitor
         status = Imagemod_Init();
+        if (!NT_SUCCESS(status))
+            return status;
+
+        status = Register_Init(DriverObject);
         if (!NT_SUCCESS(status))
             return status;
 

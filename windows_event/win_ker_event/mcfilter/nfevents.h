@@ -35,6 +35,8 @@ public:
 
 	// Get Sys Module
 	virtual void imagemodPacket(const char* buf, int len) = 0;
+
+	virtual void registerPacket(const char* buf, int len) = 0;
 };
 
 #else // _C_API
@@ -63,6 +65,7 @@ typedef struct _NF_EventHandler
 	void (NFAPI_CC * processPacket)(const char * buf, int len);
 	void (NFAPI_CC * threadPacket)(const char * buf, int len);
 	void (NFAPI_CC* imagemodPacket)(const char* buf, int len);
+	void (NFAPI_CC* registerPacket)(const char* buf, int len);
 } NF_EventHandler, *PNF_EventHandler;
 
 #pragma pack(pop)

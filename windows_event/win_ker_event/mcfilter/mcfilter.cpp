@@ -123,6 +123,60 @@ class EventHandler : public NF_EventHandler
 		OutputDebugString(info);
 	}
 
+	void registerPacket(const char* buf, int len) override
+	{
+		REGISTERINFO registerinfo;
+		RtlSecureZeroMemory(&registerinfo, sizeof(REGISTERINFO));
+		RtlCopyMemory(&registerinfo, buf, len);
+
+		wstring opearestring;
+		switch (registerinfo.opeararg)
+		{
+			// 创建Key
+			case RegNtPreCreateKey:
+			{
+				opearestring = L"Register - Create Key";
+			}
+			break;
+			// 打开Key
+			case RegNtPreOpenKey:
+			{
+				opearestring = L"Register - Open Key";
+			}
+			break;
+
+			// 修改Key
+			case RegNtSetValueKey:
+			{
+
+			}
+			// 删除Key
+			case RegNtPreDeleteKey:
+			{
+				opearestring = L"Register - Modify Key";
+			}
+			break;
+
+			// 枚举Key
+			case RegNtEnumerateKey:
+			{
+				opearestring = L"Register - Emun Key";
+			}
+			break;
+
+			// 重命名注册表
+			case RegNtPostRenameKey:
+			{
+				opearestring = L"Register - Rename Key";
+			}
+			break;
+		}
+
+		WCHAR info[MAX_PATH] = { 0, };
+		swprintf(info, MAX_PATH, L"Pid: %d %s", registerinfo.processid, opearestring.data());
+		OutputDebugString(info);
+	}
+
 };
 
 static DevctrlIoct devobj;

@@ -6,8 +6,13 @@ D:\Hades\windows_event\win_ker_event\mcfilter\devctrl.cpp(134,3): warning C4996:
   HlprMiniCom.cpp
   mcfilter.cpp
 D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(58,50): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(211,20): warning C4018: “<”: 有符号/无符号不匹配
-D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(215,22): warning C4018: “<”: 有符号/无符号不匹配
-D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(246,20): warning C4018: “<”: 有符号/无符号不匹配
+D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(122,28): warning C4477: “swprintf”: 格式字符串“%p”需要类型“void *”的参数，但可变参数 2 拥有了类型“__int64”
+D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(122,28): warning C4477: “swprintf”: 格式字符串“%d”需要类型“int”的参数，但可变参数 3 拥有了类型“__int64”
+D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(122,28): message : 请考虑在格式字符串中使用“%lld”
+D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(122,28): message : 请考虑在格式字符串中使用“%Id”
+D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(122,28): message : 请考虑在格式字符串中使用“%I64d”
+D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(271,20): warning C4018: “<”: 有符号/无符号不匹配
+D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(275,22): warning C4018: “<”: 有符号/无符号不匹配
+D:\Hades\windows_event\win_ker_event\mcfilter\mcfilter.cpp(306,20): warning C4018: “<”: 有符号/无符号不匹配
   正在生成代码...
   mcfilter.vcxproj -> D:\Hades\windows_event\win_ker_event\bin\Debug\x64\mcfilter.exe

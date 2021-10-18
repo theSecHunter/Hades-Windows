@@ -3,6 +3,7 @@
 #include "process.h"
 #include "thread.h"
 #include "imagemod.h"
+#include "register.h"
 
 #include <ntddk.h>
 
@@ -352,6 +353,7 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	Process_Clean();
 	Thread_Clean();
 	Imagemod_Clean();
+	Register_Clean();
 	devctrl_clean();
 
 	devctrl_freeSharedMemory(&g_inBuf);
@@ -394,6 +396,7 @@ VOID devctrl_free()
 	Process_Free();
 	Thread_Free();
 	Imagemod_Free();
+	Register_Free();
 }
 
 VOID devctrl_setShutdown()
@@ -429,6 +432,7 @@ VOID devctrl_setMonitor(BOOLEAN code)
 	Process_SetMonitor(code);
 	Thread_SetMonitor(code);
 	Imagemod_SetMonitor(code);
+	Register_SetMonitor(code);
 }
 
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
@@ -719,22 +723,22 @@ NTSTATUS devctrl_popimagemodinfo(UINT64* pOffset)
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	KLOCK_QUEUE_HANDLE lh;
-	THREADBUFFER* imageBufEntry = NULL;
-	THREADDATA* imagedata = NULL;
-	PNF_DATA	pData;
-	UINT64		dataSize = 0;
-	ULONG		pPacketlens = 0;
+	IMAGEMODBUFFER*		imageBufEntry = NULL;
+	IMAGEMODDATA*		imagedata = NULL;
+	PNF_DATA			pData;
+	UINT64				dataSize = 0;
+	ULONG				pPacketlens = 0;
 
 
-	imagedata = (THREADDATA*)imagemodctx_get();
+	imagedata = (IMAGEMODDATA*)imagemodctx_get();
 	if (!imagedata)
 		return STATUS_UNSUCCESSFUL;
 
-	sl_lock(&imagedata->thread_lock, &lh);
+	sl_lock(&imagedata->imagemod_lock, &lh);
 
 	do
 	{
-		imageBufEntry = (THREADBUFFER*)RemoveHeadList(&imagedata->thread_pending);
+		imageBufEntry = (IMAGEMODBUFFER*)RemoveHeadList(&imagedata->imagemod_pending);
 
 		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
 
@@ -770,8 +774,8 @@ NTSTATUS devctrl_popimagemodinfo(UINT64* pOffset)
 		}
 		else
 		{
-			sl_lock(&imagedata->thread_lock, &lh);
-			InsertHeadList(&imagedata->thread_pending, &imageBufEntry->pEntry);
+			sl_lock(&imagedata->imagemod_lock, &lh);
+			InsertHeadList(&imagedata->imagemod_pending, &imageBufEntry->pEntry);
 			sl_unlock(&lh);
 		}
 	}
@@ -779,6 +783,69 @@ NTSTATUS devctrl_popimagemodinfo(UINT64* pOffset)
 	return status;
 }
 
+NTSTATUS devctrl_popregisterinfo(UINT64* pOffset)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	KLOCK_QUEUE_HANDLE	lh;
+	REGISTERBUFFER*		registerBufEntry = NULL;
+	REGISTERDATA*		registerdata = NULL;
+	PNF_DATA			pData;
+	UINT64				dataSize = 0;
+	ULONG				pPacketlens = 0;
+
+	registerdata = (REGISTERDATA*)registerctx_get();
+	if (!registerdata)
+		return STATUS_UNSUCCESSFUL;
+
+	sl_lock(&registerdata->register_lock, &lh);
+
+	do
+	{
+
+		registerBufEntry = (REGISTERBUFFER*)RemoveHeadList(&registerdata->register_pending);
+
+		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
+
+		if ((g_inBuf.bufferLength - *pOffset - 1) < dataSize)
+		{
+			status = STATUS_NO_MEMORY;
+			break;
+		}
+
+		pData = (PNF_DATA)((char*)g_inBuf.kernelVa + *pOffset);
+		if (!pData)
+		{
+			status = STATUS_UNSUCCESSFUL;
+			break;
+		}
+
+		pData->code = NF_REGISTERTAB_INFO;
+		pData->id = 0;
+		pData->bufferSize = registerBufEntry->dataLength;
+		memcpy(pData->buffer, registerBufEntry->dataBuffer, registerBufEntry->dataLength);
+
+		*pOffset += dataSize;
+
+	} while (FALSE);
+
+	sl_unlock(&lh);
+
+	if (registerBufEntry)
+	{
+		if (NT_SUCCESS(status))
+		{
+			Register_PacketFree(registerBufEntry);
+		}
+		else
+		{
+			sl_lock(&registerdata->register_lock, &lh);
+			InsertHeadList(&registerdata->register_pending, &registerBufEntry->pEntry);
+			sl_unlock(&lh);
+		}
+	}
+
+	return status;
+}
 
 UINT64 devctrl_fillBuffer()
 {
@@ -810,6 +877,11 @@ UINT64 devctrl_fillBuffer()
 		case NF_IMAGEMODE_INFO:
 		{
 			status = devctrl_popimagemodinfo(&offset);
+		}
+		break;
+		case NF_REGISTERTAB_INFO:
+		{
+			status = devctrl_popregisterinfo(&offset);
 		}
 		break;
 		default:
@@ -935,6 +1007,7 @@ void devctrl_pushinfo(int code)
 	case NF_PROCESS_INFO:
 	case NF_THREAD_INFO:
 	case NF_IMAGEMODE_INFO:
+	case NF_REGISTERTAB_INFO:
 	{
 		pQuery = (PNF_QUEUE_ENTRY)ExAllocateFromNPagedLookasideList(&g_IoQueryList);
 		if (!pQuery)
