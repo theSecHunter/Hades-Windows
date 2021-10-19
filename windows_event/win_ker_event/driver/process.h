@@ -23,7 +23,7 @@ typedef struct _PROCESSDATA
 	LIST_ENTRY process_pending;
 }PROCESSDATA,*PPROCESSDATA;
 
-int Process_Init(void);
+NTSTATUS Process_Init(void);
 void Process_Free(void);
 void Process_Clean(void);
 void Process_SetMonitor(BOOLEAN code);

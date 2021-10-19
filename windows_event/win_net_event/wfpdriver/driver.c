@@ -110,19 +110,6 @@ DriverEntry(
 
 	driverObject->DriverUnload = driverUnload;
 
-	// Init Alpc
-	//status = InitAlpcAddrs();
-	//if (!NT_SUCCESS(status))
-	//{
-	//	return status;
-	//}
-
-	//status = AlpcDriverStart();
-	//if (!NT_SUCCESS(status))
-	//{
-	//	return status;
-	//}
-
 	do 
 	{
 		// Init Driver 

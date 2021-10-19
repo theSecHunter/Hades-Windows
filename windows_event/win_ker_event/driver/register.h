@@ -21,7 +21,7 @@ typedef struct _REGISTERDATA
 	LIST_ENTRY register_pending;
 }REGISTERDATA, * PREGISTERDATA;
 
-int Register_Init(PDRIVER_OBJECT pDriverObject);
+NTSTATUS Register_Init(PDRIVER_OBJECT pDriverObject);
 void Register_Free(void);
 void Register_Clean(void);
 void Register_SetMonitor(BOOLEAN code);

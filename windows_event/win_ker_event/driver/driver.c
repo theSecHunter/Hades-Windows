@@ -5,6 +5,8 @@
 #include "thread.h"
 #include "imagemod.h"
 #include "register.h"
+#include "drivers.h"
+#include "syswmi.h"
 
 #include <fltKernel.h>
 #include <dontuse.h>
@@ -132,6 +134,14 @@ NTSTATUS
             return status;
 
         status = Register_Init(DriverObject);
+        if (!NT_SUCCESS(status))
+            return status;
+
+        status = Drivers_Init();
+        if (!NT_SUCCESS(status))
+            return status;
+
+        status = Wmi_Init();
         if (!NT_SUCCESS(status))
             return status;
 

@@ -18,23 +18,15 @@ void Process_NotifyImage(
 	if (!g_imagemod_monitor)
 		return;
 
-	if ((!ProcessId) || ImageInfo->SystemModeImage)
+	if (!ImageInfo)
 		return;
 
 	KLOCK_QUEUE_HANDLE lh;
 	IMAGEMODINFO imagemodinfo;
 	RtlSecureZeroMemory(&imagemodinfo,sizeof(IMAGEMODINFO));
 
-	// Get ImageName
-	//if (FullImageName->Length > 19 * sizeof(WCHAR)) {
-
-	//	WCHAR* path = FullImageName->Buffer
-	//		+ FullImageName->Length / sizeof(WCHAR)
-	//		- 19;
-
-	//}
-
 	imagemodinfo.processid = (int)ProcessId;
+	imagemodinfo.systemmodeimage = ImageInfo->SystemModeImage;
 	imagemodinfo.imagebase = (__int64)ImageInfo->ImageBase;
 	imagemodinfo.imagesize = (__int64)ImageInfo->ImageSize;
 	memcpy(imagemodinfo.imagename, FullImageName->Buffer, FullImageName->Length);
@@ -74,8 +66,10 @@ NTSTATUS Imagemod_Init(void)
 	sl_init(&g_imagemodQueryhead.imagemod_lock);
 	InitializeListHead(&g_imagemodQueryhead.imagemod_pending);
 
+	// See: Available starting with Windows 2000.
+	// Msdn: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/nf-ntddk-pssetloadimagenotifyroutine
 	PsSetLoadImageNotifyRoutine(Process_NotifyImage);
-
+	return STATUS_SUCCESS;
 }
 
 void Imagemod_Free(void)

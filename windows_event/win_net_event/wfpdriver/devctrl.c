@@ -468,16 +468,6 @@ NTSTATUS devctrl_init()
 		NULL
 	);
 
-	//status = PsCreateSystemThread(
-	//	&threadHandle,
-	//	THREAD_ALL_ACCESS,
-	//	NULL,
-	//	NULL,
-	//	NULL,
-	//	devctrl_AlpcThread,
-	//	NULL
-	//);
-
 	if (NT_SUCCESS(status))
 	{
 		KPRIORITY priority = HIGH_PRIORITY;

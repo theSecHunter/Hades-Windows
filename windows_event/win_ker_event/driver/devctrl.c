@@ -4,6 +4,8 @@
 #include "thread.h"
 #include "imagemod.h"
 #include "register.h"
+#include "drivers.h"
+#include "syswmi.h"
 
 #include <ntddk.h>
 
@@ -354,8 +356,10 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	Thread_Clean();
 	Imagemod_Clean();
 	Register_Clean();
-	devctrl_clean();
+	Drivers_Clean();
+	Wmi_Clean();
 
+	devctrl_clean();
 	devctrl_freeSharedMemory(&g_inBuf);
 	devctrl_freeSharedMemory(&g_outBuf);
 
@@ -397,6 +401,8 @@ VOID devctrl_free()
 	Thread_Free();
 	Imagemod_Free();
 	Register_Free();
+	Drivers_Free();
+	Wmi_Free();
 }
 
 VOID devctrl_setShutdown()
@@ -433,6 +439,7 @@ VOID devctrl_setMonitor(BOOLEAN code)
 	Thread_SetMonitor(code);
 	Imagemod_SetMonitor(code);
 	Register_SetMonitor(code);
+	Drivers_SetMonitor(code);
 }
 
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)

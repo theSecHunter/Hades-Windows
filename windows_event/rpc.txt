@@ -1,0 +1,34 @@
+syntax = "proto3";
+option go_package = "proto";
+package proto;
+
+// protoc --go_out=plugins=grpc:. *.proto
+
+message RawData {
+  repeated string IntranetIPv4 = 1; //内网IPv4列表
+  repeated string IntranetIPv6 = 2;
+  string Hostname = 3;
+  string AgentID = 4;
+  int64 Timestamp =5;  //Agent数据上报时间
+  string Version = 6;  //Agent版本
+  repeated Record Pkg = 7;
+}
+
+message Record {
+  map<string, string> message = 1;
+}
+
+message Command {
+  /*
+    1 关闭(Agent自身)
+    2 自更新(URL 下载)
+    3 白名单操作
+    4 主动查询模式
+  */
+  int32 AgentCtrl = 1;
+  map<string, string> message = 2;
+}
+
+service Transfer {
+  rpc Transfer (stream RawData) returns (stream Command){}
+}

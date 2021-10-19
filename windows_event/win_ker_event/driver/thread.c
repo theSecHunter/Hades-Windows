@@ -68,8 +68,10 @@ NTSTATUS Thread_Init()
 	sl_init(&g_threadQueryhead.thread_lock);
 	InitializeListHead(&g_threadQueryhead.thread_pending);
 
-	// Set Calloutback
+	// See: SAvailable starting with Windows 2000.
+	// Msdn: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/nf-ntddk-pssetcreatethreadnotifyroutine
 	PsSetCreateThreadNotifyRoutine(Process_NotifyThread);
+	return STATUS_SUCCESS;
 }
 
 void Thread_Clean()

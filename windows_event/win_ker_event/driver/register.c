@@ -105,7 +105,7 @@ NTSTATUS Process_NotifyRegister(
 	return STATUS_SUCCESS;
 }
 
-int Register_Init(PDRIVER_OBJECT pDriverObject)
+NTSTATUS Register_Init(PDRIVER_OBJECT pDriverObject)
 {
 	sl_init(&g_reg_monitorlock);
 	sl_init(&g_registelock);
@@ -125,7 +125,9 @@ int Register_Init(PDRIVER_OBJECT pDriverObject)
 
 	RtlInitUnicodeString(&g_regstring, L"140831");
 	
-	NTSTATUS status = CmRegisterCallbackEx(
+	// See: Available starting with Windows Vista.
+	// Msdn: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-cmregistercallbackex
+	CmRegisterCallbackEx(
 		Process_NotifyRegister,
 		&g_regstring,
 		pDriverObject,
@@ -133,8 +135,7 @@ int Register_Init(PDRIVER_OBJECT pDriverObject)
 		&g_plareg,
 		NULL
 	);
-
-	return 1;
+	return STATUS_SUCCESS;
 }
 
 void Register_Free(void)

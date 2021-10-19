@@ -19,10 +19,11 @@ typedef struct _THREADINFO
 
 typedef struct _IMAGEMODINFO
 {
-	int		processid;
-	__int64 imagebase;
-	__int64	imagesize;
-	wchar_t	imagename[260 * 2];
+    int		processid;
+    __int64 imagebase;
+    __int64	imagesize;
+    int		systemmodeimage;
+    wchar_t	imagename[260 * 2];
 }IMAGEMODINFO, * PIMAGEMODINFO;
 
 typedef enum _USER_REG_NOTIFY_CLASS {

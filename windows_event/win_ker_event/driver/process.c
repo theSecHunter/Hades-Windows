@@ -41,7 +41,7 @@ PROCESSDATA* processctx_get()
     return &g_processQueryhead;
 }
 
-int Process_Init(void) {
+NTSTATUS Process_Init(void) {
 
     sl_init(&g_processlock);
     sl_init(&g_proc_monitorlock);
@@ -63,8 +63,10 @@ int Process_Init(void) {
     if (!ZwQueryInformationProcess)
         return FALSE;
 
+    // See: Available starting with Windows Vista with SP1 and Windows Server 2008.
+    // Msdn: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/nf-ntddk-pssetcreateprocessnotifyroutineex
 	PsSetCreateProcessNotifyRoutineEx((PCREATE_PROCESS_NOTIFY_ROUTINE_EX)Process_NotifyProcessEx, FALSE);
-	return 1;
+    return STATUS_SUCCESS;
 }
 
 void Process_Free(void)
@@ -72,7 +74,7 @@ void Process_Free(void)
     // Set Close Monitro
     Process_Clean();
     ExDeleteNPagedLookasideList(&g_processList);
-    PsSetCreateProcessNotifyRoutineEx(Process_NotifyProcessEx, TRUE);
+    PsSetCreateProcessNotifyRoutineEx((PCREATE_PROCESS_NOTIFY_ROUTINE_EX)Process_NotifyProcessEx, TRUE);
 }
 
 void Process_SetMonitor(BOOLEAN code)
