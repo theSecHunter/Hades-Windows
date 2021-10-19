@@ -44,8 +44,8 @@ enum IoctCode
 	NF_PROCESS_INFO = 1,
 	NF_THREAD_INFO,
 	NF_IMAGEGMOD_INFO,
-	NF_DEVICE_INFO,
-	NF_REGISTERTAB_INFO
+	NF_REGISTERTAB_INFO,
+	NF_DEVICE_INFO
 };
 
 PVOID DevctrlIoct::get_eventhandler()
@@ -349,7 +349,10 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 				handleEventDispath(pData);
 
 				if ((pData->code == NF_PROCESS_INFO ||
-					pData->code == NF_THREAD_INFO) &&
+					pData->code == NF_THREAD_INFO ||
+					pData->code == NF_IMAGEGMOD_INFO ||
+					pData->code == NF_REGISTERTAB_INFO)
+					&&
 					pData->bufferSize < 1400)
 				{
 					abortBatch = true;

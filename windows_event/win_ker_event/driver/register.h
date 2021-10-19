@@ -4,6 +4,7 @@
 typedef struct _REGISTERINFO
 {
 	int processid;
+	int threadid;
 	int opeararg;
 }REGISTERINFO, * PREGISTERINFO;
 

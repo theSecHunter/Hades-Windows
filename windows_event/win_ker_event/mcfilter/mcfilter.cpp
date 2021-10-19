@@ -171,10 +171,12 @@ class EventHandler : public NF_EventHandler
 			}
 			break;
 		}
-
-		WCHAR info[MAX_PATH] = { 0, };
-		swprintf(info, MAX_PATH, L"Pid: %d %s", registerinfo.processid, opearestring.data());
-		OutputDebugString(info);
+		if (opearestring.size())
+		{
+			WCHAR info[MAX_PATH] = { 0, };
+			swprintf(info, MAX_PATH, L"Pid: %d Threadid:%d\t%s", registerinfo.processid, registerinfo.threadid, opearestring.data());
+			OutputDebugString(info);
+		}
 	}
 
 };

@@ -21,20 +21,23 @@ NTSTATUS Process_NotifyRegister(
 	_In_opt_ PVOID Argument2
 )
 {
-	// ¹Ø±Õ¼à¿Ø
+	UNREFERENCED_PARAMETER(CallbackContext);
+	UNREFERENCED_PARAMETER(Argument2);
+
 	if (FALSE == g_reg_monitorprocess)
-	{
-		return;
-	}
+		return STATUS_SUCCESS;
 
 	REGISTERINFO registerinfo;
 	KLOCK_QUEUE_HANDLE lh;
+	LONG lOperateType = -1;
 	RtlSecureZeroMemory(&registerinfo, sizeof(REGISTERINFO));
 
-	registerinfo.processid = PsGetCurrentProcessId();
+	registerinfo.processid = (int)PsGetCurrentProcessId();
+	registerinfo.threadid = (int)PsGetCurrentThreadId();
 
 	// Argument1 = _REG_NOTIFY_CLASS 
-	LONG lOperateType = (REG_NOTIFY_CLASS)Argument1;
+	if (Argument1)
+		lOperateType = (REG_NOTIFY_CLASS)Argument1;
 	registerinfo.opeararg = lOperateType;
 
 	// Argument2 = Argument1.Struct
@@ -78,12 +81,14 @@ NTSTATUS Process_NotifyRegister(
 		
 		}
 		break;
+
+		default:
+			return STATUS_SUCCESS;
 	}
 
 	REGISTERBUFFER* regbuf = (REGISTERBUFFER*)Register_PacketAllocate(sizeof(REGISTERINFO));
 	if (!regbuf)
 		return;
-	RtlSecureZeroMemory(regbuf, sizeof(REGISTERBUFFER));
 
 	regbuf->dataLength = sizeof(REGISTERINFO);
 	if (regbuf->dataBuffer)
@@ -96,6 +101,8 @@ NTSTATUS Process_NotifyRegister(
 	sl_unlock(&lh);
 
 	devctrl_pushinfo(NF_REGISTERTAB_INFO);
+
+	return STATUS_SUCCESS;
 }
 
 int Register_Init(PDRIVER_OBJECT pDriverObject)

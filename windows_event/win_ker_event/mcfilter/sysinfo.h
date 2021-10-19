@@ -107,6 +107,7 @@ typedef enum _USER_REG_NOTIFY_CLASS {
 typedef struct _REGISTERINFO
 {
 	int processid;
+    int threadid;
 	int opeararg;
 }REGISTERINFO, * PREGISTERINFO;
 
