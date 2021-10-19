@@ -5,20 +5,26 @@
     <ClCompile Include="devctrl.c">
       <Filter>devctrl</Filter>
     </ClCompile>
-    <ClCompile Include="otherevent.c">
-      <Filter>sysmon</Filter>
-    </ClCompile>
     <ClCompile Include="process.c">
-      <Filter>sysmon</Filter>
+      <Filter>sysmonitor</Filter>
     </ClCompile>
     <ClCompile Include="register.c">
-      <Filter>sysmon</Filter>
+      <Filter>sysmonitor</Filter>
     </ClCompile>
     <ClCompile Include="thread.c">
-      <Filter>sysmon</Filter>
+      <Filter>sysmonitor</Filter>
     </ClCompile>
     <ClCompile Include="imagemod.c">
-      <Filter>sysmon</Filter>
+      <Filter>sysmonitor</Filter>
+    </ClCompile>
+    <ClCompile Include="syswmi.c">
+      <Filter>sysmonitor</Filter>
+    </ClCompile>
+    <ClCompile Include="sysfile.c">
+      <Filter>sysmonitor</Filter>
+    </ClCompile>
+    <ClCompile Include="syssession.c">
+      <Filter>sysmonitor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -27,23 +33,29 @@
     <ClInclude Include="devctrl.h">
       <Filter>devctrl</Filter>
     </ClInclude>
-    <ClInclude Include="otherevent.h">
-      <Filter>sysmon</Filter>
-    </ClInclude>
     <ClInclude Include="process.h">
-      <Filter>sysmon</Filter>
+      <Filter>sysmonitor</Filter>
     </ClInclude>
     <ClInclude Include="register.h">
-      <Filter>sysmon</Filter>
+      <Filter>sysmonitor</Filter>
     </ClInclude>
     <ClInclude Include="thread.h">
-      <Filter>sysmon</Filter>
+      <Filter>sysmonitor</Filter>
     </ClInclude>
     <ClInclude Include="imagemod.h">
-      <Filter>sysmon</Filter>
+      <Filter>sysmonitor</Filter>
     </ClInclude>
     <ClInclude Include="object.h" />
     <ClInclude Include="ntdefines.h" />
+    <ClInclude Include="syswmi.h">
+      <Filter>sysmonitor</Filter>
+    </ClInclude>
+    <ClInclude Include="sysfile.h">
+      <Filter>sysmonitor</Filter>
+    </ClInclude>
+    <ClInclude Include="syssession.h">
+      <Filter>sysmonitor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="driver.rc" />
@@ -55,7 +67,13 @@
     <Filter Include="devctrl">
       <UniqueIdentifier>{0c440d3a-f981-4eb0-91cc-80ac436bb1b4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="sysmon">
+    <Filter Include="sysinterface">
+      <UniqueIdentifier>{cf114631-7265-40f4-a192-81b2b9072e12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="syssecurity">
+      <UniqueIdentifier>{6c91ef1a-0cdf-4da6-9a06-9031b2fa1495}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sysmonitor">
       <UniqueIdentifier>{c930406d-5d8f-4048-b248-e35aa76238e7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>

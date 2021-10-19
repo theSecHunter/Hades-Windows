@@ -37,9 +37,11 @@
   <ItemGroup>
     <ClCompile Include="devctrl.c" />
     <ClCompile Include="imagemod.c" />
-    <ClCompile Include="otherevent.c" />
     <ClCompile Include="process.c" />
     <ClCompile Include="register.c" />
+    <ClCompile Include="sysfile.c" />
+    <ClCompile Include="syssession.c" />
+    <ClCompile Include="syswmi.c" />
     <ClCompile Include="thread.c" />
     <ResourceCompile Include="driver.rc" />
     <ClCompile Include="driver.c" />
@@ -234,10 +236,12 @@
     <ClInclude Include="imagemod.h" />
     <ClInclude Include="ntdefines.h" />
     <ClInclude Include="object.h" />
-    <ClInclude Include="otherevent.h" />
     <ClInclude Include="process.h" />
     <ClInclude Include="public.h" />
     <ClInclude Include="register.h" />
+    <ClInclude Include="sysfile.h" />
+    <ClInclude Include="syssession.h" />
+    <ClInclude Include="syswmi.h" />
     <ClInclude Include="thread.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
