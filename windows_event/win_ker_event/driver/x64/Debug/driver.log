@@ -1,50 +1,59 @@
 ﻿  Building 'driver' with toolset 'WindowsKernelModeDriver10.0' and the 'Desktop' target platform.
   Stamping x64\Debug\driver.inf
-  Stamping [Version] section with DriverVer=10/18/2021,22.10.36.371
+  Stamping [Version] section with DriverVer=10/19/2021,21.46.39.597
 D:\Hades\windows_event\win_ker_event\driver\driver.inf : warning 1420: [DefaultInstall]-based INF cannot be processed as Primitive.
 D:\Hades\windows_event\win_ker_event\driver\driver.inf(5-5): warning 1324: [Version] section should specify PnpLockdown=1.
 D:\Hades\windows_event\win_ker_event\driver\driver.inf(24-24): warning 1421: Section [DefaultInstall] should have an architecture decoration.
 D:\Hades\windows_event\win_ker_event\driver\driver.inf(35-35): warning 1421: Section [DefaultUninstall] should have an architecture decoration.
 D:\Hades\windows_event\win_ker_event\driver\driver.inf(73-73): warning 1205: Section [MiniFilter.driverFiles] referenced from DelFiles and CopyFiles directive.
   devctrl.c
-D:\Hades\windows_event\win_ker_event\driver\devctrl.c(376,42): warning C4133: “=”: 从“PLIST_ENTRY”到“PNF_QUEUE_ENTRY”的类型不兼容
-D:\Hades\windows_event\win_ker_event\driver\devctrl.c(589,23): warning C4098: “devctrl_ioThreadFree”:“void”函数返回值
-D:\Hades\windows_event\win_ker_event\driver\devctrl.c(1029,15): warning C4098: “devctrl_pushinfo”:“void”函数返回值
+D:\Hades\windows_event\win_ker_event\driver\devctrl.c(380,42): warning C4133: “=”: 从“PLIST_ENTRY”到“PNF_QUEUE_ENTRY”的类型不兼容
+D:\Hades\windows_event\win_ker_event\driver\devctrl.c(596,23): warning C4098: “devctrl_ioThreadFree”:“void”函数返回值
+D:\Hades\windows_event\win_ker_event\driver\devctrl.c(1107,15): warning C4098: “devctrl_pushinfo”:“void”函数返回值
   imagemod.c
 D:\Hades\windows_event\win_ker_event\driver\imagemod.c(7,49): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
 D:\Hades\windows_event\win_ker_event\driver\imagemod.c(9,54): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
-D:\Hades\windows_event\win_ker_event\driver\imagemod.c(37,41): warning C4311: “类型强制转换”: 从“HANDLE”到“int”的指针截断
-D:\Hades\windows_event\win_ker_event\driver\imagemod.c(98,64): warning C4133: “=”: 从“PLIST_ENTRY”到“IMAGEMODBUFFER *”的类型不兼容
-  otherevent.c
+D:\Hades\windows_event\win_ker_event\driver\imagemod.c(28,41): warning C4311: “类型强制转换”: 从“HANDLE”到“int”的指针截断
+D:\Hades\windows_event\win_ker_event\driver\imagemod.c(92,64): warning C4133: “=”: 从“PLIST_ENTRY”到“IMAGEMODBUFFER *”的类型不兼容
   process.c
 D:\Hades\windows_event\win_ker_event\driver\process.c(8,45): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
 D:\Hades\windows_event\win_ker_event\driver\process.c(10,53): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
-D:\Hades\windows_event\win_ker_event\driver\process.c(130,46): warning C4311: “类型强制转换”: 从“HANDLE”到“DWORD”的指针截断
-D:\Hades\windows_event\win_ker_event\driver\process.c(141,42): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
-D:\Hades\windows_event\win_ker_event\driver\process.c(151,56): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
+D:\Hades\windows_event\win_ker_event\driver\process.c(132,46): warning C4311: “类型强制转换”: 从“HANDLE”到“DWORD”的指针截断
+D:\Hades\windows_event\win_ker_event\driver\process.c(143,42): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
+D:\Hades\windows_event\win_ker_event\driver\process.c(153,56): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
   register.c
 D:\Hades\windows_event\win_ker_event\driver\register.c(7,47): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
 D:\Hades\windows_event\win_ker_event\driver\register.c(9,52): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
-D:\Hades\windows_event\win_ker_event\driver\register.c(27,3): warning C4033: “Process_NotifyRegister”必须返回值
-D:\Hades\windows_event\win_ker_event\driver\register.c(34,50): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
-D:\Hades\windows_event\win_ker_event\driver\register.c(85,3): warning C4033: “Process_NotifyRegister”必须返回值
+D:\Hades\windows_event\win_ker_event\driver\register.c(35,55): warning C4311: “类型强制转换”: 从“HANDLE”到“int”的指针截断
+D:\Hades\windows_event\win_ker_event\driver\register.c(36,53): warning C4311: “类型强制转换”: 从“HANDLE”到“int”的指针截断
+D:\Hades\windows_event\win_ker_event\driver\register.c(91,3): warning C4033: “Process_NotifyRegister”必须返回值
+  sysfile.c
+D:\Hades\windows_event\win_ker_event\driver\sysfile.c(7,48): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
+D:\Hades\windows_event\win_ker_event\driver\sysfile.c(9,49): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
+D:\Hades\windows_event\win_ker_event\driver\sysfile.c(48,46): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
+D:\Hades\windows_event\win_ker_event\driver\sysfile.c(49,44): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
+D:\Hades\windows_event\win_ker_event\driver\sysfile.c(96,2): warning C4133: “函数”: 从“BOOLEAN *”到“PKSPIN_LOCK”的类型不兼容
+D:\Hades\windows_event\win_ker_event\driver\sysfile.c(154,3): warning C4133: “函数”: 从“LIST_ENTRY *”到“PKSPIN_LOCK”的类型不兼容
+  syssession.c
+  syswmi.c
+D:\Hades\windows_event\win_ker_event\driver\syswmi.c(11,47): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
+D:\Hades\windows_event\win_ker_event\driver\syswmi.c(13,48): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
+D:\Hades\windows_event\win_ker_event\driver\syswmi.c(49,2): warning C4133: “函数”: 从“BOOLEAN *”到“PKSPIN_LOCK”的类型不兼容
   thread.c
 D:\Hades\windows_event\win_ker_event\driver\thread.c(7,47): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
 D:\Hades\windows_event\win_ker_event\driver\thread.c(9,52): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
 D:\Hades\windows_event\win_ker_event\driver\thread.c(34,34): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
 D:\Hades\windows_event\win_ker_event\driver\thread.c(35,32): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
-D:\Hades\windows_event\win_ker_event\driver\thread.c(85,60): warning C4133: “=”: 从“PLIST_ENTRY”到“THREADBUFFER *”的类型不兼容
+D:\Hades\windows_event\win_ker_event\driver\thread.c(87,60): warning C4133: “=”: 从“PLIST_ENTRY”到“THREADBUFFER *”的类型不兼容
   driver.c
-D:\Hades\windows_event\win_ker_event\driver\driver.c(77,26): warning C4098: “driverUnload”:“void”函数返回值
-D:\Hades\windows_event\win_ker_event\driver\driver.c(113,102): warning C4133: “=”: 从“char *”到“unsigned short *”的类型不兼容
-D:\Hades\windows_event\win_ker_event\driver\driver.c(115,13): warning C4033: “DriverEntry”必须返回值
+D:\Hades\windows_event\win_ker_event\driver\driver.c(79,26): warning C4098: “driverUnload”:“void”函数返回值
+D:\Hades\windows_event\win_ker_event\driver\driver.c(115,102): warning C4133: “=”: 从“char *”到“unsigned short *”的类型不兼容
+D:\Hades\windows_event\win_ker_event\driver\driver.c(117,13): warning C4033: “DriverEntry”必须返回值
   正在生成代码...
-D:\Hades\windows_event\win_ker_event\driver\driver.c(141): warning C4715: “DriverEntry”: 不是所有的控件路径都返回值
-D:\Hades\windows_event\win_ker_event\driver\thread.c(73): warning C4716: “Thread_Init”: 必须返回一个值
-D:\Hades\windows_event\win_ker_event\driver\register.c(99): warning C4716: “Process_NotifyRegister”: 必须返回一个值
-D:\Hades\windows_event\win_ker_event\driver\imagemod.c(79): warning C4716: “Imagemod_Init”: 必须返回一个值
-D:\Hades\windows_event\win_ker_event\driver\devctrl.c(658): warning C4715: “devctrl_popprocessinfo”: 不是所有的控件路径都返回值
-D:\Hades\windows_event\win_ker_event\driver\devctrl.c(720): warning C4715: “devctrl_popthreadinfo”: 不是所有的控件路径都返回值
+D:\Hades\windows_event\win_ker_event\driver\driver.c(151): warning C4715: “DriverEntry”: 不是所有的控件路径都返回值
+D:\Hades\windows_event\win_ker_event\driver\register.c(106): warning C4715: “Process_NotifyRegister”: 不是所有的控件路径都返回值
+D:\Hades\windows_event\win_ker_event\driver\devctrl.c(665): warning C4715: “devctrl_popprocessinfo”: 不是所有的控件路径都返回值
+D:\Hades\windows_event\win_ker_event\driver\devctrl.c(727): warning C4715: “devctrl_popthreadinfo”: 不是所有的控件路径都返回值
   driver.vcxproj -> D:\Hades\windows_event\win_ker_event\bin\Debug\x64\driver.sys
   Done Adding Additional Store
   Successfully signed: D:\Hades\windows_event\win_ker_event\bin\Debug\x64\driver.sys

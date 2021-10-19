@@ -186,7 +186,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
-      <AdditionalDependencies>fltmgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NtosKrnl.lib;fltmgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/INTEGRITYCHECK %(AdditionalOptions)</AdditionalOptions>
       <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
     </Link>
@@ -198,7 +198,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
-      <AdditionalDependencies>fltmgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NtosKrnl.lib;fltmgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/INTEGRITYCHECK %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <ClCompile>

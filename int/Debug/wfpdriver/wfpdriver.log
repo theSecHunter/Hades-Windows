@@ -1,0 +1,178 @@
+﻿  Building 'wfpdriver' with toolset 'WindowsKernelModeDriver10.0' and the 'Desktop' target platform.
+  Stamping .\../../../int/Debug/wfpdriver/wfpdriver.inf
+  Stamping [Version] section with DriverVer=10/19/2021,14.15.5.630
+D:\Hades\windows_event\win_net_event\wfpdriver\wfpdriver.inf : warning 1420: [DefaultInstall]-based INF cannot be processed as Primitive.
+D:\Hades\windows_event\win_net_event\wfpdriver\wfpdriver.inf(8-8): warning 1324: [Version] section should specify PnpLockdown=1.
+D:\Hades\windows_event\win_net_event\wfpdriver\wfpdriver.inf(25-25): warning 1421: Section [DefaultInstall] should have an architecture decoration.
+D:\Hades\windows_event\win_net_event\wfpdriver\wfpdriver.inf(32-32): warning 1421: Section [DefaultUninstall] should have an architecture decoration.
+D:\Hades\windows_event\win_net_event\wfpdriver\wfpdriver.inf(38-38): warning 1205: Section [wfpdriver.DriverFiles] referenced from DelFiles and CopyFiles directive.
+  callouts.c
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(112,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(113,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(122,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(123,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(133,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(134,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(170,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(194,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(208,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(209,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(180,66): warning C4047: “=”:“UINT32”与“UINT32 *”的间接级别不同
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(146,14): warning C4100: “flowContext”: 未引用的形参
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(144,23): warning C4100: “classifyContext”: 未引用的形参
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(143,20): warning C4100: “layerData”: 未引用的形参
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(391,5): warning C4047: “函数”:“unsigned long”与“unsigned char [4]”的间接级别不同
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(391,5): warning C4024: “_byteswap_ulong”: 形参和实参 1 的类型不同
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(393,5): warning C4047: “函数”:“unsigned long”与“unsigned char [4]”的间接级别不同
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(393,5): warning C4024: “_byteswap_ulong”: 形参和实参 1 的类型不同
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(274,14): warning C4100: “flowContext”: 未引用的形参
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(272,23): warning C4100: “classifyContext”: 未引用的形参
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(491,21): warning C4101: “lh”: 未引用的局部变量
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(548,69): warning C4047: “=”:“UINT32”与“GUID *”的间接级别不同
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(505,12): warning C4100: “flowContext”: 未引用的形参
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(949,3): warning C4047: “函数”:“UINT32 *”与“UINT32”的间接级别不同
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(948,4): warning C4024: “helper_callout_registerCallout”: 形参和实参 7 的类型不同
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(960,3): warning C4047: “函数”:“UINT32 *”与“UINT32”的间接级别不同
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(959,4): warning C4024: “helper_callout_registerCallout”: 形参和实参 7 的类型不同
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(1104,16): warning C4242: “return”: 从“NTSTATUS”转换到“BOOLEAN”，可能丢失数据
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(1141,15): warning C4242: “return”: 从“NTSTATUS”转换到“BOOLEAN”，可能丢失数据
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(1153,45): warning C4020: “FwpsCalloutUnregisterByKey0”: 实参太多
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(1154,45): warning C4020: “FwpsCalloutUnregisterByKey0”: 实参太多
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(1155,45): warning C4020: “FwpsCalloutUnregisterByKey0”: 实参太多
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(1156,45): warning C4020: “FwpsCalloutUnregisterByKey0”: 实参太多
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(1157,45): warning C4020: “FwpsCalloutUnregisterByKey0”: 实参太多
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(1158,45): warning C4020: “FwpsCalloutUnregisterByKey0”: 实参太多
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(1146,35): warning C4189: “pcalloutsflowCtx”: 局部变量已初始化但不引用
+D:\Hades\windows_event\win_net_event\wfpdriver\callouts.c(1147,26): warning C4189: “pcalloutsDatalinkCtx”: 局部变量已初始化但不引用
+  datalinkctx.c
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(112,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(113,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(122,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(123,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(133,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(134,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(170,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(194,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(208,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(209,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+  devctrl.c
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(112,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(113,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(122,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(123,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(133,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(134,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(170,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(194,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(208,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(209,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.h(48,3): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.h(54,3): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(46,10): warning C4189: “pid”: 局部变量已初始化但不引用
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(44,21): warning C4101: “lh”: 未引用的局部变量
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(163,41): warning C4100: “DeviceObject”: 未引用的形参
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(310,10): warning C4189: “pid”: 局部变量已初始化但不引用
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(308,21): warning C4101: “lh”: 未引用的局部变量
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(362,10): warning C4189: “pid”: 局部变量已初始化但不引用
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(360,21): warning C4101: “lh”: 未引用的局部变量
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(510,42): warning C4133: “=”: 从“PLIST_ENTRY”到“PNF_QUEUE_ENTRY”的类型不兼容
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(542,23): warning C4098: “devctrl_free”:“void”函数返回值
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(652,56): warning C4133: “=”: 从“PLIST_ENTRY”到“PNF_DATALINK_BUFFER”的类型不兼容
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(865,11): warning C4100: “StartContext”: 未引用的形参
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(871,19): warning C4101: “pResult”: 未引用的局部变量
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(868,22): warning C4189: “irp”: 局部变量已初始化但不引用
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(869,22): warning C4101: “pIrpEntry”: 未引用的局部变量
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(870,22): warning C4189: “foundPendingIrp”: 局部变量已初始化但不引用
+D:\Hades\windows_event\win_net_event\wfpdriver\devctrl.c(872,21): warning C4101: “lh”: 未引用的局部变量
+  driver.c
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(112,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(113,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(122,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(123,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(133,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(134,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(170,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(194,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(208,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(209,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.h(48,3): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.h(54,3): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\driver.c(26,22): warning C4100: “registryPath”: 未引用的形参
+D:\Hades\windows_event\win_net_event\wfpdriver\driver.c(89,50): warning C4047: “函数”:“PDEVICE_OBJECT”与“PDEVICE_OBJECT *”的间接级别不同
+D:\Hades\windows_event\win_net_event\wfpdriver\driver.c(89,34): warning C4024: “callout_init”: 形参和实参 1 的类型不同
+D:\Hades\windows_event\win_net_event\wfpdriver\driver.c(194,11): warning C4189: “status”: 局部变量已初始化但不引用
+  establishedctx.c
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(112,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(113,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(122,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(123,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(133,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(134,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(170,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(194,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(208,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(209,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\establishedctx.c(35,58): warning C4133: “=”: 从“PLIST_ENTRY”到“PNF_FLOWESTABLISHED_BUFFER”的类型不兼容
+  flowctl.c
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(112,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(113,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(122,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(123,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(133,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(134,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(170,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(194,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(208,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(209,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+  HlprDriverAlpc.c
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(112,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(113,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(122,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(123,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(133,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(134,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(170,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(194,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(208,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(209,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.h(48,3): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.h(54,3): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.c(61,13): warning C4100: “StartContext”: 未引用的形参
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.c(88,13): warning C4189: “hMyThread”: 局部变量已初始化但不引用
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.c(111,18): warning C4101: “nLen”: 未引用的局部变量
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.c(110,18): warning C4101: “bBreak”: 未引用的局部变量
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.c(113,26): warning C4101: “objPort”: 未引用的局部变量
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.c(114,26): warning C4101: “serverPortAttr”: 未引用的局部变量
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.c(108,18): warning C4101: “pmReceive”: 未引用的局部变量
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.c(171,32): warning C4242: “=”: 从“int”转换到“CSHORT”，可能丢失数据
+D:\Hades\windows_event\win_net_event\wfpdriver\HlprDriverAlpc.c(204,32): warning C4242: “=”: 从“int”转换到“CSHORT”，可能丢失数据
+  util.c
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(112,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(113,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(122,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(123,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(133,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(134,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(170,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(194,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(208,10): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+D:\Hades\windows_event\win_net_event\wfpdriver\public.h(209,6): warning C4201: 使用了非标准扩展: 无名称的结构/联合
+  正在生成代码...
+  wfpdriver.vcxproj -> D:\Hades\bin\wfp\wfpdriver.sys
+  Done Adding Additional Store
+  Successfully signed: D:\Hades\bin\wfp\wfpdriver.sys
+  
+  .........................
+  Signability test complete.
+  
+  Errors:
+  None
+  
+  Warnings:
+  None
+  
+  Catalog generation complete.
+  D:\Hades\bin\wfp\wfpdriver\wfpdriver.cat
+  Done Adding Additional Store
+  Successfully signed: ..\..\..\bin\wfp\wfpdriver\wfpdriver.cat
+  
