@@ -18,6 +18,8 @@ using namespace std;
 
 const char devSyLinkName[] = "\\??\\KernelDark";
 
+const int max_size = MAX_PATH * 3;
+
 typedef struct _PE_CONTROL{
 	string name;
 	unsigned int type;
@@ -68,9 +70,9 @@ class EventHandler : public NF_EventHandler
 		RtlCopyMemory(&processinfo, buf, len);
 
 		wstring wstr;
-		WCHAR info[MAX_PATH] = { 0, };
+		WCHAR info[max_size] = { 0, };
 
-		swprintf(info, MAX_PATH, L"Pid: %d\t", processinfo.processid);
+		swprintf(info, max_size, L"[Process_Log] Pid: %d\t", processinfo.processid);
 		if (processinfo.endprocess)
 		{
 			wstr = info;
@@ -107,8 +109,8 @@ class EventHandler : public NF_EventHandler
 		RtlSecureZeroMemory(&threadinfo, sizeof(THREADINFO));
 		RtlCopyMemory(&threadinfo, buf, len);
 
-		WCHAR info[MAX_PATH] = { 0, };
-		swprintf(info, MAX_PATH, L"Pid: %d Threadid: %d ExitStatus: %d", threadinfo.processid, threadinfo.threadid, threadinfo.createid);
+		WCHAR info[max_size] = { 0, };
+		swprintf(info, max_size, L"[Thread_Log] Pid: %d Threadid: %d ExitStatus: %d", threadinfo.processid, threadinfo.threadid, threadinfo.createid);
 		OutputDebugString(info);
 	}
 
@@ -118,8 +120,8 @@ class EventHandler : public NF_EventHandler
 		RtlSecureZeroMemory(&imageinfo, sizeof(IMAGEMODINFO));
 		RtlCopyMemory(&imageinfo, buf, len);
 
-		WCHAR info[MAX_PATH] = { 0, };
-		swprintf(info, MAX_PATH, L"Pid: %d ImageBase: %p ImageSize: %d \n ImageBasePath: %s", imageinfo.processid, imageinfo.imagebase, imageinfo.imagesize, imageinfo.imagename);
+		WCHAR info[max_size] = { 0, };
+		swprintf(info, max_size, L"[Image_Log] Pid: %d ImageBase: %p ImageSize: %d \n ImageBasePath: %s", imageinfo.processid, imageinfo.imagebase, imageinfo.imagesize, imageinfo.imagename);
 		OutputDebugString(info);
 	}
 
@@ -173,10 +175,21 @@ class EventHandler : public NF_EventHandler
 		}
 		if (opearestring.size())
 		{
-			WCHAR info[MAX_PATH] = { 0, };
-			swprintf(info, MAX_PATH, L"Pid: %d Threadid:%d\t%s", registerinfo.processid, registerinfo.threadid, opearestring.data());
+			WCHAR info[max_size] = { 0, };
+			swprintf(info, max_size, L"[Register_Log] Pid: %d Threadid:%d\t%s", registerinfo.processid, registerinfo.threadid, opearestring.data());
 			OutputDebugString(info);
 		}
+	}
+
+	void filePacket(const char* buf, int len) override
+	{
+		FILEINFO fileinfo;
+		RtlSecureZeroMemory(&fileinfo, sizeof(FILEINFO));
+		RtlCopyMemory(&fileinfo, buf, len);
+
+		WCHAR info[max_size] = { 0, };
+		swprintf(info, max_size, L"[File_Log]: Pid %d Threadid:%d\nDosPath: %s - FileName: %s", fileinfo.processid, fileinfo.threadid, fileinfo.DosName, fileinfo.FileName);
+		OutputDebugString(info);
 	}
 
 };

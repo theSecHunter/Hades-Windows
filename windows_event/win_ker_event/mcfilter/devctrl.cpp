@@ -45,7 +45,7 @@ enum IoctCode
 	NF_THREAD_INFO,
 	NF_IMAGEGMOD_INFO,
 	NF_REGISTERTAB_INFO,
-	NF_DEVICE_INFO
+	NF_FILE_INFO
 };
 
 PVOID DevctrlIoct::get_eventhandler()
@@ -257,6 +257,11 @@ static void handleEventDispath(PNF_DATA pData)
 	case NF_REGISTERTAB_INFO:
 	{
 		g_pEventHandler->registerPacket(pData->buffer, pData->bufferSize);
+	}
+	break;
+	case NF_FILE_INFO:
+	{
+		g_pEventHandler->filePacket(pData->buffer, pData->bufferSize);
 	}
 	break;
 	}

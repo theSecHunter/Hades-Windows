@@ -15,7 +15,13 @@ static	NPAGED_LOOKASIDE_LIST	g_wmilist;
 
 static	WMIDATA					g_wmidata;
 
-static  PVOID					g_handobj = NULL;
+static  PVOID					g_smbioshandobj = NULL;
+static  PVOID					g_prochandobj = NULL;
+
+enum WMICODE
+{
+
+};
 
 VOID Sys_NotifyWmi(
 	PVOID Wnode,
@@ -32,7 +38,7 @@ VOID Sys_NotifyWmi(
 	else
 		return;
 
-	DbgBreakPoint();
+	// DbgBreakPoint();
 	wnode->WnodeHeader.Guid;
 	wnode->WnodeHeader.Version;
 }
@@ -63,17 +69,27 @@ NTSTATUS Wmi_Init()
 
 	*/
 	GUID smbios = SMBIOS_DATA_GUID;
-	DbgBreakPoint();
+
 	// See: Available in Windows XP and later versions
 	// Msdn: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-iowmisetnotificationcallback
-	status = IoWMIOpenBlock(&smbios, 0x0004/*WMIGUID_NOTIFICATION*/, &g_handobj);
+	status = IoWMIOpenBlock(&smbios, 0x0004/*WMIGUID_NOTIFICATION*/, &g_smbioshandobj);
 	if (NT_SUCCESS(status))
 	{
 		// See: Available in Windows XP and later versions
 		// Msdn: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-iowmisetnotificationcallback
-		if (g_handobj)
-			IoWMISetNotificationCallback(g_handobj, Sys_NotifyWmi, NULL);
+		if (g_smbioshandobj)
+			IoWMISetNotificationCallback(g_smbioshandobj, Sys_NotifyWmi, NULL);
 	}
+
+	// smbios = "Win32_Process";
+	//status = IoWMIOpenBlock(&smbios, 0x0004/*WMIGUID_NOTIFICATION*/, &g_prochandobj);
+	//if (NT_SUCCESS(status))
+	//{
+	//	if (g_prochandobj)
+	//		IoWMISetNotificationCallback(g_prochandobj, Sys_NotifyWmi, NULL);
+	//}
+
+
 	return STATUS_SUCCESS;
 }
 

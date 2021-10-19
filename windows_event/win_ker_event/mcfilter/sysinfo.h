@@ -112,4 +112,27 @@ typedef struct _REGISTERINFO
 	int opeararg;
 }REGISTERINFO, * PREGISTERINFO;
 
+typedef struct _FILEINFO
+{
+    int				processid;
+    int				threadid;
+
+    // Msdn: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ns-wdm-_file_object
+    unsigned char	LockOperation;
+    unsigned char	DeletePending;
+    unsigned char	ReadAccess;
+    unsigned char	WriteAccess;
+    unsigned char	DeleteAccess;
+    unsigned char	SharedRead;
+    unsigned char	SharedWrite;
+    unsigned char	SharedDelete;
+    unsigned long	flag;
+
+    // DosName 
+    wchar_t DosName[260];
+    // FileName
+    wchar_t FileName[260];
+
+}FILEINFO, * PFILEINFO;
+
 #endif // !_SYSINFO_H

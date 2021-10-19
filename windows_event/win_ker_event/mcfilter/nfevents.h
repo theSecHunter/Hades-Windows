@@ -27,16 +27,20 @@ typedef enum _NF_STATUS
 class NF_EventHandler
 {
 public:
-	// Get Sys Process
+	// Kernel Callout Sys Process
 	virtual void processPacket(const char* buf, int len) = 0;
 
-	// Get Sys Thread
+	// Kernel Callout Sys Thread
 	virtual void threadPacket(const char* buf, int len) = 0;
 
-	// Get Sys Module
+	// Kernel Callout Sys Module
 	virtual void imagemodPacket(const char* buf, int len) = 0;
 
+	// Kernel Callout Register Table
 	virtual void registerPacket(const char* buf, int len) = 0;
+
+	// Kernel Callout FileObj
+	virtual void filePacket(const char* buf, int len) = 0;
 };
 
 #else // _C_API
@@ -66,6 +70,7 @@ typedef struct _NF_EventHandler
 	void (NFAPI_CC * threadPacket)(const char * buf, int len);
 	void (NFAPI_CC* imagemodPacket)(const char* buf, int len);
 	void (NFAPI_CC* registerPacket)(const char* buf, int len);
+	void (NFAPI_CC* filePacket)(const char* buf, int len);
 } NF_EventHandler, *PNF_EventHandler;
 
 #pragma pack(pop)

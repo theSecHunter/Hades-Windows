@@ -4,8 +4,8 @@
 #include "thread.h"
 #include "imagemod.h"
 #include "register.h"
-#include "drivers.h"
 #include "syswmi.h"
+#include "sysfile.h"
 
 #include <ntddk.h>
 
@@ -356,7 +356,7 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	Thread_Clean();
 	Imagemod_Clean();
 	Register_Clean();
-	Drivers_Clean();
+	File_Clean();
 	Wmi_Clean();
 
 	devctrl_clean();
@@ -401,7 +401,7 @@ VOID devctrl_free()
 	Thread_Free();
 	Imagemod_Free();
 	Register_Free();
-	Drivers_Free();
+	File_Free();
 	Wmi_Free();
 }
 
@@ -439,7 +439,8 @@ VOID devctrl_setMonitor(BOOLEAN code)
 	Thread_SetMonitor(code);
 	Imagemod_SetMonitor(code);
 	Register_SetMonitor(code);
-	Drivers_SetMonitor(code);
+	Wmi_SetMonitor(code);
+	File_SetMonitor(code);
 }
 
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
@@ -490,7 +491,6 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_SUCCESS;
 }
-
 
 NTSTATUS devctrl_ioInit(PDRIVER_OBJECT DriverObject) {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -854,6 +854,71 @@ NTSTATUS devctrl_popregisterinfo(UINT64* pOffset)
 	return status;
 }
 
+NTSTATUS devctrl_popfileinfo(UINT64* pOffset)
+{
+	NTSTATUS			status = STATUS_SUCCESS;
+	KLOCK_QUEUE_HANDLE	lh;
+	FILEBUFFER			*fileBufEntry = NULL;
+	FILEDATA			*filedata = NULL;
+	PNF_DATA			pData;
+	UINT64				dataSize = 0;
+	ULONG				pPacketlens = 0;
+
+	filedata = (FILEDATA*)filectx_get();
+	if (!filedata)
+		return STATUS_UNSUCCESSFUL;
+
+	sl_lock(&filedata->file_lock, &lh);
+
+	do
+	{
+
+		fileBufEntry = (FILEBUFFER*)RemoveHeadList(&filedata->file_pending);
+
+		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
+
+		if ((g_inBuf.bufferLength - *pOffset - 1) < dataSize)
+		{
+			status = STATUS_NO_MEMORY;
+			break;
+		}
+
+		pData = (PNF_DATA)((char*)g_inBuf.kernelVa + *pOffset);
+		if (!pData)
+		{
+			status = STATUS_UNSUCCESSFUL;
+			break;
+		}
+
+		pData->code = NF_FILE_INFO;
+		pData->id = 0;
+		pData->bufferSize = fileBufEntry->dataLength;
+		memcpy(pData->buffer, fileBufEntry->dataBuffer, fileBufEntry->dataLength);
+
+		*pOffset += dataSize;
+
+	} while (FALSE);
+
+	sl_unlock(&lh);
+
+	if (fileBufEntry)
+	{
+		if (NT_SUCCESS(status))
+		{
+			File_PacketFree(fileBufEntry);
+		}
+		else
+		{
+			sl_lock(&filedata->file_lock, &lh);
+			InsertHeadList(&filedata->file_pending, &fileBufEntry->pEntry);
+			sl_unlock(&lh);
+		}
+	}
+
+	return status;
+
+}
+
 UINT64 devctrl_fillBuffer()
 {
 	PNF_QUEUE_ENTRY	pEntry;
@@ -889,6 +954,11 @@ UINT64 devctrl_fillBuffer()
 		case NF_REGISTERTAB_INFO:
 		{
 			status = devctrl_popregisterinfo(&offset);
+		}
+		break;
+		case NF_FILE_INFO:
+		{
+			status = devctrl_popfileinfo(&offset);
 		}
 		break;
 		default:
@@ -1015,6 +1085,7 @@ void devctrl_pushinfo(int code)
 	case NF_THREAD_INFO:
 	case NF_IMAGEMODE_INFO:
 	case NF_REGISTERTAB_INFO:
+	case NF_FILE_INFO:
 	{
 		pQuery = (PNF_QUEUE_ENTRY)ExAllocateFromNPagedLookasideList(&g_IoQueryList);
 		if (!pQuery)
