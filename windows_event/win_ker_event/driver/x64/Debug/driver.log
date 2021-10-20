@@ -1,15 +1,15 @@
 ﻿  Building 'driver' with toolset 'WindowsKernelModeDriver10.0' and the 'Desktop' target platform.
   Stamping x64\Debug\driver.inf
-  Stamping [Version] section with DriverVer=10/19/2021,21.46.39.597
+  Stamping [Version] section with DriverVer=10/20/2021,9.26.43.341
 D:\Hades\windows_event\win_ker_event\driver\driver.inf : warning 1420: [DefaultInstall]-based INF cannot be processed as Primitive.
 D:\Hades\windows_event\win_ker_event\driver\driver.inf(5-5): warning 1324: [Version] section should specify PnpLockdown=1.
 D:\Hades\windows_event\win_ker_event\driver\driver.inf(24-24): warning 1421: Section [DefaultInstall] should have an architecture decoration.
 D:\Hades\windows_event\win_ker_event\driver\driver.inf(35-35): warning 1421: Section [DefaultUninstall] should have an architecture decoration.
 D:\Hades\windows_event\win_ker_event\driver\driver.inf(73-73): warning 1205: Section [MiniFilter.driverFiles] referenced from DelFiles and CopyFiles directive.
   devctrl.c
-D:\Hades\windows_event\win_ker_event\driver\devctrl.c(380,42): warning C4133: “=”: 从“PLIST_ENTRY”到“PNF_QUEUE_ENTRY”的类型不兼容
-D:\Hades\windows_event\win_ker_event\driver\devctrl.c(596,23): warning C4098: “devctrl_ioThreadFree”:“void”函数返回值
-D:\Hades\windows_event\win_ker_event\driver\devctrl.c(1107,15): warning C4098: “devctrl_pushinfo”:“void”函数返回值
+D:\Hades\windows_event\win_ker_event\driver\devctrl.c(382,42): warning C4133: “=”: 从“PLIST_ENTRY”到“PNF_QUEUE_ENTRY”的类型不兼容
+D:\Hades\windows_event\win_ker_event\driver\devctrl.c(598,23): warning C4098: “devctrl_ioThreadFree”:“void”函数返回值
+D:\Hades\windows_event\win_ker_event\driver\devctrl.c(1109,15): warning C4098: “devctrl_pushinfo”:“void”函数返回值
   imagemod.c
 D:\Hades\windows_event\win_ker_event\driver\imagemod.c(7,49): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
 D:\Hades\windows_event\win_ker_event\driver\imagemod.c(9,54): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
@@ -30,10 +30,9 @@ D:\Hades\windows_event\win_ker_event\driver\register.c(91,3): warning C4033: “
   sysfile.c
 D:\Hades\windows_event\win_ker_event\driver\sysfile.c(7,48): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
 D:\Hades\windows_event\win_ker_event\driver\sysfile.c(9,49): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
-D:\Hades\windows_event\win_ker_event\driver\sysfile.c(48,46): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
-D:\Hades\windows_event\win_ker_event\driver\sysfile.c(49,44): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
-D:\Hades\windows_event\win_ker_event\driver\sysfile.c(96,2): warning C4133: “函数”: 从“BOOLEAN *”到“PKSPIN_LOCK”的类型不兼容
-D:\Hades\windows_event\win_ker_event\driver\sysfile.c(154,3): warning C4133: “函数”: 从“LIST_ENTRY *”到“PKSPIN_LOCK”的类型不兼容
+D:\Hades\windows_event\win_ker_event\driver\sysfile.c(49,46): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
+D:\Hades\windows_event\win_ker_event\driver\sysfile.c(50,44): warning C4047: “=”:“int”与“HANDLE”的间接级别不同
+D:\Hades\windows_event\win_ker_event\driver\sysfile.c(100,2): warning C4133: “函数”: 从“BOOLEAN *”到“PKSPIN_LOCK”的类型不兼容
   syssession.c
   syswmi.c
 D:\Hades\windows_event\win_ker_event\driver\syswmi.c(11,47): warning C4047: “初始化”:“KSPIN_LOCK”与“void *”的间接级别不同
@@ -52,8 +51,8 @@ D:\Hades\windows_event\win_ker_event\driver\driver.c(117,13): warning C4033: “
   正在生成代码...
 D:\Hades\windows_event\win_ker_event\driver\driver.c(151): warning C4715: “DriverEntry”: 不是所有的控件路径都返回值
 D:\Hades\windows_event\win_ker_event\driver\register.c(106): warning C4715: “Process_NotifyRegister”: 不是所有的控件路径都返回值
-D:\Hades\windows_event\win_ker_event\driver\devctrl.c(665): warning C4715: “devctrl_popprocessinfo”: 不是所有的控件路径都返回值
-D:\Hades\windows_event\win_ker_event\driver\devctrl.c(727): warning C4715: “devctrl_popthreadinfo”: 不是所有的控件路径都返回值
+D:\Hades\windows_event\win_ker_event\driver\devctrl.c(667): warning C4715: “devctrl_popprocessinfo”: 不是所有的控件路径都返回值
+D:\Hades\windows_event\win_ker_event\driver\devctrl.c(729): warning C4715: “devctrl_popthreadinfo”: 不是所有的控件路径都返回值
   driver.vcxproj -> D:\Hades\windows_event\win_ker_event\bin\Debug\x64\driver.sys
   Done Adding Additional Store
   Successfully signed: D:\Hades\windows_event\win_ker_event\bin\Debug\x64\driver.sys

@@ -29,8 +29,9 @@ OB_PREOP_CALLBACK_STATUS preNotifyCall(
 		return OB_PREOP_SUCCESS;
 
 	UNICODE_STRING DosName;
-	PFILE_OBJECT fileo = OperationInformation->Object;
+	RtlInitUnicodeString(&DosName, L"");
 
+	PFILE_OBJECT fileo = OperationInformation->Object;
 	if (fileo->FileName.Buffer == NULL ||
 		!MmIsAddressValid(fileo->FileName.Buffer) ||
 		fileo->DeviceObject == NULL ||
@@ -58,11 +59,14 @@ OB_PREOP_CALLBACK_STATUS preNotifyCall(
 	fileinfo.SharedDelete = fileo->SharedDelete;
 	fileinfo.flag = fileo->Flags;
 
+	if (0 >= fileo->FileName.Length)
+		return OB_PREOP_SUCCESS;
 	memcpy(fileinfo.FileName, fileo->FileName.Buffer, fileo->FileName.Length);
 
 	// Obsolete for Microsoft Windows XP and later versions of Windows
 	RtlVolumeDeviceToDosName(fileo->DeviceObject, &DosName);
-	memcpy(fileinfo.FileName, DosName.Buffer, DosName.Length);
+	if(DosName.Length)
+		memcpy(fileinfo.DosName, DosName.Buffer, DosName.Length);
 
 	KLOCK_QUEUE_HANDLE lh;
 	FILEBUFFER* filebuf = NULL;
@@ -109,6 +113,10 @@ NTSTATUS File_Init(PDRIVER_OBJECT pDriverObject)
 		0
 	);
 
+	// Set type callout
+	POBJECT_TYPE_TEMP  ObjectTypeTemp = (POBJECT_TYPE_TEMP)*IoFileObjectType;
+	ObjectTypeTemp->TypeInfo.SupportsObjectCallbacks = 1;
+
 	OB_CALLBACK_REGISTRATION obReg;
 	OB_OPERATION_REGISTRATION opReg;
 	memset(&obReg, 0, sizeof(obReg));
@@ -123,7 +131,6 @@ NTSTATUS File_Init(PDRIVER_OBJECT pDriverObject)
 	opReg.PreOperation = (POB_PRE_OPERATION_CALLBACK)&preNotifyCall;
 	obReg.OperationRegistration = &opReg;
 
-	DbgBreakPoint();
 	// See: Available starting with Windows Vista with Service Pack 1 (SP1) and Windows Server 2008.
 	// Msdn: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-obregistercallbacks
 	NTSTATUS status = ObRegisterCallbacks(&obReg, &g_handleobj);
@@ -151,7 +158,7 @@ void File_Clean(void)
 		sl_unlock(&lh);
 		File_PacketFree(pData);
 		pData = NULL;
-		sl_lock(&g_filedata.file_pending, &lh);
+		sl_lock(&g_filedata.file_lock, &lh);
 	}
 
 	sl_unlock(&lh);
