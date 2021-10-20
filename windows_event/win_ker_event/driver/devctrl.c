@@ -6,6 +6,7 @@
 #include "register.h"
 #include "syswmi.h"
 #include "sysfile.h"
+#include "syssession.h"
 
 #include <ntddk.h>
 
@@ -358,6 +359,7 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	Register_Clean();
 	File_Clean();
 	Wmi_Clean();
+	Session_Clean();
 
 	devctrl_clean();
 	devctrl_freeSharedMemory(&g_inBuf);
@@ -403,6 +405,7 @@ VOID devctrl_free()
 	Register_Free();
 	File_Free();
 	Wmi_Free();
+	Session_Free();
 }
 
 VOID devctrl_setShutdown()
@@ -441,6 +444,7 @@ VOID devctrl_setMonitor(BOOLEAN code)
 	Register_SetMonitor(code);
 	Wmi_SetMonitor(code);
 	File_SetMonitor(code);
+	Session_SetMonitor(code);
 }
 
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
@@ -602,15 +606,15 @@ void devctrl_ioThreadFree() {
 */
 NTSTATUS devctrl_popprocessinfo(UINT64* pOffset)
 {
-	NTSTATUS status = STATUS_SUCCESS;
-	KLOCK_QUEUE_HANDLE lh;
-	PROCESSBUFFER* processbuffer = NULL;
-	PROCESSDATA* processdata = NULL;
-	PNF_DATA	pData;
-	UINT64		dataSize = 0;
-	ULONG		pPacketlens = 0;
+	NTSTATUS			status = STATUS_SUCCESS;
+	KLOCK_QUEUE_HANDLE	lh;
+	PROCESSBUFFER		*processbuffer = NULL;
+	PROCESSDATA			*processdata = NULL;
+	PNF_DATA			pData;
+	UINT64				dataSize = 0;
+	ULONG				pPacketlens = 0;
 
-	processdata = processctx_get();
+	processdata = (PROCESSDATA*)processctx_get();
 	if (!processdata)
 		return STATUS_UNSUCCESSFUL;
 
@@ -666,15 +670,15 @@ NTSTATUS devctrl_popprocessinfo(UINT64* pOffset)
 
 NTSTATUS devctrl_popthreadinfo(UINT64* pOffset)
 {
-	NTSTATUS status = STATUS_SUCCESS;
-	KLOCK_QUEUE_HANDLE lh;
-	THREADBUFFER* threadbuffer = NULL;
-	THREADDATA* threaddata = NULL;
-	PNF_DATA	pData;
-	UINT64		dataSize = 0;
-	ULONG		pPacketlens = 0;
+	NTSTATUS			status = STATUS_SUCCESS;
+	KLOCK_QUEUE_HANDLE	lh;
+	THREADBUFFER		*threadbuffer = NULL;
+	THREADDATA			*threaddata = NULL;
+	PNF_DATA			pData;
+	UINT64				dataSize = 0;
+	ULONG				pPacketlens = 0;
 
-	threaddata = threadctx_get();
+	threaddata = (THREADDATA*)threadctx_get();
 	if (!threaddata)
 		return STATUS_UNSUCCESSFUL;
 
@@ -728,8 +732,8 @@ NTSTATUS devctrl_popthreadinfo(UINT64* pOffset)
 
 NTSTATUS devctrl_popimagemodinfo(UINT64* pOffset)
 {
-	NTSTATUS status = STATUS_SUCCESS;
-	KLOCK_QUEUE_HANDLE lh;
+	NTSTATUS			status = STATUS_SUCCESS;
+	KLOCK_QUEUE_HANDLE	lh;
 	IMAGEMODBUFFER*		imageBufEntry = NULL;
 	IMAGEMODDATA*		imagedata = NULL;
 	PNF_DATA			pData;
@@ -746,6 +750,8 @@ NTSTATUS devctrl_popimagemodinfo(UINT64* pOffset)
 	do
 	{
 		imageBufEntry = (IMAGEMODBUFFER*)RemoveHeadList(&imagedata->imagemod_pending);
+
+		pPacketlens = imageBufEntry->dataLength;
 
 		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
 
@@ -792,7 +798,7 @@ NTSTATUS devctrl_popimagemodinfo(UINT64* pOffset)
 
 NTSTATUS devctrl_popregisterinfo(UINT64* pOffset)
 {
-	NTSTATUS status = STATUS_SUCCESS;
+	NTSTATUS			status = STATUS_SUCCESS;
 	KLOCK_QUEUE_HANDLE	lh;
 	REGISTERBUFFER*		registerBufEntry = NULL;
 	REGISTERDATA*		registerdata = NULL;
@@ -810,6 +816,8 @@ NTSTATUS devctrl_popregisterinfo(UINT64* pOffset)
 	{
 
 		registerBufEntry = (REGISTERBUFFER*)RemoveHeadList(&registerdata->register_pending);
+
+		pPacketlens = registerBufEntry->dataLength;
 
 		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
 
@@ -875,6 +883,8 @@ NTSTATUS devctrl_popfileinfo(UINT64* pOffset)
 
 		fileBufEntry = (FILEBUFFER*)RemoveHeadList(&filedata->file_pending);
 
+		pPacketlens = fileBufEntry->dataLength;
+
 		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
 
 		if ((g_inBuf.bufferLength - *pOffset - 1) < dataSize)
@@ -911,6 +921,73 @@ NTSTATUS devctrl_popfileinfo(UINT64* pOffset)
 		{
 			sl_lock(&filedata->file_lock, &lh);
 			InsertHeadList(&filedata->file_pending, &fileBufEntry->pEntry);
+			sl_unlock(&lh);
+		}
+	}
+
+	return status;
+
+}
+
+NTSTATUS devctrl_popsessioninfo(UINT64* pOffset)
+{
+	NTSTATUS			status = STATUS_SUCCESS;
+	KLOCK_QUEUE_HANDLE	lh;
+	SESSIONBUFFER*		sessionbufentry = NULL;
+	SESSIONDATA*		sessiondata = NULL;
+	PNF_DATA			pData;
+	UINT64				dataSize = 0;
+	ULONG				pPacketlens = 0;
+
+	sessiondata = (SESSIONDATA*)sessionctx_get();
+	if (!sessiondata)
+		return STATUS_UNSUCCESSFUL;
+
+	sl_lock(&sessiondata->session_lock, &lh);
+
+	do
+	{
+
+		sessionbufentry = (SESSIONBUFFER*)RemoveHeadList(&sessiondata->session_pending);
+
+		pPacketlens = sessionbufentry->dataLength;
+
+		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
+
+		if ((g_inBuf.bufferLength - *pOffset - 1) < dataSize)
+		{
+			status = STATUS_NO_MEMORY;
+			break;
+		}
+
+		pData = (PNF_DATA)((char*)g_inBuf.kernelVa + *pOffset);
+		if (!pData)
+		{
+			status = STATUS_UNSUCCESSFUL;
+			break;
+		}
+
+		pData->code = NF_SESSION_INFO;
+		pData->id = 0;
+		pData->bufferSize = sessionbufentry->dataLength;
+		memcpy(pData->buffer, sessionbufentry->dataBuffer, sessionbufentry->dataLength);
+
+		*pOffset += dataSize;
+
+	} while (FALSE);
+
+	sl_unlock(&lh);
+
+	if (sessionbufentry)
+	{
+		if (NT_SUCCESS(status))
+		{
+			Session_PacketFree(sessionbufentry);
+		}
+		else
+		{
+			sl_lock(&sessiondata->session_lock, &lh);
+			InsertHeadList(&sessiondata->session_pending, &sessionbufentry->pEntry);
 			sl_unlock(&lh);
 		}
 	}
@@ -959,6 +1036,11 @@ UINT64 devctrl_fillBuffer()
 		case NF_FILE_INFO:
 		{
 			status = devctrl_popfileinfo(&offset);
+		}
+		break;
+		case NF_SESSION_INFO:
+		{
+			status = devctrl_popsessioninfo(&offset);
 		}
 		break;
 		default:
@@ -1086,6 +1168,7 @@ void devctrl_pushinfo(int code)
 	case NF_IMAGEMODE_INFO:
 	case NF_REGISTERTAB_INFO:
 	case NF_FILE_INFO:
+	case NF_SESSION_INFO:
 	{
 		pQuery = (PNF_QUEUE_ENTRY)ExAllocateFromNPagedLookasideList(&g_IoQueryList);
 		if (!pQuery)

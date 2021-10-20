@@ -135,4 +135,32 @@ typedef struct _FILEINFO
 
 }FILEINFO, * PFILEINFO;
 
+#define IO_SESSION_MAX_PAYLOAD_SIZE             256L
+
+typedef enum _IO_SESSION_STATE {
+    IoSessionStateCreated = 1,
+    IoSessionStateInitialized,          // 2
+    IoSessionStateConnected,            // 3
+    IoSessionStateDisconnected,         // 4
+    IoSessionStateDisconnectedLoggedOn, // 5
+    IoSessionStateLoggedOn,             // 6
+    IoSessionStateLoggedOff,            // 7
+    IoSessionStateTerminated,           // 8
+    IoSessionStateMax
+} IO_SESSION_STATE, * PIO_SESSION_STATE;
+
+typedef struct _IO_SESSION_STATE_INFORMATION {
+    ULONG            SessionId;
+    IO_SESSION_STATE SessionState;
+    BOOLEAN          LocalSession;
+} IO_SESSION_STATE_INFORMATION, * PIO_SESSION_STATE_INFORMATION;
+
+typedef struct _SESSIONINFO
+{
+    int             processid;
+    int             threadid;
+    unsigned long	evens;
+    char            iosessioninfo[sizeof(IO_SESSION_STATE_INFORMATION)];
+}SESSIONINFO, * PSESSIONINFO;
+
 #endif // !_SYSINFO_H

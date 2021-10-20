@@ -7,6 +7,7 @@
 #include "register.h"
 #include "syswmi.h"
 #include "sysfile.h"
+#include "syssession.h"
 
 #include <fltKernel.h>
 #include <dontuse.h>
@@ -116,19 +117,14 @@ NTSTATUS
         if (!g_processname)
             return;
 
-        // Register Process Monitor
         status = Process_Init();
         if (!NT_SUCCESS(status))
             return status;
 
-        // Register registry_tab Monito
-
-        // Register Thread Monitot
         status = Thread_Init();
         if (!NT_SUCCESS(status))
             return status;
 
-        // Register DLL Monitor
         status = Imagemod_Init();
         if (!NT_SUCCESS(status))
             return status;
@@ -142,6 +138,10 @@ NTSTATUS
             return status;
 
         status = File_Init(DriverObject);
+        if (!NT_SUCCESS(status))
+            return status;
+
+        status = Session_Init(DriverObject);
         if (!NT_SUCCESS(status))
             return status;
 

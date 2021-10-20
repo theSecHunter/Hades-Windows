@@ -41,6 +41,9 @@ public:
 
 	// Kernel Callout FileObj
 	virtual void filePacket(const char* buf, int len) = 0;
+
+	// Kernel Callout UserSession
+	virtual void sessionPacket(const char* buf, int len) = 0;
 };
 
 #else // _C_API
@@ -71,6 +74,7 @@ typedef struct _NF_EventHandler
 	void (NFAPI_CC* imagemodPacket)(const char* buf, int len);
 	void (NFAPI_CC* registerPacket)(const char* buf, int len);
 	void (NFAPI_CC* filePacket)(const char* buf, int len);
+	void (NFAPI_CC* sessionPacket)(const char* buf, int len);
 } NF_EventHandler, *PNF_EventHandler;
 
 #pragma pack(pop)

@@ -62,7 +62,6 @@ void charTowchar(const char* chr, wchar_t* wchar, int size)
 
 class EventHandler : public NF_EventHandler
 {
-	// sys_process_info
 	void processPacket(const char* buf, int len) override
 	{
 		PROCESSINFO processinfo;
@@ -102,7 +101,6 @@ class EventHandler : public NF_EventHandler
 		OutputDebugString(wstr.data());
 	}
 
-	// sys_thread_info
 	void threadPacket(const char* buf, int len) override
 	{
 		THREADINFO threadinfo;
@@ -192,6 +190,52 @@ class EventHandler : public NF_EventHandler
 		OutputDebugString(info);
 	}
 
+	void sessionPacket(const char* buf, int len) override
+	{
+		SESSIONINFO sessioninfo;
+		RtlSecureZeroMemory(&sessioninfo, sizeof(SESSIONINFO));
+		RtlCopyMemory(&sessioninfo, buf, len);
+
+		IO_SESSION_STATE_INFORMATION iosession;
+		RtlSecureZeroMemory(&iosession, sizeof(IO_SESSION_STATE_INFORMATION));
+		RtlCopyMemory(&iosession, sessioninfo.iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
+
+		wstring events;
+		switch (sessioninfo.evens)
+		{
+		case IoSessionStateCreated:
+		{
+			events = L"Session Create";
+		}
+		break;
+		case IoSessionStateConnected:
+		{
+			events = L"Session Connect, But User NotLogin";
+		}
+		break;
+		case IoSessionStateLoggedOn:
+		{
+			events = L"Session Login";
+		}
+		break;
+		case IoSessionStateLoggedOff:
+		{
+			events = L"Session ExitLogin";
+		}
+		break;
+		}
+		if (events.size() == 0)
+			return;
+
+		if (iosession.LocalSession)
+			events += L" - User Local Login";
+		else
+			events += L" - User Remote Login";
+
+		WCHAR info[max_size] = { 0, };
+		swprintf(info, max_size, L"[Session_Log]: Pid %d Threadid:%d\n%s - EventId: %d", sessioninfo.processid, sessioninfo.threadid, events.data(), iosession.SessionId);
+		OutputDebugString(info);
+	}
 };
 
 static DevctrlIoct devobj;

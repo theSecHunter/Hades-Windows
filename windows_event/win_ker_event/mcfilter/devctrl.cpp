@@ -45,7 +45,8 @@ enum IoctCode
 	NF_THREAD_INFO,
 	NF_IMAGEGMOD_INFO,
 	NF_REGISTERTAB_INFO,
-	NF_FILE_INFO
+	NF_FILE_INFO,
+	NF_SESSION_INFO
 };
 
 PVOID DevctrlIoct::get_eventhandler()
@@ -264,6 +265,11 @@ static void handleEventDispath(PNF_DATA pData)
 		g_pEventHandler->filePacket(pData->buffer, pData->bufferSize);
 	}
 	break;
+	case NF_SESSION_INFO:
+	{
+		g_pEventHandler->sessionPacket(pData->buffer, pData->bufferSize);
+	}
+	break;
 	}
 }
 
@@ -356,7 +362,9 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 				if ((pData->code == NF_PROCESS_INFO ||
 					pData->code == NF_THREAD_INFO ||
 					pData->code == NF_IMAGEGMOD_INFO ||
-					pData->code == NF_REGISTERTAB_INFO)
+					pData->code == NF_REGISTERTAB_INFO ||
+					pData->code == NF_FILE_INFO ||
+					pData->code == NF_SESSION_INFO)
 					&&
 					pData->bufferSize < 1400)
 				{
