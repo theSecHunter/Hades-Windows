@@ -22,6 +22,7 @@ void devctrl_ioThreadFree();
 VOID devctrl_setShutdown();
 VOID devctrl_setMonitor(BOOLEAN code);
 
+void devctrl_pushversion(BOOLEAN code);
 void devctrl_pushinfo(int code);
 
 #endif // !_DEVCTRL_H

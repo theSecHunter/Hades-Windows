@@ -23,6 +23,7 @@ WCHAR*          g_processname = NULL;
 unsigned int	g_processnamelen = 0;
 PFLT_PORT       gServerPort;
 static BOOLEAN  g_unDriverLoadFlag = FALSE;
+static BOOLEAN  g_Win10Version = FALSE;
 
 typedef NTSTATUS(*PfnNtQueryInformationProcess) (
     __in HANDLE ProcessHandle,
@@ -112,6 +113,24 @@ NTSTATUS
         return 0;
     }
 
+    DbgBreakPoint();
+    // Get System Version
+    OSVERSIONINFOW osver;
+    RtlSecureZeroMemory(&osver, sizeof(osver));
+    osver.dwOSVersionInfoSize = sizeof(osver);
+    status = RtlGetVersion(&osver);
+    if (!NT_SUCCESS(status))
+    {
+        return 0;
+    }
+
+    if (osver.dwMajorVersion > 6)
+        g_Win10Version = TRUE;
+    else
+        g_Win10Version = FALSE;
+
+    devctrl_pushversion(g_Win10Version);
+
     do {
         g_processname = (char*)ExAllocatePoolWithTag(NonPagedPool, 260 * (260 * sizeof(WCHAR)), 'CM');
         if (!g_processname)
@@ -137,9 +156,12 @@ NTSTATUS
         if (!NT_SUCCESS(status))
             return status;
 
-        status = File_Init(DriverObject);
-        if (!NT_SUCCESS(status))
-            return status;
+        if (g_Win10Version)
+        {
+            status = File_Init(DriverObject);
+            if (!NT_SUCCESS(status))
+                return status;
+        }
 
         status = Session_Init(DriverObject);
         if (!NT_SUCCESS(status))

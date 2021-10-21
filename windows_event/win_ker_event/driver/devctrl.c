@@ -16,6 +16,7 @@
 static UNICODE_STRING g_devicename;
 static UNICODE_STRING g_devicesyslink;
 static PDEVICE_OBJECT g_deviceControl;
+static BOOLEAN		  g_version = FALSE;
 
 typedef struct _SHARED_MEMORY
 {
@@ -357,7 +358,8 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	Thread_Clean();
 	Imagemod_Clean();
 	Register_Clean();
-	File_Clean();
+	if (g_version)
+		File_Clean();
 	Wmi_Clean();
 	Session_Clean();
 
@@ -403,7 +405,8 @@ VOID devctrl_free()
 	Thread_Free();
 	Imagemod_Free();
 	Register_Free();
-	File_Free();
+	if(g_version)
+		File_Free();
 	Wmi_Free();
 	Session_Free();
 }
@@ -1151,6 +1154,10 @@ void devctrl_ioThread(void* StartContext)
 	PsTerminateSystemThread(STATUS_SUCCESS);
 }
 
+void devctrl_pushversion(BOOLEAN code)
+{
+	g_version = code;
+}
 
 /*
 * push 

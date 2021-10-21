@@ -14,7 +14,7 @@
 | ALE层 | 0 | ProcessInfo |
 | 传输层     | 0 | TCP - UDP |
 | 网络层     | 0     | ICMP |
-| 数据链路层 | 0     | ARP  Os >= Windows10 |
+| 数据链路层 | 0     | ARP  OS >= Windows10 |
 
 ##### 内核回调上抛事件：
 
@@ -26,7 +26,7 @@
 | 模块 | 0 | DLL -  驱动 |
 | 会话 | 0      | 用户登录/退出/Session切换 |
 | WMI    | 0    |  |
-| 文件 | 0     | 文件读写访问 |
+| 文件 | 0     | 文件读写访问  OS <= Windows7 Windows对象回调(文件)会触发PG检测 |
 
 可以使用json配置文件对内核上抛事件管理:
 
