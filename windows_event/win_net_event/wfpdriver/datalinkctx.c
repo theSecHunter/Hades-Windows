@@ -109,12 +109,7 @@ VOID datalinkctx_clean()
 	{
 		pDataCtl = (PNF_DATALINK_BUFFER)RemoveHeadList(&g_datalink_data.pendedPackets);
 		sl_unlock(&lh);
-		if (pDataCtl->dataBuffer)
-		{
-			free_np(pDataCtl->dataBuffer);
-			pDataCtl->dataBuffer = NULL;
-		}
-		ExFreeToNPagedLookasideList(&g_dataLinkPacketsList, pDataCtl);
+		datalinkctx_packfree(pDataCtl);
 		pDataCtl = NULL;
 		sl_lock(&g_datalink_data.lock, &lh);
 	}

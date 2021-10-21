@@ -4,7 +4,6 @@
 #include "datalinkctx.h"
 #include "establishedctx.h"
 #include "callouts.h"
-#include "HlprDriverAlpc.h"
 
 #include <fwpmk.h>
 
@@ -62,6 +61,8 @@ driverUnload(
 	UNREFERENCED_PARAMETER(driverObject);
 
 	KdPrint((DPREFIX"driverUnload\n"));
+
+	DbgBreakPoint();
 	
 	driver_free();
 
@@ -182,15 +183,14 @@ VOID driver_free()
 
 	if (g_deviceControl)
 	{
-		IoDeleteDevice(g_deviceControl);
 		IoDeleteSymbolicLink(&u_devicesyslink);
+		IoDeleteDevice(g_deviceControl);
 		g_deviceControl = NULL;
 	}
 	devctrl_setShutdown();
 	devctrl_setmonitor(0);
-	// flowctl_free();
-	datalinkctx_free();
-	establishedctx_free();
 	callout_free();
 	devctrl_free();
+	datalinkctx_free();
+	establishedctx_free();
 };

@@ -5,7 +5,6 @@
 #include "devctrl.h"
 #include "datalinkctx.h"
 #include "establishedctx.h"
-#include "HlprDriverAlpc.h"
 #include "callouts.h"
 
 #define NF_TCP_PACKET_BUF_SIZE 8192

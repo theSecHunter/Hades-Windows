@@ -187,8 +187,6 @@
     <ClInclude Include="devctrl.h" />
     <ClInclude Include="driver.h" />
     <ClInclude Include="establishedctx.h" />
-    <ClInclude Include="flowctl.h" />
-    <ClInclude Include="HlprDriverAlpc.h" />
     <ClInclude Include="ntdefines.h" />
     <ClInclude Include="public.h" />
     <ClInclude Include="util.h" />
@@ -199,8 +197,6 @@
     <ClCompile Include="devctrl.c" />
     <ClCompile Include="driver.c" />
     <ClCompile Include="establishedctx.c" />
-    <ClCompile Include="flowctl.c" />
-    <ClCompile Include="HlprDriverAlpc.c" />
     <ClCompile Include="util.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

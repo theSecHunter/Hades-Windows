@@ -36,9 +36,6 @@
     <ClInclude Include="datalinkctx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="flowctl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="callouts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -49,9 +46,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="establishedctx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HlprDriverAlpc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -65,9 +59,6 @@
     <ClCompile Include="datalinkctx.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="flowctl.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="callouts.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -75,9 +66,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="establishedctx.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HlprDriverAlpc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

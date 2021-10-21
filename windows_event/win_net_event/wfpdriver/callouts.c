@@ -589,8 +589,7 @@ helper_callout_classFn_connectredirect(
 		flowContextLocal->toRemotePort =
 			inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_REMOTE_PORT].value.uint16;
 	}
-
-	// DbgBreakPoint();
+	DbgBreakPoint();
 	flowContextLocal->processId = inMetaValues->processId;
 	flowContextLocal->processPathSize = inMetaValues->processPath->size;
 	RtlCopyMemory(flowContextLocal->processPath, inMetaValues->processPath->data, inMetaValues->processPath->size);
@@ -1156,6 +1155,8 @@ VOID callout_free()
 	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_outbound_mac_etherent);
 	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_ale_connectredirect_v4);
 	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_ale_connectredirect_v6);
+	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_inbound_mac_native);
+	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_outbound_mac_native);
 
 	// clean SubLayer
 	FwpmSubLayerDeleteByKey(g_engineHandle, &g_sublayerGuid);
