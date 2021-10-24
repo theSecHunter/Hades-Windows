@@ -13,11 +13,12 @@
 #include "nfevents.h"
 #include "devctrl.h"
 #include "sysinfo.h"
+#include "ArkSsdt.h"
+#include "ArkIdt.h"
 
 using namespace std;
 
 const char devSyLinkName[] = "\\??\\KernelDark";
-
 const int max_size = MAX_PATH * 3;
 
 typedef struct _PE_CONTROL{
@@ -241,6 +242,9 @@ class EventHandler : public NF_EventHandler
 static DevctrlIoct devobj;
 static EventHandler eventobj;
 
+static ArkSsdt ssdtobj;
+static ArkSsdt idtobj;
+
 int main(int argc, char* argv[])
 {
 	// getchar();
@@ -301,7 +305,57 @@ int main(int argc, char* argv[])
 
 	OutputDebugString(L"Init Driver Success. Json Rule Init Wait.......");
 
-	system("pause");
+	int id_s = 0;
+
+	// 功能接口分发
+	// 后续功能号对应RPC接口
+	while (true)
+	{
+		cout << " Please Input SysCheck Id";
+		cin >> id_s;
+
+		switch (id_s)
+		{
+		case NF_SSDT_ID:
+		{
+			if (ssdtobj.nf_init())
+				ssdtobj.nf_GetSsdtData();
+		}
+		break;
+		case NF_IDT_ID:
+		{
+			if (idtobj.nf_init())
+				idtobj.nf_GetSsdtData();
+		}
+		break;
+		case NF_GDT_ID:
+		{
+		
+		}
+		break;
+		case NF_SYSCALLBACK_ID:
+		{
+		
+		}
+		break;
+		case NF_SYSPROCESSTREE_ID:
+		{
+		
+		}
+		break;
+		case NF_OBJ_ID:
+		{
+		
+		}
+		break;
+		case NF_IRP_ID:
+		{
+		
+		}
+		break;
+		}
+
+	}
 
 	bool nstatus = false;
 	// read rule to mcrule.json

@@ -148,27 +148,27 @@ DriverEntry(
 		}
 
 		// Init WFP Callout
-		//if (FwpmBfeStateGet() == FWPM_SERVICE_RUNNING)
-		//{
-		//	status = callout_init(g_deviceControl);
-		//	if (!NT_SUCCESS(status))
-		//	{
-		//		break;
-		//	}
-		//}
-		//else
-		//{
-		//	status = FwpmBfeStateSubscribeChanges(
-		//		g_deviceControl,
-		//		bfeStateCallback,
-		//		NULL,
-		//		&g_bfeStateSubscribeHandle);
-		//	if (!NT_SUCCESS(status))
-		//	{
-		//		KdPrint((DPREFIX"FwpmBfeStateSubscribeChanges\n"));
-		//		break;
-		//	}
-		//}
+		if (FwpmBfeStateGet() == FWPM_SERVICE_RUNNING)
+		{
+			status = callout_init(g_deviceControl);
+			if (!NT_SUCCESS(status))
+			{
+				break;
+			}
+		}
+		else
+		{
+			status = FwpmBfeStateSubscribeChanges(
+				g_deviceControl,
+				bfeStateCallback,
+				NULL,
+				&g_bfeStateSubscribeHandle);
+			if (!NT_SUCCESS(status))
+			{
+				KdPrint((DPREFIX"FwpmBfeStateSubscribeChanges\n"));
+				break;
+			}
+		}
 		return status;
 	} while (FALSE);
 	
@@ -189,7 +189,7 @@ VOID driver_free()
 	}
 	devctrl_setShutdown();
 	devctrl_setmonitor(0);
-	// callout_free();
+	callout_free();
 	devctrl_free();
 	datalinkctx_free();
 	establishedctx_free();

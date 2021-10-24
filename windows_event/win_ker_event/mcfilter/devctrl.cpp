@@ -22,6 +22,7 @@
 #define CTL_DEVCTRL_DISENTABLE_MONITOR \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_NEITHER, FILE_ANY_ACCESS)
 
+
 static NF_BUFFERS			g_nfBuffers;
 static DWORD				g_nThreads = 1;
 static HANDLE				g_hDevice_old;

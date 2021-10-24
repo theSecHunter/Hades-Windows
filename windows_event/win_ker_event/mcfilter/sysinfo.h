@@ -163,4 +163,16 @@ typedef struct _SESSIONINFO
     char            iosessioninfo[sizeof(IO_SESSION_STATE_INFORMATION)];
 }SESSIONINFO, * PSESSIONINFO;
 
+
+enum AnRootkitId
+{
+    NF_SSDT_ID,
+    NF_IDT_ID,
+    NF_GDT_ID,
+    NF_SYSCALLBACK_ID,
+    NF_SYSPROCESSTREE_ID,
+    NF_OBJ_ID,
+    NF_IRP_ID
+};
+
 #endif // !_SYSINFO_H

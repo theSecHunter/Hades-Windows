@@ -1,60 +1,48 @@
 # win_ker_event
 
-1） 进程事件
+#### 监控回调：
 
-PsSetCreateProcessNotifyRoutineEx
+###### 进程事件
 
-采集EPROCESS和PPS_CREATE_NOTIFY_INFO 和_FILE_OBJECT数据结构：
+PsSetCreateProcessNotifyRoutineEx:
 
-进程启动时候，数据如下：
-
-PPS_CREATE_NOTIFY_INFO ：进程名 - PID - CommandLine(进程参数) 
-
-EPROCESS：DirectoryTableBase（进程页目录地址）
-
-进程退出时候，数据如下：
-
-PPS_CREATE_NOTIFY_INFO ：进程名 - PID
-
-2） 线程事件
+###### 线程事件
 
 PsSetCreateThreadNotifyRoutineEx
 
-3） 注册表事件
+###### 注册表事件
 
 CmRegisterCallbackEx
 
-4） 模块事件
+###### 模块事件
 
 PsSetLoadImageNotifyRoutineEx
 
-5） 驱动事件
+###### Boot
 
-IoRegisterBootDriverCallback
+IoRegisterBootDriverCallback|SeRegisterImageVerificationCallback
 
-SeRegisterImageVerificationCallback
-
-6）Session
+###### Session
 
 IoRegisterContainerNotification
 
-7）NMI
+###### NMI
 
 KeRegisterNmiCallback
 
-8）关机
+###### 关机
 
 IoRegisterShutdownNotification
 
-9）电源管理
+###### 电源管理
 
 PoRegisterPowerSettingCallback
 
-10）WMI
+###### WMI
 
 IoWMISetNotificationCallback
 
-11）其他
+###### 其他
 
 ObRegisterCallbacks、ObUnRegisterCallbacks
 
@@ -69,3 +57,25 @@ IoRegisterFsRegistrationChange
 KeRegisterProcessorChangeCallback
 
 应用层系统数据采集：https://github.com/TimelifeCzy/Windows-emergency-servicetools
+
+
+
+#### Ark
+
+###### SSDT
+
+###### IDT
+
+###### OBJ
+
+###### Callback
+
+###### IRP
+
+###### FSD
+
+###### PROCESSTREE
+
+###### TIME
+
+###### DPC
