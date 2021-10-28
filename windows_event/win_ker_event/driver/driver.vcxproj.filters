@@ -26,6 +26,12 @@
     <ClCompile Include="syssession.c">
       <Filter>sysmonitor</Filter>
     </ClCompile>
+    <ClCompile Include="sysssdt.c">
+      <Filter>sysark</Filter>
+    </ClCompile>
+    <ClCompile Include="sysidt.c">
+      <Filter>sysark</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="driver.h" />
@@ -56,6 +62,12 @@
     <ClInclude Include="syssession.h">
       <Filter>sysmonitor</Filter>
     </ClInclude>
+    <ClInclude Include="sysssdt.h">
+      <Filter>sysark</Filter>
+    </ClInclude>
+    <ClInclude Include="sysidt.h">
+      <Filter>sysark</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="driver.rc" />
@@ -67,14 +79,11 @@
     <Filter Include="devctrl">
       <UniqueIdentifier>{0c440d3a-f981-4eb0-91cc-80ac436bb1b4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="sysinterface">
-      <UniqueIdentifier>{cf114631-7265-40f4-a192-81b2b9072e12}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="syssecurity">
-      <UniqueIdentifier>{6c91ef1a-0cdf-4da6-9a06-9031b2fa1495}</UniqueIdentifier>
-    </Filter>
     <Filter Include="sysmonitor">
       <UniqueIdentifier>{c930406d-5d8f-4048-b248-e35aa76238e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sysark">
+      <UniqueIdentifier>{6c91ef1a-0cdf-4da6-9a06-9031b2fa1495}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

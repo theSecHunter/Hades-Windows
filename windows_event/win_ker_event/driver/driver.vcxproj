@@ -40,7 +40,9 @@
     <ClCompile Include="process.c" />
     <ClCompile Include="register.c" />
     <ClCompile Include="sysfile.c" />
+    <ClCompile Include="sysidt.c" />
     <ClCompile Include="syssession.c" />
+    <ClCompile Include="sysssdt.c" />
     <ClCompile Include="syswmi.c" />
     <ClCompile Include="thread.c" />
     <ResourceCompile Include="driver.rc" />
@@ -240,7 +242,9 @@
     <ClInclude Include="public.h" />
     <ClInclude Include="register.h" />
     <ClInclude Include="sysfile.h" />
+    <ClInclude Include="sysidt.h" />
     <ClInclude Include="syssession.h" />
+    <ClInclude Include="sysssdt.h" />
     <ClInclude Include="syswmi.h" />
     <ClInclude Include="thread.h" />
   </ItemGroup>

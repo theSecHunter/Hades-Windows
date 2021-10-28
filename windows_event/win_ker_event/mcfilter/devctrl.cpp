@@ -201,33 +201,43 @@ void DevctrlIoct::devctrl_clean()
 
 int DevctrlIoct::devctrl_OnMonitor()
 {
-	return devctrl_sendioct(CTL_DEVCTRL_ENABLE_MONITOR);
+	DWORD InSize = 0;
+	DWORD OutSize = 0;
+	DWORD dwSize = 0;
+	return devctrl_sendioct(CTL_DEVCTRL_ENABLE_MONITOR, NULL, InSize, NULL, OutSize, dwSize);
 }
 
-int DevctrlIoct::devctrl_sendioct(const int ioctcode)
+bool DevctrlIoct::devctrl_sendioct(
+	const int ioctcode,
+	LPVOID lpInBuffer,
+	DWORD& InBufSize,
+	LPVOID lpOutBuffer,
+	DWORD& OutBufSize,
+	DWORD& dSize
+	)
 {
-	DWORD dSize;
+	
 
-	if (!m_devhandler)
-		return -1;
+	if (!g_hDevice.m_h)
+		return false;
 
 	OutputDebugString(L"devctrl_sendioct entablMonitor");
 	BOOL status = DeviceIoControl(
-		m_devhandler,
+		g_hDevice,
 		ioctcode,
-		NULL,
-		0,
-		NULL,
-		0,
+		lpInBuffer,
+		InBufSize,
+		lpOutBuffer,
+		OutBufSize,
 		&dSize,
 		NULL
 	);
 	if (!status)
 	{
 		OutputDebugString(L"devctrl_sendioct Error End");
-		return -2;
+		return false;
 	}	
-	return 1;
+	return true;
 }
 
 int DevctrlIoct::devctrl_writeio()

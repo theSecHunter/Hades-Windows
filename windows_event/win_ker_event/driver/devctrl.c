@@ -8,6 +8,8 @@
 #include "sysfile.h"
 #include "syssession.h"
 
+#include "sysssdt.h"
+
 #include <ntddk.h>
 
 #define NF_TCP_PACKET_BUF_SIZE 8192
@@ -215,6 +217,55 @@ NTSTATUS devctrl_openMem(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATI
 	irp->IoStatus.Information = 0;
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_UNSUCCESSFUL;
+}
+
+NTSTATUS devctrl_InitSsdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID ioBuffer = NULL;
+	ioBuffer = irp->AssociatedIrp.SystemBuffer;
+	if (!ioBuffer)
+	{
+		ioBuffer = irp->UserBuffer;
+	}
+
+	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+	
+	do{
+
+		if (!ioBuffer && (outputBufferLength < sizeof(DWORD)))
+			break;
+
+		if (Sstd_Init())
+		{
+			RtlCopyMemory(ioBuffer, 1, sizeof(DWORD));
+		}
+		else
+			break;
+
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = sizeof(DWORD);
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_UNSUCCESSFUL;
+}
+
+NTSTATUS devctrl_GetSysSsdtIndex(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID ioBuffer = NULL;
+	ioBuffer = irp->AssociatedIrp.SystemBuffer;
+	if (!ioBuffer)
+	{
+		ioBuffer = irp->UserBuffer;
+	}
+
+	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
 }
 
 NTSTATUS devctrl_create(PIRP irp, PIO_STACK_LOCATION irpSp)
@@ -487,6 +538,12 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 		case CTL_DEVCTRL_DISENTABLE_MONITOR:
 			devctrl_setMonitor(FALSE);
 			break;
+
+		case CTL_DEVCTRL_ARK_INITSSDT:
+			return devctrl_InitSsdtBase(DeviceObject, irp, irpSp);
+
+		case CTL_DEVCTRL_ARK_GETSSDTDATA:
+			return devctrl_GetSysSsdtIndex(DeviceObject, irp, irpSp);
 		}
 		break;
 	default:

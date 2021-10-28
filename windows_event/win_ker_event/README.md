@@ -4,47 +4,63 @@
 
 ###### 进程事件
 
-PsSetCreateProcessNotifyRoutineEx:
+API: PsSetCreateProcessNotifyRoutineEx
+
+See Code: process.h process.c
 
 ###### 线程事件
 
-PsSetCreateThreadNotifyRoutineEx
+API: PsSetCreateThreadNotifyRoutine|PsRemoveCreateThreadNotifyRoutine
+
+See Code: thread.h thread.c
 
 ###### 注册表事件
 
-CmRegisterCallbackEx
+API: CmRegisterCallbackEx|CmUnRegisterCallback
+
+See Code: register.h register.c
 
 ###### 模块事件
 
-PsSetLoadImageNotifyRoutineEx
+API: PsSetLoadImageNotifyRoutine|PsRemoveLoadImageNotifyRoutine
 
-###### Boot
+See Code: imagemod.h imagemod.c
 
-IoRegisterBootDriverCallback|SeRegisterImageVerificationCallback
+###### Boot(未监控)
+
+API: IoRegisterBootDriverCallback|SeRegisterImageVerificationCallback
 
 ###### Session
 
-IoRegisterContainerNotification
+API: IoRegisterContainerNotification|IoUnregisterContainerNotification
 
-###### NMI
+See Code: syssession.h syssession.c
 
-KeRegisterNmiCallback
+###### NMI(未监控)
 
-###### 关机
+API: KeRegisterNmiCallback
 
-IoRegisterShutdownNotification
+###### 关机(未监控)
 
-###### 电源管理
+API:IoRegisterShutdownNotification
 
-PoRegisterPowerSettingCallback
+###### 电源管理(未监控)
+
+API:PoRegisterPowerSettingCallback
 
 ###### WMI
 
-IoWMISetNotificationCallback
+API: IoWMISetNotificationCallback
 
-###### 其他
+See Code: syswmi.h syswmi.c
 
-ObRegisterCallbacks、ObUnRegisterCallbacks
+###### 对象回调事件
+
+API: ObRegisterCallbacks|ObUnRegisterCallbacks
+
+See Code:  sysfile.h sysfile.c   -- ObjectType: IoFileObjectType
+
+###### 其他(未监控)
 
 ExRegisterCallback(Callback\ProcessorAdd)
 
@@ -62,9 +78,18 @@ KeRegisterProcessorChangeCallback
 
 #### Ark
 
-###### SSDT
+###### SSDT:
+
+- x64读取SSDTBase：Start: __readmsr(0xC0000082)   End: Start+0x500 
+- 枚举找到机器码标识：4c8d15
+- 枚举系统已加载SSDT每个函数偏移
+- 重新加载MySSDT获取真实的偏移或者解析PE获取偏移
+
+See Code:  sysssdt.h sysssdt.c
 
 ###### IDT
+
+- 
 
 ###### OBJ
 

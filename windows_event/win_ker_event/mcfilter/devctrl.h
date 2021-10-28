@@ -48,6 +48,15 @@ public:
 	int devctrl_InitshareMem();
 	void nf_setEventHandler(PVOID64 pHandler);
 	int devctrl_OnMonitor();
+	
+	bool devctrl_sendioct(
+		const int ioctcode,
+		LPVOID lpInBuffer,
+		DWORD& InBufSize,
+		LPVOID lpOutBuffer,
+		DWORD& OutBufSize,
+		DWORD& dSize
+	);
 
 private:
 	HANDLE m_devhandler;
@@ -56,9 +65,6 @@ private:
 	HANDLE m_listthreadobjhandler;
 	DWORD  m_dwthreadid;
 	DWORD  m_dwthreadid1;
-
-	// ·¢ËÍ¿ØÖÆÂë
-	int devctrl_sendioct(const int ioctcode);
 	int devctrl_writeio();
 	PVOID get_eventhandler();
 
