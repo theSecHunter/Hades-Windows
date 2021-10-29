@@ -113,7 +113,6 @@ NTSTATUS
         return 0;
     }
 
-    DbgBreakPoint();
     // Get System Version
     OSVERSIONINFOW osver;
     RtlSecureZeroMemory(&osver, sizeof(osver));

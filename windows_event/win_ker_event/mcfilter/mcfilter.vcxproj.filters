@@ -36,6 +36,12 @@
     <ClCompile Include="devctrl.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ArkSsdt.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkIdt.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ntbasic.h">
@@ -60,6 +66,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="sysinfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkSsdt.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkIdt.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -14,13 +14,13 @@
 #define FSCTL_DEVCTRL_BASE      FILE_DEVICE_NETWORK
 
 #define CTL_DEVCTRL_ENABLE_MONITOR \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x801, METHOD_NEITHER, FILE_ANY_ACCESS)
+	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x801, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define CTL_DEVCTRL_STOP_MONITOR \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x802, METHOD_NEITHER, FILE_ANY_ACCESS)
+	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x802, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define CTL_DEVCTRL_OPEN_SHAREMEM \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_NEITHER, FILE_ANY_ACCESS)
+	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define CTL_DEVCTRL_DISENTABLE_MONITOR \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_NEITHER, FILE_ANY_ACCESS)
+	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 
 static NF_BUFFERS			g_nfBuffers;
@@ -30,13 +30,12 @@ static AutoHandle			g_hDevice;
 static AutoEventHandle		g_ioPostEvent;
 static AutoEventHandle		g_ioEvent;
 static AutoEventHandle		g_stopEvent;
+static NF_EventHandler*		g_pEventHandler = NULL;
+static char					g_driverName[MAX_PATH] = { 0 };
+static bool					g_exitthread = false;
 static DWORD WINAPI	nf_workThread(LPVOID lpThreadParameter);
-static NF_EventHandler* g_pEventHandler = NULL;
-static char	g_driverName[MAX_PATH] = { 0 };
-HANDLE	g_deviceHandle;
 
 static AutoCriticalSection	g_cs;
-
 static AutoEventHandle		g_workThreadStartedEvent;
 static AutoEventHandle		g_workThreadStoppedEvent;
 
@@ -69,8 +68,24 @@ int DevctrlIoct::devctrl_init()
 	m_threadobjhandler = NULL;
 	m_alpcthreadobjhandler = NULL;
 	m_dwthreadid = 0;
-	g_deviceHandle = NULL;
 	return 1;
+}
+
+void DevctrlIoct::devctrl_free()
+{
+	g_exitthread = true;
+	Sleep(1000);
+	if (m_threadobjhandler)
+	{
+		TerminateThread(m_threadobjhandler, 0);
+		CloseHandle(m_threadobjhandler);
+		m_threadobjhandler = NULL;
+	}
+
+	if (g_hDevice.m_h)
+	{
+		g_hDevice.Close();
+	}
 }
 
 int DevctrlIoct::devctrl_workthread()
@@ -107,17 +122,7 @@ int DevctrlIoct::devctrl_opendeviceSylink(const char* devSylinkName)
 	if (hDevice == INVALID_HANDLE_VALUE)
 		return -1;
 
-	//// 2. Open Minifilter Driver Port
-	//HANDLE hDevice = INVALID_HANDLE_VALUE;
-	//HRESULT hResult = S_OK;
-	//hResult = FilterConnectCommunicationPort(L"\\KernelMiniPort", 0, NULL, 0, NULL, &hDevice);
-	//if (IS_ERROR(hResult)) {
-	//	OutputDebugString(L"FilterConnectCommunicationPort fail!\n");
-	//	return hResult;
-	//}
-
 	m_devhandler = hDevice;
-	g_deviceHandle = hDevice;
 	return 1;
 }
 
@@ -178,25 +183,6 @@ int DevctrlIoct::devctrl_waitSingeObject()
 	if(m_alpcthreadobjhandler)
 		WaitForSingleObject(m_alpcthreadobjhandler, INFINITE);
 	return 1;
-}
-
-void DevctrlIoct::devctrl_clean()
-{
-	// Send Driver Clean
-	// devctrl_sendioct();
-
-	if (m_devhandler)
-	{
-		CloseHandle(m_devhandler);
-		m_devhandler = NULL;
-	}
-
-	if (m_threadobjhandler)
-	{
-		TerminateThread(m_threadobjhandler, 0);
-		CloseHandle(m_threadobjhandler);
-		m_threadobjhandler = NULL;
-	}
 }
 
 int DevctrlIoct::devctrl_OnMonitor()
@@ -306,7 +292,9 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 		waitTimeout = 10;
 		abortBatch = false;
 
-		// “Ï≤Ω»•∂¡
+		if (g_exitthread)
+			break;
+
 		for (i = 0; i < 8; i++)
 		{
 			readBytes = 0;
@@ -394,6 +382,7 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 			if (abortBatch)
 				break;
 		}
+
 	}
 
 finish:

@@ -1,8 +1,6 @@
 #ifndef _DEVCTRL_H
 #define _DEVCTRL_H
 
-extern HANDLE g_deviceHandle;
-
 typedef enum _NF_DRIVER_TYPE
 {
 	DT_UNKNOWN = 0,
@@ -41,10 +39,10 @@ public:
 	~DevctrlIoct();
 
 	int devctrl_init();
+	void devctrl_free();
 	int devctrl_opendeviceSylink(const char* devSylinkName);
 	int devctrl_workthread();
 	int devctrl_waitSingeObject();
-	void devctrl_clean();
 	int devctrl_InitshareMem();
 	void nf_setEventHandler(PVOID64 pHandler);
 	int devctrl_OnMonitor();

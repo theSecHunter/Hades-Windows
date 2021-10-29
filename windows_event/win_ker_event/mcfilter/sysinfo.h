@@ -172,7 +172,8 @@ enum AnRootkitId
     NF_SYSCALLBACK_ID,
     NF_SYSPROCESSTREE_ID,
     NF_OBJ_ID,
-    NF_IRP_ID
+    NF_IRP_ID,
+    NF_EXIT = 100
 };
 
 #endif // !_SYSINFO_H

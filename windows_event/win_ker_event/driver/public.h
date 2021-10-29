@@ -76,6 +76,8 @@ enum _NF_DATA_CODE
     NF_SESSION_INFO
 }NF_DATA_CODE;
 
+
+
 typedef UNALIGNED struct _NF_DATA
 {
 	int				code;

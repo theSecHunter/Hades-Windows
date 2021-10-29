@@ -126,8 +126,6 @@ VOID Process_NotifyProcessEx(
 
     // ¸¸½ø³Ìpid -- BUG
    
-    
-    // DbgBreakPoint();
     WCHAR path[260] = { 0 };
     if (QueryProcessNamePath((DWORD)ProcessId, path, sizeof(path))) {
         // _wcsupr(path);

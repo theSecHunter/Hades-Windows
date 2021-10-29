@@ -306,12 +306,12 @@ int main(int argc, char* argv[])
 	OutputDebugString(L"Init Driver Success. Json Rule Init Wait.......");
 
 	int id_s = 0;
-
+	bool exit_id = false;
 	// 功能接口分发
 	// 后续功能号对应RPC接口
 	while (true)
 	{
-		cout << " Please Input SysCheck Id";
+		cout << " Please Input SysCheck Id: ";
 		cin >> id_s;
 
 		switch (id_s)
@@ -319,18 +319,20 @@ int main(int argc, char* argv[])
 		case NF_SSDT_ID:
 		{
 			if (ssdtobj.nf_init())
+			{
 				ssdtobj.nf_GetSsdtData();
+				OutputDebugString(L"Init Ssdt Success!");
+				break;
+			}
+			OutputDebugString(L"Init Ssdt Failuer!");
 		}
 		break;
 		case NF_IDT_ID:
 		{
-			if (idtobj.nf_init())
-				idtobj.nf_GetSsdtData();
 		}
 		break;
 		case NF_GDT_ID:
 		{
-		
 		}
 		break;
 		case NF_SYSCALLBACK_ID:
@@ -353,9 +355,19 @@ int main(int argc, char* argv[])
 		
 		}
 		break;
+		case NF_EXIT:
+		{
+			exit_id = true;
+		}
+		break;
 		}
 
+		if (exit_id)
+			break;
 	}
+
+	devobj.devctrl_free();
+	exit(0);
 
 	bool nstatus = false;
 	// read rule to mcrule.json

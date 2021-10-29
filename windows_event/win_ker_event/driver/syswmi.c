@@ -38,7 +38,6 @@ VOID Sys_NotifyWmi(
 	else
 		return;
 
-	// DbgBreakPoint();
 	wnode->WnodeHeader.Guid;
 	wnode->WnodeHeader.Version;
 }

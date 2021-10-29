@@ -160,16 +160,20 @@
     <ClCompile Include="..\lib_json\json_reader.cpp" />
     <ClCompile Include="..\lib_json\json_value.cpp" />
     <ClCompile Include="..\lib_json\json_writer.cpp" />
+    <ClCompile Include="ArkIdt.cpp" />
     <ClCompile Include="devctrl.cpp" />
     <ClCompile Include="HlprMiniCom.cpp" />
     <ClCompile Include="mcfilter.cpp" />
+    <ClCompile Include="ArkSsdt.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArkIdt.h" />
     <ClInclude Include="devctrl.h" />
     <ClInclude Include="HlprMiniCom.h" />
     <ClInclude Include="nfevents.h" />
     <ClInclude Include="nf_api.h" />
     <ClInclude Include="ntbasic.h" />
+    <ClInclude Include="ArkSsdt.h" />
     <ClInclude Include="sync.h" />
     <ClInclude Include="sysinfo.h" />
     <ClInclude Include="threadpool.h" />

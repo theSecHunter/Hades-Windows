@@ -221,23 +221,25 @@ NTSTATUS devctrl_openMem(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATI
 
 NTSTATUS devctrl_InitSsdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
 {
-	PVOID ioBuffer = NULL;
-	ioBuffer = irp->AssociatedIrp.SystemBuffer;
-	if (!ioBuffer)
+	NTSTATUS nStatus = STATUS_SUCCESS;
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+	if (!pOutBuffer)
 	{
-		ioBuffer = irp->UserBuffer;
+		pOutBuffer = irp->UserBuffer;
 	}
 
 	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
 	
 	do{
 
-		if (!ioBuffer && (outputBufferLength < sizeof(DWORD)))
+		if (!pOutBuffer && (outputBufferLength < sizeof(DWORD)))
 			break;
 
 		if (Sstd_Init())
 		{
-			RtlCopyMemory(ioBuffer, 1, sizeof(DWORD));
+			DWORD flag = 1;
+			RtlCopyMemory(pOutBuffer, &flag, sizeof(DWORD));
 		}
 		else
 			break;
@@ -257,15 +259,27 @@ NTSTATUS devctrl_InitSsdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_L
 
 NTSTATUS devctrl_GetSysSsdtIndex(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
 {
-	PVOID ioBuffer = NULL;
-	ioBuffer = irp->AssociatedIrp.SystemBuffer;
-	if (!ioBuffer)
+	DbgBreakPoint();
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+	if (!pOutBuffer)
 	{
-		ioBuffer = irp->UserBuffer;
+		pOutBuffer = irp->UserBuffer;
 	}
 
 	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
 
+	if (!pOutBuffer && (outputBufferLength < 0x1024))
+	{
+		return STATUS_UNSUCCESSFUL;
+	}
+
+	Sstd_GetTableIndex();
+
+	irp->IoStatus.Status = STATUS_SUCCESS;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_SUCCESS;
 }
 
 NTSTATUS devctrl_create(PIRP irp, PIO_STACK_LOCATION irpSp)
@@ -541,9 +555,9 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 
 		case CTL_DEVCTRL_ARK_INITSSDT:
 			return devctrl_InitSsdtBase(DeviceObject, irp, irpSp);
-
 		case CTL_DEVCTRL_ARK_GETSSDTDATA:
 			return devctrl_GetSysSsdtIndex(DeviceObject, irp, irpSp);
+
 		}
 		break;
 	default:
@@ -551,7 +565,7 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 	}
 
 	irp->IoStatus.Status = STATUS_SUCCESS;
-	irp->IoStatus.Information = sizeof(NF_BUFFERS);
+	irp->IoStatus.Information = 0;
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_SUCCESS;
 }
