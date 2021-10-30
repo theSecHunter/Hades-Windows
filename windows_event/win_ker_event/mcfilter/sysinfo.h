@@ -176,4 +176,11 @@ enum AnRootkitId
     NF_EXIT = 100
 };
 
+typedef struct _SSDTINFO
+{
+    short			ssdt_id;
+    ULONGLONG		sstd_memaddr;
+    LONG			sstd_memoffset;
+}SSDTINFO, * PSSDTINFO;
+
 #endif // !_SYSINFO_H

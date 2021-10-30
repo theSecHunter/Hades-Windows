@@ -320,8 +320,11 @@ int main(int argc, char* argv[])
 		{
 			if (ssdtobj.nf_init())
 			{
-				ssdtobj.nf_GetSsdtData();
+				// Get Sys Current Mem Ssdt Info
+				ssdtobj.nf_GetSysCurrentSsdtData();
 				OutputDebugString(L"Init Ssdt Success!");
+				// Get Sys DiskFile Ssdt Info
+
 				break;
 			}
 			OutputDebugString(L"Init Ssdt Failuer!");

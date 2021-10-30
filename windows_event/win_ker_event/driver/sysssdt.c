@@ -69,7 +69,7 @@ int Sstd_Init()
 		return 0;
 }
 
-int Sstd_GetTableIndex()
+int Sstd_GetTableIndex(SSDTINFO* MemBuffer)
 {
 	DbgBreakPoint();
 	if (!KeServiceDescriptorTable)
@@ -84,10 +84,30 @@ int Sstd_GetTableIndex()
 	if (0 >= ServiceTableBase)
 		return -1;
 
-	LONG dwtmp = ServiceTableBase[1];
-	dwtmp = dwtmp >> 4;
+	int  i = 0;
+	LONG offset = 0;
+	ULONGLONG funaddr = 0;
+	PSSDTINFO ssdtinfo = ExAllocatePoolWithTag(NonPagedPool, sizeof(SSDTINFO), 'STMM');
+	if (!ssdtinfo)
+		return -1;
+	RtlSecureZeroMemory(ssdtinfo, sizeof(SSDTINFO));
+	for (i = 0; i < SsdtFunNumber; ++i)
+	{
+		ssdtinfo->ssdt_id = i;
 
-	ULONGLONG funaddr = (ULONGLONG)ServiceTableBase + (ULONGLONG)dwtmp;
+		offset = ServiceTableBase[i];
+		ssdtinfo->sstd_memoffset = offset;
 
-	DbgBreakPoint();
+		if (offset & 0x80000000)
+			offset = (offset >> 4) | 0xF0000000;
+		else
+			offset = offset >> 4;
+		funaddr = (ULONGLONG)ServiceTableBase + (ULONGLONG)offset;
+
+		ssdtinfo->sstd_memaddr = funaddr;
+
+		RtlCopyMemory(&MemBuffer[i], ssdtinfo, sizeof(SSDTINFO));
+	}
+
+
 }

@@ -6,6 +6,6 @@ public:
 	~ArkSsdt();
 
 	bool nf_init();
-	bool nf_GetSsdtData();
+	bool nf_GetSysCurrentSsdtData();
 };
 

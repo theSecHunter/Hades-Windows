@@ -50,9 +50,9 @@ public:
 	bool devctrl_sendioct(
 		const int ioctcode,
 		LPVOID lpInBuffer,
-		DWORD& InBufSize,
+		DWORD InBufSize,
 		LPVOID lpOutBuffer,
-		DWORD& OutBufSize,
+		DWORD OutBufSize,
 		DWORD& dSize
 	);
 
