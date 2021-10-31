@@ -61,7 +61,6 @@ ULONGLONG SysGetSsdtBaseAddrto64()
 
 int Sstd_Init()
 {
-	DbgBreakPoint();
 	KeServiceDescriptorTable = (PSYSTEM_SERVICE_TABLE)SysGetSsdtBaseAddrto64();
 	if (KeServiceDescriptorTable)
 		return 1;
@@ -69,9 +68,8 @@ int Sstd_Init()
 		return 0;
 }
 
-int Sstd_GetTableIndex(SSDTINFO* MemBuffer)
+int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 {
-	DbgBreakPoint();
 	if (!KeServiceDescriptorTable)
 		return -1;
 
@@ -109,5 +107,5 @@ int Sstd_GetTableIndex(SSDTINFO* MemBuffer)
 		RtlCopyMemory(&MemBuffer[i], ssdtinfo, sizeof(SSDTINFO));
 	}
 
-
+	return 1;
 }

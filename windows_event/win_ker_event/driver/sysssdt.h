@@ -18,7 +18,7 @@ typedef struct _SYSTEM_SERVICE_TABLE {
 PSYSTEM_SERVICE_TABLE KeServiceDescriptorTable;
 
 int Sstd_Init();
-int Sstd_GetTableIndex();
+int Sstd_GetTableInfo(SSDTINFO* MemBuffer);
 
 #endif // !_SYSSSDT_H
 

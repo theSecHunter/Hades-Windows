@@ -9,6 +9,7 @@
 #include "syssession.h"
 
 #include "sysssdt.h"
+#include "sysidt.h"
 
 #include <ntddk.h>
 
@@ -46,6 +47,78 @@ typedef struct _NF_QUEUE_ENTRY
     int				code;		// IO code
 } NF_QUEUE_ENTRY, * PNF_QUEUE_ENTRY;
 
+// Ark Data Collection
+NTSTATUS devctrl_InitSsdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	NTSTATUS nStatus = STATUS_SUCCESS;
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+	if (!pOutBuffer)
+	{
+		pOutBuffer = irp->UserBuffer;
+	}
+
+	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+	do {
+
+		if (!pOutBuffer && (outputBufferLength < sizeof(DWORD)))
+			break;
+
+		if (Sstd_Init())
+		{
+			DWORD flag = 1;
+			RtlCopyMemory(pOutBuffer, &flag, sizeof(DWORD));
+		}
+		else
+			break;
+
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = sizeof(DWORD);
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_UNSUCCESSFUL;
+}
+NTSTATUS devctrl_GetSysSsdtInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+	if (!pOutBuffer)
+	{
+		pOutBuffer = irp->UserBuffer;
+	}
+
+	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+	if (!pOutBuffer && (outputBufferLength < 0x1024))
+	{
+		return STATUS_UNSUCCESSFUL;
+	}
+
+	Sstd_GetTableInfo(pOutBuffer);
+
+	irp->IoStatus.Status = STATUS_SUCCESS;
+	irp->IoStatus.Information = outputBufferLength;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_SUCCESS;
+}
+NTSTATUS devctrl_InitIdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+
+	return STATUS_SUCCESS;
+}
+NTSTATUS devctrl_GetSysIdtInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+
+	return STATUS_SUCCESS;
+}
+
 void devctrl_freeSharedMemory(PSHARED_MEMORY pSharedMemory)
 {
 	if (pSharedMemory->mdl)
@@ -71,7 +144,6 @@ void devctrl_freeSharedMemory(PSHARED_MEMORY pSharedMemory)
 		memset(pSharedMemory, 0, sizeof(SHARED_MEMORY));
 	}
 }
-
 NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 {
 	PMDL  mdl;
@@ -151,7 +223,6 @@ NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 
 	return STATUS_SUCCESS;
 }
-
 NTSTATUS devctrl_openMem(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	PVOID ioBuffer = NULL;
@@ -219,69 +290,6 @@ NTSTATUS devctrl_openMem(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATI
 	return STATUS_UNSUCCESSFUL;
 }
 
-NTSTATUS devctrl_InitSsdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
-{
-	NTSTATUS nStatus = STATUS_SUCCESS;
-	PVOID pOutBuffer = NULL;
-	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
-	if (!pOutBuffer)
-	{
-		pOutBuffer = irp->UserBuffer;
-	}
-
-	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
-	
-	do{
-
-		if (!pOutBuffer && (outputBufferLength < sizeof(DWORD)))
-			break;
-
-		if (Sstd_Init())
-		{
-			DWORD flag = 1;
-			RtlCopyMemory(pOutBuffer, &flag, sizeof(DWORD));
-		}
-		else
-			break;
-
-		irp->IoStatus.Status = STATUS_SUCCESS;
-		irp->IoStatus.Information = sizeof(DWORD);
-		IoCompleteRequest(irp, IO_NO_INCREMENT);
-		return STATUS_SUCCESS;
-
-	} while (FALSE);
-
-	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
-	irp->IoStatus.Information = 0;
-	IoCompleteRequest(irp, IO_NO_INCREMENT);
-	return STATUS_UNSUCCESSFUL;
-}
-
-NTSTATUS devctrl_GetSysSsdtIndex(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
-{
-	DbgBreakPoint();
-	PVOID pOutBuffer = NULL;
-	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
-	if (!pOutBuffer)
-	{
-		pOutBuffer = irp->UserBuffer;
-	}
-
-	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
-
-	if (!pOutBuffer && (outputBufferLength < 0x1024))
-	{
-		return STATUS_UNSUCCESSFUL;
-	}
-
-	Sstd_GetTableIndex();
-
-	irp->IoStatus.Status = STATUS_SUCCESS;
-	irp->IoStatus.Information = 0;
-	IoCompleteRequest(irp, IO_NO_INCREMENT);
-	return STATUS_SUCCESS;
-}
-
 NTSTATUS devctrl_create(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -296,7 +304,6 @@ NTSTATUS devctrl_create(PIRP irp, PIO_STACK_LOCATION irpSp)
 
 	return status;
 }
-
 VOID devctrl_cancelRead(IN PDEVICE_OBJECT deviceObject, IN PIRP irp)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -315,7 +322,6 @@ VOID devctrl_cancelRead(IN PDEVICE_OBJECT deviceObject, IN PIRP irp)
 	irp->IoStatus.Information = 0;
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 }
-
 ULONG devctrl_processRequest(ULONG bufferSize)
 {
 	PNF_DATA pData = (PNF_DATA)g_outBuf.kernelVa;
@@ -332,7 +338,6 @@ ULONG devctrl_processRequest(ULONG bufferSize)
 	}
 	return 0;
 }
-
 NTSTATUS devctrl_read(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -389,7 +394,6 @@ NTSTATUS devctrl_read(PIRP irp, PIO_STACK_LOCATION irpSp)
 
 	return status;
 }
-
 NTSTATUS devctrl_write(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	PNF_READ_RESULT pRes;
@@ -409,7 +413,6 @@ NTSTATUS devctrl_write(PIRP irp, PIO_STACK_LOCATION irpSp)
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_SUCCESS;
 }
-
 NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -455,7 +458,6 @@ VOID devctrl_clean()
 	}
 	sl_unlock(&lh);
 }
-
 VOID devctrl_free()
 {
 	if (g_deviceControl)
@@ -475,7 +477,6 @@ VOID devctrl_free()
 	Wmi_Free();
 	Session_Free();
 }
-
 VOID devctrl_setShutdown()
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -484,7 +485,6 @@ VOID devctrl_setShutdown()
 	g_shutdown = TRUE;
 	sl_unlock(&lh);
 }
-
 BOOLEAN	devctrl_isShutdown()
 {
 	BOOLEAN		res;
@@ -496,7 +496,6 @@ BOOLEAN	devctrl_isShutdown()
 
 	return res;
 }
-
 VOID devctrl_setMonitor(BOOLEAN code)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -514,7 +513,6 @@ VOID devctrl_setMonitor(BOOLEAN code)
 	File_SetMonitor(code);
 	Session_SetMonitor(code);
 }
-
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -556,7 +554,12 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 		case CTL_DEVCTRL_ARK_INITSSDT:
 			return devctrl_InitSsdtBase(DeviceObject, irp, irpSp);
 		case CTL_DEVCTRL_ARK_GETSSDTDATA:
-			return devctrl_GetSysSsdtIndex(DeviceObject, irp, irpSp);
+			return devctrl_GetSysSsdtInfo(DeviceObject, irp, irpSp);
+
+		case CTL_DEVCTRL_ARK_INITIDT:
+			return devctrl_InitIdtBase(DeviceObject, irp, irpSp);
+		case CTL_DEVCTRL_ARK_GETIDTDATA:
+			return devctrl_GetSysSsdtInfo(DeviceObject, irp, irpSp);
 
 		}
 		break;
@@ -569,7 +572,6 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_SUCCESS;
 }
-
 NTSTATUS devctrl_ioInit(PDRIVER_OBJECT DriverObject) {
 	NTSTATUS status = STATUS_SUCCESS;
 
@@ -648,7 +650,6 @@ NTSTATUS devctrl_ioInit(PDRIVER_OBJECT DriverObject) {
 	}
 	return status;
 }
-
 void devctrl_ioThreadFree() {
 
 	devctrl_clean();
@@ -674,7 +675,7 @@ void devctrl_ioThreadFree() {
 	return STATUS_SUCCESS;
 }
 
-
+// System Active Monitor
 /*
 * pop
 */
@@ -1070,6 +1071,9 @@ NTSTATUS devctrl_popsessioninfo(UINT64* pOffset)
 
 }
 
+/*
+* handler
+*/
 UINT64 devctrl_fillBuffer()
 {
 	PNF_QUEUE_ENTRY	pEntry;

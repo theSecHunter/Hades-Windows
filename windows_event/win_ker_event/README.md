@@ -81,9 +81,9 @@ KeRegisterProcessorChangeCallback
 ###### SSDT:
 
 - x64读取SSDTBase：Start: __readmsr(0xC0000082)   End: Start+0x500 
-- 枚举找到机器码标识：4c8d15
-- 枚举系统已加载SSDT每个函数偏移
-- 重新加载MySSDT获取真实的偏移或者解析PE获取偏移
+- 细节：准确说msr开启隔离模式读取出来是KiSystemCall64Shadow ，否则是KiSystemCall64，所以Shadow函数寻找SsdtBase需要其他处理，详细见代码。
+- 枚举找到机器码标识：Call64: 4c8d15 & Call64Shadow：c3e9e35ce9ff
+- 枚举当前系统内存已加载SSDT数据和重新加载MySSDT或PE文件偏移对比
 
 See Code:  sysssdt.h sysssdt.c
 
