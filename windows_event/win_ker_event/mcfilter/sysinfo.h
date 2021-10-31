@@ -183,4 +183,10 @@ typedef struct _SSDTINFO
     LONG			sstd_memoffset;
 }SSDTINFO, * PSSDTINFO;
 
+typedef struct _IDTINFO
+{
+    int			    idt_id;
+    ULONGLONG		idt_isrmemaddr;
+}IDTINFO, * PIDTINFO;
+
 #endif // !_SYSINFO_H

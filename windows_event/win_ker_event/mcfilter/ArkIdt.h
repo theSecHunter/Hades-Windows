@@ -7,6 +7,6 @@ public:
 	~ArkIdt();
 
 	bool nf_init();
-	void nf_GetIdtData();
+	bool nf_GetIdtData();
 };
 

@@ -105,6 +105,14 @@ int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 		ssdtinfo->sstd_memaddr = funaddr;
 
 		RtlCopyMemory(&MemBuffer[i], ssdtinfo, sizeof(SSDTINFO));
+
+		RtlSecureZeroMemory(ssdtinfo, sizeof(SSDTINFO));
+	}
+
+	if (ssdtinfo)
+	{
+		ExFreePoolWithTag(ssdtinfo, 'STMM');
+		ssdtinfo = NULL;
 	}
 
 	return 1;

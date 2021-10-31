@@ -243,7 +243,7 @@ static DevctrlIoct devobj;
 static EventHandler eventobj;
 
 static ArkSsdt ssdtobj;
-static ArkSsdt idtobj;
+static ArkIdt idtobj;
 
 int main(int argc, char* argv[])
 {
@@ -332,6 +332,10 @@ int main(int argc, char* argv[])
 		break;
 		case NF_IDT_ID:
 		{
+			if (idtobj.nf_init())
+			{
+				idtobj.nf_GetIdtData();
+			}
 		}
 		break;
 		case NF_GDT_ID:

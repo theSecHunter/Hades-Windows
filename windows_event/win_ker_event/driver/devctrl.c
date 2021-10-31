@@ -96,7 +96,7 @@ NTSTATUS devctrl_GetSysSsdtInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK
 
 	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
 
-	if (!pOutBuffer && (outputBufferLength < 0x1024))
+	if (!pOutBuffer && (outputBufferLength < 0x2000))
 	{
 		return STATUS_UNSUCCESSFUL;
 	}
@@ -110,12 +110,61 @@ NTSTATUS devctrl_GetSysSsdtInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK
 }
 NTSTATUS devctrl_InitIdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
 {
+	NTSTATUS nStatus = STATUS_SUCCESS;
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+	if (!pOutBuffer)
+	{
+		pOutBuffer = irp->UserBuffer;
+	}
 
+	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+	do {
+
+		if (!pOutBuffer && (outputBufferLength < sizeof(DWORD)))
+			break;
+
+		if (Idt_Init())
+		{
+			DWORD flag = 1;
+			RtlCopyMemory(pOutBuffer, &flag, sizeof(DWORD));
+		}
+		else
+			break;
+
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = sizeof(DWORD);
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_SUCCESS;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_SUCCESS;
 }
 NTSTATUS devctrl_GetSysIdtInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
 {
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+	if (!pOutBuffer)
+	{
+		pOutBuffer = irp->UserBuffer;
+	}
 
+	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+	if (!pOutBuffer && (outputBufferLength < (sizeof(IDTINFO) * 0x100)))
+	{
+		return STATUS_UNSUCCESSFUL;
+	}
+
+	Idt_GetTableInfo(pOutBuffer);
+	irp->IoStatus.Status = STATUS_SUCCESS;
+	irp->IoStatus.Information = outputBufferLength;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_SUCCESS;
 }
 
@@ -559,7 +608,7 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 		case CTL_DEVCTRL_ARK_INITIDT:
 			return devctrl_InitIdtBase(DeviceObject, irp, irpSp);
 		case CTL_DEVCTRL_ARK_GETIDTDATA:
-			return devctrl_GetSysSsdtInfo(DeviceObject, irp, irpSp);
+			return devctrl_GetSysIdtInfo(DeviceObject, irp, irpSp);
 
 		}
 		break;

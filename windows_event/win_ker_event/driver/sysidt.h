@@ -5,9 +5,9 @@
 typedef struct _IDTR
 {
 	USHORT limit;
-	ULONG32 ulowBase;
-	ULONG32 uhighBase;
-	//ULONG64 Base;
+	//ULONG32 ulowBase;
+	//ULONG32 uhighBase;
+	ULONG64 Base;
 }IDTR, * PIDTR;
 
 typedef union _IDT_ENTRY
@@ -37,7 +37,13 @@ typedef struct _IDT_INFO
 	ULONGLONG	pInlineHookAddress;
 }IDT_INFO, * PIDT_INFO;
 
+typedef struct _IDTINFO
+{
+	int			    idt_id;
+	ULONGLONG		idt_isrmemaddr;
+}IDTINFO, * PIDTINFO;
+
 int Idt_Init();
-int Idt_GetTableInfo();
+int Idt_GetTableInfo(IDTINFO* MemBuffer);
 
 #endif // !_SYSIDT_H
