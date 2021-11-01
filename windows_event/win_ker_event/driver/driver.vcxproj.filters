@@ -32,6 +32,9 @@
     <ClCompile Include="sysidt.c">
       <Filter>sysark</Filter>
     </ClCompile>
+    <ClCompile Include="sysdpctimer.c">
+      <Filter>sysark</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="driver.h" />
@@ -66,6 +69,9 @@
       <Filter>sysark</Filter>
     </ClInclude>
     <ClInclude Include="sysidt.h">
+      <Filter>sysark</Filter>
+    </ClInclude>
+    <ClInclude Include="sysdpctimer.h">
       <Filter>sysark</Filter>
     </ClInclude>
   </ItemGroup>

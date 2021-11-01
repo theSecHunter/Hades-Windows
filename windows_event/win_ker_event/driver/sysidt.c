@@ -37,7 +37,6 @@ int Idt_Init()
 
 int Idt_GetTableInfo(IDTINFO* MemBuffer)
 {
-	DbgBreakPoint();
 	if ((g_idtInitflag == FALSE) &&
 		(g_idtr.limit <= 0))
 	{

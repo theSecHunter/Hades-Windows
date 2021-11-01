@@ -89,18 +89,30 @@ See Code:  sysssdt.h sysssdt.c
 
 ###### IDT
 
+- __sidt获取IDTR Struct
+- 枚举Base IDT_ENTRY
 - 
 
 ###### OBJ
+
+- 
 
 ###### Callback
 
 ###### IRP
 
+- 
+
 ###### FSD
+
+- 
 
 ###### PROCESSTREE
 
-###### TIME
+- 
 
-###### DPC
+###### DPCTIMTER
+
+- 老版本可以通过KeUpdateSystemTime拿到KiTimerTableListHead链表，枚举遍历，WIN7以上使用KPRCB结构或者readmsr(0xC0000101) + 0x20拿到KPRCB，最后拿到_KTIMER_TABLE 。
+- x64 DPC有一段加密，需要注意
+- 

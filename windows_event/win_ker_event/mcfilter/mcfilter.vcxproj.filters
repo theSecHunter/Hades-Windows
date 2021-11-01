@@ -42,6 +42,9 @@
     <ClCompile Include="ArkIdt.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ArkDpcTimer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ntbasic.h">
@@ -72,6 +75,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ArkIdt.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkDpcTimer.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

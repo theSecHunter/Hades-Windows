@@ -13,8 +13,10 @@
 #include "nfevents.h"
 #include "devctrl.h"
 #include "sysinfo.h"
+
 #include "ArkSsdt.h"
 #include "ArkIdt.h"
+#include "ArkDpcTimer.h"
 
 using namespace std;
 
@@ -242,8 +244,9 @@ class EventHandler : public NF_EventHandler
 static DevctrlIoct devobj;
 static EventHandler eventobj;
 
-static ArkSsdt ssdtobj;
-static ArkIdt idtobj;
+static ArkSsdt			g_ssdtobj;
+static ArkIdt			g_idtobj;
+static ArkDpcTimer		g_dpcobj;
 
 int main(int argc, char* argv[])
 {
@@ -318,10 +321,10 @@ int main(int argc, char* argv[])
 		{
 		case NF_SSDT_ID:
 		{
-			if (ssdtobj.nf_init())
+			if (g_ssdtobj.nf_init())
 			{
 				// Get Sys Current Mem Ssdt Info
-				ssdtobj.nf_GetSysCurrentSsdtData();
+				g_ssdtobj.nf_GetSysCurrentSsdtData();
 				OutputDebugString(L"Init Ssdt Success!");
 				// Get Sys DiskFile Ssdt Info
 
@@ -332,14 +335,15 @@ int main(int argc, char* argv[])
 		break;
 		case NF_IDT_ID:
 		{
-			if (idtobj.nf_init())
+			if (g_idtobj.nf_init())
 			{
-				idtobj.nf_GetIdtData();
+				g_idtobj.nf_GetIdtData();
 			}
 		}
 		break;
-		case NF_GDT_ID:
+		case NF_DPC_ID:
 		{
+			g_dpcobj.nf_GetDpcTimerData();
 		}
 		break;
 		case NF_SYSCALLBACK_ID:

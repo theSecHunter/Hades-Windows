@@ -10,6 +10,7 @@
 
 #include "sysssdt.h"
 #include "sysidt.h"
+#include "sysdpctimer.h"
 
 #include <ntddk.h>
 
@@ -185,6 +186,40 @@ NTSTATUS devctrl_GetSysIdtInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_
 
 		if (!Idt_GetTableInfo(pOutBuffer))
 			break;
+
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = outputBufferLength;
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_UNSUCCESSFUL;
+}
+NTSTATUS devctrl_GetDpcTimerInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+
+	do {
+
+		if (!pOutBuffer)
+		{
+			pOutBuffer = irp->UserBuffer;
+		}
+		if (MmIsAddressValid(pOutBuffer) == FALSE)
+			break;
+
+		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+		if (!pOutBuffer && (outputBufferLength < (sizeof(DPC_TIMERINFO) * 0x100)))
+			break;
+
+
+		nf_GetDpcTimerInfoData(pOutBuffer);
 
 		irp->IoStatus.Status = STATUS_SUCCESS;
 		irp->IoStatus.Information = outputBufferLength;
@@ -641,6 +676,8 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 		case CTL_DEVCTRL_ARK_GETIDTDATA:
 			return devctrl_GetSysIdtInfo(DeviceObject, irp, irpSp);
 
+		case CTL_DEVCTRL_ARK_GETDPCTIMERDATA:
+			return devctrl_GetDpcTimerInfo(DeviceObject, irp, irpSp);
 		}
 		break;
 	default:

@@ -169,6 +169,7 @@ enum AnRootkitId
     NF_SSDT_ID,
     NF_IDT_ID,
     NF_GDT_ID,
+    NF_DPC_ID,
     NF_SYSCALLBACK_ID,
     NF_SYSPROCESSTREE_ID,
     NF_OBJ_ID,

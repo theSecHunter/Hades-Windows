@@ -2,8 +2,11 @@ d:\hades\windows_event\win_ker_event\driver\x64\debug\vc142.pdb
 d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.obj
 d:\hades\windows_event\win_ker_event\driver\x64\debug\thread.obj
 d:\hades\windows_event\win_ker_event\driver\x64\debug\syswmi.obj
+d:\hades\windows_event\win_ker_event\driver\x64\debug\sysssdt.obj
 d:\hades\windows_event\win_ker_event\driver\x64\debug\syssession.obj
+d:\hades\windows_event\win_ker_event\driver\x64\debug\sysidt.obj
 d:\hades\windows_event\win_ker_event\driver\x64\debug\sysfile.obj
+d:\hades\windows_event\win_ker_event\driver\x64\debug\sysdpctimer.obj
 d:\hades\windows_event\win_ker_event\driver\x64\debug\register.obj
 d:\hades\windows_event\win_ker_event\driver\x64\debug\process.obj
 d:\hades\windows_event\win_ker_event\driver\x64\debug\imagemod.obj
@@ -16,8 +19,8 @@ d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.inf
 d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.tlog\cl.command.1.tlog
 d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.tlog\cl.read.1.tlog
 d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.tlog\cl.write.1.tlog
-d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.tlog\inf2cat-expand.7080.read.1.tlog
-d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.tlog\inf2cat-expand.7080.write.1.tlog
+d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.tlog\inf2cat-expand.4448.read.1.tlog
+d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.tlog\inf2cat-expand.4448.write.1.tlog
 d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.tlog\inf2cat-expand.read.1.tlog
 d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.tlog\inf2cat-expand.write.1.tlog
 d:\hades\windows_event\win_ker_event\driver\x64\debug\driver.tlog\inf2cat.command.1.tlog

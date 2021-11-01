@@ -39,6 +39,7 @@
     <ClCompile Include="imagemod.c" />
     <ClCompile Include="process.c" />
     <ClCompile Include="register.c" />
+    <ClCompile Include="sysdpctimer.c" />
     <ClCompile Include="sysfile.c" />
     <ClCompile Include="sysidt.c" />
     <ClCompile Include="syssession.c" />
@@ -241,6 +242,7 @@
     <ClInclude Include="process.h" />
     <ClInclude Include="public.h" />
     <ClInclude Include="register.h" />
+    <ClInclude Include="sysdpctimer.h" />
     <ClInclude Include="sysfile.h" />
     <ClInclude Include="sysidt.h" />
     <ClInclude Include="syssession.h" />
