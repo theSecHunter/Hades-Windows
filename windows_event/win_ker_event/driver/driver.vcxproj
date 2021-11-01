@@ -40,6 +40,7 @@
     <ClCompile Include="process.c" />
     <ClCompile Include="register.c" />
     <ClCompile Include="sysdpctimer.c" />
+    <ClCompile Include="sysenumnotify.c" />
     <ClCompile Include="sysfile.c" />
     <ClCompile Include="sysidt.c" />
     <ClCompile Include="syssession.c" />
@@ -243,12 +244,14 @@
     <ClInclude Include="public.h" />
     <ClInclude Include="register.h" />
     <ClInclude Include="sysdpctimer.h" />
+    <ClInclude Include="sysenumnotify.h" />
     <ClInclude Include="sysfile.h" />
     <ClInclude Include="sysidt.h" />
     <ClInclude Include="syssession.h" />
     <ClInclude Include="sysssdt.h" />
     <ClInclude Include="syswmi.h" />
     <ClInclude Include="thread.h" />
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

@@ -76,7 +76,7 @@ KeRegisterProcessorChangeCallback
 
 
 
-#### Ark
+#### ArkTools
 
 ###### SSDT:
 
@@ -91,7 +91,8 @@ See Code:  sysssdt.h sysssdt.c
 
 - __sidt获取IDTR Struct
 - 枚举Base IDT_ENTRY
-- 
+
+See Code:  sysidt.h sysidt.c
 
 ###### OBJ
 
@@ -107,12 +108,33 @@ See Code:  sysssdt.h sysssdt.c
 
 - 
 
-###### PROCESSTREE
+###### DpcTimer
 
-- 
+- 老版本可以通过KeUpdateSystemTime拿到KiTimerTableListHead链表，枚举遍历，WIN7以上使用KPRCB结构或者readmsr(0xC0000101) + 0x20拿到KPRCB。
+- x64 DPCBase有加密需要通过硬编码获取，详细见Code。
 
-###### DPCTIMTER
+See Code:  sysdpctimer.h sysdpctimer.c
 
-- 老版本可以通过KeUpdateSystemTime拿到KiTimerTableListHead链表，枚举遍历，WIN7以上使用KPRCB结构或者readmsr(0xC0000101) + 0x20拿到KPRCB，最后拿到_KTIMER_TABLE 。
-- x64 DPC有一段加密，需要注意
-- 
+###### SysNotify
+
+1) Process_Notify
+
+2. Thread_Notify
+3. Minifilter_Notify
+4. Image_Notify
+5. Regsiter_Notify
+6. ObCall_Notify
+7. WFPCallout_Nofity
+
+See Code: sysenumnotify.h sysenumnotify.c
+
+###### HideProcess_Check:
+
+###### HideWinDlg_Check:
+
+###### HideRegister_Check:
+
+###### HideFile_Check:
+
+
+

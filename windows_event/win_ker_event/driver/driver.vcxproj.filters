@@ -27,13 +27,16 @@
       <Filter>sysmonitor</Filter>
     </ClCompile>
     <ClCompile Include="sysssdt.c">
-      <Filter>sysark</Filter>
+      <Filter>sysarktools</Filter>
     </ClCompile>
     <ClCompile Include="sysidt.c">
-      <Filter>sysark</Filter>
+      <Filter>sysarktools</Filter>
     </ClCompile>
     <ClCompile Include="sysdpctimer.c">
-      <Filter>sysark</Filter>
+      <Filter>sysarktools</Filter>
+    </ClCompile>
+    <ClCompile Include="sysenumnotify.c">
+      <Filter>sysarktools</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -66,14 +69,18 @@
       <Filter>sysmonitor</Filter>
     </ClInclude>
     <ClInclude Include="sysssdt.h">
-      <Filter>sysark</Filter>
+      <Filter>sysarktools</Filter>
     </ClInclude>
     <ClInclude Include="sysidt.h">
-      <Filter>sysark</Filter>
+      <Filter>sysarktools</Filter>
     </ClInclude>
     <ClInclude Include="sysdpctimer.h">
-      <Filter>sysark</Filter>
+      <Filter>sysarktools</Filter>
     </ClInclude>
+    <ClInclude Include="sysenumnotify.h">
+      <Filter>sysarktools</Filter>
+    </ClInclude>
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="driver.rc" />
@@ -88,7 +95,7 @@
     <Filter Include="sysmonitor">
       <UniqueIdentifier>{c930406d-5d8f-4048-b248-e35aa76238e7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="sysark">
+    <Filter Include="sysarktools">
       <UniqueIdentifier>{6c91ef1a-0cdf-4da6-9a06-9031b2fa1495}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
