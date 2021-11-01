@@ -5,8 +5,8 @@
 typedef struct _IDTR
 {
 	USHORT limit;
-	//ULONG32 ulowBase;
-	//ULONG32 uhighBase;
+	// ULONG32 ulowBase;
+	// ULONG32 uhighBase;
 	ULONG64 Base;
 }IDTR, * PIDTR;
 

@@ -55,7 +55,7 @@ int Idt_GetTableInfo(IDTINFO* MemBuffer)
 		return -1;
 
 	RtlSecureZeroMemory(idtinfo, sizeof(IDTINFO));
-    for (ULONG i = 0; i < g_idtr.limit; ++i)
+    for (ULONG i = 0; i < MAX_IDT; ++i)
     {
 		idtinfo->idt_id = i;
 		uaddress = Idt_GetAddr(g_pIdtEntry, i);

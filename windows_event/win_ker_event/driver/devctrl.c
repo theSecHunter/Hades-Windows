@@ -71,7 +71,11 @@ NTSTATUS devctrl_InitSsdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_L
 			RtlCopyMemory(pOutBuffer, &flag, sizeof(DWORD));
 		}
 		else
+		{
+			DWORD flag = 0;
+			RtlCopyMemory(pOutBuffer, &flag, sizeof(DWORD));
 			break;
+		}
 
 		irp->IoStatus.Status = STATUS_SUCCESS;
 		irp->IoStatus.Information = sizeof(DWORD);
@@ -89,24 +93,35 @@ NTSTATUS devctrl_GetSysSsdtInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK
 {
 	PVOID pOutBuffer = NULL;
 	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
-	if (!pOutBuffer)
+
+	do
 	{
-		pOutBuffer = irp->UserBuffer;
-	}
+		if (!pOutBuffer)
+		{
+			pOutBuffer = irp->UserBuffer;
+		}
+		if (MmIsAddressValid(pOutBuffer) == FALSE)
+			break;
 
-	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
 
-	if (!pOutBuffer && (outputBufferLength < 0x2000))
-	{
-		return STATUS_UNSUCCESSFUL;
-	}
+		if (!pOutBuffer && (outputBufferLength < 0x2000))
+			break;
 
-	Sstd_GetTableInfo(pOutBuffer);
+		if (!Sstd_GetTableInfo(pOutBuffer))
+			break;
 
-	irp->IoStatus.Status = STATUS_SUCCESS;
-	irp->IoStatus.Information = outputBufferLength;
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = outputBufferLength;
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
-	return STATUS_SUCCESS;
+	return STATUS_UNSUCCESSFUL;
 }
 NTSTATUS devctrl_InitIdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
 {
@@ -131,7 +146,11 @@ NTSTATUS devctrl_InitIdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LO
 			RtlCopyMemory(pOutBuffer, &flag, sizeof(DWORD));
 		}
 		else
+		{
+			DWORD flag = 0;
+			RtlCopyMemory(pOutBuffer, &flag, sizeof(DWORD));
 			break;
+		}
 
 		irp->IoStatus.Status = STATUS_SUCCESS;
 		irp->IoStatus.Information = sizeof(DWORD);
@@ -149,23 +168,35 @@ NTSTATUS devctrl_GetSysIdtInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_
 {
 	PVOID pOutBuffer = NULL;
 	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
-	if (!pOutBuffer)
-	{
-		pOutBuffer = irp->UserBuffer;
-	}
 
-	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+	do {
 
-	if (!pOutBuffer && (outputBufferLength < (sizeof(IDTINFO) * 0x100)))
-	{
-		return STATUS_UNSUCCESSFUL;
-	}
+		if (!pOutBuffer)
+		{
+			pOutBuffer = irp->UserBuffer;
+		}
+		if (MmIsAddressValid(pOutBuffer) == FALSE)
+			break;
 
-	Idt_GetTableInfo(pOutBuffer);
-	irp->IoStatus.Status = STATUS_SUCCESS;
-	irp->IoStatus.Information = outputBufferLength;
+		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+		if (!pOutBuffer && (outputBufferLength < (sizeof(IDTINFO) * 0x100)))
+			break;
+
+		if (!Idt_GetTableInfo(pOutBuffer))
+			break;
+
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = outputBufferLength;
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
-	return STATUS_SUCCESS;
+	return STATUS_UNSUCCESSFUL;
 }
 
 void devctrl_freeSharedMemory(PSHARED_MEMORY pSharedMemory)
