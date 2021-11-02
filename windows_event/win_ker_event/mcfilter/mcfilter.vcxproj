@@ -162,6 +162,7 @@
     <ClCompile Include="..\lib_json\json_writer.cpp" />
     <ClCompile Include="ArkDpcTimer.cpp" />
     <ClCompile Include="ArkIdt.cpp" />
+    <ClCompile Include="ArkSysEnumNotify.cpp" />
     <ClCompile Include="devctrl.cpp" />
     <ClCompile Include="HlprMiniCom.cpp" />
     <ClCompile Include="mcfilter.cpp" />
@@ -170,6 +171,7 @@
   <ItemGroup>
     <ClInclude Include="ArkDpcTimer.h" />
     <ClInclude Include="ArkIdt.h" />
+    <ClInclude Include="ArkSysEnumNotify.h" />
     <ClInclude Include="devctrl.h" />
     <ClInclude Include="HlprMiniCom.h" />
     <ClInclude Include="nfevents.h" />

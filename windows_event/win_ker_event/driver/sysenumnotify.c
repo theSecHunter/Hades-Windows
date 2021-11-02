@@ -5,14 +5,14 @@
 #include "public.h"
 #include "sysenumnotify.h"
 
-VOID Enum_ProcessNotify()
+VOID Enum_ProcessNotify(PNOTIFY_INFO pNotify)
 {
 	LONG			OffsetAddr = 0;
 	ULONG64			i = 0, pCheckArea = 0;
 	UNICODE_STRING	unstrFunc;
 	LONG			PspCreateProcessNotifyRoutine = 0;
 	ULONG64			NotifyAddr = 0, MagicPtr = 0;
-	PNOTIFY_INFO	pNotify = NULL;
+	// PNOTIFY_INFO	pNotify = NULL;
 	SYSTEM_MODULE	Sysmodule = { 0 };
 
 	RtlInitUnicodeString(&unstrFunc, L"PsSetCreateProcessNotifyRoutine");
@@ -52,16 +52,15 @@ VOID Enum_ProcessNotify()
 			count++;
 		}
 	}
+	pNotify[0].Count = count;
 }
-
-VOID Enum_ThreadNotify()
+VOID Enum_ThreadNotify(PNOTIFY_INFO pNotify)
 {
 	ULONG64			i = 0, pCheckArea = 0;
 	UNICODE_STRING	unstrFunc;
 	RtlInitUnicodeString(&unstrFunc, L"PsSetLoadImageNotifyRoutine");
 	ULONG64 PspLoadImageNotifyRoutine = 0;
 	pCheckArea = (ULONG64)MmGetSystemRoutineAddress(&unstrFunc);
-	//DbgPrint("PsSetLoadImageNotifyRoutine: %llx\n",pCheckArea);
 	for (i = pCheckArea; i < pCheckArea + 0xff; i++)
 	{
 		if (*(PUCHAR)i == 0x48 && *(PUCHAR)(i + 1) == 0x8d && *(PUCHAR)(i + 2) == 0x0d)	//lea rcx,xxxx
@@ -76,7 +75,6 @@ VOID Enum_ThreadNotify()
 		return;
 
 	ULONG count = 0;
-	PNOTIFY_INFO pNotify = NULL;
 	SYSTEM_MODULE Sysmodule = { 0 };
 	ULONG64	NotifyAddr = 0, MagicPtr = 0;
 
@@ -98,11 +96,11 @@ VOID Enum_ThreadNotify()
 			pNotify[count].CallbacksAddr = NotifyAddr;
 			pNotify[count].CallbackType = 0; // loadimage
 			memset(&Sysmodule, 0, sizeof(SYSTEM_MODULE));
-			if (NT_SUCCESS(getSystemImageInfoByAddress(NotifyAddr, &Sysmodule)) &&
-				strlen(Sysmodule.ImageName) < MAX_PATH)
-			{
-				RtlCopyMemory(pNotify[count].ImgPath, Sysmodule.ImageName, MAX_PATH);
-			}
+			//if (NT_SUCCESS(getSystemImageInfoByAddress(NotifyAddr, &Sysmodule)) &&
+			//	strlen(Sysmodule.ImageName) < MAX_PATH)
+			//{
+			//	RtlCopyMemory(pNotify[count].ImgPath, Sysmodule.ImageName, MAX_PATH);
+			//}
 
 			//DbgPrint("[LoadImage]%llx\n",NotifyAddr);
 			count++;
@@ -111,104 +109,7 @@ VOID Enum_ThreadNotify()
 
 	pNotify[0].Count = count;
 }
-
-VOID Enum_ResiterNotify()
-{
-
-}
-
-VOID Enum_ObCalloutNotify()
-{
-	ULONG c = 0;
-	POBCALLBACKS_INFO pNotify = NULL;
-	PLIST_ENTRY CurrEntry = NULL;
-	POB_CALLBACK pObCallback;
-	SYSTEM_MODULE Sysmodule = { 0 };
-	ULONG64 ObProcessCallbackListHead = *(ULONG64*)PsProcessType + ObjectCallbackListOffset;
-	ULONG64 ObThreadCallbackListHead = *(ULONG64*)PsThreadType + ObjectCallbackListOffset;
-
-	pNotify = ExAllocatePool(NonPagedPool, sizeof(OBCALLBACKS_INFO) * 100);
-	if (pNotify == NULL)
-		return NULL;
-
-
-	RtlZeroMemory(pNotify, sizeof(OBCALLBACKS_INFO) * 100);
-
-	CurrEntry = ((PLIST_ENTRY)ObProcessCallbackListHead)->Flink;
-	do
-	{
-		pObCallback = (POB_CALLBACK)CurrEntry;
-		if (pObCallback->ObHandle != 0) //list_head的数据是垃圾数据，忽略
-		{
-			//dprintf("ObHandle: %p\n", pObCallback->ObHandle);
-			//dprintf("PreCall: %p\n", pObCallback->PreCall);
-			//dprintf("PostCall: %p\n", pObCallback->PostCall);
-			pNotify[c].PreCallbackAddr = pObCallback->PreCall;
-			pNotify[c].PostCallbackAddr = pObCallback->PostCall;
-			pNotify[c].ObHandle = pObCallback->ObHandle;
-			pNotify[c].ObType = 0;
-
-			memset(&Sysmodule, 0, sizeof(SYSTEM_MODULE));
-			if (NT_SUCCESS(getSystemImageInfoByAddress(pNotify[c].PreCallbackAddr, &Sysmodule)) &&
-				strlen(Sysmodule.ImageName) < MAX_PATH)
-			{
-				RtlCopyMemory(pNotify[c].PreImgPath, Sysmodule.ImageName, MAX_PATH);
-			}
-
-			memset(&Sysmodule, 0, sizeof(SYSTEM_MODULE));
-			if (NT_SUCCESS(getSystemImageInfoByAddress(pNotify[c].PostCallbackAddr, &Sysmodule)) &&
-				strlen(Sysmodule.ImageName) < MAX_PATH)
-			{
-				RtlCopyMemory(pNotify[c].PostImgPaht, Sysmodule.ImageName, MAX_PATH);
-			}
-
-			c++;
-		}
-		CurrEntry = CurrEntry->Flink;
-	} while (CurrEntry != (PLIST_ENTRY)ObProcessCallbackListHead);
-
-	// 线程
-	CurrEntry = ((PLIST_ENTRY)ObThreadCallbackListHead)->Flink;	//list_head的数据是垃圾数据，忽略
-	do
-	{
-		pObCallback = (POB_CALLBACK)CurrEntry;
-		if (pObCallback->ObHandle != 0)
-		{
-			//dprintf("ObHandle: %p\n", pObCallback->ObHandle);
-			//dprintf("PreCall: %p\n", pObCallback->PreCall);
-			//dprintf("PostCall: %p\n", pObCallback->PostCall);
-			pNotify[c].PreCallbackAddr = pObCallback->PreCall;
-			pNotify[c].PostCallbackAddr = pObCallback->PostCall;
-			pNotify[c].ObHandle = pObCallback->ObHandle;
-			pNotify[c].ObType = 1;
-
-			memset(&Sysmodule, 0, sizeof(SYSTEM_MODULE));
-			if (NT_SUCCESS(getSystemImageInfoByAddress(pNotify[c].PreCallbackAddr, &Sysmodule)) &&
-				strlen(Sysmodule.ImageName) < MAX_PATH)
-			{
-				RtlCopyMemory(pNotify[c].PreImgPath, Sysmodule.ImageName, MAX_PATH);
-			}
-
-			memset(&Sysmodule, 0, sizeof(SYSTEM_MODULE));
-			if (NT_SUCCESS(getSystemImageInfoByAddress(pNotify[c].PostCallbackAddr, &Sysmodule)) &&
-				strlen(Sysmodule.ImageName) < MAX_PATH)
-			{
-				RtlCopyMemory(pNotify[c].PostImgPaht, Sysmodule.ImageName, MAX_PATH);
-			}
-			c++;
-		}
-		CurrEntry = CurrEntry->Flink;
-	} while (CurrEntry != (PLIST_ENTRY)ObThreadCallbackListHead);
-	//dprintf("ObCallback count: %ld\n", c);
-
-	pNotify[0].Count = c;
-}
-
-VOID Enum_MinifilterNotify()
-{
-}
-
-VOID Enum_ImageModNotify()
+VOID Enum_ImageModNotify(PNOTIFY_INFO pNotify)
 {
 	ULONG64			i = 0, pCheckArea = 0;
 	UNICODE_STRING	unstrFunc;
@@ -230,10 +131,8 @@ VOID Enum_ImageModNotify()
 		return;
 
 	ULONG count = 0;
-	PNOTIFY_INFO pNotify = NULL;
 	SYSTEM_MODULE Sysmodule = { 0 };
 	ULONG64	NotifyAddr = 0, MagicPtr = 0;
-	 = FindPspLoadImageNotifyRoutine();
 	//DbgPrint("PspLoadImageNotifyRoutine: %llx\n",PspLoadImageNotifyRoutine);
 	pNotify = ExAllocatePool(NonPagedPool, sizeof(NOTIFY_INFO) * 100);
 
@@ -266,8 +165,14 @@ VOID Enum_ImageModNotify()
 
 	pNotify[0].Count = count;
 }
+VOID Enum_ResiterNotify(PNOTIFY_INFO pNotify)
+{
 
-PMINIFILTER_INFO Enum_ImageModNotify()
+}
+VOID Enum_ObCalloutNotify(PNOTIFY_INFO pNotify)
+{
+}
+VOID Enum_MinifilterNotify(PMINIFILTER_INFO pFltInfo)
 {
 	long	ntStatus;
 	ULONG	uNumber = 0;

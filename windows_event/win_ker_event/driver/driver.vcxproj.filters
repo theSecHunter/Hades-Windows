@@ -38,6 +38,21 @@
     <ClCompile Include="sysenumnotify.c">
       <Filter>sysarktools</Filter>
     </ClCompile>
+    <ClCompile Include="sysprocess.c">
+      <Filter>sysarktools</Filter>
+    </ClCompile>
+    <ClCompile Include="sysnetwork.c">
+      <Filter>sysarktools</Filter>
+    </ClCompile>
+    <ClCompile Include="syshive.c">
+      <Filter>sysarktools</Filter>
+    </ClCompile>
+    <ClCompile Include="sysfsd.c">
+      <Filter>sysarktools</Filter>
+    </ClCompile>
+    <ClCompile Include="sysmousekeyboard.c">
+      <Filter>sysarktools</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="driver.h" />
@@ -81,6 +96,21 @@
       <Filter>sysarktools</Filter>
     </ClInclude>
     <ClInclude Include="util.h" />
+    <ClInclude Include="sysprocess.h">
+      <Filter>sysarktools</Filter>
+    </ClInclude>
+    <ClInclude Include="sysnetwork.h">
+      <Filter>sysarktools</Filter>
+    </ClInclude>
+    <ClInclude Include="syshive.h">
+      <Filter>sysarktools</Filter>
+    </ClInclude>
+    <ClInclude Include="sysfsd.h">
+      <Filter>sysarktools</Filter>
+    </ClInclude>
+    <ClInclude Include="sysmousekeyboard.h">
+      <Filter>sysarktools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="driver.rc" />

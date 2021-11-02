@@ -98,8 +98,6 @@ See Code:  sysidt.h sysidt.c
 
 - 
 
-###### Callback
-
 ###### IRP
 
 - 

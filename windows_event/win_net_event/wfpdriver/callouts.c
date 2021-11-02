@@ -162,7 +162,9 @@ helper_callout_classFn_flowEstablished(
 		return;
 	}
 
+	sl_lock(&g_callouts_flowspinlock, &lh);
 	flowContextLocal = (PNF_CALLOUT_FLOWESTABLISHED_INFO)ExAllocateFromNPagedLookasideList(&g_callouts_flowCtxPacketsLAList);
+	sl_unlock(&lh);
 	if (flowContextLocal == NULL)
 	{
 		status = STATUS_NO_MEMORY;
@@ -508,6 +510,10 @@ helper_callout_classFn_connectredirect(
 	if (g_monitorflag == 0)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
+		if (filter->flags & FWPS_FILTER_FLAG_CLEAR_ACTION_RIGHT)
+		{
+			classifyOut->flags &= ~FWPS_RIGHT_ACTION_WRITE;
+		}
 		return;
 	}
 
@@ -529,7 +535,6 @@ helper_callout_classFn_connectredirect(
 	PNF_CALLOUT_FLOWESTABLISHED_INFO flowContextLocal = NULL;
 
 	// Connect V4
-
 	flowContextLocal = (PNF_CALLOUT_FLOWESTABLISHED_INFO)ExAllocateFromNPagedLookasideList(&g_callouts_flowCtxPacketsLAList);
 	if (flowContextLocal == NULL)
 	{
@@ -589,7 +594,8 @@ helper_callout_classFn_connectredirect(
 		flowContextLocal->toRemotePort =
 			inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_REMOTE_PORT].value.uint16;
 	}
-	DbgBreakPoint();
+
+
 	flowContextLocal->processId = inMetaValues->processId;
 	flowContextLocal->processPathSize = inMetaValues->processPath->size;
 	RtlCopyMemory(flowContextLocal->processPath, inMetaValues->processPath->data, inMetaValues->processPath->size);
@@ -864,23 +870,23 @@ callouts_addFilters()
 		if (!NT_SUCCESS(status))
 			break;
 		
-		//status = callout_addDataLinkMacFilter(
-		//	&g_calloutGuid_inbound_mac_etherent,
-		//	&FWPM_LAYER_INBOUND_MAC_FRAME_ETHERNET,
-		//	&subLayer,
-		//	1
-		//);
-		//if (!NT_SUCCESS(status))
-		//	break;
+		status = callout_addDataLinkMacFilter(
+			&g_calloutGuid_inbound_mac_etherent,
+			&FWPM_LAYER_INBOUND_MAC_FRAME_ETHERNET,
+			&subLayer,
+			1
+		);
+		if (!NT_SUCCESS(status))
+			break;
 
-		//status = callout_addDataLinkMacFilter(
-		//	&g_calloutGuid_outbound_mac_etherent,
-		//	&FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET,
-		//	&subLayer,
-		//	2
-		//);
-		//if (!NT_SUCCESS(status))
-		//	break;
+		status = callout_addDataLinkMacFilter(
+			&g_calloutGuid_outbound_mac_etherent,
+			&FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET,
+			&subLayer,
+			2
+		);
+		if (!NT_SUCCESS(status))
+			break;
 
 		//status = callout_addFlowEstablishedFilter(
 		//	&g_calloutGuid_ale_connectredirect_v4,
@@ -895,12 +901,20 @@ callouts_addFilters()
 		//);
 	
 		//// FWPM_LAYER_INBOUND_MAC_FRAME_ETHERNET
-		//status = callout_addDataLinkMacFilter(&g_calloutGuid_inbound_mac_native, &FWPM_LAYER_INBOUND_MAC_FRAME_NATIVE, &subLayer,3);
+		//status = callout_addDataLinkMacFilter(
+		//	&g_calloutGuid_inbound_mac_native,
+		//	&FWPM_LAYER_INBOUND_MAC_FRAME_NATIVE,
+		//	&subLayer,
+		//	3);
 		//if (!NT_SUCCESS(status))
 		//	break;
 
 		//// FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET
-		//status = callout_addDataLinkMacFilter(&g_calloutGuid_outbound_mac_native, &FWPM_LAYER_OUTBOUND_MAC_FRAME_NATIVE, &subLayer,4);
+		//status = callout_addDataLinkMacFilter(
+		//	&g_calloutGuid_outbound_mac_native,
+		//	&FWPM_LAYER_OUTBOUND_MAC_FRAME_NATIVE,
+		//	&subLayer,
+		//	4);
 		//if (!NT_SUCCESS(status))
 		//	break;
 
@@ -913,6 +927,7 @@ callouts_addFilters()
 	if (!NT_SUCCESS(status))
 	{
 		FwpmTransactionAbort(g_engineHandle);
+		_Analysis_assume_lock_not_held_(g_engineHandle);
 		return status;
 	}
 
@@ -929,8 +944,6 @@ callouts_registerCallouts(
 	status = FwpmTransactionBegin(g_engineHandle, 0);
 	if (!NT_SUCCESS(status))
 	{
-		FwpmEngineClose(g_engineHandle);
-		g_engineHandle = NULL;
 		return status;
 	}
 
@@ -944,7 +957,7 @@ callouts_registerCallouts(
 			NULL,
 			&g_calloutGuid_flow_established_v4,
 			0,
-			g_calloutId_flow_established_v4
+			&g_calloutId_flow_established_v4
 		);
 
 		// FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6
@@ -955,7 +968,7 @@ callouts_registerCallouts(
 			NULL,
 			&g_calloutGuid_flow_established_v6,
 			0,
-			g_calloutId_flow_established_v6
+			&g_calloutId_flow_established_v6
 		);
 
 		// TCP Buffer v4
@@ -966,29 +979,29 @@ callouts_registerCallouts(
 
 		// UDP Buffer v6
 
-		//// FWPM_LAYER_INBOUND_MAC_FRAME_ETHERNET
-		//status = helper_callout_registerCallout(
-		//	deviceObject,
-		//	helper_callout_classFn_mac,
-		//	helper_callout_notifyFn_mac,
-		//	helper_callout_deleteFn_mac,
-		//	&g_calloutGuid_inbound_mac_etherent,
-		//	0,
-		//	g_calloutId_inbound_mac_etherent
-		//);
+		// FWPM_LAYER_INBOUND_MAC_FRAME_ETHERNET
+		status = helper_callout_registerCallout(
+			deviceObject,
+			helper_callout_classFn_mac,
+			helper_callout_notifyFn_mac,
+			helper_callout_deleteFn_mac,
+			&g_calloutGuid_inbound_mac_etherent,
+			0,
+			&g_calloutId_inbound_mac_etherent
+		);
 
-		//// FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET
-		//status = helper_callout_registerCallout(
-		//	deviceObject,
-		//	helper_callout_classFn_mac,
-		//	helper_callout_notifyFn_mac,
-		//	helper_callout_deleteFn_mac,
-		//	&g_calloutGuid_outbound_mac_etherent,
-		//	0,
-		//	g_calloutId_outbound_mac_etherent
-		//);
+		// FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET
+		status = helper_callout_registerCallout(
+			deviceObject,
+			helper_callout_classFn_mac,
+			helper_callout_notifyFn_mac,
+			helper_callout_deleteFn_mac,
+			&g_calloutGuid_outbound_mac_etherent,
+			0,
+			&g_calloutId_outbound_mac_etherent
+		);
 
-		//// FWPM_LAYER_ALE_CONNECT_REDIRECT_V4
+		// FWPM_LAYER_ALE_CONNECT_REDIRECT_V4
 		//status = helper_callout_registerCallout(
 		//	deviceObject,
 		//	helper_callout_classFn_connectredirect,
@@ -1009,7 +1022,7 @@ callouts_registerCallouts(
 		//	&g_calloutId_ale_connectredirect_v6
 		//);
 
-		//// FWPM_LAYER_INBOUND_MAC_FRAME_NATIVE
+		// FWPM_LAYER_INBOUND_MAC_FRAME_NATIVE
 		//status = helper_callout_registerCallout(
 		//	deviceObject,
 		//	NULL,
@@ -1033,17 +1046,14 @@ callouts_registerCallouts(
 
 		status = FwpmTransactionCommit(g_engineHandle);
 		if (!NT_SUCCESS(status))
-		{
 			break;
-		}
 
 	} while (FALSE);
 
 	if (!NT_SUCCESS(status))
 	{
 		FwpmTransactionAbort(g_engineHandle);
-		FwpmEngineClose(g_engineHandle);
-		g_engineHandle = NULL;
+		_Analysis_assume_lock_not_held_(g_engineHandle);
 	}
 
 	return status;
@@ -1058,7 +1068,7 @@ BOOLEAN callout_init(
 	FWPM_SESSION0 session;
 	RtlSecureZeroMemory(&session, sizeof(FWPM_SESSION0));
 
-	// ´´½¨GUID
+	// Create GUID
 	ExUuidCreate(&g_calloutGuid_flow_established_v4);
 	ExUuidCreate(&g_calloutGuid_flow_established_v6);
 	ExUuidCreate(&g_calloutGuid_inbound_mac_etherent);
@@ -1099,7 +1109,6 @@ BOOLEAN callout_init(
 	status = FwpmEngineOpen(NULL, RPC_C_AUTHN_WINNT, NULL, &session, &g_engineHandle);
 	if (!NT_SUCCESS(status))
 	{
-		// KDbgPrint(DPREFIX"FwpmEnginOpen - callout.c line: 34 error");
 		return status;
 	}
 
@@ -1129,6 +1138,7 @@ BOOLEAN callout_init(
 		{
 			break;
 		}
+
 		
 	} while (FALSE);
 
@@ -1144,25 +1154,35 @@ VOID callout_free()
 {
 	PNF_CALLOUT_FLOWESTABLISHED_INFO	pcalloutsflowCtx = NULL;
 	PNF_CALLOUT_MAC_INFO				pcalloutsDatalinkCtx = NULL;
-
+	
 	ExDeleteNPagedLookasideList(&g_callouts_flowCtxPacketsLAList);
 	ExDeleteNPagedLookasideList(&g_callouts_datalinkPacktsList);
 
 	// clean guid
-	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_flow_established_v4);
-	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_flow_established_v6);
-	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_inbound_mac_etherent);
-	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_outbound_mac_etherent);
-	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_ale_connectredirect_v4);
-	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_ale_connectredirect_v6);
-	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_inbound_mac_native);
-	FwpsCalloutUnregisterByKey(g_engineHandle, &g_calloutGuid_outbound_mac_native);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_flow_established_v4);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_flow_established_v6);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_inbound_mac_etherent);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_outbound_mac_etherent);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_ale_connectredirect_v4);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_ale_connectredirect_v6);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_inbound_mac_native);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_outbound_mac_native);
+
+	// clean id
+	FwpsCalloutUnregisterById(g_calloutId_flow_established_v4);
+	FwpsCalloutUnregisterById(g_calloutId_flow_established_v6);
+	FwpsCalloutUnregisterById(g_calloutId_inbound_mac_etherent);
+	FwpsCalloutUnregisterById(g_calloutId_outbound_mac_etherent);
+	FwpsCalloutUnregisterById(g_calloutId_inbound_mac_native);
+	FwpsCalloutUnregisterById(g_calloutId_outbound_mac_native);
+	FwpsCalloutUnregisterById(g_calloutId_ale_connectredirect_v4);
+	FwpsCalloutUnregisterById(g_calloutId_ale_connectredirect_v6);
 
 	// clean SubLayer
 	FwpmSubLayerDeleteByKey(g_engineHandle, &g_sublayerGuid);
 
 	// clean
-	FwpmProviderContextDeleteByKey(g_engineHandle,&g_providerGuid);
+	FwpmProviderContextDeleteByKey(g_engineHandle, &g_providerGuid);
 
 	if (g_engineHandle)
 	{

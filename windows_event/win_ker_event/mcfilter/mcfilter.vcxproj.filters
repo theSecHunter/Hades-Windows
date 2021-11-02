@@ -16,6 +16,9 @@
     <Filter Include="json">
       <UniqueIdentifier>{f4395451-c10f-4037-ada8-418be5414f46}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Arktools">
+      <UniqueIdentifier>{9f63d77f-b3d2-46eb-b893-9f2d2700685d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mcfilter.cpp">
@@ -36,14 +39,17 @@
     <ClCompile Include="devctrl.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="ArkSsdt.cpp">
-      <Filter>源文件</Filter>
+    <ClCompile Include="ArkDpcTimer.cpp">
+      <Filter>Arktools</Filter>
     </ClCompile>
     <ClCompile Include="ArkIdt.cpp">
-      <Filter>源文件</Filter>
+      <Filter>Arktools</Filter>
     </ClCompile>
-    <ClCompile Include="ArkDpcTimer.cpp">
-      <Filter>源文件</Filter>
+    <ClCompile Include="ArkSsdt.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkSysEnumNotify.cpp">
+      <Filter>Arktools</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -71,14 +77,17 @@
     <ClInclude Include="sysinfo.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ArkSsdt.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="ArkDpcTimer.h">
+      <Filter>Arktools</Filter>
     </ClInclude>
     <ClInclude Include="ArkIdt.h">
-      <Filter>头文件</Filter>
+      <Filter>Arktools</Filter>
     </ClInclude>
-    <ClInclude Include="ArkDpcTimer.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="ArkSsdt.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkSysEnumNotify.h">
+      <Filter>Arktools</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

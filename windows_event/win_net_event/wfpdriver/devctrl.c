@@ -36,7 +36,6 @@ typedef struct _NF_QUEUE_ENTRY
 } NF_QUEUE_ENTRY, * PNF_QUEUE_ENTRY;
 
 void devctrl_ioThread(IN PVOID StartContext);
-void devctrl_AlpcThread(IN PVOID StartContext);
 
 NTSTATUS devctrl_create(PIRP irp, PIO_STACK_LOCATION irpSp)
 {

@@ -79,11 +79,12 @@ FltObjectDereference
 	PVOID FltObject
 );
 
-VOID Enum_ProcessNotify();
-VOID Enum_ThreadNotify();
-VOID Enum_ResiterNotify();
-VOID Enum_ObCalloutNotify();
-VOID Enum_MinifilterNotify();
-VOID Enum_ImageModNotify();
+VOID Enum_ProcessNotify(PNOTIFY_INFO pNotify);
+VOID Enum_ThreadNotify(PNOTIFY_INFO pNotify);
+VOID Enum_ResiterNotify(PNOTIFY_INFO pNotify);
+VOID Enum_ObCalloutNotify(PNOTIFY_INFO pNotify);
+VOID Enum_ImageModNotify(PNOTIFY_INFO pNotify);
+VOID Enum_MinifilterNotify(PMINIFILTER_INFO pFltInfo);
+
 
 #endif // !_SYSENUMNOTIFY_H

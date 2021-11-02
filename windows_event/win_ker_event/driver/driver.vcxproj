@@ -42,7 +42,12 @@
     <ClCompile Include="sysdpctimer.c" />
     <ClCompile Include="sysenumnotify.c" />
     <ClCompile Include="sysfile.c" />
+    <ClCompile Include="sysfsd.c" />
+    <ClCompile Include="syshive.c" />
     <ClCompile Include="sysidt.c" />
+    <ClCompile Include="sysmousekeyboard.c" />
+    <ClCompile Include="sysnetwork.c" />
+    <ClCompile Include="sysprocess.c" />
     <ClCompile Include="syssession.c" />
     <ClCompile Include="sysssdt.c" />
     <ClCompile Include="syswmi.c" />
@@ -246,7 +251,12 @@
     <ClInclude Include="sysdpctimer.h" />
     <ClInclude Include="sysenumnotify.h" />
     <ClInclude Include="sysfile.h" />
+    <ClInclude Include="sysfsd.h" />
+    <ClInclude Include="syshive.h" />
     <ClInclude Include="sysidt.h" />
+    <ClInclude Include="sysmousekeyboard.h" />
+    <ClInclude Include="sysnetwork.h" />
+    <ClInclude Include="sysprocess.h" />
     <ClInclude Include="syssession.h" />
     <ClInclude Include="sysssdt.h" />
     <ClInclude Include="syswmi.h" />
