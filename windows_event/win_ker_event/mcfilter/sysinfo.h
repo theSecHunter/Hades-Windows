@@ -175,6 +175,7 @@ enum AnRootkitId
     NF_OBJ_ID,                      // 6
     NF_IRP_ID,                      // 7
     NF_FSD_ID,                      // 8
+    NF_MOUSEKEYBOARD_ID,            // 9
     NF_EXIT = 100       
 };
 

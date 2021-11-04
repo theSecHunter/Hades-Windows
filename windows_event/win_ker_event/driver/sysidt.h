@@ -43,7 +43,7 @@ typedef struct _IDTINFO
 	ULONGLONG		idt_isrmemaddr;
 }IDTINFO, * PIDTINFO;
 
-int Idt_Init();
-int Idt_GetTableInfo(IDTINFO* MemBuffer);
+int nf_IdtInit();
+int nf_GetIdtTableInfo(IDTINFO* MemBuffer);
 
 #endif // !_SYSIDT_H

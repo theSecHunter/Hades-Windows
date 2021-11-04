@@ -20,7 +20,7 @@ ULONG64 Idt_GetAddr(PIDT_ENTRY IdtBaseAddr, UCHAR Index)
 	return ret;
 }
 
-int Idt_Init()
+int nf_IdtInit()
 {
 	RtlSecureZeroMemory(&g_idtr, sizeof(IDTR));
     // KeSetSystemAffinityThread(1);
@@ -35,7 +35,7 @@ int Idt_Init()
 		return -1;
 }
 
-int Idt_GetTableInfo(IDTINFO* MemBuffer)
+int nf_GetIdtTableInfo(IDTINFO* MemBuffer)
 {
 	if ((g_idtInitflag == FALSE) &&
 		(g_idtr.limit <= 0))

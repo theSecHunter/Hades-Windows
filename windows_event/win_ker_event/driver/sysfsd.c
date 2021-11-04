@@ -1,28 +1,14 @@
 #include "public.h"
 #include "sysfsd.h"
 
-extern POBJECT_TYPE* IoDriverObjectType;
-
-NTSTATUS
-ObReferenceObjectByName(
-	__in PUNICODE_STRING ObjectName,
-	__in ULONG Attributes,
-	__in_opt PACCESS_STATE AccessState,
-	__in_opt ACCESS_MASK DesiredAccess,
-	__in POBJECT_TYPE ObjectType,
-	__in KPROCESSOR_MODE AccessMode,
-	__inout_opt PVOID ParseContext,
-	__out PVOID* Object
-);
-
 PDRIVER_OBJECT  g_fatdriverObject;
 PDRIVER_OBJECT  g_ntfsdriverObject;
 static NTSTATUS ob1 = STATUS_UNSUCCESSFUL, ob2 = STATUS_UNSUCCESSFUL;
 
 int nf_fsdinit()
 {
-	static UNICODE_STRING fatsysName;
-	static UNICODE_STRING ntfssysName;
+	UNICODE_STRING fatsysName;
+	UNICODE_STRING ntfssysName;
 
 	RtlInitUnicodeString(&fatsysName, L"\\FileSystem\\FastFat");
 	RtlInitUnicodeString(&ntfssysName, L"\\FileSystem\\Ntfs");
@@ -60,20 +46,24 @@ int nf_GetfsdData(ULONGLONG* pBuffer)
 	if (!NT_SUCCESS(ob1) || !NT_SUCCESS(ob2))
 		return -1;
 
-	int i = 0;
-	int index = 0;
+	int i = 0, index = 0;
 
-	for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)
+	if (g_fatdriverObject)
 	{
-		pBuffer[index] = g_fatdriverObject->MajorFunction[i];
-		index++;
+		for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)
+		{
+			pBuffer[index] = g_fatdriverObject->MajorFunction[i];
+			index++;
+		}
 	}
 
-
-	for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)
+	if (g_ntfsdriverObject)
 	{
-		pBuffer[index] = g_ntfsdriverObject->MajorFunction[i];
-		index++;
+		for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)
+		{
+			pBuffer[index] = g_ntfsdriverObject->MajorFunction[i];
+			index++;
+		}
 	}
 
 	return 1;
@@ -95,4 +85,6 @@ int nf_fsdfree()
 		ObDereferenceObject(g_ntfsdriverObject);
 		g_ntfsdriverObject = NULL;
 	}
+
+	return 1;
 }

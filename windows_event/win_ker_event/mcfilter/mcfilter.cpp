@@ -17,6 +17,8 @@
 #include "ArkSsdt.h"
 #include "ArkIdt.h"
 #include "ArkDpcTimer.h"
+#include "ArkFsd.h"
+#include "ArkMouseKeyBoard.h"
 
 using namespace std;
 
@@ -241,12 +243,14 @@ class EventHandler : public NF_EventHandler
 	}
 };
 
-static DevctrlIoct devobj;
-static EventHandler eventobj;
+static DevctrlIoct			devobj;
+static EventHandler			eventobj;
 
-static ArkSsdt			g_ssdtobj;
-static ArkIdt			g_idtobj;
-static ArkDpcTimer		g_dpcobj;
+static ArkSsdt				g_ssdtobj;
+static ArkIdt				g_idtobj;
+static ArkDpcTimer			g_dpcobj;
+static ArkFsd				g_fsdobj;
+static ArkMouseKeyBoard		g_mousekeyboardobj;
 
 int main(int argc, char* argv[])
 {
@@ -326,8 +330,6 @@ int main(int argc, char* argv[])
 				// Get Sys Current Mem Ssdt Info
 				g_ssdtobj.nf_GetSysCurrentSsdtData();
 				OutputDebugString(L"Init Ssdt Success!");
-				// Get Sys DiskFile Ssdt Info
-
 				break;
 			}
 			OutputDebugString(L"Init Ssdt Failuer!");
@@ -344,6 +346,16 @@ int main(int argc, char* argv[])
 		case NF_DPC_ID:
 		{
 			g_dpcobj.nf_GetDpcTimerData();
+		}
+		break;
+		case NF_FSD_ID:
+		{
+			g_fsdobj.nf_GetFsdInfo();
+		}
+		break;
+		case NF_MOUSEKEYBOARD_ID:
+		{
+			g_mousekeyboardobj.nf_GetMouseKeyInfoData();
 		}
 		break;
 		case NF_SYSCALLBACK_ID:

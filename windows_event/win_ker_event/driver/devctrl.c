@@ -13,6 +13,7 @@
 #include "sysdpctimer.h"
 #include "sysenumnotify.h"
 #include "sysfsd.h"
+#include "sysmousekeyboard.h"
 
 #include <ntddk.h>
 
@@ -143,7 +144,7 @@ NTSTATUS devctrl_InitIdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LO
 		if (!pOutBuffer && (outputBufferLength < sizeof(DWORD)))
 			break;
 
-		if (Idt_Init())
+		if (nf_IdtInit())
 		{
 			DWORD flag = 1;
 			RtlCopyMemory(pOutBuffer, &flag, sizeof(DWORD));
@@ -186,7 +187,7 @@ NTSTATUS devctrl_GetSysIdtInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_
 		if (!pOutBuffer && (outputBufferLength < (sizeof(IDTINFO) * 0x100)))
 			break;
 
-		if (!Idt_GetTableInfo(pOutBuffer))
+		if (!nf_GetIdtTableInfo(pOutBuffer))
 			break;
 
 		irp->IoStatus.Status = STATUS_SUCCESS;
@@ -309,7 +310,45 @@ NTSTATUS devctrl_GetSysFsdInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_UNSUCCESSFUL;
 }
+NTSTATUS devctrl_GetSysMouseKeyBoardInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
 
+	do {
+
+		if (!pOutBuffer)
+		{
+			pOutBuffer = irp->UserBuffer;
+		}
+		if (MmIsAddressValid(pOutBuffer) == FALSE)
+			break;
+
+		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+		if (!pOutBuffer && (outputBufferLength < 0x200))
+			break;
+		if (nf_mousKeyboardInit())
+		{
+			nf_GetmousKeyboardInfoData(pOutBuffer);
+			nf_mouskeyboardfree();
+		}
+		else
+			break;
+
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = outputBufferLength;
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_UNSUCCESSFUL;
+
+}
 
 void devctrl_freeSharedMemory(PSHARED_MEMORY pSharedMemory)
 {
@@ -760,6 +799,9 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 
 		case CTL_DEVCTRL_ARK_GETSYSFSDDATA:
 			return devctrl_GetSysFsdInfo(DeviceObject, irp, irpSp);
+
+		case CTL_DEVCTRL_ARK_GETSYSMOUSEKEYBOARDDATA:
+			return devctrl_GetSysMouseKeyBoardInfo(DeviceObject, irp, irpSp);
 		}
 		break;
 	default:
