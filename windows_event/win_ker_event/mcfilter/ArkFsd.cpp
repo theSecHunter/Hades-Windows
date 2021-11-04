@@ -26,7 +26,7 @@ bool ArkFsd::nf_GetFsdInfo()
 	DWORD	dwSize = 0;
 	char*	outBuf = NULL;
 	bool	status = false;
-	const DWORD Fsdinfosize = sizeof(ULONGLONG) * 0x1d * 2 + 1;
+	const DWORD Fsdinfosize = sizeof(ULONGLONG) * 0x1b * 2 + 1;
 	outBuf = new char[Fsdinfosize];
 	if (!outBuf)
 		return false;
@@ -57,14 +57,14 @@ bool ArkFsd::nf_GetFsdInfo()
 			break;
 		}
 		cout << "FastFat MjFuction Start" << endl;
-		for (i = 0; i < 0x1d; ++i)
+		for (i = 0; i < 0x1b; ++i)
 		{
 			cout << hex << "Mj_Id: " << i << " - MjAddr: " << MjAddrArry[index] << endl;
 			index++;
 		}
 		cout << "FastFat MjFuction End" << endl;
 		cout << "Ntfs MjFuction Start" << endl;
-		for (i = 0; i < 0x1d; ++i) 
+		for (i = 0; i < 0x1b; ++i)
 		{
 			cout << hex << "Mj_Id: " << i << " - MjAddr: " << MjAddrArry[index] << endl;
 			index++;

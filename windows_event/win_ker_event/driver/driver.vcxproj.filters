@@ -38,7 +38,7 @@
     <ClCompile Include="sysenumnotify.c">
       <Filter>sysarktools</Filter>
     </ClCompile>
-    <ClCompile Include="sysprocess.c">
+    <ClCompile Include="sysprocesstree.c">
       <Filter>sysarktools</Filter>
     </ClCompile>
     <ClCompile Include="sysnetwork.c">
@@ -96,7 +96,7 @@
       <Filter>sysarktools</Filter>
     </ClInclude>
     <ClInclude Include="util.h" />
-    <ClInclude Include="sysprocess.h">
+    <ClInclude Include="sysprocesstree.h">
       <Filter>sysarktools</Filter>
     </ClInclude>
     <ClInclude Include="sysnetwork.h">

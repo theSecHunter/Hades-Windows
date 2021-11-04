@@ -88,9 +88,10 @@ int nf_GetmousKeyboardInfoData(ULONGLONG * pBuffer)
 	}
 	else
 	{
+
 		for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)
 		{
-			pBuffer[index] = 0;
+			pBuffer[index] = (ULONGLONG)0;
 			index++;
 		}
 	}

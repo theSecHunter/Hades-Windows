@@ -288,7 +288,7 @@ NTSTATUS devctrl_GetSysFsdInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_
 
 		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
 
-		if (!pOutBuffer && (outputBufferLength < 0x1B0))
+		if (!pOutBuffer && (outputBufferLength < 0x1b * sizeof(ULONGLONG)))
 			break;
 
 		if (nf_fsdinit())
@@ -326,8 +326,9 @@ NTSTATUS devctrl_GetSysMouseKeyBoardInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, 
 
 		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
 
-		if (!pOutBuffer && (outputBufferLength < 0x200))
+		if (!pOutBuffer && (outputBufferLength < 0x1b * sizeof(ULONGLONG)))
 			break;
+
 		if (nf_mousKeyboardInit())
 		{
 			nf_GetmousKeyboardInfoData(pOutBuffer);

@@ -47,7 +47,7 @@
     <ClCompile Include="sysidt.c" />
     <ClCompile Include="sysmousekeyboard.c" />
     <ClCompile Include="sysnetwork.c" />
-    <ClCompile Include="sysprocess.c" />
+    <ClCompile Include="sysprocesstree.c" />
     <ClCompile Include="syssession.c" />
     <ClCompile Include="sysssdt.c" />
     <ClCompile Include="syswmi.c" />
@@ -256,7 +256,7 @@
     <ClInclude Include="sysidt.h" />
     <ClInclude Include="sysmousekeyboard.h" />
     <ClInclude Include="sysnetwork.h" />
-    <ClInclude Include="sysprocess.h" />
+    <ClInclude Include="sysprocesstree.h" />
     <ClInclude Include="syssession.h" />
     <ClInclude Include="sysssdt.h" />
     <ClInclude Include="syswmi.h" />
