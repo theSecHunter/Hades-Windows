@@ -12,6 +12,7 @@
 #include "sysidt.h"
 #include "sysdpctimer.h"
 #include "sysenumnotify.h"
+#include "sysfsd.h"
 
 #include <ntddk.h>
 
@@ -259,6 +260,44 @@ NTSTATUS devctrl_GetSysNotify(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_L
 		Enum_ImageModNotify((ULONG64)pOutBuffer + (ULONG64)(sizeof(PNOTIFY_INFO) * 72));
 		// xxxxx((ULONG64)pOutBuffer + (ULONG64)(sizeof(PNOTIFY_INFO) * 80));
 
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = outputBufferLength;
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_UNSUCCESSFUL;
+}
+NTSTATUS devctrl_GetSysFsdInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+
+	do {
+
+		if (!pOutBuffer)
+		{
+			pOutBuffer = irp->UserBuffer;
+		}
+		if (MmIsAddressValid(pOutBuffer) == FALSE)
+			break;
+
+		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+		if (!pOutBuffer && (outputBufferLength < 0x1B0))
+			break;
+
+		if (nf_fsdinit())
+		{
+			nf_GetfsdData(pOutBuffer);
+			nf_fsdfree();
+		}
+		else
+			break;
+		
 		irp->IoStatus.Status = STATUS_SUCCESS;
 		irp->IoStatus.Information = outputBufferLength;
 		IoCompleteRequest(irp, IO_NO_INCREMENT);
@@ -718,6 +757,9 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 			return devctrl_GetDpcTimerInfo(DeviceObject, irp, irpSp);
 		case CTL_DEVCTRL_ARK_GETSYSENUMNOTIFYDATA:
 			return devctrl_GetSysNotify(DeviceObject, irp, irpSp);
+
+		case CTL_DEVCTRL_ARK_GETSYSFSDDATA:
+			return devctrl_GetSysFsdInfo(DeviceObject, irp, irpSp);
 		}
 		break;
 	default:

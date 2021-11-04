@@ -55,6 +55,7 @@ bool ArkIdt::nf_GetIdtData()
 	DWORD inSize = 0;
 	DWORD dwSize = 0;
 	char* outBuf = NULL;
+	bool  status = false;
 	const DWORD idtinfosize = sizeof(IDTINFO) * 0x100;
 	outBuf = new char[idtinfosize];
 	if (!outBuf)
@@ -95,17 +96,17 @@ bool ArkIdt::nf_GetIdtData()
 				cout << hex << "Index: " << idtinfo[i].idt_id << " - IdtAddr: " << idtinfo[i].idt_isrmemaddr << endl;
 			}
 			cout << "SystemCurrent Idt End:" << endl;
-		}
 
-		if (outBuf)
-		{
-			delete outBuf;
-			outBuf = NULL;
+			status = true;
 		}
-
-		return true;
 
 	} while (false);
 
-	return false;
+	if (outBuf)
+	{
+		delete[] outBuf;
+		outBuf = NULL;
+	}
+
+	return status;
 }

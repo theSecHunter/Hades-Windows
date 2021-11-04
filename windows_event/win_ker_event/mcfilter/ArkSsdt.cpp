@@ -55,9 +55,10 @@ bool ArkSsdt::nf_init()
 
 bool ArkSsdt::nf_GetSysCurrentSsdtData()
 {
-	DWORD inSize = 0;
-	DWORD dwSize = 0;
-	char* outBuf = NULL;
+	DWORD	inSize = 0;
+	DWORD	dwSize = 0;
+	char*	outBuf = NULL;
+	bool	status = false;
 	const DWORD ssdtinfosize = sizeof(SSDTINFO) * 0x200;
 	outBuf = new char[ssdtinfosize];
 	if (!outBuf)
@@ -74,6 +75,7 @@ bool ArkSsdt::nf_GetSysCurrentSsdtData()
 			dwSize)
 			)
 		{
+			status = false;
 			break;
 		}
 
@@ -83,7 +85,8 @@ bool ArkSsdt::nf_GetSysCurrentSsdtData()
 			if (!ssdtinfo)
 			{
 				OutputDebugString(L"Kernel Get Ssdt Failuer");
-				return false;
+				status = false;
+				break;
 			}
 
 			OutputDebugString(L"Get SsdtInfo Success");
@@ -98,17 +101,17 @@ bool ArkSsdt::nf_GetSysCurrentSsdtData()
 				cout << hex << "Index: " << ssdtinfo[i].ssdt_id << " - offset: " << ssdtinfo[i].sstd_memoffset << " - SsdtAddr: " << ssdtinfo[i].sstd_memaddr << endl;
 			}
 			cout << "SystemCurrent Ssdt End:" << endl;
-		}
 
-		if (outBuf)
-		{
-			delete outBuf;
-			outBuf = NULL;
+			status = true;
 		}
-
-		return true;
-			
+	
 	} while (false);
 
-	return false;
+	if (outBuf)
+	{
+		delete[] outBuf;
+		outBuf = NULL;
+	}
+
+	return status;
 }

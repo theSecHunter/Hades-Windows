@@ -32,6 +32,7 @@ bool ArkDpcTimer::nf_GetDpcTimerData()
 	DWORD inSize = 0;
 	DWORD dwSize = 0;
 	char* outBuf = NULL;
+	bool  status = false;
 	const DWORD DpcTimerinfosize = sizeof(DPC_TIMERINFO) * 0x200;
 	outBuf = new char[DpcTimerinfosize];
 	if (!outBuf)
@@ -53,7 +54,7 @@ bool ArkDpcTimer::nf_GetDpcTimerData()
 
 		DPC_TIMERINFO* dpcinfo = NULL;
 
-		if (dwSize > 0)
+		if (dwSize > sizeof(DPC_TIMERINFO))
 		{
 			dpcinfo = (DPC_TIMERINFO*)outBuf;
 			for (int i = 0; i < 0x100; ++i)
@@ -61,8 +62,17 @@ bool ArkDpcTimer::nf_GetDpcTimerData()
 				if(dpcinfo[i].dpc)
 					cout << hex << "index: " << i << " - dpc: " << dpcinfo[i].dpc << " - time: " << dpcinfo[i].period << " - timer: " << dpcinfo[i].timeroutine << endl;
 			}
+
+			status = true;
 		}
 
 	} while (FALSE);
 
+	if (outBuf)
+	{
+		delete[] outBuf;
+		outBuf = NULL;
+	}
+
+	return 1;
 }

@@ -40,9 +40,10 @@ ArkSysEnumNotify::~ArkSysEnumNotify()
 
 bool ArkSysEnumNotify::nf_GetSysNofityInfo()
 {
-	DWORD inSize = 0;
-	DWORD dwSize = 0;
-	char* outBuf = NULL;
+	DWORD	inSize = 0;
+	DWORD	dwSize = 0;
+	char*	outBuf = NULL;
+	bool	status = false;
 	const DWORD SysNotifyinfosize = sizeof(NOTIFY_INFO) * 0x100 + sizeof(MINIFILTER_INFO) * 1000 + 100;
 	outBuf = new char[SysNotifyinfosize];
 	if (!outBuf)
@@ -59,12 +60,25 @@ bool ArkSysEnumNotify::nf_GetSysNofityInfo()
 			dwSize)
 			)
 		{
+			status = false;
 			break;
 		}
 
 		if (dwSize < SysNotifyinfosize)
-			return false;
+		{
+			status = false;
+			break;
+		}
 
+		status = true;
 
 	} while (false);
+
+	if (outBuf)
+	{
+		delete[] outBuf;
+		outBuf = NULL;
+	}
+
+	return status;
 }

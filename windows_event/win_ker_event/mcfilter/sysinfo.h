@@ -166,15 +166,16 @@ typedef struct _SESSIONINFO
 
 enum AnRootkitId
 {
-    NF_SSDT_ID,
-    NF_IDT_ID,
-    NF_GDT_ID,
-    NF_DPC_ID,
-    NF_SYSCALLBACK_ID,
-    NF_SYSPROCESSTREE_ID,
-    NF_OBJ_ID,
-    NF_IRP_ID,
-    NF_EXIT = 100
+    NF_SSDT_ID,                     // 0
+    NF_IDT_ID,                      // 1
+    NF_GDT_ID,                      // 2
+    NF_DPC_ID,                      // 3
+    NF_SYSCALLBACK_ID,              // 4
+    NF_SYSPROCESSTREE_ID,           // 5
+    NF_OBJ_ID,                      // 6
+    NF_IRP_ID,                      // 7
+    NF_FSD_ID,                      // 8
+    NF_EXIT = 100       
 };
 
 typedef struct _SSDTINFO
