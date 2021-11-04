@@ -35,8 +35,6 @@ typedef struct _NOTIFY_INFO
 	CHAR	ImgPath[MAX_PATH];
 }NOTIFY_INFO, * PNOTIFY_INFO;
 
-ULONG FltFilterOperationsOffset = 0;
-
 typedef struct _FLT_OPERATION_REGISTRATION
 {
 	UCHAR	MajorFunction;

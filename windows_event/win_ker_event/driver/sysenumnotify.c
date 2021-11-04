@@ -5,6 +5,8 @@
 #include "public.h"
 #include "sysenumnotify.h"
 
+ULONG FltFilterOperationsOffset = 0;
+
 VOID Enum_ProcessNotify(PNOTIFY_INFO pNotify)
 {
 	LONG			OffsetAddr = 0;
@@ -152,11 +154,11 @@ VOID Enum_ImageModNotify(PNOTIFY_INFO pNotify)
 			pNotify[count].CallbacksAddr = NotifyAddr;
 			pNotify[count].CallbackType = 0; // loadimage
 			memset(&Sysmodule, 0, sizeof(SYSTEM_MODULE));
-			if (NT_SUCCESS(getSystemImageInfoByAddress(NotifyAddr, &Sysmodule)) &&
-				strlen(Sysmodule.ImageName) < MAX_PATH)
-			{
-				RtlCopyMemory(pNotify[count].ImgPath, Sysmodule.ImageName, MAX_PATH);
-			}
+			//if (NT_SUCCESS(getSystemImageInfoByAddress(NotifyAddr, &Sysmodule)) &&
+			//	strlen(Sysmodule.ImageName) < MAX_PATH)
+			//{
+			//	RtlCopyMemory(pNotify[count].ImgPath, Sysmodule.ImageName, MAX_PATH);
+			//}
 
 			//DbgPrint("[LoadImage]%llx\n",NotifyAddr);
 			count++;
@@ -181,7 +183,6 @@ VOID Enum_MinifilterNotify(PMINIFILTER_INFO pFltInfo)
 	ULONG	DrvCount = 0;
 	PVOID	pCallBacks = NULL, pFilter = NULL;
 	SYSTEM_MODULE	SysModuel = { 0 };
-	PMINIFILTER_INFO pFltInfo = NULL;
 	PFLT_OPERATION_REGISTRATION pNode = NULL;
 
 
@@ -245,10 +246,10 @@ VOID Enum_MinifilterNotify(PMINIFILTER_INFO pFltInfo)
 						{
 							pFltInfo[IrpCount].PreFunc = pNode->PreOperation;
 
-							if (NT_SUCCESS(getSystemImageInfoByAddress(pFltInfo[IrpCount].PreFunc, &SysModuel)) && strlen(SysModuel.ImageName) < MAX_PATH)
+	/*						if (NT_SUCCESS(getSystemImageInfoByAddress(pFltInfo[IrpCount].PreFunc, &SysModuel)) && strlen(SysModuel.ImageName) < MAX_PATH)
 							{
 								RtlCopyMemory(pFltInfo[IrpCount].PreImgPath, SysModuel.ImageName, MAX_PATH);
-							}
+							}*/
 
 						}
 
@@ -257,10 +258,10 @@ VOID Enum_MinifilterNotify(PMINIFILTER_INFO pFltInfo)
 						if (pNode->PostOperation != 0)
 						{
 							pFltInfo[IrpCount].PostFunc = pNode->PostOperation;
-							if (NT_SUCCESS(getSystemImageInfoByAddress(pFltInfo[IrpCount].PostFunc, &SysModuel)) && strlen(SysModuel.ImageName) < MAX_PATH)
+				/*			if (NT_SUCCESS(getSystemImageInfoByAddress(pFltInfo[IrpCount].PostFunc, &SysModuel)) && strlen(SysModuel.ImageName) < MAX_PATH)
 							{
 								RtlCopyMemory(pFltInfo[IrpCount].PostImgPath, SysModuel.ImageName, MAX_PATH);
-							}
+							}*/
 						}
 
 						RtlZeroMemory(&SysModuel, sizeof(SYSTEM_MODULE));

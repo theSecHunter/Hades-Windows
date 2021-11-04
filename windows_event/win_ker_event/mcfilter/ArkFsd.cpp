@@ -50,17 +50,23 @@ bool ArkFsd::nf_GetFsdInfo()
 
 		int  i = 0;
 		int index = 0;
+		ULONGLONG* MjAddrArry = (ULONGLONG*)outBuf;
+		if (!MjAddrArry)
+		{
+			status = false;
+			break;
+		}
 		cout << "FastFat MjFuction Start" << endl;
 		for (i = 0; i < 0x1d; ++i)
 		{
-			cout << hex << "Mj_Id: " << i << " - MjAddr: " << endl;
+			cout << hex << "Mj_Id: " << i << " - MjAddr: " << MjAddrArry[index] << endl;
 			index++;
 		}
 		cout << "FastFat MjFuction End" << endl;
 		cout << "Ntfs MjFuction Start" << endl;
 		for (i = 0; i < 0x1d; ++i) 
 		{
-			cout << hex << "Mj_Id: " << i << " - MjAddr: " << endl;
+			cout << hex << "Mj_Id: " << i << " - MjAddr: " << MjAddrArry[index] << endl;
 			index++;
 		}
 		cout << "Ntfs MjFuction End" << endl;

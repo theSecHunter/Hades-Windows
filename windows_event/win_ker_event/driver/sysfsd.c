@@ -15,8 +15,9 @@ ObReferenceObjectByName(
 	__out PVOID* Object
 );
 
-static PDRIVER_OBJECT  g_fatdriverObject = NULL;
-static PDRIVER_OBJECT  g_ntfsdriverObject = NULL;
+PDRIVER_OBJECT  g_fatdriverObject;
+PDRIVER_OBJECT  g_ntfsdriverObject;
+static NTSTATUS ob1 = STATUS_UNSUCCESSFUL, ob2 = STATUS_UNSUCCESSFUL;
 
 int nf_fsdinit()
 {
@@ -26,18 +27,18 @@ int nf_fsdinit()
 	RtlInitUnicodeString(&fatsysName, L"\\FileSystem\\FastFat");
 	RtlInitUnicodeString(&ntfssysName, L"\\FileSystem\\Ntfs");
 
-	ObReferenceObjectByName(
-		&fatsysName, 
+	ob1 = ObReferenceObjectByName(
+		&fatsysName,
 		OBJ_CASE_INSENSITIVE,
 		NULL,
 		FILE_ALL_ACCESS,
 		*IoDriverObjectType,
 		KernelMode,
 		NULL,
-		g_fatdriverObject
-		);
+		(PVOID*)&g_fatdriverObject
+	);
 
-	ObReferenceObjectByName(
+	ob2 = ObReferenceObjectByName(
 		&ntfssysName,
 		OBJ_CASE_INSENSITIVE,
 		NULL,
@@ -45,10 +46,10 @@ int nf_fsdinit()
 		*IoDriverObjectType,
 		KernelMode,
 		NULL,
-		g_ntfsdriverObject
+		(PVOID*)&g_ntfsdriverObject
 	);
 
-	if (g_fatdriverObject == NULL || g_ntfsdriverObject == NULL)
+	if (!NT_SUCCESS(ob1) || !NT_SUCCESS(ob2))
 		return -1;
 
 	return 1;
@@ -56,7 +57,7 @@ int nf_fsdinit()
 
 int nf_GetfsdData(ULONGLONG* pBuffer)
 {
-	if (g_fatdriverObject == NULL || g_ntfsdriverObject == NULL)
+	if (!NT_SUCCESS(ob1) || !NT_SUCCESS(ob2))
 		return -1;
 
 	int i = 0;
@@ -80,6 +81,9 @@ int nf_GetfsdData(ULONGLONG* pBuffer)
 
 int nf_fsdfree()
 {
+	if (!NT_SUCCESS(ob1) || !NT_SUCCESS(ob2))
+		return -1;
+
 	if (g_fatdriverObject)
 	{
 		ObDereferenceObject(g_fatdriverObject);
@@ -91,5 +95,4 @@ int nf_fsdfree()
 		ObDereferenceObject(g_ntfsdriverObject);
 		g_ntfsdriverObject = NULL;
 	}
-
 }
