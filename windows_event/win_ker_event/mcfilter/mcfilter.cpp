@@ -19,6 +19,7 @@
 #include "ArkDpcTimer.h"
 #include "ArkFsd.h"
 #include "ArkMouseKeyBoard.h"
+#include "ArkNetwork.h"
 
 using namespace std;
 
@@ -251,6 +252,7 @@ static ArkIdt				g_idtobj;
 static ArkDpcTimer			g_dpcobj;
 static ArkFsd				g_fsdobj;
 static ArkMouseKeyBoard		g_mousekeyboardobj;
+static ArkNetwork			g_networkobj;
 
 int main(int argc, char* argv[])
 {
@@ -312,12 +314,12 @@ int main(int argc, char* argv[])
 
 	OutputDebugString(L"Init Driver Success. Json Rule Init Wait.......");
 
-	int id_s = 0;
+	int id_s = -1;
 	bool exit_id = false;
-	// 功能接口分发
-	// 后续功能号对应RPC接口
+
 	while (true)
 	{
+		
 		cout << " Please Input SysCheck Id: ";
 		cin >> id_s;
 
@@ -358,6 +360,11 @@ int main(int argc, char* argv[])
 			g_mousekeyboardobj.nf_GetMouseKeyInfoData();
 		}
 		break;
+		case NF_NETWORK_ID:
+		{
+			g_networkobj.nf_GetNteworkProcessInfo();
+		}
+		break;
 		case NF_SYSCALLBACK_ID:
 		{
 		
@@ -383,6 +390,8 @@ int main(int argc, char* argv[])
 			exit_id = true;
 		}
 		break;
+		default:
+			break;
 		}
 
 		if (exit_id)

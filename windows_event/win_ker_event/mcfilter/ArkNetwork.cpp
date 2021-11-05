@@ -1,49 +1,27 @@
-#ifndef _SYSNETWORK_H
-#define _SYSNETWORK_H
+#include <Windows.h>
+#include "ArkNetwork.h"
+#include "devctrl.h"
+#include <iostream>
 
-typedef struct _MIB_UDPROW_OWNER_PID
+using namespace std;
+
+#define CTL_DEVCTRL_ARK_GETSYNETWORKDDATA \
+	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x1060, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+static DevctrlIoct g_networkobj;
+
+typedef struct _NSI_STATUS_ENTRY
 {
-	DWORD           dwLocalAddr;
-	DWORD           dwLocalPort;
-	DWORD           dwOwningPid;
-} MIB_UDPROW_OWNER_PID, * PMIB_UDPROW_OWNER_PID;
-
-typedef struct _MIB_TCPROW_OWNER_PID
-{
-	DWORD       dwState;
-	DWORD       dwLocalAddr;
-	DWORD       dwLocalPort;
-	DWORD       dwRemoteAddr;
-	DWORD       dwRemotePort;
-	DWORD       dwOwningPid;
-} MIB_TCPROW_OWNER_PID, * PMIB_TCPROW_OWNER_PID;
-
-typedef struct _NSI_PARAM
-{
-	ULONG_PTR UnknownParam1;
-	SIZE_T UnknownParam2;
-	PVOID UnknownParam3;
-	SIZE_T UnknownParam4;
-	ULONG UnknownParam5;
-	ULONG UnknownParam6;
-	PVOID UnknownParam7;
-	SIZE_T UnknownParam8;
-	PVOID UnknownParam9;
-	SIZE_T UnknownParam10;
-	PVOID UnknownParam11;
-	SIZE_T UnknownParam12;
-	PVOID UnknownParam13;
-	SIZE_T UnknownParam14;
-	SIZE_T ConnCount;
-
-}NSI_PARAM, * PNSI_PARAM;
+	ULONG  dwState;
+	char bytesfill[8];
+}NSI_STATUS_ENTRY, * PNSI_STATUS_ENTRY;
 
 typedef struct _INTERNAL_TCP_TABLE_SUBENTRY
 {
-	char bytesfill0[2];
-	USHORT Port;
-	ULONG dwIP;
-	char bytesfill[20];
+	char	bytesfill0[2];
+	USHORT	Port;
+	ULONG	dwIP;
+	char	bytesfill[20];
 }INTERNAL_TCP_TABLE_SUBENTRY, * PINTERNAL_TCP_TABLE_SUBENTRY;
 
 typedef struct _INTERNAL_TCP_TABLE_ENTRY
@@ -51,12 +29,6 @@ typedef struct _INTERNAL_TCP_TABLE_ENTRY
 	INTERNAL_TCP_TABLE_SUBENTRY localEntry;
 	INTERNAL_TCP_TABLE_SUBENTRY remoteEntry;
 }INTERNAL_TCP_TABLE_ENTRY, * PINTERNAL_TCP_TABLE_ENTRY;
-
-typedef struct _NSI_STATUS_ENTRY
-{
-	ULONG  dwState;
-	char bytesfill[8];
-}NSI_STATUS_ENTRY, * PNSI_STATUS_ENTRY;
 
 typedef struct _NSI_PROCESSID_INFO
 {
@@ -99,6 +71,54 @@ typedef struct _SYSNETWORKINFONODE
 	SYSUDPINFO		sysudpinfo[65535];
 }SYSNETWORKINFONODE, * PSYSNETWORKINFONODE;
 
-int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer);
+ArkNetwork::ArkNetwork()
+{
 
-#endif // !_SYSNETWORK_H
+}
+
+ArkNetwork::~ArkNetwork()
+{
+
+}
+
+int ArkNetwork::nf_GetNteworkProcessInfo()
+{
+	DWORD	inSize = 0;
+	DWORD	dwSize = 0;
+	char*	outBuf = NULL;
+	bool	status = false;
+	const DWORD64 Networkinfosize = sizeof(SYSNETWORKINFONODE);
+	outBuf = new char[Networkinfosize];
+	if (!outBuf)
+		return false;
+	RtlSecureZeroMemory(outBuf, Networkinfosize);
+	do {
+
+		if (false == g_networkobj.devctrl_sendioct(
+			CTL_DEVCTRL_ARK_GETSYNETWORKDDATA,
+			NULL,
+			inSize,
+			outBuf,
+			Networkinfosize,
+			dwSize)
+			)
+		{
+			break;
+		}
+
+		if (dwSize <= 0)
+			break;
+
+
+		status = true;
+
+	} while (FALSE);
+
+	if (outBuf)
+	{
+		delete[] outBuf;
+		outBuf = NULL;
+	}
+
+	return status;
+}

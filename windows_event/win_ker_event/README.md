@@ -97,15 +97,15 @@ KeRegisterProcessorChangeCallback
 ###### MouseKeyBoard
 
 - 	RtlInitUnicodeString(&kbdysName, L"\\Driver\\Kbdclass");
-  	RtlInitUnicodeString(&i8042sysName, L"\\Driver\\i8042ptr");
-  	RtlInitUnicodeString(&mousysName, L"\\Driver\\Mouclass");
+    	RtlInitUnicodeString(&i8042sysName, L"\\Driver\\i8042ptr");
+    	RtlInitUnicodeString(&mousysName, L"\\Driver\\Mouclass");
 
 **See Code:  sysenumnotify.h sysenumnotify.c**
 
 ###### FSD
 
 - 	RtlInitUnicodeString(&fatsysName, L"\\FileSystem\\FastFat");
-  	RtlInitUnicodeString(&ntfssysName, L"\\FileSystem\\Ntfs");
+    	RtlInitUnicodeString(&ntfssysName, L"\\FileSystem\\Ntfs");
 
 **See Code:  sysmousekeyboard.h sysmousekeyboard.c**
 
@@ -149,6 +149,14 @@ KeRegisterProcessorChangeCallback
 **See Code: syshive.h syshive.c**
 
 ###### SysNetwork
+
+- xp:  tpc/udp查询IOCTL_TCP_QUERY_INFORMATION_EX，这里只是提供思路。
+- win7/win10: 获取Nsi.sys对象，发送IOCTL_NSI_GETALLPARAM，原因如下：
+
+```c++
+IPHLPAPI.DLL:
+GetExtendedTcpTable|GetExtendedUdpTable --> NsiAllocateAndGetTable --> NtDeviceIoControlFile("\\\\.\\Nsi.dll")
+```
 
 **See Code: sysnetwork.c sysnetwork.h**
 

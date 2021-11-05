@@ -14,6 +14,7 @@
 #include "sysenumnotify.h"
 #include "sysfsd.h"
 #include "sysmousekeyboard.h"
+#include "sysnetwork.h"
 
 #include <ntddk.h>
 
@@ -349,6 +350,39 @@ NTSTATUS devctrl_GetSysMouseKeyBoardInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, 
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_UNSUCCESSFUL;
 
+}
+NTSTATUS devctrl_GetNetworkProcessInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+
+	do {
+
+		if (!pOutBuffer)
+		{
+			pOutBuffer = irp->UserBuffer;
+		}
+		if (MmIsAddressValid(pOutBuffer) == FALSE)
+			break;
+
+		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+		if (!pOutBuffer == FALSE && (outputBufferLength < 0x1b * sizeof(ULONGLONG)))
+			break;
+
+		nf_GetNetworkIpProcessInfo(pOutBuffer);
+
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = outputBufferLength;
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_UNSUCCESSFUL;
 }
 
 void devctrl_freeSharedMemory(PSHARED_MEMORY pSharedMemory)
@@ -803,6 +837,9 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 
 		case CTL_DEVCTRL_ARK_GETSYSMOUSEKEYBOARDDATA:
 			return devctrl_GetSysMouseKeyBoardInfo(DeviceObject, irp, irpSp);
+
+		case CTL_DEVCTRL_ARK_GETSYNETWORKDDATA:
+			return devctrl_GetNetworkProcessInfo(DeviceObject, irp, irpSp);
 		}
 		break;
 	default:
