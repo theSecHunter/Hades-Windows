@@ -3,34 +3,100 @@
 
 #define IOCTL_NSI_GETALLPARAM 0x12001B
 
+NTSTATUS GetObjectByName(
+	HANDLE* pFileHandle,
+	OUT PFILE_OBJECT* FileObject,
+	IN WCHAR* DeviceName
+)
+{
+	UNICODE_STRING		deviceTCPUnicodeString;
+	OBJECT_ATTRIBUTES	TCP_object_attr;
+	NTSTATUS			status = STATUS_UNSUCCESSFUL;
+	IO_STATUS_BLOCK		IoStatus;
+	HANDLE				FileHandle = NULL;
+
+	if (!FileObject ||
+		!DeviceName)
+	{
+		return status;
+	}
+
+	RtlInitUnicodeString(&deviceTCPUnicodeString, DeviceName);
+
+	InitializeObjectAttributes(&TCP_object_attr,
+		&deviceTCPUnicodeString,
+		OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
+		0,
+		0
+	);
+
+	status = ZwCreateFile(
+		&FileHandle,
+		GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE,
+		&TCP_object_attr,
+		&IoStatus,
+		0,
+		FILE_ATTRIBUTE_NORMAL,
+		FILE_SHARE_READ,
+		FILE_OPEN,
+		0,
+		0,
+		0
+	);
+
+	if (!NT_SUCCESS(status))
+	{
+		KdPrint(("Failed to open"));
+		return STATUS_UNSUCCESSFUL;
+	}
+
+	 status = ObReferenceObjectByHandle(
+		 FileHandle,
+		 FILE_ANY_ACCESS,
+		 *IoFileObjectType,
+		 KernelMode,
+		 (PVOID*)FileObject,
+		 NULL
+	 );
+
+	if (pFileHandle)
+	{
+		*pFileHandle = FileHandle;
+	}
+
+	return status;
+}
+
 int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer)
 {
+	PIRP						pIrp = NULL;
+	KEVENT						Event;
 	NTSTATUS					statu = STATUS_UNSUCCESSFUL;
 	PDEVICE_OBJECT				pDeviceObject = NULL;
 	PFILE_OBJECT				FileObj = NULL;
-	KEVENT						Event;
-	PIRP						pIrp = NULL;
-	UNICODE_STRING				DeviceName;
-	PIO_STACK_LOCATION			StatusBlock = NULL;
+	UNICODE_STRING				NsiDeviceName;
+	IO_STATUS_BLOCK				StatusBlock;
+	PIO_STACK_LOCATION			StackLocation = NULL;
 	PINTERNAL_TCP_TABLE_ENTRY	pBuf1 = NULL;
 	PNSI_STATUS_ENTRY			pBuf2 = NULL;
 	PNSI_PROCESSID_INFO			pBuf3 = NULL;
 	PINTERNAL_UDP_TABLE_ENTRY	pBuf4 = NULL;
 	PNSI_PROCESSID_INFO			pBuf5 = NULL;
+	HANDLE						hFile = NULL;
+	NTSTATUS					ob1 = STATUS_UNSUCCESSFUL;
+
 
 	DbgBreakPoint();
 
 	KeInitializeEvent(&Event, NotificationEvent, FALSE);
-
-	RtlInitUnicodeString(&DeviceName, L"\\Device\\Nsi");
+	RtlInitUnicodeString(&NsiDeviceName, L"\\Device\\Nsi");
 
 	statu = IoGetDeviceObjectPointer(
-		&DeviceName,
+		&NsiDeviceName,
 		FILE_ALL_ACCESS,
 		&FileObj,
 		&pDeviceObject
 	);
-
 	if (!NT_SUCCESS(statu))
 		return -1;
 
@@ -67,9 +133,9 @@ int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer)
 			IOCTL_NSI_GETALLPARAM,
 			pDeviceObject,
 			&paramTcp,
-			0x70,
+			sizeof(NSI_PARAM),
 			&paramTcp,
-			0x70,
+			sizeof(NSI_PARAM),
 			FALSE,
 			&Event,
 			&StatusBlock
@@ -81,16 +147,21 @@ int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer)
 			break;
 		}
 
-
-		StatusBlock = IoGetNextIrpStackLocation(pIrp);
-		StatusBlock->FileObject = FileObj;
-		StatusBlock->DeviceObject = pDeviceObject;
+		StackLocation = IoGetNextIrpStackLocation(pIrp);
+		StackLocation->FileObject = FileObj;
+		StackLocation->DeviceObject = pDeviceObject;
 		pIrp->RequestorMode = KernelMode;
 
 		statu = IoCallDriver(pDeviceObject, pIrp);
 		if (STATUS_PENDING == statu)
 		{
-			statu = KeWaitForSingleObject(&Event, Executive, KernelMode, TRUE, 0);
+			statu = KeWaitForSingleObject(
+				&Event,
+				Executive,
+				KernelMode,
+				FALSE,
+				0
+			);
 		}
 		if (!NT_SUCCESS(statu))
 			break;
@@ -134,22 +205,22 @@ int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer)
 		if (!pIrp)
 			break;
 
-		StatusBlock = IoGetNextIrpStackLocation(pIrp);
-		StatusBlock->FileObject = FileObj;
-		StatusBlock->DeviceObject = pDeviceObject;
+		StackLocation = IoGetNextIrpStackLocation(pIrp);
+		StackLocation->FileObject = FileObj;
+		StackLocation->DeviceObject = pDeviceObject;
 		pIrp->RequestorMode = KernelMode;
 
 		statu = IoCallDriver(pDeviceObject, pIrp);
-		if (!NT_SUCCESS(statu))
-			break;
-
-		statu = KeWaitForSingleObject(
-			&Event,
-			Executive,
-			KernelMode,
-			FALSE,
-			0
-		);
+		if (STATUS_PENDING == statu)
+		{
+			statu = KeWaitForSingleObject(
+				&Event,
+				Executive,
+				KernelMode,
+				FALSE,
+				0
+			);
+		}
 		if (!NT_SUCCESS(statu))
 			break;
 
@@ -183,17 +254,22 @@ int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer)
 			break;
 		}
 
-		StatusBlock = IoGetNextIrpStackLocation(pIrp);
+		StackLocation = IoGetNextIrpStackLocation(pIrp);
+		StackLocation->FileObject = FileObj;
+		StackLocation->DeviceObject = pDeviceObject;
+		pIrp->RequestorMode = KernelMode;
+
 		statu = IoCallDriver(pDeviceObject, pIrp);
-		if (!NT_SUCCESS(statu))
-			break;
-		statu = KeWaitForSingleObject(
-			&Event,
-			Executive,
-			KernelMode,
-			FALSE,
-			0
-		);
+		if (STATUS_PENDING == statu)
+		{
+			statu = KeWaitForSingleObject(
+				&Event,
+				Executive,
+				KernelMode,
+				FALSE,
+				0
+			);
+		}
 		if (!NT_SUCCESS(statu))
 			break;
 
@@ -204,7 +280,7 @@ int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer)
 			break;
 
 		RtlSecureZeroMemory(&paramUdp, sizeof(NSI_PARAM));
-		paramUdp.UnknownParam3 = (ULONG_PTR)NPI_MS_UDP_MODULEID;
+		paramUdp.UnknownParam3 = (ULONG_PTR)&NPI_MS_UDP_MODULEID;
 		paramUdp.UnknownParam4 = 0x1;
 		paramUdp.UnknownParam5 = 0x100000001;
 		paramUdp.UnknownParam6 = (ULONG_PTR)pBuf4;
@@ -225,17 +301,22 @@ int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer)
 			&StatusBlock
 		);
 
-		StatusBlock = IoGetNextIrpStackLocation(pIrp);
+		StackLocation = IoGetNextIrpStackLocation(pIrp);
+		StackLocation->FileObject = FileObj;
+		StackLocation->DeviceObject = pDeviceObject;
+		pIrp->RequestorMode = KernelMode;
+
 		statu = IoCallDriver(pDeviceObject, pIrp);
-		if (!NT_SUCCESS(statu))
-			break;
-		statu = KeWaitForSingleObject(
-			&Event,
-			Executive,
-			KernelMode,
-			FALSE,
-			0
-		);
+		if (STATUS_PENDING == statu)
+		{
+			statu = KeWaitForSingleObject(
+				&Event,
+				Executive,
+				KernelMode,
+				FALSE,
+				0
+			);
+		}
 		if (!NT_SUCCESS(statu))
 			break;
 
@@ -281,11 +362,11 @@ int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer)
 		ObDereferenceObject(FileObj);
 		FileObj = NULL;
 	}
-	if (pDeviceObject)
-	{
-		ObDereferenceObject(pDeviceObject);
-		pDeviceObject = NULL;
-	}
+	//if (pDeviceObject)
+	//{
+	//	ObDereferenceObject(pDeviceObject);
+	//	pDeviceObject = NULL;
+	//}
 	if (!NT_SUCCESS(statu))
 	{
 		return -1;

@@ -18,24 +18,43 @@ typedef struct _MIB_TCPROW_OWNER_PID
 	DWORD       dwOwningPid;
 } MIB_TCPROW_OWNER_PID, * PMIB_TCPROW_OWNER_PID;
 
+// Win7 or Xp?
+//typedef struct _NSI_PARAM
+//{
+//	ULONG_PTR UnknownParam1;
+//	SIZE_T UnknownParam2;
+//	PVOID UnknownParam3;
+//	SIZE_T UnknownParam4;
+//	ULONG UnknownParam5;
+//	ULONG UnknownParam6;
+//	PVOID UnknownParam7;
+//	SIZE_T UnknownParam8;
+//	PVOID UnknownParam9;
+//	SIZE_T UnknownParam10;
+//	PVOID UnknownParam11;
+//	SIZE_T UnknownParam12;
+//	PVOID UnknownParam13;
+//	SIZE_T UnknownParam14;
+//	SIZE_T ConnCount;
+//}NSI_PARAM, * PNSI_PARAM;
+
+// Windows 10
 typedef struct _NSI_PARAM
 {
 	ULONG_PTR UnknownParam1;
-	SIZE_T UnknownParam2;
-	PVOID UnknownParam3;
-	SIZE_T UnknownParam4;
-	ULONG UnknownParam5;
-	ULONG UnknownParam6;
-	PVOID UnknownParam7;
-	SIZE_T UnknownParam8;
-	PVOID UnknownParam9;
-	SIZE_T UnknownParam10;
-	PVOID UnknownParam11;
-	SIZE_T UnknownParam12;
-	PVOID UnknownParam13;
-	SIZE_T UnknownParam14;
-	SIZE_T ConnCount;
-
+	ULONG_PTR UnknownParam2;
+	ULONG_PTR UnknownParam3;
+	ULONG_PTR UnknownParam4;
+	ULONG_PTR UnknownParam5;
+	ULONG_PTR UnknownParam6;
+	ULONG_PTR UnknownParam7;
+	ULONG_PTR UnknownParam8;
+	ULONG_PTR UnknownParam9;
+	ULONG_PTR UnknownParam10;
+	ULONG_PTR UnknownParam11;
+	ULONG_PTR UnknownParam12;
+	ULONG_PTR UnknownParam13;
+	ULONG_PTR ConnCount;
 }NSI_PARAM, * PNSI_PARAM;
 
 typedef struct _INTERNAL_TCP_TABLE_SUBENTRY
