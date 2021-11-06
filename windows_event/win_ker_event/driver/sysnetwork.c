@@ -85,9 +85,6 @@ int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer)
 	HANDLE						hFile = NULL;
 	NTSTATUS					ob1 = STATUS_UNSUCCESSFUL;
 
-
-	DbgBreakPoint();
-
 	KeInitializeEvent(&Event, NotificationEvent, FALSE);
 	RtlInitUnicodeString(&NsiDeviceName, L"\\Device\\Nsi");
 
@@ -321,7 +318,7 @@ int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer)
 			break;
 
 		// Udp
-		pBuffer->tcpcout = paramUdp.ConnCount;
+		pBuffer->udpcout = paramUdp.ConnCount;
 		for (ULONG i = 0; i < paramUdp.ConnCount; i++)
 		{
 			RtlCopyMemory(&pBuffer->sysudpinfo[i].processinfo, &pBuf5[i], sizeof(PNSI_PROCESSID_INFO));

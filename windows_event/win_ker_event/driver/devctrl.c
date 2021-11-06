@@ -367,7 +367,7 @@ NTSTATUS devctrl_GetNetworkProcessInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PI
 
 		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
 
-		if (!pOutBuffer == FALSE && (outputBufferLength < 0x1b * sizeof(ULONGLONG)))
+		if (!pOutBuffer == FALSE && (outputBufferLength <= 0))
 			break;
 
 		nf_GetNetworkIpProcessInfo(pOutBuffer);
