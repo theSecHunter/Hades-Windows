@@ -97,15 +97,19 @@ KeRegisterProcessorChangeCallback
 ###### MouseKeyBoard
 
 - 	RtlInitUnicodeString(&kbdysName, L"\\Driver\\Kbdclass");
-    	RtlInitUnicodeString(&i8042sysName, L"\\Driver\\i8042ptr");
-    	RtlInitUnicodeString(&mousysName, L"\\Driver\\Mouclass");
+- 	RtlInitUnicodeString(&i8042sysName, L"\\Driver\\i8042ptr");
+- 	RtlInitUnicodeString(&mousysName, L"\\Driver\\Mouclass");
+
+MajorFunction检测 -  非inlinehook检测。
 
 **See Code:  sysenumnotify.h sysenumnotify.c**
 
 ###### FSD
 
 - 	RtlInitUnicodeString(&fatsysName, L"\\FileSystem\\FastFat");
-    	RtlInitUnicodeString(&ntfssysName, L"\\FileSystem\\Ntfs");
+- 	RtlInitUnicodeString(&ntfssysName, L"\\FileSystem\\Ntfs");
+
+MajorFunction检测 -  非inlinehook检测。
 
 **See Code:  sysmousekeyboard.h sysmousekeyboard.c**
 
@@ -130,23 +134,37 @@ KeRegisterProcessorChangeCallback
 
 - ObCall_Notify
 
-- WFPCallout_Nofity
+- WFPCallout_Nofity(未实现)
 
 **See Code:  sysenumnotify.h sysenumnotify.c**
 
-###### Process_Tree:
+###### ProcessInfo:
 
-- process thread
-- process image
-- process memory
-- process scan inliehook - iathook
-- process dump
+- process thread - 输入PID - 查看进程线程
+- process image -  输入PID - 查看进程模块
+- process memory - 输入PID - 查看进程内存
+- process scan inliehook - iathook - 扫描进程应用层挂钩
+- process dump - 输入PID - dump进程内存
 
-**See Code: sysprocesstree.h  sysprocesstree.c**
+**See Code: sysprocessinfo.h  sysprocessinfo.c**
+
+###### ThreadInfo:
+
+- 枚举系统活跃线程
+- 枚举就绪队列数据
+
+**See Code: sysworkthreadinfo.h sysworkthreadinfo.c**
 
 ###### Hive
 
+- 指定注册表路径解析
+
 **See Code: syshive.h syshive.c**
+
+###### DriverInfo:
+
+- 枚举系统活跃驱动
+- Driver Dump
 
 ###### SysNetwork
 
@@ -160,3 +178,6 @@ GetExtendedTcpTable|GetExtendedUdpTable --> NsiAllocateAndGetTable --> NtDeviceI
 
 **See Code: sysnetwork.c sysnetwork.h**
 
+###### FILE：
+
+- ntfs查看固定目录和文件
