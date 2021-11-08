@@ -5,6 +5,7 @@
 #include "devctrl.h"
 #include "datalinkctx.h"
 #include "establishedctx.h"
+#include "tcpctx.h"
 #include "callouts.h"
 
 #define NF_TCP_PACKET_BUF_SIZE 8192
@@ -582,7 +583,6 @@ NTSTATUS devctrl_pushDataLinkCtxBuffer(int code)
 
 	return status;
 }
-
 NTSTATUS devctrl_pushFlowCtxBuffer(int code)
 {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -592,6 +592,35 @@ NTSTATUS devctrl_pushFlowCtxBuffer(int code)
 	switch (code)
 	{
 	case NF_FLOWCTX_PACKET:
+	{
+		pQuery = (PNF_QUEUE_ENTRY)ExAllocateFromNPagedLookasideList(&g_IoQueryList);
+		if (!pQuery)
+		{
+			status = STATUS_UNSUCCESSFUL;
+			break;
+		}
+		pQuery->code = code;
+		sl_lock(&g_sIolock, &lh);
+		InsertHeadList(&g_IoQueryHead, &pQuery->entry);
+		sl_unlock(&lh);
+	}
+	break;
+	default:
+		break;
+	}
+	// keSetEvent
+	KeSetEvent(&g_ioThreadEvent, IO_NO_INCREMENT, FALSE);
+	return status;
+}
+NTSTATUS devctrl_pushTcpCtxBuffer(int code)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	PNF_QUEUE_ENTRY pQuery = NULL;
+	KLOCK_QUEUE_HANDLE lh;
+	// Send to I/O(Read) Buffer
+	switch (code)
+	{
+	case NF_TCPREDIRECTCONNECT_PACKET:
 	{
 		pQuery = (PNF_QUEUE_ENTRY)ExAllocateFromNPagedLookasideList(&g_IoQueryList);
 		if (!pQuery)
@@ -677,7 +706,6 @@ NTSTATUS devtrl_popDataLinkData(UINT64* pOffset)
 	}
 	return status;
 }
-
 NTSTATUS devtrl_popFlowestablishedData(UINT64* pOffset)
 {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -741,6 +769,69 @@ NTSTATUS devtrl_popFlowestablishedData(UINT64* pOffset)
 
 	return status;
 }
+NTSTATUS devtrl_popTcpRedirectConnectData(UINT64* pOffset)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	PNF_TCPCTX_DATA tcpctxdata = NULL;
+	PNF_TCPCTX_BUFFER pEntry = NULL;
+	KLOCK_QUEUE_HANDLE lh;
+	PNF_DATA	pData;
+	UINT64		dataSize = 0;
+	ULONG		pPacketlens = 0;
+
+	tcpctxdata = tcpctx_get();
+	if (!tcpctxdata)
+		return STATUS_UNSUCCESSFUL;
+
+	sl_lock(&tcpctxdata->lock, &lh);
+
+	while (!IsListEmpty(&tcpctxdata->pendedPackets))
+	{
+		pEntry = (PNF_TCPCTX_BUFFER)RemoveHeadList(&tcpctxdata->pendedPackets);
+
+		pPacketlens = pEntry->dataLength;
+
+		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
+
+		if ((g_inBuf.bufferLength - *pOffset - 1) < dataSize)
+		{
+			status = STATUS_NO_MEMORY;
+			break;
+		}
+
+		pData = (PNF_DATA)((char*)g_inBuf.kernelVa + *pOffset);
+
+		pData->code = NF_TCPREDIRECTCONNECT_PACKET;
+		pData->id = 520;
+		pData->bufferSize = pEntry->dataLength;
+
+		if (pEntry->dataBuffer) {
+			memcpy(pData->buffer, pEntry->dataBuffer, pEntry->dataLength);
+		}
+
+		*pOffset += dataSize;
+
+		break;
+	}
+
+	sl_unlock(&lh);
+
+	if (pEntry)
+	{
+		if (NT_SUCCESS(status))
+		{
+			tcpctxctx_packfree(pEntry);
+		}
+		else
+		{
+			sl_lock(&tcpctxdata->lock, &lh);
+			InsertHeadList(&tcpctxdata->pendedPackets, &pEntry->pEntry);
+			sl_unlock(&lh);
+		}
+	}
+
+	return status;
+}
 
 UINT64 devctrl_fillBuffer()
 {
@@ -770,6 +861,11 @@ UINT64 devctrl_fillBuffer()
 			status = devtrl_popFlowestablishedData(&offset);
 		}
 		break;
+		case NF_TCPREDIRECTCONNECT_PACKET:
+		{
+			status = devtrl_popTcpRedirectConnectData(&offset);
+		}
+		break;
 		default:
 			ASSERT(0);
 			status = STATUS_SUCCESS;
@@ -789,7 +885,6 @@ UINT64 devctrl_fillBuffer()
 	sl_unlock(&lh);
 	return offset;
 }
-
 void devctrl_serviceReads()
 {
 	PIRP                irp = NULL;
@@ -848,7 +943,6 @@ void devctrl_serviceReads()
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 
 }
-
 void devctrl_ioThread(
 	IN PVOID StartContext
 )

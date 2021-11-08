@@ -1,8 +1,9 @@
 #include "public.h"
-#include "devctrl.h"
+#include "datalinkctx.h"
 
 #include <ws2def.h>
-#include "datalinkctx.h"
+
+#include "devctrl.h"
 
 static NPAGED_LOOKASIDE_LIST	g_dataLinkPacketsList;
 static NF_DATALINK_DATA			g_datalink_data;

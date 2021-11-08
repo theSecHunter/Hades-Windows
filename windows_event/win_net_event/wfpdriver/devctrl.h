@@ -22,5 +22,6 @@ NTSTATUS devctrl_setmonitor(int flag);
 NTSTATUS devtrl_popDataLinkData(UINT64* pOffset);
 NTSTATUS devctrl_pushDataLinkCtxBuffer(int code);
 NTSTATUS devctrl_pushFlowCtxBuffer(int code);
+NTSTATUS devctrl_pushTcpCtxBuffer(int code);
 
 #endif // ! _DEVCTRL_H

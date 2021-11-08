@@ -113,7 +113,7 @@ DriverEntry(
 
 	do 
 	{
-		// Init Driver 
+		// Init driver 
 		status = driver_init(driverObject, registryPath);
 		if (!NT_SUCCESS(status))
 		{

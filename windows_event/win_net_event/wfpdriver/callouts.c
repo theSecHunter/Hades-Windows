@@ -2,16 +2,8 @@
 #include "devctrl.h"
 #include "datalinkctx.h"
 #include "establishedctx.h"
+#include "tcpctx.h"
 #include "callouts.h"
-
-#include <fwpmk.h>
-
-#pragma warning(push)
-#pragma warning(disable:4201)       // unnamed struct/union
-
-#include <fwpsk.h>
-
-#pragma warning(pop)
 
 #include <ws2ipdef.h>
 #include <in6addr.h>
@@ -45,83 +37,6 @@ static GUID		g_sublayerGuid;
 static HANDLE	g_engineHandle = NULL;
 
 DWORD g_monitorflag = 0;
-
-/*
-* Callouts Buffer - Established Layer
-*/
-typedef struct _NF_CALLOUT_FLOWESTABLISHED_INFO
-{
-	ADDRESS_FAMILY addressFamily;
-#pragma warning(push)
-#pragma warning(disable: 4201) //NAMELESS_STRUCT_UNION
-	union
-	{
-		FWP_BYTE_ARRAY16 localAddr;
-		UINT32 ipv4LocalAddr;
-	};
-#pragma warning(pop)
-	UINT16 toLocalPort;
-
-	UINT8 protocol;
-	UINT64 flowId;
-	UINT16 layerId;
-	UINT32 calloutId;
-
-#pragma warning(push)
-#pragma warning(disable: 4201) //NAMELESS_STRUCT_UNION
-	union
-	{
-		FWP_BYTE_ARRAY16 RemoteAddr;
-		UINT32 ipv4toRemoteAddr;
-	};
-#pragma warning(pop)
-	UINT16 toRemotePort;
-
-	WCHAR  processPath[MAX_PATH * 2];
-	int	   processPathSize;
-	UINT64 processId;
-
-	LONG refCount;
-}NF_CALLOUT_FLOWESTABLISHED_INFO, * PNF_CALLOUT_FLOWESTABLISHED_INFO;
-
-/*
-* Callouts Buffer - DataLink Layer
-*/
-typedef struct _ETHERNET_HEADER_INFO
-{
-	unsigned char    pDestinationAddress[6];
-	unsigned char    pSourceAddress[6];
-	unsigned short  type;
-}ETHERNET_HEADER_INFO, * PETHERNET_HEADER_INFO;
-
-typedef struct _NF_CALLOUT_MAC_INFO
-{
-	int code;
-	ADDRESS_FAMILY addressFamily;
-#pragma warning(push)
-#pragma warning(disable: 4201) //NAMELESS_STRUCT_UNION
-	union
-	{
-		FWP_BYTE_ARRAY16 localAddr;
-		UINT32 ipv4LocalAddr;
-	};
-#pragma warning(pop)
-	UINT16 toLocalPort;
-
-	UINT8 protocol;
-
-#pragma warning(push)
-#pragma warning(disable: 4201) //NAMELESS_STRUCT_UNION
-	union
-	{
-		FWP_BYTE_ARRAY16 RemoteAddr;
-		UINT32 ipv4toRemoteAddr;
-	};
-#pragma warning(pop)
-	UINT16 toRemotePort;
-
-	ETHERNET_HEADER_INFO mac_info;
-}NF_CALLOUT_MAC_INFO, * PNF_CALLOUT_MAC_INFO;
 
 static NPAGED_LOOKASIDE_LIST	g_callouts_flowCtxPacketsLAList;
 static KSPIN_LOCK				g_callouts_flowspinlock;
@@ -497,6 +412,16 @@ VOID helper_callout_deleteFn_mac(
 	UNREFERENCED_PARAMETER(flowContext);
 }
 
+typedef
+NTSTATUS
+(NTAPI* t_FwpsPendClassify0)(
+	UINT64 classifyHandle,
+	UINT64 filterId,
+	UINT32 flags,
+	FWPS_CLASSIFY_OUT0* classifyOut
+	);
+
+static t_FwpsPendClassify0 _FwpsPendClassify0 = FwpsPendClassify0;
 VOID
 helper_callout_classFn_connectredirect(
 	IN const FWPS_INCOMING_VALUES* inFixedValues,
@@ -510,10 +435,6 @@ helper_callout_classFn_connectredirect(
 	if (g_monitorflag == 0)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
-		if (filter->flags & FWPS_FILTER_FLAG_CLEAR_ACTION_RIGHT)
-		{
-			classifyOut->flags &= ~FWPS_RIGHT_ACTION_WRITE;
-		}
 		return;
 	}
 
@@ -534,12 +455,12 @@ helper_callout_classFn_connectredirect(
 	KLOCK_QUEUE_HANDLE lh;
 	PNF_CALLOUT_FLOWESTABLISHED_INFO flowContextLocal = NULL;
 
-	// Connect V4
+	// 申请结构体保存数据
 	flowContextLocal = (PNF_CALLOUT_FLOWESTABLISHED_INFO)ExAllocateFromNPagedLookasideList(&g_callouts_flowCtxPacketsLAList);
 	if (flowContextLocal == NULL)
 	{
-		status = STATUS_NO_MEMORY;
-		goto Exit;
+		classifyOut->actionType = FWP_ACTION_PERMIT;
+		return;
 	}
 	RtlSecureZeroMemory(flowContextLocal, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
 
@@ -552,6 +473,9 @@ helper_callout_classFn_connectredirect(
 	flowContextLocal->layerId = FWPS_LAYER_ALE_CONNECT_REDIRECT_V4;
 	flowContextLocal->calloutId = &g_calloutGuid_ale_connectredirect_v4;
 
+	/*
+	*	保存IP端口和进程数据
+	*/
 	if (flowContextLocal->addressFamily == AF_INET)
 	{
 		flowContextLocal->ipv4LocalAddr =
@@ -595,34 +519,78 @@ helper_callout_classFn_connectredirect(
 			inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_REMOTE_PORT].value.uint16;
 	}
 
-
 	flowContextLocal->processId = inMetaValues->processId;
 	flowContextLocal->processPathSize = inMetaValues->processPath->size;
 	RtlCopyMemory(flowContextLocal->processPath, inMetaValues->processPath->data, inMetaValues->processPath->size);
 
-	establishedctx_pushflowestablishedctx(flowContextLocal, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
-	
-	classifyOut->actionType = FWP_ACTION_PERMIT;
-	if (filter->flags & FWPS_FILTER_FLAG_CLEAR_ACTION_RIGHT)
+	/*
+	* 保存注入所需要的数据
+	*/
+	memcpy(&flowContextLocal->redirectinfo.classifyOut, classifyOut, sizeof(FWPS_CLASSIFY_OUT));
+	flowContextLocal->transportEndpointHandle = inMetaValues->transportEndpointHandle;
+	flowContextLocal->redirectinfo.filterId = filter->filterId;
+
+#ifdef USE_NTDDI
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+	status = FwpsRedirectHandleCreate(&g_providerGuid, 0, &pTcpCtx->redirectInfo.redirectHandle);
+	if (status != STATUS_SUCCESS)
 	{
-		classifyOut->flags &= ~FWPS_RIGHT_ACTION_WRITE;
+		classifyOut->actionType = FWP_ACTION_PERMIT;
+		LogOutputEx(bGame, 0x400, DPREFIX"%d-connectRedirectCallout FwpsRedirectHandleCreate failed-%I64u,%x\n", inMetaValues->processId, pTcpCtx->id, status);
+		KdPrint((DPREFIX"callouts_connectRedirectCallout FwpsRedirectHandleCreate failed, status=%x\n", status));
+		break;
+	}
+#endif
+#endif
+
+	FwpsAcquireClassifyHandle((void*)classifyContext,
+		0,
+		&(flowContextLocal->redirectinfo.classifyHandle)
+	);
+	if (status != STATUS_SUCCESS)
+	{
+		classifyOut->actionType = FWP_ACTION_PERMIT;
+		goto Exit;
 	}
 
-Exit:
-	if (flowContextLocal)
+	status = _FwpsPendClassify0(flowContextLocal->redirectinfo.classifyHandle,
+		filter->filterId,
+		0,
+		&flowContextLocal->redirectinfo.classifyOut);
+	if (status != STATUS_SUCCESS)
 	{
-		sl_lock(&g_callouts_flowspinlock, &lh);
-		ExFreeToNPagedLookasideList(&g_callouts_flowCtxPacketsLAList, flowContextLocal);
-		flowContextLocal = NULL;
-		sl_unlock(&lh);
+		classifyOut->actionType = FWP_ACTION_PERMIT;
+		goto Exit;
 	}
 
+	// 设置为阻塞将该连接block
+	flowContextLocal->redirectinfo.isPended = TRUE;
+	classifyOut->actionType = FWP_ACTION_BLOCK;
+	classifyOut->rights &= ~FWPS_RIGHT_ACTION_WRITE;
+
+	// 插入保存
+	add_tcpHandle(flowContextLocal);
+	// 将数据发送r3
+	status = push_tcpRedirectinfo(flowContextLocal, sizeof(PNF_CALLOUT_FLOWESTABLISHED_INFO));
 	if (!NT_SUCCESS(status))
 	{
-		classifyOut->actionType = FWP_ACTION_BLOCK;
-		classifyOut->rights &= ~FWPS_RIGHT_ACTION_WRITE;
+		goto Exit;
 	}
+	return;
 
+Exit:
+
+	classifyOut->actionType = FWP_ACTION_PERMIT;
+	if (!NT_SUCCESS(status))
+	{
+		if (flowContextLocal)
+		{
+			sl_lock(&g_callouts_flowspinlock, &lh);
+			ExFreeToNPagedLookasideList(&g_callouts_flowCtxPacketsLAList, flowContextLocal);
+			flowContextLocal = NULL;
+			sl_unlock(&lh);
+		}
+	}
 }
 
 NTSTATUS
@@ -1002,25 +970,25 @@ callouts_registerCallouts(
 		);
 
 		// FWPM_LAYER_ALE_CONNECT_REDIRECT_V4
-		//status = helper_callout_registerCallout(
-		//	deviceObject,
-		//	helper_callout_classFn_connectredirect,
-		//	helper_callout_notifyFn_connectredirect,
-		//	NULL,
-		//	&g_calloutGuid_ale_connectredirect_v4,
-		//	0,
-		//	&g_calloutId_ale_connectredirect_v4
-		//);
+		status = helper_callout_registerCallout(
+			deviceObject,
+			helper_callout_classFn_connectredirect,
+			helper_callout_notifyFn_connectredirect,
+			NULL,
+			&g_calloutGuid_ale_connectredirect_v4,
+			0,
+			&g_calloutId_ale_connectredirect_v4
+		);
 
-		//status = helper_callout_registerCallout(
-		//	deviceObject,
-		//	helper_callout_classFn_connectredirect,
-		//	helper_callout_notifyFn_connectredirect,
-		//	NULL,
-		//	&g_calloutGuid_ale_connectredirect_v6,
-		//	0,
-		//	&g_calloutId_ale_connectredirect_v6
-		//);
+		status = helper_callout_registerCallout(
+			deviceObject,
+			helper_callout_classFn_connectredirect,
+			helper_callout_notifyFn_connectredirect,
+			NULL,
+			&g_calloutGuid_ale_connectredirect_v6,
+			0,
+			&g_calloutId_ale_connectredirect_v6
+		);
 
 		// FWPM_LAYER_INBOUND_MAC_FRAME_NATIVE
 		//status = helper_callout_registerCallout(
