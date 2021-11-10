@@ -20,6 +20,20 @@
 #include <ntifs.h>
 #include <ntstrsafe.h>
 
+#include <fwpmk.h>
+
+#pragma warning(push)
+#pragma warning(disable:4201)       // unnamed struct/union
+
+#include <fwpsk.h>
+
+#pragma warning(pop)
+
+#include <ws2ipdef.h>
+#include <in6addr.h>
+#include <ip2string.h>
+#include <stdlib.h>
+
 #undef ASSERT
 #define ASSERT(x)
 
@@ -69,7 +83,8 @@ extern DWORD g_monitorflag;
 enum _NF_DATA_CODE
 {
 	NF_DATALINK_PACKET = 1,
-	NF_FLOWCTX_PACKET
+	NF_FLOWCTX_PACKET,
+    NF_TCPREDIRECTCONNECT_PACKET
 }NF_DATA_CODE;
 
 typedef UNALIGNED struct _NF_DATA
@@ -174,7 +189,6 @@ typedef struct _IP_HEADER_V6_
     unsigned char    pSourceAddress[16];
     unsigned char    pDestinationAddress[16];
 } IP_HEADER_V6, * PIP_HEADER_V6;
-
 
 typedef struct _TCP_HEADER_
 {

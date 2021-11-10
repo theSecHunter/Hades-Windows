@@ -29,7 +29,6 @@ static BOOLEAN						g_shutdown = FALSE;
 
 static SHARED_MEMORY g_inBuf;
 static SHARED_MEMORY g_outBuf;
-
 typedef struct _NF_QUEUE_ENTRY
 {
 	LIST_ENTRY		entry;		// Linkage
@@ -37,7 +36,6 @@ typedef struct _NF_QUEUE_ENTRY
 } NF_QUEUE_ENTRY, * PNF_QUEUE_ENTRY;
 
 void devctrl_ioThread(IN PVOID StartContext);
-
 NTSTATUS devctrl_create(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -52,7 +50,6 @@ NTSTATUS devctrl_create(PIRP irp, PIO_STACK_LOCATION irpSp)
 
 	return status;
 }
-
 void devctrl_freeSharedMemory(PSHARED_MEMORY pSharedMemory)
 {
 	if (pSharedMemory->mdl)
@@ -78,7 +75,6 @@ void devctrl_freeSharedMemory(PSHARED_MEMORY pSharedMemory)
 		memset(pSharedMemory, 0, sizeof(SHARED_MEMORY));
 	}
 }
-
 NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 {
 	PMDL  mdl;
@@ -158,7 +154,6 @@ NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 
 	return STATUS_SUCCESS;
 }
-
 NTSTATUS devctrl_openMem(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	PVOID ioBuffer = NULL;
@@ -244,7 +239,6 @@ VOID devctrl_cancelRead(IN PDEVICE_OBJECT deviceObject, IN PIRP irp)
 	irp->IoStatus.Information = 0;
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 }
-
 NTSTATUS devctrl_read1(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -301,7 +295,6 @@ NTSTATUS devctrl_read1(PIRP irp, PIO_STACK_LOCATION irpSp)
 
 	return status;
 }
-
 NTSTATUS devctrl_read(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -317,6 +310,73 @@ NTSTATUS devctrl_read(PIRP irp, PIO_STACK_LOCATION irpSp)
 	return status;
 }
 
+ULONG devctrl_processTcpConnect(PNF_DATA pData)
+{
+	PTCPCTX pTcpCtx = NULL;
+	PNF_TCP_CONN_INFO pInfo;
+	NTSTATUS status = STATUS_SUCCESS;
+
+	pInfo = (PNF_TCP_CONN_INFO)pData->buffer;
+
+	if (!pInfo)
+		return 0;
+
+	pTcpCtx = tcpctx_find(pData->id);
+	if (!pTcpCtx)
+	{
+		return 0;
+	}
+
+	if (pTcpCtx->redirectInfo.isPended)
+	{
+		FWPS_CONNECT_REQUEST* pConnectRequest;
+		int addrLen = 0;
+
+		pTcpCtx->filteringFlag = pInfo->filteringFlag;
+
+		if (pTcpCtx->ip_family == AF_INET)
+		{
+			addrLen = sizeof(struct sockaddr_in);
+		}
+		else
+		{
+			addrLen = sizeof(struct sockaddr_in6);
+		}
+
+		if ((memcmp(pTcpCtx->remoteAddr, pInfo->remoteAddress, addrLen) != 0))
+		{
+			KdPrint((DPREFIX"devctrl_processTcpConnect[%I64u]: redirection\n", pData->id));
+
+			status = FwpsAcquireWritableLayerDataPointer(pTcpCtx->redirectInfo.classifyHandle,
+				pTcpCtx->redirectInfo.filterId,
+				0,
+				(PVOID*)&pConnectRequest,
+				&pTcpCtx->redirectInfo.classifyOut);
+			if (status == STATUS_SUCCESS)
+			{
+				memcpy(&pConnectRequest->remoteAddressAndPort, pInfo->remoteAddress, NF_MAX_ADDRESS_LENGTH);
+				pConnectRequest->localRedirectTargetPID = pInfo->processId;
+
+#ifdef USE_NTDDI
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+				pConnectRequest->localRedirectHandle = pTcpCtx->redirectInfo.redirectHandle;
+#endif
+#endif
+
+				FwpsApplyModifiedLayerData(pTcpCtx->redirectInfo.classifyHandle,
+					pConnectRequest,
+					0);
+			}
+		}
+
+		pTcpCtx->redirectInfo.classifyOut.actionType = FWP_ACTION_PERMIT;
+		tcpctx_purgeRedirectInfo(pTcpCtx);
+	}
+
+	tcpctx_release(pTcpCtx);
+
+	return sizeof(NF_DATA) - 1;
+}
 ULONG devctrl_processRequest(ULONG bufferSize)
 {
 	PNF_DATA pData = (PNF_DATA)g_outBuf.kernelVa;
@@ -328,6 +388,11 @@ ULONG devctrl_processRequest(ULONG bufferSize)
 
 	switch (pData->code)
 	{
+	case NF_TCPREDIRECTCONNECT_PACKET:
+	{
+		return devctrl_processTcpConnect(pData);
+	}
+	break;
 	default:
 		break;
 	}
@@ -353,7 +418,6 @@ NTSTATUS devctrl_write(PIRP irp, PIO_STACK_LOCATION irpSp)
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_SUCCESS;
 }
-
 NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -377,14 +441,12 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 
 	return status;
 }
-
 NTSTATUS devctrl_setmonitor(int flag)
 {
 	// …Ë÷√¥Ú”°±Í«©
 	g_monitorflag = flag;
 	return STATUS_SUCCESS;
 }
-
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 {
 	PIO_STACK_LOCATION irpSp;
@@ -488,7 +550,6 @@ NTSTATUS devctrl_init()
 
 	return status;
 }
-
 VOID devctrl_clean()
 {
 	PNF_QUEUE_ENTRY pQuery = NULL;
@@ -505,7 +566,6 @@ VOID devctrl_clean()
 	}
 	sl_unlock(&lh);
 }
-
 VOID devctrl_free()
 {
 	devctrl_clean();
@@ -530,7 +590,6 @@ VOID devctrl_free()
 
 	return STATUS_SUCCESS;
 }
-
 VOID devctrl_setShutdown()
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -539,7 +598,6 @@ VOID devctrl_setShutdown()
 	g_shutdown = TRUE;
 	sl_unlock(&lh);
 }
-
 BOOLEAN	devctrl_isShutdown()
 {
 	BOOLEAN		res;

@@ -152,13 +152,16 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="datalinkctx.h" />
     <ClInclude Include="devctrl.h" />
+    <ClInclude Include="establishedctx.h" />
     <ClInclude Include="eventQueue.h" />
     <ClInclude Include="nf_api.h" />
     <ClInclude Include="nfdriver.h" />
     <ClInclude Include="nfevents.h" />
     <ClInclude Include="ntbasic.h" />
     <ClInclude Include="sync.h" />
+    <ClInclude Include="tcpctx.h" />
     <ClInclude Include="threadpool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

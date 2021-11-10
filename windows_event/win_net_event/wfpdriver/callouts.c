@@ -44,6 +44,13 @@ static KSPIN_LOCK				g_callouts_flowspinlock;
 static NPAGED_LOOKASIDE_LIST	g_callouts_datalinkPacktsList;
 static KSPIN_LOCK				g_callouts_datalinkspinlock;
 
+typedef enum _NF_DIRECTION
+{
+	NF_D_IN = 1,		// Incoming TCP connection or UDP packet
+	NF_D_OUT = 2,		// Outgoing TCP connection or UDP packet
+	NF_D_BOTH = 3		// Any direction
+} NF_DIRECTION;
+
 #define NFSDK_SUBLAYER_NAME L"Dark Sublayer"
 #define NFSDK_RECV_SUBLAYER_NAME L"Dark Recv Sublayer"
 #define NFSDK_PROVIDER_NAME L"Dark Provider"
@@ -144,12 +151,6 @@ helper_callout_classFn_flowEstablished(
 	RtlCopyMemory(flowContextLocal->processPath, inMetaValues->processPath->data, inMetaValues->processPath->size);
 
 	establishedctx_pushflowestablishedctx(flowContextLocal, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
-	
-	classifyOut->actionType = FWP_ACTION_PERMIT;
-	if (filter->flags & FWPS_FILTER_FLAG_CLEAR_ACTION_RIGHT) 
-	{
-		classifyOut->flags &= ~FWPS_RIGHT_ACTION_WRITE;
-	}
 
 Exit:
 	if (flowContextLocal)
@@ -160,10 +161,10 @@ Exit:
 		sl_unlock(&lh);
 	}
 
-	if (!NT_SUCCESS(status))
+	classifyOut->actionType = FWP_ACTION_PERMIT;
+	if (filter->flags & FWPS_FILTER_FLAG_CLEAR_ACTION_RIGHT)
 	{
-		classifyOut->actionType = FWP_ACTION_BLOCK;
-		classifyOut->rights &= ~FWPS_RIGHT_ACTION_WRITE;
+		classifyOut->flags &= ~FWPS_RIGHT_ACTION_WRITE;
 	}
 }
 
@@ -206,10 +207,6 @@ helper_callout_classFn_mac(
 	if (g_monitorflag == 0)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
-		if (filter->flags & FWPS_FILTER_FLAG_CLEAR_ACTION_RIGHT)
-		{
-			classifyOut->flags &= ~FWPS_RIGHT_ACTION_WRITE;
-		}
 		return;
 	}
 
@@ -231,10 +228,6 @@ helper_callout_classFn_mac(
 	default:
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
-		if (filter->flags & FWPS_FILTER_FLAG_CLEAR_ACTION_RIGHT)
-		{
-			classifyOut->flags &= ~FWPS_RIGHT_ACTION_WRITE;
-		}
 		IsOutBound = 0;
 		return;
 	}
@@ -360,12 +353,6 @@ helper_callout_classFn_mac(
 	// push_data to datalink --> devctrl --> read I/O complate to r3
 	datalinkctx_pushdata(pdatalink_info, sizeof(NF_CALLOUT_MAC_INFO));
 
-	classifyOut->actionType = FWP_ACTION_PERMIT;
-	if (filter->flags & FWPS_FILTER_FLAG_CLEAR_ACTION_RIGHT)
-	{
-		classifyOut->flags &= ~FWPS_RIGHT_ACTION_WRITE;
-	}
-
 Exit:
 
 	if (pdatalink_info)
@@ -376,13 +363,7 @@ Exit:
 		sl_unlock(&lh);
 	}
 
-	if (!NT_SUCCESS(status))
-	{
-		classifyOut->actionType = FWP_ACTION_BLOCK;
-		classifyOut->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
-		classifyOut->rights &= ~FWPS_RIGHT_ACTION_WRITE;
-	}
-
+	classifyOut->actionType = FWP_ACTION_PERMIT;
 }
 
 NTSTATUS
@@ -438,8 +419,13 @@ helper_callout_classFn_connectredirect(
 		return;
 	}
 
+	/*
+		添加pid监控 和 上层代理本身过滤
+	*/
+
 	if ((classifyOut->rights & FWPS_RIGHT_ACTION_WRITE) == 0)
 	{
+		// classifyOut->actionType = FWP_ACTION_PERMIT;
 		return;
 	}
 
@@ -453,82 +439,150 @@ helper_callout_classFn_connectredirect(
 
 	NTSTATUS status = STATUS_SUCCESS;
 	KLOCK_QUEUE_HANDLE lh;
-	PNF_CALLOUT_FLOWESTABLISHED_INFO flowContextLocal = NULL;
+	PTCPCTX pTcpCtx = NULL;
 
 	// 申请结构体保存数据
-	flowContextLocal = (PNF_CALLOUT_FLOWESTABLISHED_INFO)ExAllocateFromNPagedLookasideList(&g_callouts_flowCtxPacketsLAList);
-	if (flowContextLocal == NULL)
+	pTcpCtx = tcpctxctx_packallocatectx();
+	if (pTcpCtx == NULL)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
 		return;
 	}
-	RtlSecureZeroMemory(flowContextLocal, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
+	RtlSecureZeroMemory(pTcpCtx, sizeof(TCPCTX));
+	if (inFixedValues->layerId == FWPS_LAYER_ALE_CONNECT_REDIRECT_V4)
+	{
+		struct sockaddr_in* pAddr;
 
-	flowContextLocal->refCount = 1;
-	// 家族协议
-	flowContextLocal->addressFamily =
-		(inFixedValues->layerId == FWPS_LAYER_ALE_CONNECT_REDIRECT_V4) ? AF_INET : AF_INET6;
+		pTcpCtx->layerId = FWPS_LAYER_STREAM_V4;
+		pTcpCtx->sendCalloutId = 0;
+		pTcpCtx->recvCalloutId =0;
+		pTcpCtx->recvProtCalloutId = 0;
 
-	flowContextLocal->flowId = inMetaValues->flowHandle;
-	flowContextLocal->layerId = FWPS_LAYER_ALE_CONNECT_REDIRECT_V4;
-	flowContextLocal->calloutId = &g_calloutGuid_ale_connectredirect_v4;
+		pTcpCtx->transportLayerIdOut = FWPS_LAYER_OUTBOUND_TRANSPORT_V4;
+		pTcpCtx->transportCalloutIdOut = 0;
+		pTcpCtx->transportLayerIdIn = FWPS_LAYER_INBOUND_TRANSPORT_V4;
+		pTcpCtx->transportCalloutIdIn = 0;
+
+		pTcpCtx->ipProto = inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_PROTOCOL].value.uint8;
+		pTcpCtx->ip_family = AF_INET;
+
+		pAddr = (struct sockaddr_in*)pTcpCtx->localAddr;
+		pAddr->sin_family = AF_INET;
+		pAddr->sin_addr.S_un.S_addr =
+			htonl(inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_LOCAL_ADDRESS].value.uint32);
+		pAddr->sin_port =
+			htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_LOCAL_PORT].value.uint16);
+
+		dbgPrintAddress(AF_INET, pAddr, "localAddr", pTcpCtx->id);
+
+		pAddr = (struct sockaddr_in*)pTcpCtx->remoteAddr;
+		pAddr->sin_family = AF_INET;
+		pAddr->sin_addr.S_un.S_addr =
+			htonl(inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_REMOTE_ADDRESS].value.uint32);
+		pAddr->sin_port =
+			htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_REMOTE_PORT].value.uint16);
+
+		dbgPrintAddress(AF_INET, pAddr, "remoteAddr", pTcpCtx->id);
+
+		pTcpCtx->direction = NF_D_OUT;
+
+		if (inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_ALE_APP_ID].value.byteBlob)
+		{
+			int offset, len;
+
+			len = inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_ALE_APP_ID].value.byteBlob->size;
+			if (len > sizeof(pTcpCtx->processName) - 2)
+			{
+				offset = len - (sizeof(pTcpCtx->processName) - 2);
+				len = sizeof(pTcpCtx->processName) - 2;
+			}
+			else
+			{
+				offset = 0;
+			}
+			memcpy(pTcpCtx->processName,
+				inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_ALE_APP_ID].value.byteBlob->data + offset,
+				len);
+		}
+	}
+	else if (inFixedValues->layerId == FWPS_LAYER_ALE_CONNECT_REDIRECT_V6)
+	{
+		struct sockaddr_in6* pAddr;
+
+		pTcpCtx->layerId = FWPS_LAYER_STREAM_V6;
+		pTcpCtx->sendCalloutId = 0;
+		pTcpCtx->recvCalloutId = 0;
+		pTcpCtx->recvProtCalloutId = 0;
+
+		pTcpCtx->transportLayerIdOut = FWPS_LAYER_OUTBOUND_TRANSPORT_V6;
+		pTcpCtx->transportCalloutIdOut = 0;
+		pTcpCtx->transportLayerIdIn = FWPS_LAYER_INBOUND_TRANSPORT_V6;
+		pTcpCtx->transportCalloutIdIn = 0;
+
+		pTcpCtx->ipProto = inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_PROTOCOL].value.uint8;
+		pTcpCtx->ip_family = AF_INET6;
+
+		pAddr = (struct sockaddr_in6*)pTcpCtx->localAddr;
+		pAddr->sin6_family = AF_INET6;
+		memcpy(&pAddr->sin6_addr,
+			inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_LOCAL_ADDRESS].value.byteArray16->byteArray16,
+			NF_MAX_IP_ADDRESS_LENGTH);
+		pAddr->sin6_port =
+			htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_LOCAL_PORT].value.uint16);
+
+		dbgPrintAddress(AF_INET6, pAddr, "localAddr", pTcpCtx->id);
+
+		pAddr = (struct sockaddr_in6*)pTcpCtx->remoteAddr;
+		pAddr->sin6_family = AF_INET6;
+		memcpy(&pAddr->sin6_addr,
+			inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_REMOTE_ADDRESS].value.byteArray16->byteArray16,
+			NF_MAX_IP_ADDRESS_LENGTH);
+		pAddr->sin6_port =
+			htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_REMOTE_PORT].value.uint16);
+
+		dbgPrintAddress(AF_INET6, pAddr, "remoteAddr", pTcpCtx->id);
+
+		if (FWPS_IS_METADATA_FIELD_PRESENT(inMetaValues, FWPS_METADATA_FIELD_REMOTE_SCOPE_ID))
+		{
+			pAddr->sin6_scope_id = inMetaValues->remoteScopeId.Value;
+		}
+
+		pTcpCtx->direction = NF_D_OUT;
+
+		if (inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_ALE_APP_ID].value.byteBlob)
+		{
+			int offset, len;
+
+			len = inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_ALE_APP_ID].value.byteBlob->size;
+			if (len > sizeof(pTcpCtx->processName) - 2)
+			{
+				offset = len - (sizeof(pTcpCtx->processName) - 2);
+				len = sizeof(pTcpCtx->processName) - 2;
+			}
+			else
+			{
+				offset = 0;
+			}
+			memcpy(pTcpCtx->processName,
+				inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_ALE_APP_ID].value.byteBlob->data + offset,
+				len);
+		}
+
+	}
 
 	/*
 	*	保存IP端口和进程数据
 	*/
-	if (flowContextLocal->addressFamily == AF_INET)
-	{
-		flowContextLocal->ipv4LocalAddr =
-			RtlUlongByteSwap(
-				inFixedValues->incomingValue\
-				[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_LOCAL_ADDRESS].value.uint32
-			);
-		flowContextLocal->ipv4toRemoteAddr =
-			RtlUlongByteSwap(
-				inFixedValues->incomingValue\
-				[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_REMOTE_ADDRESS].value.uint32
-			);
-		flowContextLocal->protocol =
-			inFixedValues->incomingValue\
-			[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_PROTOCOL].value.uint8;
-		flowContextLocal->toLocalPort =
-			inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_LOCAL_PORT].value.uint16;
-		flowContextLocal->toRemotePort =
-			inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_REMOTE_PORT].value.uint16;
-	}
-	else
-	{
-		RtlCopyMemory(
-			(UINT8*)&flowContextLocal->localAddr,
-			inFixedValues->incomingValue\
-			[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_LOCAL_ADDRESS].value.byteArray16,
-			sizeof(FWP_BYTE_ARRAY16)
-		);
-		RtlCopyMemory(
-			(UINT8*)&flowContextLocal->RemoteAddr,
-			inFixedValues->incomingValue\
-			[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_REMOTE_ADDRESS].value.byteArray16,
-			sizeof(FWP_BYTE_ARRAY16)
-		);
-		flowContextLocal->protocol =
-			inFixedValues->incomingValue\
-			[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_PROTOCOL].value.uint8;
-		flowContextLocal->toLocalPort =
-			inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_LOCAL_PORT].value.uint16;
-		flowContextLocal->toRemotePort =
-			inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_REMOTE_PORT].value.uint16;
-	}
-
-	flowContextLocal->processId = inMetaValues->processId;
-	flowContextLocal->processPathSize = inMetaValues->processPath->size;
-	RtlCopyMemory(flowContextLocal->processPath, inMetaValues->processPath->data, inMetaValues->processPath->size);
+	pTcpCtx->processId = inMetaValues->processId;
+	pTcpCtx->processPathSize = inMetaValues->processPath->size;
+	RtlCopyMemory(pTcpCtx->processPath, inMetaValues->processPath->data, inMetaValues->processPath->size);
 
 	/*
-	* 保存注入所需要的数据
+	* 保存重注所需要的数据
 	*/
-	memcpy(&flowContextLocal->redirectinfo.classifyOut, classifyOut, sizeof(FWPS_CLASSIFY_OUT));
-	flowContextLocal->transportEndpointHandle = inMetaValues->transportEndpointHandle;
-	flowContextLocal->redirectinfo.filterId = filter->filterId;
+	memcpy(&pTcpCtx->redirectInfo.classifyOut, classifyOut, sizeof(FWPS_CLASSIFY_OUT));
+	pTcpCtx->transportEndpointHandle = inMetaValues->transportEndpointHandle;
+	pTcpCtx->redirectInfo.filterId = filter->filterId;
 
 #ifdef USE_NTDDI
 #if (NTDDI_VERSION >= NTDDI_WIN8)
@@ -545,7 +599,7 @@ helper_callout_classFn_connectredirect(
 
 	FwpsAcquireClassifyHandle((void*)classifyContext,
 		0,
-		&(flowContextLocal->redirectinfo.classifyHandle)
+		&(pTcpCtx->redirectInfo.classifyHandle)
 	);
 	if (status != STATUS_SUCCESS)
 	{
@@ -553,10 +607,10 @@ helper_callout_classFn_connectredirect(
 		goto Exit;
 	}
 
-	status = _FwpsPendClassify0(flowContextLocal->redirectinfo.classifyHandle,
+	status = _FwpsPendClassify0(pTcpCtx->redirectInfo.classifyHandle,
 		filter->filterId,
 		0,
-		&flowContextLocal->redirectinfo.classifyOut);
+		&pTcpCtx->redirectInfo.classifyOut);
 	if (status != STATUS_SUCCESS)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
@@ -564,33 +618,24 @@ helper_callout_classFn_connectredirect(
 	}
 
 	// 设置为阻塞将该连接block
-	flowContextLocal->redirectinfo.isPended = TRUE;
-	classifyOut->actionType = FWP_ACTION_BLOCK;
-	classifyOut->rights &= ~FWPS_RIGHT_ACTION_WRITE;
+	pTcpCtx->redirectInfo.isPended = TRUE;
 
-	// 插入保存
-	add_tcpHandle(flowContextLocal);
-	// 将数据发送r3
-	status = push_tcpRedirectinfo(flowContextLocal, sizeof(PNF_CALLOUT_FLOWESTABLISHED_INFO));
+	// 插入 句柄map
+	add_tcpHandle(&pTcpCtx->transportEndpointHandle);
+	status = push_tcpRedirectinfo(pTcpCtx, sizeof(TCPCTX));
 	if (!NT_SUCCESS(status))
 	{
 		goto Exit;
 	}
+
+	classifyOut->actionType = FWP_ACTION_BLOCK;
+	classifyOut->rights &= ~FWPS_RIGHT_ACTION_WRITE;
+
 	return;
 
 Exit:
 
 	classifyOut->actionType = FWP_ACTION_PERMIT;
-	if (!NT_SUCCESS(status))
-	{
-		if (flowContextLocal)
-		{
-			sl_lock(&g_callouts_flowspinlock, &lh);
-			ExFreeToNPagedLookasideList(&g_callouts_flowCtxPacketsLAList, flowContextLocal);
-			flowContextLocal = NULL;
-			sl_unlock(&lh);
-		}
-	}
 }
 
 NTSTATUS

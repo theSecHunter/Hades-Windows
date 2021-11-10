@@ -47,5 +47,14 @@
     <ClInclude Include="eventQueue.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="datalinkctx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="establishedctx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="tcpctx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

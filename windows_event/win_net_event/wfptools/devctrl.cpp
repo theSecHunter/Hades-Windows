@@ -32,7 +32,8 @@ static AutoEventHandle		g_workThreadStoppedEvent;
 enum IoctCode
 {
 	NF_DATALINKMAC_LAYER_PACKET = 1,
-	NF_ESTABLISHED_LAYER_PACKET
+	NF_ESTABLISHED_LAYER_PACKET,
+	NF_TCPREDIRECT_LAYER_PACKET
 };
 
 PVOID DevctrlIoct::get_eventhandler()
@@ -225,6 +226,11 @@ static void handleEventDispath(PNF_DATA pData)
 	{
 		g_pEventHandler->datalinkPacket(pData->buffer, pData->bufferSize);
 		// push datalink - event
+	}
+	break;
+	case NF_TCPREDIRECT_LAYER_PACKET:
+	{
+		g_pEventHandler->tcpredirectPacket(pData->buffer, pData->bufferSize);
 	}
 	break;
 	}

@@ -33,6 +33,9 @@ public:
 
 	// 捕获 MAC 链路层数据
 	virtual void datalinkPacket(const char* buf, int len) = 0;
+
+	// 捕获 redirect
+	virtual void tcpredirectPacket(const char* buf, int len) = 0;
 };
 
 #else // _C_API
@@ -60,6 +63,7 @@ typedef struct _NF_EventHandler
 {
 	void (NFAPI_CC * datalinkPacket)(const char * buf, int len);
 	void (NFAPI_CC * establishedPacket)(const char * buf, int len);
+	void (NFAPI_CC * tcpredirectPacket(const char* buf, int len);
 } NF_EventHandler, *PNF_EventHandler;
 
 #pragma pack(pop)
