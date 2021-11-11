@@ -95,7 +95,7 @@ NTSTATUS datalinkctx_pushdata(
 	InsertHeadList(&g_datalink_data.pendedPackets, &pdatalinkinfo->pEntry);
 	sl_unlock(&lh);
 
-	devctrl_pushDataLinkCtxBuffer(NF_DATALINK_PACKET);
+	devctrl_pushEventQueryLisy(NF_DATALINK_PACKET);
 
 	return status;
 }

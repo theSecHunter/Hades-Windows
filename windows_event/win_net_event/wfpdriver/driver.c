@@ -3,6 +3,7 @@
 #include "devctrl.h"
 #include "datalinkctx.h"
 #include "establishedctx.h"
+#include "tcpctx.h"
 #include "callouts.h"
 
 #include <fwpmk.h>
@@ -147,6 +148,12 @@ DriverEntry(
 			break;
 		}
 
+		status = tcpctxctx_init();
+		if (!NT_SUCCESS(status))
+		{
+			break;
+		}
+
 		// Init WFP Callout
 		if (FwpmBfeStateGet() == FWPM_SERVICE_RUNNING)
 		{
@@ -192,5 +199,6 @@ VOID driver_free()
 	callout_free();
 	devctrl_free();
 	datalinkctx_free();
+	tcpctxctx_free();
 	establishedctx_free();
 };

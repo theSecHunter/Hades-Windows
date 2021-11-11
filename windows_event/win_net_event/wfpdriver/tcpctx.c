@@ -12,46 +12,21 @@ static NPAGED_LOOKASIDE_LIST	g_tcpctxPacketsList;
 static NF_TCPCTX_DATA			g_tcpctx_data;
 static __int64					g_nextTcpCtxId;
 static NPAGED_LOOKASIDE_LIST	g_tcpCtxLAList;
+static NPAGED_LOOKASIDE_LIST	g_packetsLAList;
 
-NF_TCPCTX_DATA* tcpctx_get()
+typedef struct _NF_PACKET
 {
-	return &g_tcpctx_data;
-}
-NTSTATUS tcpctxctx_init()
-{
-	NTSTATUS status = STATUS_SUCCESS;
-	ExInitializeNPagedLookasideList(
-		&g_tcpctxPacketsList,
-		NULL,
-		NULL,
-		0,
-		sizeof(NF_TCPCTX_BUFFER),
-		MEM_TAG_NETWORK,
-		0
-	);
+	LIST_ENTRY			entry;
+	PTCPCTX				pTcpCtx;
+	UINT32				calloutId;
+	BOOLEAN				isClone;
+	FWPS_STREAM_DATA	streamData;			// Packet data
+	char*				flatStreamData;		// Flat buffer for large packets
+	UINT64				flatStreamOffset;	// Current offset in flatStreamData
+} NF_PACKET, * PNF_PACKET;
 
-	ExInitializeNPagedLookasideList(
-		&g_tcpCtxLAList,
-		NULL,
-		NULL,
-		0,
-		sizeof(TCPCTX),
-		MEM_TAG_TCP_PACKET,
-		0
-	);
-	
-	sl_init(&g_slTcpCtx);
-	InitializeListHead(&g_lTcpCtx);
-
-	sl_init(&g_tcpctx_data.lock);
-	InitializeListHead(&g_tcpctx_data.pendedPackets);
-
-	return status;
-}
-
-PNF_TCPCTX_BUFFER tcpctxctx_packallocate(
-	int lens
-)
+// 申请缓冲及消息队列结构
+PNF_TCPCTX_BUFFER tcpctxctx_packallocate(int lens)
 {
 	if (lens < 0)
 		return NULL;
@@ -73,8 +48,44 @@ PNF_TCPCTX_BUFFER tcpctxctx_packallocate(
 	}
 	return pTcpctx;
 }
+VOID tcpctxctx_packfree(PNF_TCPCTX_BUFFER pPacket)
+{
+	if (pPacket->dataBuffer)
+	{
+		free_np(pPacket->dataBuffer);
+		pPacket->dataBuffer = NULL;
+	}
+	ExFreeToNPagedLookasideList(&g_tcpctxPacketsList, pPacket);
+}
+NTSTATUS push_tcpRedirectinfo(PVOID64 packet, int lens)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	KLOCK_QUEUE_HANDLE lh;
+	PNF_TCPCTX_BUFFER ptcpctxinfo = NULL;
 
+	if (!packet && (lens < 1))
+		return FALSE;
 
+	// Allocate 
+	ptcpctxinfo = tcpctxctx_packallocate(lens);
+	if (!ptcpctxinfo)
+	{
+		return FALSE;
+	}
+
+	ptcpctxinfo->dataLength = lens;
+	RtlCopyMemory(ptcpctxinfo->dataBuffer, packet, lens);
+
+	sl_lock(&g_tcpctx_data.lock, &lh);
+	InsertHeadList(&g_tcpctx_data.pendedPackets, &ptcpctxinfo->pEntry);
+	sl_unlock(&lh);
+
+	devctrl_pushEventQueryLisy(NF_TCPREDIRECTCONNECT_PACKET);
+
+	return status;
+}
+
+// 申请ctx结构体结构
 PTCPCTX tcpctxctx_packallocatectx()
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -98,7 +109,36 @@ PTCPCTX tcpctxctx_packallocatectx()
 
 	return pTcpCtx;
 }
+void tcpctx_purgeRedirectInfo(PTCPCTX pTcpCtx)
+{
+	UINT64 classifyHandle = pTcpCtx->redirectInfo.classifyHandle;
 
+	if (classifyHandle)
+	{
+		pTcpCtx->redirectInfo.classifyHandle = 0;
+
+		if (pTcpCtx->redirectInfo.isPended)
+		{
+			FwpsCompleteClassify(classifyHandle,
+				0,
+				&pTcpCtx->redirectInfo.classifyOut);
+
+			pTcpCtx->redirectInfo.isPended = FALSE;
+		}
+
+#ifdef USE_NTDDI
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+		if (pTcpCtx->redirectInfo.redirectHandle)
+		{
+			FwpsRedirectHandleDestroy(pTcpCtx->redirectInfo.redirectHandle);
+			pTcpCtx->redirectInfo.redirectHandle = 0;
+		}
+#endif
+#endif
+
+		FwpsReleaseClassifyHandle(classifyHandle);
+	}
+}
 VOID tcpctx_release(PTCPCTX pTcpCtx)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -126,7 +166,7 @@ VOID tcpctx_release(PTCPCTX pTcpCtx)
 
 	if (pTcpCtx->transportEndpointHandle)
 	{
-		tcpctx_removeFromHandleTable(pTcpCtx);
+		remove_tcpHandle(pTcpCtx);
 		pTcpCtx->transportEndpointHandle = 0;
 	}
 
@@ -141,48 +181,208 @@ VOID tcpctx_release(PTCPCTX pTcpCtx)
 	ExFreeToNPagedLookasideList(&g_tcpCtxLAList, pTcpCtx);
 }
 
-VOID tcpctxctx_packfree(
-	PNF_TCPCTX_BUFFER pPacket
-)
+void tcpctx_freePacket(PNF_PACKET pPacket)
 {
-	if (pPacket->dataBuffer)
+	KdPrint((DPREFIX"tcpctx_freePacket %I64x\n", (unsigned __int64)pPacket));
+
+	if (pPacket->streamData.netBufferListChain)
 	{
-		free_np(pPacket->dataBuffer);
-		pPacket->dataBuffer = NULL;
+		if (pPacket->isClone)
+		{
+			BOOLEAN isDispatch = (KeGetCurrentIrql() == DISPATCH_LEVEL) ? TRUE : FALSE;
+			FwpsDiscardClonedStreamData(pPacket->streamData.netBufferListChain, 0, isDispatch);
+		} else
+		{
+			FwpsFreeNetBufferList(pPacket->streamData.netBufferListChain);
+
+			if (pPacket->streamData.dataOffset.mdl != NULL)
+			{
+				free_np(pPacket->streamData.dataOffset.mdl->MappedSystemVa);
+				IoFreeMdl(pPacket->streamData.dataOffset.mdl);
+			}
+		}
+		pPacket->streamData.netBufferListChain = NULL;
 	}
-	ExFreeToNPagedLookasideList(&g_tcpctxPacketsList, pPacket);
+	if (pPacket->flatStreamData)
+	{
+		free_np(pPacket->flatStreamData);
+		pPacket->flatStreamData = NULL;
+	}
+
+	ExFreeToNPagedLookasideList( &g_packetsLAList, pPacket );
 }
-NTSTATUS push_tcpRedirectinfo(
-	PVOID64 packet,
-	int lens
-)
+
+void tcpctx_cleanupFlows()
 {
-	NTSTATUS status = STATUS_SUCCESS;
-	KLOCK_QUEUE_HANDLE lh;
-	PNF_TCPCTX_BUFFER ptcpctxinfo = NULL;
+	KLOCK_QUEUE_HANDLE lh, lhp;
+	PTCPCTX pTcpCtx;
+	NF_PACKET* pPacket;
+	LIST_ENTRY packets;
 
-	if (!packet && (lens < 1))
-		return FALSE;
+	KdPrint((DPREFIX"tcpctx_cleanupFlows\n"));
 
-	// Allocate 
-	ptcpctxinfo = tcpctxctx_packallocate(lens);
-	if (!ptcpctxinfo)
+	InitializeListHead(&packets);
+
+	sl_lock(&g_slTcpCtx, &lh);
+
+	pTcpCtx = (PTCPCTX)g_lTcpCtx.Flink;
+
+	while (pTcpCtx != (PTCPCTX)&g_lTcpCtx)
 	{
-		return FALSE;
+		sl_lock(&pTcpCtx->lock, &lhp);
+		while (!IsListEmpty(&pTcpCtx->pendedPackets))
+		{
+			pPacket = (PNF_PACKET)RemoveHeadList(&pTcpCtx->pendedPackets);
+			InsertTailList(&packets, &pPacket->entry);
+			KdPrint((DPREFIX"tcpctx_cleanupFlows packet in TCPCTX %I64u\n", pTcpCtx->id));
+		}
+		while (!IsListEmpty(&pTcpCtx->injectPackets))
+		{
+			pPacket = (PNF_PACKET)RemoveHeadList(&pTcpCtx->injectPackets);
+			InsertTailList(&packets, &pPacket->entry);
+			KdPrint((DPREFIX"tcpctx_cleanupFlows reinject packet in TCPCTX %I64u\n", pTcpCtx->id));
+		}
+		sl_unlock(&lhp);
+
+		pTcpCtx = (PTCPCTX)pTcpCtx->entry.Flink;
 	}
 
-	ptcpctxinfo->dataLength = lens;
-	RtlCopyMemory(ptcpctxinfo->dataBuffer, packet, lens);
-
-	sl_lock(&g_tcpctx_data.lock, &lh);
-	InsertHeadList(&g_tcpctx_data.pendedPackets, &ptcpctxinfo->pEntry);
 	sl_unlock(&lh);
 
-	devctrl_pushTcpCtxBuffer(NF_TCPREDIRECTCONNECT_PACKET);
+	while (!IsListEmpty(&packets))
+	{
+		pPacket = (PNF_PACKET)RemoveHeadList(&packets);
+		tcpctx_freePacket(pPacket);
+	}
+}
+void tcpctx_removeFromFlows()
+{
+	KLOCK_QUEUE_HANDLE lh;
+	PTCPCTX pTcpCtx;
+	NTSTATUS status;
+
+	KdPrint((DPREFIX"tcpctx_removeFromFlows\n"));
+
+	tcpctx_cleanupFlows();
+
+	sl_lock(&g_slTcpCtx, &lh);
+
+	while (!IsListEmpty(&g_lTcpCtx))
+	{
+		pTcpCtx = (PTCPCTX)RemoveHeadList(&g_lTcpCtx);
+
+		InitializeListHead(&pTcpCtx->entry);
+
+		KdPrint((DPREFIX"tcpctx_removeFromFlows(): TCPCTX [%I64d]\n", pTcpCtx->id));
+
+		pTcpCtx->refCount++;
+
+		sl_unlock(&lh);
+
+		status = FwpsFlowRemoveContext(pTcpCtx->flowHandle,
+			pTcpCtx->layerId,
+			pTcpCtx->sendCalloutId);
+		ASSERT(NT_SUCCESS(status));
+
+		status = FwpsFlowRemoveContext(pTcpCtx->flowHandle,
+			pTcpCtx->layerId,
+			pTcpCtx->recvCalloutId);
+		ASSERT(NT_SUCCESS(status));
+
+		status = FwpsFlowRemoveContext(pTcpCtx->flowHandle,
+			pTcpCtx->layerId,
+			pTcpCtx->recvProtCalloutId);
+		ASSERT(NT_SUCCESS(status));
+
+		status = FwpsFlowRemoveContext(pTcpCtx->flowHandle,
+			pTcpCtx->transportLayerIdOut,
+			pTcpCtx->transportCalloutIdOut);
+		ASSERT(NT_SUCCESS(status));
+
+		status = FwpsFlowRemoveContext(pTcpCtx->flowHandle,
+			pTcpCtx->transportLayerIdIn,
+			pTcpCtx->transportCalloutIdIn);
+		ASSERT(NT_SUCCESS(status));
+
+		if (pTcpCtx->transportEndpointHandle != 0)
+		{
+			tcpctx_release(pTcpCtx);
+		}
+
+		tcpctx_release(pTcpCtx);
+
+		sl_lock(&g_slTcpCtx, &lh);
+	}
+
+	sl_unlock(&lh);
+}
+void tcpctx_releaseFlows()
+{
+	KLOCK_QUEUE_HANDLE lh;
+	PTCPCTX pTcpCtx;
+
+	KdPrint((DPREFIX"tcpctx_releaseFlows\n"));
+
+	sl_lock(&g_slTcpCtx, &lh);
+
+	while (!IsListEmpty(&g_lTcpCtx))
+	{
+		pTcpCtx = (PTCPCTX)g_lTcpCtx.Flink;
+
+		sl_unlock(&lh);
+
+		tcpctx_release(pTcpCtx);
+
+		sl_lock(&g_slTcpCtx, &lh);
+	}
+
+	sl_unlock(&lh);
+}
+
+NF_TCPCTX_DATA* tcpctx_get()
+{
+	return &g_tcpctx_data;
+}
+NTSTATUS tcpctxctx_init()
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	ExInitializeNPagedLookasideList(
+		&g_tcpctxPacketsList,
+		NULL,
+		NULL,
+		0,
+		sizeof(NF_TCPCTX_BUFFER),
+		MEM_TAG_NETWORK,
+		0
+	);
+
+	ExInitializeNPagedLookasideList(
+		&g_tcpCtxLAList,
+		NULL,
+		NULL,
+		0,
+		sizeof(TCPCTX),
+		MEM_TAG_TCP,
+		0
+	);
+
+	ExInitializeNPagedLookasideList(
+		&g_packetsLAList,
+		NULL,
+		NULL,
+		0,
+		sizeof(NF_PACKET),
+		MEM_TAG_TCP_PACKET,
+		0);
+
+	sl_init(&g_slTcpCtx);
+	InitializeListHead(&g_lTcpCtx);
+
+	sl_init(&g_tcpctx_data.lock);
+	InitializeListHead(&g_tcpctx_data.pendedPackets);
 
 	return status;
 }
-
 VOID tcpctxctx_clean()
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -198,13 +398,36 @@ VOID tcpctxctx_clean()
 		sl_lock(&g_tcpctx_data.lock, &lh);
 	}
 	sl_unlock(&lh);
+
+	tcpctx_removeFromFlows();
+	devctrl_sleep(1000);
+
+	tcpctx_releaseFlows();
 }
 VOID tcpctxctx_free()
 {
 	tcpctxctx_clean();
+
+	if (g_phtTcpCtxById)
+	{
+		hash_table_free(g_phtTcpCtxById);
+		g_phtTcpCtxById = NULL;
+	}
+
+	if (g_phtTcpCtxByHandle)
+	{
+		hash_table_free(g_phtTcpCtxByHandle);
+		g_phtTcpCtxByHandle = NULL;
+	}
+
+	ExDeleteNPagedLookasideList(&g_tcpCtxLAList);
+	ExDeleteNPagedLookasideList(&g_packetsLAList);
 	ExDeleteNPagedLookasideList(&g_tcpctxPacketsList);
 }
 
+/*
+	散列表操作
+*/
 PTCPCTX tcpctx_find(UINT64 id)
 {
 	PTCPCTX pTcpCtx = NULL;
@@ -255,34 +478,5 @@ void remove_tcpHandle(PTCPCTX ptcpctx)
 	ht_remove_entry(g_phtTcpCtxByHandle, ptcpctx->transportEndpointHandle);
 	sl_unlock(&lh);
 }
-void tcpctx_purgeRedirectInfo(PTCPCTX pTcpCtx)
-{
-	UINT64 classifyHandle = pTcpCtx->redirectInfo.classifyHandle;
 
-	if (classifyHandle)
-	{
-		pTcpCtx->redirectInfo.classifyHandle = 0;
-
-		if (pTcpCtx->redirectInfo.isPended)
-		{
-			FwpsCompleteClassify(classifyHandle,
-				0,
-				&pTcpCtx->redirectInfo.classifyOut);
-
-			pTcpCtx->redirectInfo.isPended = FALSE;
-		}
-
-#ifdef USE_NTDDI
-#if (NTDDI_VERSION >= NTDDI_WIN8)
-		if (pTcpCtx->redirectInfo.redirectHandle)
-		{
-			FwpsRedirectHandleDestroy(pTcpCtx->redirectInfo.redirectHandle);
-			pTcpCtx->redirectInfo.redirectHandle = 0;
-		}
-#endif
-#endif
-
-		FwpsReleaseClassifyHandle(classifyHandle);
-	}
-}
 

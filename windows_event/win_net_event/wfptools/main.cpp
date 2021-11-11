@@ -48,7 +48,6 @@ BOOL DeviceDosPathToNtPath(wchar_t* pszDosPath, wchar_t* pszNtPath);
 
 class EventHandler : public NF_EventHandler
 {
-	// 捕获 TCP UDP 已建立连接数据
 	void establishedPacket(const char* buf, int len) override
 	{
 		NF_CALLOUT_FLOWESTABLISHED_INFO flowestablished_processinfo;
@@ -97,7 +96,6 @@ class EventHandler : public NF_EventHandler
 		OutputDebugString(wsinfo.data());
 	}
 
-	// 捕获 MAC 链路层数据
 	void datalinkPacket(const char* buf, int len) override
 	{
 		NF_CALLOUT_MAC_INFO datalink_netinfo;
@@ -122,7 +120,7 @@ class EventHandler : public NF_EventHandler
 			3 - 重定向标志位 - 暂时不开启
 		*/
 		size_t i = 0;
-		if (redirect_info.addressFamily == AF_INET)
+		// if (redirect_info.addressFamily == AF_INET)
 		{
 			switch (0)
 			{

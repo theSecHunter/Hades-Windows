@@ -78,7 +78,7 @@
 #define MAX_PROCESS_NAME_LEN 64
 
 extern DWORD g_dwLogLevel;
-extern DWORD g_monitorflag;
+extern BOOLEAN g_monitorflag;
 
 enum _NF_DATA_CODE
 {

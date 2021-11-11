@@ -151,11 +151,11 @@ typedef struct _TCPCTX
 } TCPCTX, * PTCPCTX;
 
 void add_tcpHandle(PTCPCTX ptcpctx);
+void remove_tcpHandle(PTCPCTX ptcpctx);
 PTCPCTX tcpctx_find(UINT64 id);
 void tcpctx_purgeRedirectInfo(PTCPCTX pTcpCtx);
 
 NTSTATUS push_tcpRedirectinfo(PVOID64 packet, int lens);
-
 
 PTCPCTX tcpctxctx_packallocatectx();
 VOID tcpctx_release(PTCPCTX pTcpCtx);

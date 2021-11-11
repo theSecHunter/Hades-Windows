@@ -17,11 +17,10 @@ NTSTATUS devctrl_init();
 VOID devctrl_free();
 VOID devctrl_clean();
 VOID devctrl_setShutdown();
+void devctrl_sleep(UINT ttw);
 UINT64 devctrl_fillBuffer();
 NTSTATUS devctrl_setmonitor(int flag);
 NTSTATUS devtrl_popDataLinkData(UINT64* pOffset);
-NTSTATUS devctrl_pushDataLinkCtxBuffer(int code);
-NTSTATUS devctrl_pushFlowCtxBuffer(int code);
-NTSTATUS devctrl_pushTcpCtxBuffer(int code);
+NTSTATUS devctrl_pushEventQueryLisy(int code);
 
 #endif // ! _DEVCTRL_H

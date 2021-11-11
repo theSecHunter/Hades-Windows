@@ -48,6 +48,12 @@
     <ClInclude Include="establishedctx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tcpctx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hashtable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="driver.c">
@@ -66,6 +72,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="establishedctx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tcpctx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hashtable.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

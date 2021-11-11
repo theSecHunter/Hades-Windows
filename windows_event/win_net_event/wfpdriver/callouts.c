@@ -36,7 +36,8 @@ static UINT32	g_calloutId_ale_connectredirect_v6;
 static GUID		g_sublayerGuid;
 static HANDLE	g_engineHandle = NULL;
 
-DWORD g_monitorflag = 0;
+BOOLEAN g_monitorflag = FALSE;
+BOOLEAN g_redirectflag = FALSE;
 
 static NPAGED_LOOKASIDE_LIST	g_callouts_flowCtxPacketsLAList;
 static KSPIN_LOCK				g_callouts_flowspinlock;
@@ -74,7 +75,7 @@ helper_callout_classFn_flowEstablished(
 	PNF_CALLOUT_FLOWESTABLISHED_INFO flowContextLocal = NULL;
 	
 	// 关闭监控的时候，不做任何操作
-	if (g_monitorflag == 0)
+	if (g_monitorflag == FALSE)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
 		if (filter->flags & FWPS_FILTER_FLAG_CLEAR_ACTION_RIGHT)
@@ -204,7 +205,7 @@ helper_callout_classFn_mac(
 	UINT32 ipHeaderSize = 0;
 
 	// 关闭监控的时候，不做任何操作
-	if (g_monitorflag == 0)
+	if (g_monitorflag == FALSE)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
 		return;
@@ -393,6 +394,33 @@ VOID helper_callout_deleteFn_mac(
 	UNREFERENCED_PARAMETER(flowContext);
 }
 
+void DbgPrintAddress(int ipFamily, void* addr, char* name, UINT64 id)
+{
+	if (ipFamily == AF_INET)
+	{
+		struct sockaddr_in* pAddr = (struct sockaddr_in*)addr;
+
+		KdPrint((DPREFIX"DbgPrintAddress[%I64u] %s=%x:%d\n",
+			id, name, pAddr->sin_addr.s_addr, htons(pAddr->sin_port)));
+	}
+	else
+	{
+		struct sockaddr_in6* pAddr = (struct sockaddr_in6*)addr;
+
+		KdPrint((DPREFIX"DbgPrintAddress[%I64u] %s=[%x:%x:%x:%x:%x:%x:%x:%x]:%d\n",
+			id, name,
+			pAddr->sin6_addr.u.Word[0],
+			pAddr->sin6_addr.u.Word[1],
+			pAddr->sin6_addr.u.Word[2],
+			pAddr->sin6_addr.u.Word[3],
+			pAddr->sin6_addr.u.Word[4],
+			pAddr->sin6_addr.u.Word[5],
+			pAddr->sin6_addr.u.Word[6],
+			pAddr->sin6_addr.u.Word[7],
+			htons(pAddr->sin6_port)));
+	}
+}
+
 typedef
 NTSTATUS
 (NTAPI* t_FwpsPendClassify0)(
@@ -413,15 +441,12 @@ helper_callout_classFn_connectredirect(
 	IN UINT64 flowContext,
 	OUT FWPS_CLASSIFY_OUT* classifyOut)
 {
-	if (g_monitorflag == 0)
+	
+	if (FALSE == g_redirectflag || FALSE == g_monitorflag)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
 		return;
 	}
-
-	/*
-		添加pid监控 和 上层代理本身过滤
-	*/
 
 	if ((classifyOut->rights & FWPS_RIGHT_ACTION_WRITE) == 0)
 	{
@@ -473,7 +498,7 @@ helper_callout_classFn_connectredirect(
 		pAddr->sin_port =
 			htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_LOCAL_PORT].value.uint16);
 
-		dbgPrintAddress(AF_INET, pAddr, "localAddr", pTcpCtx->id);
+		DbgPrintAddress(AF_INET, pAddr, "localAddr", pTcpCtx->id);
 
 		pAddr = (struct sockaddr_in*)pTcpCtx->remoteAddr;
 		pAddr->sin_family = AF_INET;
@@ -482,7 +507,7 @@ helper_callout_classFn_connectredirect(
 		pAddr->sin_port =
 			htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V4_IP_REMOTE_PORT].value.uint16);
 
-		dbgPrintAddress(AF_INET, pAddr, "remoteAddr", pTcpCtx->id);
+		DbgPrintAddress(AF_INET, pAddr, "remoteAddr", pTcpCtx->id);
 
 		pTcpCtx->direction = NF_D_OUT;
 
@@ -530,7 +555,7 @@ helper_callout_classFn_connectredirect(
 		pAddr->sin6_port =
 			htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_LOCAL_PORT].value.uint16);
 
-		dbgPrintAddress(AF_INET6, pAddr, "localAddr", pTcpCtx->id);
+		DbgPrintAddress(AF_INET6, pAddr, "localAddr", pTcpCtx->id);
 
 		pAddr = (struct sockaddr_in6*)pTcpCtx->remoteAddr;
 		pAddr->sin6_family = AF_INET6;
@@ -540,7 +565,7 @@ helper_callout_classFn_connectredirect(
 		pAddr->sin6_port =
 			htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_IP_REMOTE_PORT].value.uint16);
 
-		dbgPrintAddress(AF_INET6, pAddr, "remoteAddr", pTcpCtx->id);
+		DbgPrintAddress(AF_INET6, pAddr, "remoteAddr", pTcpCtx->id);
 
 		if (FWPS_IS_METADATA_FIELD_PRESENT(inMetaValues, FWPS_METADATA_FIELD_REMOTE_SCOPE_ID))
 		{
@@ -983,14 +1008,6 @@ callouts_registerCallouts(
 			0,
 			&g_calloutId_flow_established_v6
 		);
-
-		// TCP Buffer v4
-
-		// TCP Buffer v6
-
-		// UDP Buffer v4
-
-		// UDP Buffer v6
 
 		// FWPM_LAYER_INBOUND_MAC_FRAME_ETHERNET
 		status = helper_callout_registerCallout(

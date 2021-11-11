@@ -430,6 +430,7 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	devctrl_setmonitor(0);
 	establishedctx_clean();
 	datalinkctx_clean();
+	tcpctxctx_clean();
 	devctrl_clean();
 
 	devctrl_freeSharedMemory(&g_inBuf);
@@ -444,7 +445,12 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 NTSTATUS devctrl_setmonitor(int flag)
 {
 	// ÉèÖÃ´òÓ¡±êÇ©
-	g_monitorflag = flag;
+	if (0 == flag)
+		g_monitorflag = FALSE;
+	else if (1 == flag)
+		g_monitorflag = TRUE;
+	else
+		g_monitorflag = FALSE;
 	return STATUS_SUCCESS;
 }
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
@@ -598,6 +604,12 @@ VOID devctrl_setShutdown()
 	g_shutdown = TRUE;
 	sl_unlock(&lh);
 }
+void devctrl_sleep(UINT ttw)
+{
+	NDIS_EVENT  _SleepEvent;
+	NdisInitializeEvent(&_SleepEvent);
+	NdisWaitEvent(&_SleepEvent, ttw);
+}
 BOOLEAN	devctrl_isShutdown()
 {
 	BOOLEAN		res;
@@ -609,8 +621,7 @@ BOOLEAN	devctrl_isShutdown()
 
 	return res;
 }
-
-NTSTATUS devctrl_pushDataLinkCtxBuffer(int code)
+NTSTATUS devctrl_pushEventQueryLisy(int code)
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	PNF_QUEUE_ENTRY pQuery = NULL;
@@ -619,65 +630,7 @@ NTSTATUS devctrl_pushDataLinkCtxBuffer(int code)
 	switch (code)
 	{
 	case NF_DATALINK_PACKET:
-	{
-		pQuery = ExAllocateFromNPagedLookasideList(&g_IoQueryList);
-		if (!pQuery)
-		{
-			status = STATUS_UNSUCCESSFUL;
-			break;
-		}
-		pQuery->code = code;
-		sl_lock(&g_sIolock, &lh);
-		InsertHeadList(&g_IoQueryHead, &pQuery->entry);
-		sl_unlock(&lh);
-	}
-	break;
-	default:
-		break;
-	}
-
-	// keSetEvent
-	KeSetEvent(&g_ioThreadEvent, IO_NO_INCREMENT, FALSE);
-
-	return status;
-}
-NTSTATUS devctrl_pushFlowCtxBuffer(int code)
-{
-	NTSTATUS status = STATUS_SUCCESS;
-	PNF_QUEUE_ENTRY pQuery = NULL;
-	KLOCK_QUEUE_HANDLE lh;
-	// Send to I/O(Read) Buffer
-	switch (code)
-	{
 	case NF_FLOWCTX_PACKET:
-	{
-		pQuery = (PNF_QUEUE_ENTRY)ExAllocateFromNPagedLookasideList(&g_IoQueryList);
-		if (!pQuery)
-		{
-			status = STATUS_UNSUCCESSFUL;
-			break;
-		}
-		pQuery->code = code;
-		sl_lock(&g_sIolock, &lh);
-		InsertHeadList(&g_IoQueryHead, &pQuery->entry);
-		sl_unlock(&lh);
-	}
-	break;
-	default:
-		break;
-	}
-	// keSetEvent
-	KeSetEvent(&g_ioThreadEvent, IO_NO_INCREMENT, FALSE);
-	return status;
-}
-NTSTATUS devctrl_pushTcpCtxBuffer(int code)
-{
-	NTSTATUS status = STATUS_SUCCESS;
-	PNF_QUEUE_ENTRY pQuery = NULL;
-	KLOCK_QUEUE_HANDLE lh;
-	// Send to I/O(Read) Buffer
-	switch (code)
-	{
 	case NF_TCPREDIRECTCONNECT_PACKET:
 	{
 		pQuery = (PNF_QUEUE_ENTRY)ExAllocateFromNPagedLookasideList(&g_IoQueryList);
@@ -1001,9 +954,7 @@ void devctrl_serviceReads()
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 
 }
-void devctrl_ioThread(
-	IN PVOID StartContext
-)
+void devctrl_ioThread(IN PVOID StartContext)
 {
 	PIRP                irp = NULL;
 	PLIST_ENTRY         pIrpEntry;

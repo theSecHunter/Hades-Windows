@@ -187,8 +187,10 @@
     <ClInclude Include="devctrl.h" />
     <ClInclude Include="driver.h" />
     <ClInclude Include="establishedctx.h" />
+    <ClInclude Include="hashtable.h" />
     <ClInclude Include="ntdefines.h" />
     <ClInclude Include="public.h" />
+    <ClInclude Include="tcpctx.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -197,6 +199,8 @@
     <ClCompile Include="devctrl.c" />
     <ClCompile Include="driver.c" />
     <ClCompile Include="establishedctx.c" />
+    <ClCompile Include="hashtable.c" />
+    <ClCompile Include="tcpctx.c" />
     <ClCompile Include="util.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

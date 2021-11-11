@@ -12,7 +12,6 @@ typedef struct _HASH_TABLE_ENTRY
 	HASH_ID		id;
 	struct _HASH_TABLE_ENTRY* pNext;
 } HASH_TABLE_ENTRY, * PHASH_TABLE_ENTRY;
-
 typedef struct FWPS_CLASSIFY_OUT0_
 {
 	FWP_ACTION_TYPE actionType;
@@ -22,7 +21,6 @@ typedef struct FWPS_CLASSIFY_OUT0_
 	UINT32 flags;
 	UINT32 reserved;
 } 	FWPS_CLASSIFY_OUT0;
-
 typedef struct _REDIRECT_INFO
 {
 	UINT64				classifyHandle;
@@ -36,14 +34,12 @@ typedef struct _REDIRECT_INFO
 #endif 
 #endif
 } REDIRECT_INFO, * PREDIRECT_INFO;
-
 typedef enum _UMT_FILTERING_STATE
 {
 	UMFS_NONE,
 	UMFS_DISABLE,
 	UMFS_DISABLED
 } UMT_FILTERING_STATE;
-
 typedef struct _TCPCTX
 {
 	LIST_ENTRY entry;
