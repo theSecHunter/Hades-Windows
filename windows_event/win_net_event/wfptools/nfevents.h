@@ -28,14 +28,12 @@ typedef enum _NF_STATUS
 class NF_EventHandler
 {
 public:
-	// 捕获 TCP UDP 已建立连接数据
 	virtual void establishedPacket(const char* buf, int len) = 0;
-
-	// 捕获 MAC 链路层数据
 	virtual void datalinkPacket(const char* buf, int len) = 0;
-
-	// 捕获 redirect
 	virtual void tcpredirectPacket(const char* buf, int len) = 0;
+
+	virtual void threadStart() = 0;
+	virtual void threadEnd() = 0;
 };
 
 #else // _C_API
@@ -64,6 +62,8 @@ typedef struct _NF_EventHandler
 	void (NFAPI_CC * datalinkPacket)(const char * buf, int len);
 	void (NFAPI_CC * establishedPacket)(const char * buf, int len);
 	void (NFAPI_CC * tcpredirectPacket(const char* buf, int len);
+	void (NFAPI_CC* threadStart)();
+	void (NFAPI_CC* threadEnd)();
 } NF_EventHandler, *PNF_EventHandler;
 
 #pragma pack(pop)

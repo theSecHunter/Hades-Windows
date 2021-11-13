@@ -124,26 +124,6 @@ typedef  struct _NF_RULE_EX
 	wchar_t			processName[260];
 } NF_RULE_EX, *PNF_RULE_EX;
 
-
-/**
-*	TCP connection properties
-**/
-typedef struct _NF_TCP_CONN_INFO
-{
-	unsigned long	filteringFlag;	// See NF_FILTERING_FLAG
-	unsigned long	pflag;
-	unsigned long	processId;		// Process identifier
-	unsigned char	direction;		// See NF_DIRECTION
-	unsigned short	ip_family;		// AF_INET for IPv4 and AF_INET6 for IPv6
-	
-	// Local address as sockaddr_in for IPv4 and sockaddr_in6 for IPv6
-	unsigned char	localAddress[NF_MAX_ADDRESS_LENGTH]; 
-	
-	// Remote address as sockaddr_in for IPv4 and sockaddr_in6 for IPv6
-	unsigned char	remoteAddress[NF_MAX_ADDRESS_LENGTH];
-
-} NF_TCP_CONN_INFO, *PNF_TCP_CONN_INFO;
-
 /**
 *	UDP endpoint properties
 **/

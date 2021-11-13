@@ -40,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -150,19 +150,24 @@
   <ItemGroup>
     <ClCompile Include="devctrl.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="mempool.cpp" />
+    <ClCompile Include="workqueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="datalinkctx.h" />
     <ClInclude Include="devctrl.h" />
     <ClInclude Include="establishedctx.h" />
-    <ClInclude Include="eventQueue.h" />
+    <ClInclude Include="EventQueue.h" />
+    <ClInclude Include="mempool.h" />
     <ClInclude Include="nf_api.h" />
     <ClInclude Include="nfdriver.h" />
     <ClInclude Include="nfevents.h" />
     <ClInclude Include="ntbasic.h" />
+    <ClInclude Include="stdinc.h" />
     <ClInclude Include="sync.h" />
     <ClInclude Include="tcpctx.h" />
     <ClInclude Include="threadpool.h" />
+    <ClInclude Include="workqueue.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

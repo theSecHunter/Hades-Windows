@@ -14,6 +14,7 @@
 #include <map>
 #include <set>
 #include <list>
+#include "mempool.h"
 
 typedef __int64 ENDPOINT_ID;
 
@@ -31,16 +32,83 @@ inline eEndpointType getEndpointType(int code)
 {
 	return ET_UNKNOWN;
 }
-
 inline int getEventFlag(int code)
 {
 	return 1 << code;
 }
-
 inline bool isEventFlagEnabled(int flags, int code)
 {
 	return (flags & (1 << code)) != 0;
 }
+
+bool nf_pushInEvent(ENDPOINT_ID id, int code);
+bool nf_pushOutEvent(ENDPOINT_ID id, int code);
+
+class NFEvent : public ThreadJob
+{
+public:
+
+	NFEvent(eEndpointType et, ENDPOINT_ID id, int flags)
+	{
+		m_et = et;
+		m_id = id;
+		m_flags = flags;
+	}
+
+	~NFEvent()
+	{
+	}
+
+	virtual void execute()
+	{
+		NF_STATUS status;
+		if (ET_TCP == m_et)
+		{
+
+		}
+		else if (ET_UDP == m_et)
+		{
+
+		}
+	}
+
+	eEndpointType	m_et;
+	ENDPOINT_ID		m_id;
+	unsigned long	m_flags;
+};
+
+class NFEventOut : public ThreadJob
+{
+public:
+
+	NFEventOut(eEndpointType et, ENDPOINT_ID id, int flags)
+	{
+		m_et = et;
+		m_id = id;
+		m_flags = flags;
+	}
+
+	~NFEventOut()
+	{
+	}
+
+	virtual void execute()
+	{
+		NF_STATUS status;
+		if (ET_TCP == m_et)
+		{
+
+		}
+		else if (ET_UDP == m_et)
+		{
+
+		}
+	}
+
+	eEndpointType	m_et;
+	ENDPOINT_ID		m_id;
+	unsigned long	m_flags;
+};
 
 template <class EventType>
 class EventQueue : public ThreadJobSource
@@ -167,6 +235,16 @@ public:
 			{
 				m_pool.jobAvailable();
 			}
+	}
+
+	virtual void threadStarted()
+	{
+		g_pEventHandler->threadStart();
+	}
+
+	virtual void threadStopped()
+	{
+		g_pEventHandler->threadEnd();
 	}
 
 private:

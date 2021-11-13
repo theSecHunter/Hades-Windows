@@ -908,21 +908,21 @@ callouts_addFilters()
 		if (!NT_SUCCESS(status))
 			break;
 		
-		status = callout_addDataLinkMacFilter(
-			&g_calloutGuid_inbound_mac_etherent,
-			&FWPM_LAYER_INBOUND_MAC_FRAME_ETHERNET,
-			&subLayer,
-			1
-		);
-		if (!NT_SUCCESS(status))
-			break;
+		//status = callout_addDataLinkMacFilter(
+		//	&g_calloutGuid_inbound_mac_etherent,
+		//	&FWPM_LAYER_INBOUND_MAC_FRAME_ETHERNET,
+		//	&subLayer,
+		//	1
+		//);
+		//if (!NT_SUCCESS(status))
+		//	break;
 
-		status = callout_addDataLinkMacFilter(
-			&g_calloutGuid_outbound_mac_etherent,
-			&FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET,
-			&subLayer,
-			2
-		);
+		//status = callout_addDataLinkMacFilter(
+		//	&g_calloutGuid_outbound_mac_etherent,
+		//	&FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET,
+		//	&subLayer,
+		//	2
+		//);
 		if (!NT_SUCCESS(status))
 			break;
 
@@ -1010,26 +1010,26 @@ callouts_registerCallouts(
 		);
 
 		// FWPM_LAYER_INBOUND_MAC_FRAME_ETHERNET
-		status = helper_callout_registerCallout(
-			deviceObject,
-			helper_callout_classFn_mac,
-			helper_callout_notifyFn_mac,
-			helper_callout_deleteFn_mac,
-			&g_calloutGuid_inbound_mac_etherent,
-			0,
-			&g_calloutId_inbound_mac_etherent
-		);
+		//status = helper_callout_registerCallout(
+		//	deviceObject,
+		//	helper_callout_classFn_mac,
+		//	helper_callout_notifyFn_mac,
+		//	helper_callout_deleteFn_mac,
+		//	&g_calloutGuid_inbound_mac_etherent,
+		//	0,
+		//	&g_calloutId_inbound_mac_etherent
+		//);
 
-		// FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET
-		status = helper_callout_registerCallout(
-			deviceObject,
-			helper_callout_classFn_mac,
-			helper_callout_notifyFn_mac,
-			helper_callout_deleteFn_mac,
-			&g_calloutGuid_outbound_mac_etherent,
-			0,
-			&g_calloutId_outbound_mac_etherent
-		);
+		//// FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET
+		//status = helper_callout_registerCallout(
+		//	deviceObject,
+		//	helper_callout_classFn_mac,
+		//	helper_callout_notifyFn_mac,
+		//	helper_callout_deleteFn_mac,
+		//	&g_calloutGuid_outbound_mac_etherent,
+		//	0,
+		//	&g_calloutId_outbound_mac_etherent
+		//);
 
 		// FWPM_LAYER_ALE_CONNECT_REDIRECT_V4
 		status = helper_callout_registerCallout(

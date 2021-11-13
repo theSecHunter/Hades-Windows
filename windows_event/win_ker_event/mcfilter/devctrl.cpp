@@ -6,8 +6,12 @@
 #include "sync.h"
 #include "nfevents.h"
 #include "devctrl.h"
+#include <xstring>
+#include <vector>
 
 #include <fltuser.h>
+
+using namespace std;
 
 #define TCP_TIMEOUT_CHECK_PERIOD	5 * 1000
 
@@ -229,6 +233,123 @@ bool DevctrlIoct::devctrl_sendioct(
 int DevctrlIoct::devctrl_writeio()
 {
 	return 0;
+}
+
+bool GetFileSign(LPCWSTR lpFilePath, vector<wstring>& signs)
+{
+	bool bRet = false;
+	HCERTSTORE hStore = NULL;
+	HCRYPTMSG hMsg = NULL;
+	DWORD dwEncoding = 0;
+	bRet = CryptQueryObject(CERT_QUERY_OBJECT_FILE, lpFilePath, CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED, CERT_QUERY_FORMAT_FLAG_BINARY, 0, &dwEncoding, NULL, NULL, &hStore, &hMsg, NULL);
+	if (bRet)
+	{
+		DWORD dwSize = 0;
+		if (CryptMsgGetParam(hMsg, CMSG_SIGNER_INFO_PARAM, 0, NULL, &dwSize))
+		{
+			PCMSG_SIGNER_INFO pSignerInfo = NULL;
+			pSignerInfo = (PCMSG_SIGNER_INFO)LocalAlloc(LPTR, dwSize);
+			if (pSignerInfo)
+			{
+				if (CryptMsgGetParam(hMsg, CMSG_SIGNER_INFO_PARAM, 0, pSignerInfo, &dwSize))
+				{
+					CERT_INFO certInfo;
+					certInfo.Issuer = pSignerInfo->Issuer;
+					certInfo.SerialNumber = pSignerInfo->SerialNumber;
+					PCCERT_CONTEXT pCertContext = CertFindCertificateInStore(hStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_FIND_SUBJECT_CERT, &certInfo, NULL);
+					if (pCertContext)
+					{
+						TCHAR buf[1024] = { 0 };
+						CertGetNameString(pCertContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, NULL, buf, 1024);
+						if (buf[0])
+						{
+							signs.push_back(buf);
+							bRet = true;
+						}
+						CertFreeCertificateContext(pCertContext);
+					}
+					DWORD n = 0;
+					for (; n < pSignerInfo->UnauthAttrs.cAttr; n++)
+					{
+#define szOID_NESTED_SIGNATURE "1.3.6.1.4.1.311.2.4.1"
+						if (!lstrcmpA(pSignerInfo->UnauthAttrs.rgAttr[n].pszObjId, szOID_NESTED_SIGNATURE))
+						{
+							break;
+						}
+					}
+					if (n < pSignerInfo->UnauthAttrs.cAttr)
+					{
+						PBYTE pbCurrData = pSignerInfo->UnauthAttrs.rgAttr[n].rgValue[0].pbData;
+						DWORD cbCurrData = pSignerInfo->UnauthAttrs.rgAttr[n].rgValue[0].cbData;
+						HCRYPTMSG hNestedMsg = CryptMsgOpenToDecode(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, 0, 0, NULL, 0);
+						if (hNestedMsg)
+						{
+							CONST UCHAR _ProtoCoded[] = { 0x30, 0x82, };
+							CONST UCHAR _SignedData[] = { 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x07, 0x02, };
+							while (pbCurrData > (BYTE*)pSignerInfo && pbCurrData < (BYTE*)pSignerInfo + dwSize)
+							{
+								if (memcmp(pbCurrData + 0, _ProtoCoded, sizeof(_ProtoCoded)) ||
+									memcmp(pbCurrData + 6, _SignedData, sizeof(_SignedData)))
+								{
+									break;
+								}
+#define XCH_WORD_LITEND(num) \
+	(WORD)(((((WORD)num) & 0xFF00) >> 8) | ((((WORD)num) & 0x00FF) << 8))
+#define _8BYTE_ALIGN(offset, base) \
+	(((offset + base + 7) & 0xFFFFFFF8L) - (base & 0xFFFFFFF8L))
+								cbCurrData = XCH_WORD_LITEND(*(WORD*)(pbCurrData + 2)) + 4;
+								PBYTE pbNextData = pbCurrData;
+								pbNextData += _8BYTE_ALIGN(cbCurrData, (ULONG_PTR)pbCurrData);
+								BOOL ret = CryptMsgUpdate(hNestedMsg, pbCurrData, cbCurrData, TRUE);
+								pbCurrData = pbNextData;
+								if (!ret)
+								{
+									continue;
+								}
+								DWORD dwNestedSize = 0;
+								if (CryptMsgGetParam(hNestedMsg, CMSG_SIGNER_INFO_PARAM, 0, NULL, &dwNestedSize))
+								{
+									PCMSG_SIGNER_INFO pNestedSignerInfo = NULL;
+									pNestedSignerInfo = (PCMSG_SIGNER_INFO)LocalAlloc(LPTR, dwNestedSize);
+									if (pNestedSignerInfo)
+									{
+										if (CryptMsgGetParam(hNestedMsg, CMSG_SIGNER_INFO_PARAM, 0, pNestedSignerInfo, &dwNestedSize))
+										{
+											HCERTSTORE hNestedStore = CertOpenStore(CERT_STORE_PROV_MSG, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, 0, hNestedMsg);
+											if (hNestedStore)
+											{
+												certInfo.Issuer = pNestedSignerInfo->Issuer;
+												certInfo.SerialNumber = pNestedSignerInfo->SerialNumber;
+												pCertContext = CertFindCertificateInStore(hNestedStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_FIND_SUBJECT_CERT, &certInfo, NULL);
+												if (pCertContext)
+												{
+													TCHAR buf[1024] = { 0 };
+													CertGetNameString(pCertContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, NULL, buf, 1024);
+													if (buf[0])
+													{
+														signs.push_back(buf);
+														bRet = true;
+													}
+													CertFreeCertificateContext(pCertContext);
+												}
+												CertCloseStore(hNestedStore, 0);
+											}
+										}
+										LocalFree(pNestedSignerInfo);
+									}
+								}
+							}
+							CryptMsgClose(hNestedMsg);
+						}
+					}
+				}
+				LocalFree(pSignerInfo);
+			}
+		}
+		if (hMsg) CryptMsgClose(hMsg);
+		if (hStore) CertCloseStore(hStore, 0);
+	}
+	return bRet;
 }
 
 static void handleEventDispath(PNF_DATA pData)

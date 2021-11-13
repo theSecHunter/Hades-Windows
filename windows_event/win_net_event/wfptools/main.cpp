@@ -3,6 +3,7 @@
 #include "devctrl.h"
 #include "establishedctx.h"
 #include "datalinkctx.h"
+#include "workqueue.h"
 #include "tcpctx.h"
 #include "nfevents.h"
 #include "nf_api.h"
@@ -21,22 +22,6 @@ typedef struct _PROCESS_INFO
 	UINT64 processId;
 }PROCESS_INFO, *PPROCESS_INFO;
 
-typedef UNALIGNED struct _NF_TCP_CONN_INFO
-{
-	unsigned long	filteringFlag;	// See NF_FILTERING_FLAG
-	unsigned long	pflag;
-	unsigned long	processId;		// Process identifier
-	unsigned char	direction;		// See NF_DIRECTION
-	unsigned short	ip_family;		// AF_INET for IPv4 and AF_INET6 for IPv6
-
-	// Local address as sockaddr_in for IPv4 and sockaddr_in6 for IPv6
-	unsigned char	localAddress[NF_MAX_ADDRESS_LENGTH];
-
-	// Remote address as sockaddr_in for IPv4 and sockaddr_in6 for IPv6
-	unsigned char	remoteAddress[NF_MAX_ADDRESS_LENGTH];
-
-} NF_TCP_CONN_INFO, * PNF_TCP_CONN_INFO;
-
 static mutex g_mutx;
 map<int, NF_CALLOUT_FLOWESTABLISHED_INFO> flowestablished_map;
 
@@ -48,6 +33,15 @@ BOOL DeviceDosPathToNtPath(wchar_t* pszDosPath, wchar_t* pszNtPath);
 
 class EventHandler : public NF_EventHandler
 {
+public:
+	
+	virtual void threadStart()
+	{
+	}
+	virtual void threadEnd()
+	{
+	}
+
 	void establishedPacket(const char* buf, int len) override
 	{
 		NF_CALLOUT_FLOWESTABLISHED_INFO flowestablished_processinfo;
@@ -126,32 +120,10 @@ class EventHandler : public NF_EventHandler
 			{
 			case 1:
 			{
-				// hide port
-				for (i = 0; i < ids_destinationport.size(); ++i)
-				{
-					// block
-					if (redirect_info.toRemotePort == ids_destinationport[i])
-						return;
-				}
-
-
-				for (i = 0; i < ids_destinationaddress.size(); ++i)
-				{
-					// block
-					if (redirect_info.ipv4toRemoteAddr == ids_destinationaddress[i])
-						return;
-				}
 			}
 			break;
 			case 2:
 			{
-				ULONGLONG ulKey = redirect_info.ipv4toRemoteAddr + redirect_info.toRemotePort;
-				for (i = 0; i < ids_destinationaddressport.size(); ++i)
-				{
-					// block
-					if (ulKey == ids_destinationaddressport[i])
-						return;
-				}
 				
 			}
 			break;
@@ -626,6 +598,7 @@ int nf_driverInstall()
 int main(void)
 //int nf_init(void)
 {
+	getchar();
 	int status = 0;
 	DWORD nSeriverstatus = -1;
 	wstring pszCmd = L"sc start wfpdriver";
@@ -705,6 +678,9 @@ int main(void)
 			break;
 		}
 
+		// 必须在 devctrl_workthread 之前初始化 Work Queue
+		nf_InitWorkQueue((PVOID64)&packtebuff);
+
 		status = devobj.devctrl_workthread();
 		if (0 > status)
 		{
@@ -719,12 +695,16 @@ int main(void)
 			cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
 			break;
 		}
-
-		// Enable Event
-		devobj.nf_setWfpCheckEventHandler((PVOID)&packtebuff);
 		
 		status = 1;
 	} while (false);
+
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
 
 	return status;
 }

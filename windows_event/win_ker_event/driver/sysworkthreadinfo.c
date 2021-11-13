@@ -3,5 +3,5 @@
 
 int nf_GetsysWorkThread(ULONGLONG* pBuffer)
 {
-
+	return 0;
 }
