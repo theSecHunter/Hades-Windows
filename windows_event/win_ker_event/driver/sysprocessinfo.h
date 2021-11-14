@@ -8,14 +8,26 @@
 #ifndef _SYSPROCESSINFO_H
 #define _SYSPROCESSINFP_H
 
+typedef struct _HANDLE_INFO {
+	ULONG_PTR	ObjectTypeIndex;
+	ULONG_PTR	HandleValue;
+	ULONG_PTR	ReferenceCount;
+	ULONG_PTR	GrantedAccess;
+	ULONG_PTR	CountNum;
+	ULONG_PTR	Object;
+	WCHAR	ProcessName[256 * 2];
+	WCHAR	TypeName[256 * 2];
+	WCHAR	HandleName[256 * 2];
+} HANDLE_INFO, * PHANDLE_INFO;
+
+typedef struct _KERNEL_COPY_MEMORY_OPERATION
+{
+	INT32 targetProcessId;
+	PVOID targetAddress;
+	PVOID bufferAddress;
+	INT32 bufferSize;
+} KERNEL_COPY_MEMORY_OPERATION, * PKERNEL_COPY_MEMORY_OPERATION;
 
 int nf_KillProcess(PEPROCESS Process);
-int nf_DumpProcess();
-
-int nf_GetSysProcess_SearchMemory();
-int nf_GetSysProcess_Api();
-int nf_GetSysProcess_List();
-int nf_GetSysProcess_CidHandle();
-int nf_GetSysProcess_Module();
 
 #endif

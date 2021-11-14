@@ -66,8 +66,50 @@
 extern DWORD g_dwLogLevel;
 // extern BOOLEAN g_monitorflag;
 
-
 extern POBJECT_TYPE* IoDriverObjectType;
+
+typedef enum _SYSTEM_INFORMATION_CLASS
+{
+    SystemProcessInformation = 5
+} SYSTEM_INFORMATION_CLASS;
+
+NTKERNELAPI PPEB NTAPI PsGetProcessPeb(
+    IN PEPROCESS Process
+);
+
+NTSYSAPI NTSTATUS NTAPI ZwQuerySystemInformation(
+    IN SYSTEM_INFORMATION_CLASS SystemInformationClass,
+    OUT PVOID SystemInformation,
+    IN ULONG SystemInformationLength,
+    OUT PULONG ReturnLength OPTIONAL
+);
+
+NTKERNELAPI NTSTATUS NTAPI MmCopyVirtualMemory(
+    IN PEPROCESS FromProcess,
+    IN PVOID FromAddress,
+    IN PEPROCESS ToProcess,
+    OUT PVOID ToAddress,
+    IN SIZE_T BufferSize,
+    IN KPROCESSOR_MODE PreviousMode,
+    OUT PSIZE_T NumberOfBytesCopied
+);
+
+NTKERNELAPI PVOID NTAPI PsGetProcessWow64Process(
+    PEPROCESS Process
+);
+
+NTSYSAPI NTSTATUS NTAPI ZwQueryVirtualMemory(
+    IN HANDLE ProcessHandle,
+    IN PVOID BaseAddress,
+    IN MEMORY_INFORMATION_CLASS MemoryInformationClass,
+    OUT PVOID MemoryInformation,
+    IN SIZE_T MemoryInformationLength,
+    OUT PSIZE_T ReturnLength OPTIONAL
+);
+
+NTKERNELAPI UCHAR* PsGetProcessImageFileName(
+    PEPROCESS Process
+);
 
 NTSTATUS
 ObReferenceObjectByName(
@@ -240,5 +282,89 @@ typedef struct _UDP_HEADER_
     unsigned short length;
     unsigned short checksum;
 }UDP_HEADER, * PUDP_HEADER;
+
+typedef enum _OBJECT_INFORMATION_CLASSEx {
+    ObjectBasicInformation1,
+    ObjectNameInformation1,
+    ObjectTypeInformation1,
+    ObjectAllInformation1,
+    ObjectDataInformation1
+} OBJECT_INFORMATION_CLASSEx, * POBJECT_INFORMATION_CLASSEx;
+
+typedef struct _OBJECT_BASIC_INFORMATION {
+    ULONG                   Attributes;
+    ACCESS_MASK             DesiredAccess;
+    ULONG                   HandleCount;
+    ULONG                   ReferenceCount;
+    ULONG                   PagedPoolUsage;
+    ULONG                   NonPagedPoolUsage;
+    ULONG                   Reserved[3];
+    ULONG                   NameInformationLength;
+    ULONG                   TypeInformationLength;
+    ULONG                   SecurityDescriptorLength;
+    LARGE_INTEGER           CreationTime;
+} OBJECT_BASIC_INFORMATION, * POBJECT_BASIC_INFORMATION;
+
+typedef struct _OBJECT_TYPE_INFORMATION {
+    UNICODE_STRING          TypeName;
+    ULONG                   TotalNumberOfHandles;
+    ULONG                   TotalNumberOfObjects;
+    WCHAR                   Unused1[8];
+    ULONG                   HighWaterNumberOfHandles;
+    ULONG                   HighWaterNumberOfObjects;
+    WCHAR                   Unused2[8];
+    ACCESS_MASK             InvalidAttributes;
+    GENERIC_MAPPING         GenericMapping;
+    ACCESS_MASK             ValidAttributes;
+    BOOLEAN                 SecurityRequired;
+    BOOLEAN                 MaintainHandleCount;
+    USHORT                  MaintainTypeList;
+    POOL_TYPE               PoolType;
+    ULONG                   DefaultPagedPoolCharge;
+    ULONG                   DefaultNonPagedPoolCharge;
+} OBJECT_TYPE_INFORMATION, * POBJECT_TYPE_INFORMATION;
+
+typedef struct _SYSTEM_HANDLE_TABLE_ENTRY_INFO {
+    USHORT	UniqueProcessId;
+    USHORT	CreatorBackTraceIndex;
+    UCHAR	ObjectTypeIndex;
+    UCHAR	HandleAttributes;
+    USHORT	HandleValue;
+    PVOID	Object;
+    ULONG	GrantedAccess;
+} SYSTEM_HANDLE_TABLE_ENTRY_INFO, * PSYSTEM_HANDLE_TABLE_ENTRY_INFO;
+
+typedef struct _SYSTEM_HANDLE_INFORMATION {
+    ULONG64 NumberOfHandles;
+    SYSTEM_HANDLE_TABLE_ENTRY_INFO Handles[1];
+} SYSTEM_HANDLE_INFORMATION, * PSYSTEM_HANDLE_INFORMATION;
+
+typedef struct _LDR_DATA_TABLE_ENTRY
+{
+    LIST_ENTRY        InLoadOrderLinks;
+    LIST_ENTRY        InMemoryOrderLinks;
+    LIST_ENTRY        InInitializationOrderLinks;
+    PVOID                        DllBase;
+    PVOID                        EntryPoint;
+    ULONG                        SizeOfImage;
+    UNICODE_STRING        FullDllName;
+    UNICODE_STRING         BaseDllName;
+} LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
+
+typedef struct _LDR_DATA_TABLE_ENTRY32
+{
+    LIST_ENTRY32                InLoadOrderLinks;
+    LIST_ENTRY32                InMemoryOrderLinks;
+    LIST_ENTRY32                InInitializationOrderLinks;
+    ULONG                                DllBase;
+    ULONG                                EntryPoint;
+    ULONG                                SizeOfImage;
+    UNICODE_STRING32        FullDllName;
+    UNICODE_STRING32         BaseDllName;
+    ULONG                                Flags;
+    USHORT                                LoadCount;
+    USHORT                                TlsIndex;
+    //下面的省略
+} LDR_DATA_TABLE_ENTRY32, * PLDR_DATA_TABLE_ENTRY32;
 
 #endif

@@ -1,11 +1,29 @@
+/*
+	- 2018 year
+*/
 #include "public.h"
 #include "sysprocessinfo.h"
 
-/*
-	ProcessExplorer Tools 的方法
-*/
+PHANDLE_INFO g_pHandleInfo = NULL;
 
-ULONG_PTR EnumProcessHandleWin78(HANDLE pid)
+/*
+	-- nf_EnumProcessHandle
+	-- nf_EnumModuleByPid 
+	-- nf_KillProcess
+	使用ZhuHuiBeiShaDiaoARK-master代码
+
+	-- nf_DumpProcesss内核只需要查询出来地址和大小拷贝，修复PE工作在应用层进行。
+*/
+VOID CharToWchar(PCHAR src, PWCHAR dst)
+{
+	UNICODE_STRING uString;
+	ANSI_STRING aString;
+	RtlInitAnsiString(&aString, src);
+	RtlAnsiStringToUnicodeString(&uString, &aString, TRUE);
+	wcscpy(dst, uString.Buffer);
+	RtlFreeUnicodeString(&uString);
+}
+ULONG_PTR nf_EnumProcessHandle(HANDLE pid)
 {
 	PVOID Buffer;
 	ULONG BufferSize = 0x20000, rtl = 0;
@@ -27,25 +45,24 @@ ULONG_PTR EnumProcessHandleWin78(HANDLE pid)
 	ULONG_PTR Count = 0;
 	char* szProcessName = NULL;
 
-
-	if (pHandleInfo)
+	if (g_pHandleInfo)
 	{
-		ExFreePool(pHandleInfo);
-		pHandleInfo = NULL;
+		ExFreePool(g_pHandleInfo);
+		g_pHandleInfo = NULL;
 	}
-	pHandleInfo = (PHANDLE_INFO)ExAllocatePool(NonPagedPool, sizeof(HANDLE_INFO) * 1024 * 2);
 
-	if (pHandleInfo == NULL)
+	g_pHandleInfo = (PHANDLE_INFO)ExAllocatePool(NonPagedPool, sizeof(HANDLE_INFO) * 1024 * 2);
+	if (g_pHandleInfo == NULL)
 		return 0x88888888;
 
-	Buffer = kmalloc(BufferSize);
+	Buffer = malloc_np(BufferSize);
 	memset(Buffer, 0, BufferSize);
 	Status = ZwQuerySystemInformation(16, Buffer, BufferSize, 0);	//SystemHandleInformation
 	while (Status == 0xC0000004)	//STATUS_INFO_LENGTH_MISMATCH
 	{
-		kfree(Buffer);
+		free_np(Buffer);
 		BufferSize = BufferSize * 2;
-		Buffer = kmalloc(BufferSize);
+		Buffer = malloc_np(BufferSize);
 		memset(Buffer, 0, BufferSize);
 		Status = ZwQuerySystemInformation(16, Buffer, BufferSize, 0);
 	}
@@ -53,7 +70,7 @@ ULONG_PTR EnumProcessHandleWin78(HANDLE pid)
 	qwHandleCount = ((SYSTEM_HANDLE_INFORMATION*)Buffer)->NumberOfHandles;
 	p = (SYSTEM_HANDLE_TABLE_ENTRY_INFO*)((SYSTEM_HANDLE_INFORMATION*)Buffer)->Handles;
 	//clear array
-	memset(pHandleInfo, 0, 1024 * sizeof(HANDLE_INFO) * 2);
+	memset(g_pHandleInfo, 0, 1024 * sizeof(HANDLE_INFO) * 2);
 	//ENUM HANDLE PROC
 	for (i = 0; i < qwHandleCount; i++)
 	{
@@ -77,14 +94,14 @@ ULONG_PTR EnumProcessHandleWin78(HANDLE pid)
 				if (ns == 0xc00000bb)
 				{
 					//KdPrint(( "This is EtwRegistration ZwDuplicateObject Fail Code :0x%x",ns ));
-					pHandleInfo[Count].GrantedAccess = p[i].GrantedAccess;
-					pHandleInfo[Count].HandleValue = p[i].HandleValue;
-					wcsncpy(pHandleInfo[Count].HandleName, L" ", wcslen(L" "));
-					pHandleInfo[Count].Object = (ULONG64)p[i].Object;
-					pHandleInfo[Count].ObjectTypeIndex = p[i].ObjectTypeIndex;
-					wcsncpy(pHandleInfo[Count].TypeName, L"EtwRegistration", wcslen(L"EtwRegistration"));
-					pHandleInfo[Count].ReferenceCount = 0;
-					wcsncpy(pHandleInfo[Count].ProcessName, L"System", wcslen(L"System"));
+					g_pHandleInfo[Count].GrantedAccess = p[i].GrantedAccess;
+					g_pHandleInfo[Count].HandleValue = p[i].HandleValue;
+					wcsncpy(g_pHandleInfo[Count].HandleName, L" ", wcslen(L" "));
+					g_pHandleInfo[Count].Object = (ULONG64)p[i].Object;
+					g_pHandleInfo[Count].ObjectTypeIndex = p[i].ObjectTypeIndex;
+					wcsncpy(g_pHandleInfo[Count].TypeName, L"EtwRegistration", wcslen(L"EtwRegistration"));
+					g_pHandleInfo[Count].ReferenceCount = 0;
+					wcsncpy(g_pHandleInfo[Count].ProcessName, L"System", wcslen(L"System"));
 					Count++;
 				}
 				continue;
@@ -110,23 +127,23 @@ ULONG_PTR EnumProcessHandleWin78(HANDLE pid)
 			{
 				//KdPrint(("Process:%s\n",PsGetProcessImageFileName((PEPROCESS)p[i].Object)));
 				szProcessName = (PCHAR)PsGetProcessImageFileName((PEPROCESS)p[i].Object);
-				CharToWchar(szProcessName, pHandleInfo[Count].ProcessName);
+				CharToWchar(szProcessName, g_pHandleInfo[Count].ProcessName);
 				//KdPrint(("%ws\n",pHandleInfo[Count].ProcessName));
 			}
 			else if (p[i].ObjectTypeIndex == 8)//Thread
 			{
 				//KdPrint(("Process:%s\n",PsGetProcessImageFileName(IoThreadToProcess((PETHREAD)p[i].Object))));
 				szProcessName = (PCHAR)PsGetProcessImageFileName(IoThreadToProcess((PETHREAD)p[i].Object));
-				CharToWchar(szProcessName, pHandleInfo[Count].ProcessName);
+				CharToWchar(szProcessName, g_pHandleInfo[Count].ProcessName);
 				//KdPrint(("%ws\n",pHandleInfo[Count].ProcessName));
 			}
-			pHandleInfo[Count].ObjectTypeIndex = p[i].ObjectTypeIndex;
-			pHandleInfo[Count].ReferenceCount = BasicInfo.ReferenceCount;
-			pHandleInfo[Count].GrantedAccess = BasicInfo.DesiredAccess;
-			pHandleInfo[Count].HandleValue = p[i].HandleValue;
-			pHandleInfo[Count].Object = (ULONG64)p[i].Object;
-			wcsncpy(pHandleInfo[Count].HandleName, pNameInfo->Name.Buffer, pNameInfo->Name.Length * 2);
-			wcsncpy(pHandleInfo[Count].TypeName, pTypeInfo->TypeName.Buffer, pTypeInfo->TypeName.Length * 2);
+			g_pHandleInfo[Count].ObjectTypeIndex = p[i].ObjectTypeIndex;
+			g_pHandleInfo[Count].ReferenceCount = BasicInfo.ReferenceCount;
+			g_pHandleInfo[Count].GrantedAccess = BasicInfo.DesiredAccess;
+			g_pHandleInfo[Count].HandleValue = p[i].HandleValue;
+			g_pHandleInfo[Count].Object = (ULONG64)p[i].Object;
+			wcsncpy(g_pHandleInfo[Count].HandleName, pNameInfo->Name.Buffer, pNameInfo->Name.Length * 2);
+			wcsncpy(g_pHandleInfo[Count].TypeName, pTypeInfo->TypeName.Buffer, pTypeInfo->TypeName.Length * 2);
 
 			ExFreePool(pNameInfo);
 			ExFreePool(pTypeInfo);
@@ -137,13 +154,10 @@ ULONG_PTR EnumProcessHandleWin78(HANDLE pid)
 
 		}
 	}
-	KdPrint(("pid:%d---HandleCount:%d", pid, Count));
-	//总数放在第1个结构中
-	pHandleInfo[0].CountNum = Count;
+	g_pHandleInfo[0].CountNum = Count;
 	return Count;
 }
-
-VOID EnumModuleByPid(ULONG pid)
+VOID nf_EnumModuleByPid(ULONG pid)
 {
 	SIZE_T Peb = 0, Ldr = 0, tmp = 0;
 	PEPROCESS Process = NULL;
@@ -161,12 +175,11 @@ VOID EnumModuleByPid(ULONG pid)
 	const int ModListInPebOffset = 0xC;
 #endif
 
-	Process = LookupProcess((HANDLE)pid);
-
-	if (Process == NULL)
-		return;
-
-	KdPrint(("EPROCESS = %p ,PID = %ld,PPID = %ld,Name = %s\n", Process, (DWORD64)PsGetProcessId(Process), (DWORD64)PsGetProcessInheritedFromUniqueProcessId(Process), PsGetProcessImageFileName(Process)));
+	PEPROCESS eprocess = NULL;
+	if (NT_SUCCESS(PsLookupProcessByProcessId((HANDLE)pid, &eprocess)))
+		return eprocess;
+	else
+		return NULL;
 
 	Peb = PsGetProcessPeb(Process);
 	KeStackAttachProcess(Process, &ks);
@@ -235,9 +248,7 @@ VOID EnumModuleByPid(ULONG pid)
 						((PLDR_DATA_TABLE_ENTRY32)Module32)->FullDllName.Buffer);
 				}
 				count++;
-				//下一个元素
 				Module32 = (PLIST_ENTRY32)(Module32->Flink);
-				//测试下一个模块信息的可读性
 				ProbeForRead((CONST PVOID)Module32, 40, 4);
 			}
 		}
@@ -292,31 +303,27 @@ NTSTATUS GetProcessPathByPid(HANDLE pid, WCHAR* szProcessName)
 
 }
 
-int nf_GetSysProcesstoSearchMemory()
+int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request)
 {
+	PEPROCESS targetProcess;
 
+	if (NT_SUCCESS(PsLookupProcessByProcessId(request->targetProcessId, &targetProcess)))
+	{
+		PSIZE_T readBytes;
+		MmCopyVirtualMemory(targetProcess, request->bufferAddress, PsGetCurrentProcess(), request->targetAddress, request->bufferSize, UserMode, &readBytes);
+		ObDereferenceObject(targetProcess);
+	}
 }
 
-int nf_GetSysProcesstoApi()
-{
 
-}
+typedef NTSTATUS(__fastcall* PSPTERMINATETHREADBYPOINTER)
+(
+	IN PETHREAD Thread,
+	IN NTSTATUS ExitStatus,
+	IN BOOLEAN DirectTerminate
+	);
 
-int nf_GetSysProcesstoList()
-{
-
-}
-
-int nf_GetSysProcessCidHandle()
-{
-
-}
-
-int nf_DumpProcess()
-{
-
-}
-
+PSPTERMINATETHREADBYPOINTER PspTerminateThreadByPointer = NULL;
 int nf_KillProcess(PEPROCESS Process)
 {
 	ULONG32 callcode = 0;
@@ -324,16 +331,17 @@ int nf_KillProcess(PEPROCESS Process)
 	PETHREAD Thread = NULL;
 	PEPROCESS tProcess = NULL;
 	NTSTATUS status = 0;
+	
 	if (PspTerminateThreadByPointer == NULL)
 	{
-		AddressOfPsTST = (ULONG64)GetFunctionAddr(L"PsTerminateSystemThread");
+		AddressOfPsTST = (ULONG64)MmGetSystemRoutineAddress(L"PsTerminateSystemThread");
 		if (AddressOfPsTST == 0)
 			return STATUS_UNSUCCESSFUL;
 		for (i = 1; i < 0xff; i++)
 		{
 			if (MmIsAddressValid((PVOID)(AddressOfPsTST + i)) != FALSE)
 			{
-				if (*(BYTE*)(AddressOfPsTST + i) == 0x01 && *(BYTE*)(AddressOfPsTST + i + 1) == 0xe8) //目标地址-原始地址-5=机器码 ==> 目标地址=机器码+5+原始地址
+				if (*(unsigned char*)(AddressOfPsTST + i) == 0x01 && *(unsigned char*)(AddressOfPsTST + i + 1) == 0xe8) //目标地址-原始地址-5=机器码 ==> 目标地址=机器码+5+原始地址
 				{
 					RtlMoveMemory(&callcode, (PVOID)(AddressOfPsTST + i + 2), 4);
 					AddressOfPspTTBP = (ULONG64)callcode + 5 + AddressOfPsTST + i + 1;
