@@ -1,3 +1,6 @@
+/*
+	获取某Process全部线程
+*/
 #include "public.h"
 #include "sysworkthreadinfo.h"
 

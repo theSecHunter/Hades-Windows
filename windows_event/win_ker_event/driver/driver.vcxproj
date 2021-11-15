@@ -35,11 +35,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="bios.c" />
     <ClCompile Include="devctrl.c" />
     <ClCompile Include="imagemod.c" />
+    <ClCompile Include="mbr.c" />
     <ClCompile Include="process.c" />
     <ClCompile Include="register.c" />
     <ClCompile Include="sysdpctimer.c" />
+    <ClCompile Include="sysdriverinfo.c" />
     <ClCompile Include="sysenumnotify.c" />
     <ClCompile Include="sysfile.c" />
     <ClCompile Include="sysfsd.c" />
@@ -47,11 +50,13 @@
     <ClCompile Include="sysidt.c" />
     <ClCompile Include="sysmousekeyboard.c" />
     <ClCompile Include="sysnetwork.c" />
-    <ClCompile Include="sysprocesstree.c" />
+    <ClCompile Include="sysprocessinfo.c" />
     <ClCompile Include="syssession.c" />
     <ClCompile Include="sysssdt.c" />
     <ClCompile Include="syswmi.c" />
+    <ClCompile Include="sysworkthreadinfo.c" />
     <ClCompile Include="thread.c" />
+    <ClCompile Include="uefi.c" />
     <ResourceCompile Include="driver.rc" />
     <ClCompile Include="driver.c" />
     <Inf Include="driver.inf">
@@ -240,15 +245,18 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bios.h" />
     <ClInclude Include="devctrl.h" />
     <ClInclude Include="driver.h" />
     <ClInclude Include="imagemod.h" />
+    <ClInclude Include="mbr.h" />
     <ClInclude Include="ntdefines.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="process.h" />
     <ClInclude Include="public.h" />
     <ClInclude Include="register.h" />
     <ClInclude Include="sysdpctimer.h" />
+    <ClInclude Include="sysdriverinfo.h" />
     <ClInclude Include="sysenumnotify.h" />
     <ClInclude Include="sysfile.h" />
     <ClInclude Include="sysfsd.h" />
@@ -256,11 +264,13 @@
     <ClInclude Include="sysidt.h" />
     <ClInclude Include="sysmousekeyboard.h" />
     <ClInclude Include="sysnetwork.h" />
-    <ClInclude Include="sysprocesstree.h" />
+    <ClInclude Include="sysprocessinfo.h" />
     <ClInclude Include="syssession.h" />
     <ClInclude Include="sysssdt.h" />
     <ClInclude Include="syswmi.h" />
+    <ClInclude Include="sysworkthreadinfo.h" />
     <ClInclude Include="thread.h" />
+    <ClInclude Include="uefi.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

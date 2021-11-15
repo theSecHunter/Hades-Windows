@@ -19,6 +19,9 @@
     <Filter Include="Arktools">
       <UniqueIdentifier>{9f63d77f-b3d2-46eb-b893-9f2d2700685d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="grpc">
+      <UniqueIdentifier>{f5786f9a-b4d8-4337-aa63-296c32994e28}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mcfilter.cpp">
@@ -50,6 +53,24 @@
     </ClCompile>
     <ClCompile Include="ArkSysEnumNotify.cpp">
       <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkFsd.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkMouseKeyBoard.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkNetwork.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="grpc.cpp">
+      <Filter>grpc</Filter>
+    </ClCompile>
+    <ClCompile Include="hades_win.grpc.pb.cc">
+      <Filter>grpc</Filter>
+    </ClCompile>
+    <ClCompile Include="hades_win.pb.cc">
+      <Filter>grpc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -89,5 +110,26 @@
     <ClInclude Include="ArkSysEnumNotify.h">
       <Filter>Arktools</Filter>
     </ClInclude>
+    <ClInclude Include="ArkFsd.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkMouseKeyBoard.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkNetwork.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="grpc.h">
+      <Filter>grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="hades_win.grpc.pb.h">
+      <Filter>grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="hades_win.pb.h">
+      <Filter>grpc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

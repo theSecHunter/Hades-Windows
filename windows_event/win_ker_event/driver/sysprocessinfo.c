@@ -1,19 +1,24 @@
 /*
 	- 2018 year
+	-- nf_EnumProcessHandle
+	-- nf_EnumModuleByPid
+	-- nf_KillProcess
+	使用ZhuHuiBeiShaDiaoARK-master代码
+	-- nf_DumpProcesss内核只需要查询出来地址和大小拷贝，修复PE工作在应用层进行。
 */
 #include "public.h"
 #include "sysprocessinfo.h"
 
+typedef NTSTATUS(__fastcall* PSPTERMINATETHREADBYPOINTER)
+(
+	IN PETHREAD Thread,
+	IN NTSTATUS ExitStatus,
+	IN BOOLEAN DirectTerminate
+	);
+PSPTERMINATETHREADBYPOINTER PspTerminateThreadByPointer = NULL;
+
 PHANDLE_INFO g_pHandleInfo = NULL;
 
-/*
-	-- nf_EnumProcessHandle
-	-- nf_EnumModuleByPid 
-	-- nf_KillProcess
-	使用ZhuHuiBeiShaDiaoARK-master代码
-
-	-- nf_DumpProcesss内核只需要查询出来地址和大小拷贝，修复PE工作在应用层进行。
-*/
 VOID CharToWchar(PCHAR src, PWCHAR dst)
 {
 	UNICODE_STRING uString;
@@ -23,6 +28,46 @@ VOID CharToWchar(PCHAR src, PWCHAR dst)
 	wcscpy(dst, uString.Buffer);
 	RtlFreeUnicodeString(&uString);
 }
+NTSTATUS GetProcessPathByPid(HANDLE pid, WCHAR* szProcessName)
+{
+
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
+	PEPROCESS Process = NULL;
+	PUNICODE_STRING szProcessPath;
+
+	if (!NT_SUCCESS(PsLookupProcessByProcessId(pid, &Process)))
+	{
+		return status;
+	}
+
+	status = SeLocateProcessImageName(Process, &szProcessPath);
+
+	if (!NT_SUCCESS(status))
+	{
+		ObDereferenceObject(Process);
+		return status;
+	}
+
+
+	//memcpy(szProcessName,szProcessPath->Buffer,szProcessPath->Length);
+	//wcsncpy(szProcessName,szProcessPath->Buffer,szProcessPath->Length*2);
+	__try {
+		RtlCopyMemory(szProcessName, szProcessPath->Buffer, szProcessPath->Length * 2);
+	}
+	__except (1)
+	{
+		DbgPrint("GetProcessPathByPid error !\n");
+	}
+
+
+	ExFreePool(szProcessPath);
+
+	ObDereferenceObject(Process);
+
+	return STATUS_SUCCESS;
+
+}
+
 ULONG_PTR nf_EnumProcessHandle(HANDLE pid)
 {
 	PVOID Buffer;
@@ -157,6 +202,7 @@ ULONG_PTR nf_EnumProcessHandle(HANDLE pid)
 	g_pHandleInfo[0].CountNum = Count;
 	return Count;
 }
+
 VOID nf_EnumModuleByPid(ULONG pid)
 {
 	SIZE_T Peb = 0, Ldr = 0, tmp = 0;
@@ -263,46 +309,6 @@ VOID nf_EnumModuleByPid(ULONG pid)
 	KdPrint(("Count:%d\n\n", count));
 }
 
-NTSTATUS GetProcessPathByPid(HANDLE pid, WCHAR* szProcessName)
-{
-
-	NTSTATUS status = STATUS_UNSUCCESSFUL;
-	PEPROCESS Process = NULL;
-	PUNICODE_STRING szProcessPath;
-
-	if (!NT_SUCCESS(PsLookupProcessByProcessId(pid, &Process)))
-	{
-		return status;
-	}
-
-	status = SeLocateProcessImageName(Process, &szProcessPath);
-
-	if (!NT_SUCCESS(status))
-	{
-		ObDereferenceObject(Process);
-		return status;
-	}
-
-
-	//memcpy(szProcessName,szProcessPath->Buffer,szProcessPath->Length);
-	//wcsncpy(szProcessName,szProcessPath->Buffer,szProcessPath->Length*2);
-	__try {
-		RtlCopyMemory(szProcessName, szProcessPath->Buffer, szProcessPath->Length * 2);
-	}
-	__except (1)
-	{
-		DbgPrint("GetProcessPathByPid error !\n");
-	}
-
-
-	ExFreePool(szProcessPath);
-
-	ObDereferenceObject(Process);
-
-	return STATUS_SUCCESS;
-
-}
-
 int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request)
 {
 	PEPROCESS targetProcess;
@@ -315,25 +321,23 @@ int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request)
 	}
 }
 
-
-typedef NTSTATUS(__fastcall* PSPTERMINATETHREADBYPOINTER)
-(
-	IN PETHREAD Thread,
-	IN NTSTATUS ExitStatus,
-	IN BOOLEAN DirectTerminate
-	);
-
-PSPTERMINATETHREADBYPOINTER PspTerminateThreadByPointer = NULL;
-int nf_KillProcess(PEPROCESS Process)
+int nf_KillProcess(ULONG pid)
 {
+	
 	ULONG32 callcode = 0;
 	ULONG64 AddressOfPspTTBP = 0, AddressOfPsTST = 0, i = 0;
 	PETHREAD Thread = NULL;
 	PEPROCESS tProcess = NULL;
 	NTSTATUS status = 0;
+
+	PEPROCESS pEProc;
+	PsLookupProcessByProcessId((HANDLE)pid, &pEProc);
+	if (!pEProc)
+		return STATUS_UNSUCCESSFUL;
 	
 	if (PspTerminateThreadByPointer == NULL)
 	{
+		// PsTerminateSystemThread
 		AddressOfPsTST = (ULONG64)MmGetSystemRoutineAddress(L"PsTerminateSystemThread");
 		if (AddressOfPsTST == 0)
 			return STATUS_UNSUCCESSFUL;
@@ -351,18 +355,22 @@ int nf_KillProcess(PEPROCESS Process)
 		PspTerminateThreadByPointer = (PSPTERMINATETHREADBYPOINTER)AddressOfPspTTBP;
 	}
 
+	// 枚举线程
 	for (i = 4; i < 0x40000; i += 4)
 	{
 		status = PsLookupThreadByThreadId((HANDLE)i, &Thread);
 		if (NT_SUCCESS(status))
 		{
+			// 获取线程的进程结构
 			tProcess = IoThreadToProcess(Thread);
-			if (tProcess == Process)
+			// 指针相同意味着属于该进程
+			if (tProcess == pEProc)
 				PspTerminateThreadByPointer(Thread, 0, 1);
 			ObDereferenceObject(Thread);
 		}
 	}
-	KdPrint(("关闭成功;"));
-	//return status
+
+	if (pEProc)
+		ObDereferenceObject(pEProc);
 	return STATUS_SUCCESS;
 }

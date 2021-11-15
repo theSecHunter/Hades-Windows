@@ -67,7 +67,9 @@ NTSTATUS GetObjectByName(
 	return status;
 }
 
-int nf_GetNetworkIpProcessInfo(PSYSNETWORKINFONODE pBuffer)
+int nf_GetNetworkIpProcessInfo(
+	PSYSNETWORKINFONODE pBuffer
+)
 {
 	PIRP						pIrp = NULL;
 	KEVENT						Event;

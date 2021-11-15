@@ -66,6 +66,7 @@ void charTowchar(const char* chr, wchar_t* wchar, int size)
 		strlen(chr) + 1, wchar, size / sizeof(wchar[0]));
 }
 
+// 内核上抛数据
 class EventHandler : public NF_EventHandler
 {
 	void processPacket(const char* buf, int len) override
@@ -244,9 +245,11 @@ class EventHandler : public NF_EventHandler
 	}
 };
 
+
 static DevctrlIoct			devobj;
 static EventHandler			eventobj;
 
+// Rootkit 接口
 static ArkSsdt				g_ssdtobj;
 static ArkIdt				g_idtobj;
 static ArkDpcTimer			g_dpcobj;
@@ -401,6 +404,9 @@ int main(int argc, char* argv[])
 	devobj.devctrl_free();
 	exit(0);
 
+	/*
+		Json Config Alay
+	*/
 	bool nstatus = false;
 	// read rule to mcrule.json
 	Json::Value root;
