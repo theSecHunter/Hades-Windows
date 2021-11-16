@@ -92,9 +92,13 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 - 看雪论坛帖子
 - OpenEdr & Netfilter SDK框架模型
 
+<<<<<<< HEAD
 ```c++
 std::cout << "项目将零散代码组织到一起，业余投入精力并不多。部分cpp可能以前学习中编写，遗憾的是时间太久，忘记了具体引用的项目，部分代码中有参考github_url，有兴趣可以去学习一番。" << std::endl
 ```
+=======
+**项目还在开发中，包括和Client grpc c++上层接口和事件类处理，都在进一步的探索和使用，开发版。**
+>>>>>>> b99bd76d9c11947e9ba3afb416c76f78d22bad40
 
 
 
