@@ -23,6 +23,10 @@
 
 #include "grpc.h"
 
+#include "winsock2.h"
+#pragma comment(lib,"ws2_32.lib")
+
+
 using namespace std;
 
 const char devSyLinkName[] = "\\??\\KernelDark";
@@ -259,16 +263,67 @@ static ArkFsd				g_fsdobj;
 static ArkMouseKeyBoard		g_mousekeyboardobj;
 static ArkNetwork			g_networkobj;
 
+bool gethostip(RawData* ip_liststr)
+{
+	WSAData data;
+	if (WSAStartup(MAKEWORD(2, 2), &data) != 0)
+		return false;
+
+	char host[255] = { 0, };
+	do {
+
+		if (gethostname(host, sizeof(host)) == SOCKET_ERROR)
+			break;
+
+		auto p = gethostbyname(host);
+		if (p == 0)
+			break;
+		else
+		{
+			for (int i = 0; p->h_addr_list[i] != 0; i++)
+			{
+				struct in_addr in;
+				memcpy(&in, p->h_addr_list[i], sizeof(struct in_addr));
+				ip_liststr->set_intranetipv4(i, inet_ntoa(in));
+			}
+		}
+	
+	} while (false);
+
+	WSACleanup();
+}
+
+bool SysNodeOnlineData(RawData* sysinfobuffer)
+{
+	
+	sysinfobuffer->mutable_pkg();
+
+}
+
 int main(int argc, char* argv[])
 {
+	// 
+	// @ Grpc Active Online Send to  Server Msg
+	//
 	static Grpc greeter(
 		grpc::CreateChannel("localhost:1234", grpc::InsecureChannelCredentials()));
 
 	RawData rawData;
-	rawData.add_intranetipv4();
-	greeter.Grpc_Transfer(&rawData);
+	DWORD ComUserLen = MAX_PATH;
+	WCHAR ComUserName[MAX_PATH] = { 0, };
+	GetComputerName(ComUserName, &ComUserLen);
+	rawData.set_hostname(ComUserName);
+	rawData.set_version("1");
+	rawData.set_agentid("1");
+	rawData.set_timestamp(GetCurrentTime());
+	string ip_liststr;
+	// Set Raw ipv4 List
+	gethostip(&rawData);
+	// Set Systme Info
+	SysNodeOnlineData(&rawData);
+	greeter.Grpc_Transfer(rawData);
 
-	// getchar();
+
 	int status = 0;
 	// Init devctrl
 	status = devobj.devctrl_init();

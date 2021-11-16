@@ -20,12 +20,13 @@ using namespace std;
 class Grpc
 {
 public:
+
 	Grpc(std::shared_ptr<Channel> channel)
 		: stub_(Transfer::NewStub(channel))
 	{
 	}
 	~Grpc();
-	bool Grpc_Transfer(RawData* rawData);
+	bool Grpc_Transfer(RawData& rawData);
 
 private:
 	unique_ptr<Transfer::Stub> stub_;
