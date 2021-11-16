@@ -21,6 +21,8 @@
 #include "ArkMouseKeyBoard.h"
 #include "ArkNetwork.h"
 
+#include "grpc.h"
+
 using namespace std;
 
 const char devSyLinkName[] = "\\??\\KernelDark";
@@ -259,6 +261,13 @@ static ArkNetwork			g_networkobj;
 
 int main(int argc, char* argv[])
 {
+	static Grpc greeter(
+		grpc::CreateChannel("localhost:1234", grpc::InsecureChannelCredentials()));
+
+	RawData rawData;
+	rawData.add_intranetipv4();
+	greeter.Grpc_Transfer(&rawData);
+
 	// getchar();
 	int status = 0;
 	// Init devctrl

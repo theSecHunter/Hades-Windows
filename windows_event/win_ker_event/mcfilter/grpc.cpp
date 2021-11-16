@@ -7,10 +7,9 @@ Grpc::~Grpc()
 
 }
 
-bool Grpc::Grpc_Init()
+bool Grpc::Grpc_Transfer(RawData* rawData)
 {
-	string ip_port = "localhost:50051";
-	auto nret =  grpc::CreateChannel(ip_port, grpc::InsecureChannelCredentials());
-
-	return true;
+    if (!rawData)
+        return false;
+    stub_->Transfer(rawData);
 }

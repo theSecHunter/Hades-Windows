@@ -10,23 +10,24 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
+
 using proto::Transfer;
+using proto::RawData;
+using proto::Command;
 
 using namespace std;
 
 class Grpc
 {
 public:
-	Grpc(shared_ptr<Channel> channel)
+	Grpc(std::shared_ptr<Channel> channel)
 		: stub_(Transfer::NewStub(channel))
 	{
-
 	}
 	~Grpc();
-
-	bool Grpc_Init();
+	bool Grpc_Transfer(RawData* rawData);
 
 private:
-	std::unique_ptr<Transfer::Stub> stub_;
+	unique_ptr<Transfer::Stub> stub_;
 };
 
