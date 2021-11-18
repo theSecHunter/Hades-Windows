@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="json">
+      <UniqueIdentifier>{f4395451-c10f-4037-ada8-418be5414f46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arktools">
+      <UniqueIdentifier>{9f63d77f-b3d2-46eb-b893-9f2d2700685d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="grpc">
+      <UniqueIdentifier>{f5786f9a-b4d8-4337-aa63-296c32994e28}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="mcfilter.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lib_json\json_reader.cpp">
+      <Filter>json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lib_json\json_value.cpp">
+      <Filter>json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\lib_json\json_writer.cpp">
+      <Filter>json</Filter>
+    </ClCompile>
+    <ClCompile Include="HlprMiniCom.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="devctrl.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkDpcTimer.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkIdt.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkSsdt.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkSysEnumNotify.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkFsd.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkMouseKeyBoard.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="ArkNetwork.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="grpc.cpp">
+      <Filter>grpc</Filter>
+    </ClCompile>
+    <ClCompile Include="hades_win.grpc.pb.cc">
+      <Filter>grpc</Filter>
+    </ClCompile>
+    <ClCompile Include="hades_win.pb.cc">
+      <Filter>grpc</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ntbasic.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HlprMiniCom.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="devctrl.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="nf_api.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="nfevents.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="sync.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="threadpool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="sysinfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkDpcTimer.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkIdt.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkSsdt.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkSysEnumNotify.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkFsd.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkMouseKeyBoard.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkNetwork.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="grpc.h">
+      <Filter>grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="hades_win.grpc.pb.h">
+      <Filter>grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="hades_win.pb.h">
+      <Filter>grpc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>
