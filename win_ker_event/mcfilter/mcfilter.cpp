@@ -302,19 +302,21 @@ int main(int argc, char* argv[])
 	// @ Grpc Active Online Send to  Server Msg
 	//
 
-	auto servercert = get_file_contents(servercert_path);
+	// ca
+	auto rootcert = get_file_contents(rootcrt_path);
 	auto clientkey = get_file_contents(clientkey_path);
-	auto clientcert = get_file_contents(clientcert_path);
+	auto clientcert = get_file_contents(clientcrt_path);
 
 	grpc::SslCredentialsOptions ssl_opts;
-	ssl_opts.pem_root_certs = servercert;
-	ssl_opts.pem_private_key = clientkey;
-	ssl_opts.pem_cert_chain = clientcert;
+	ssl_opts.pem_root_certs = rootcert;
+	//ssl_opts.pem_private_key = clientkey;
+	//ssl_opts.pem_cert_chain = clientcert;
+	auto channel_creds = grpc::SslCredentials(ssl_opts);
+	//std::shared_ptr<grpc::ChannelCredentials> channel_creds = grpc::SslCredentials(ssl_opts);
 
-	std::shared_ptr<grpc::ChannelCredentials> creds = grpc::SslCredentials(ssl_opts);
-
+	//  grpc::InsecureChannelCredentials()
 	static Grpc greeter(
-		grpc::CreateChannel("0.0.0.0:8888", creds));
+		grpc::CreateChannel("localhost:8888", channel_creds));
 
 	RawData rawData;
 	DWORD ComUserLen = MAX_PATH;
