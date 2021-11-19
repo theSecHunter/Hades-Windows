@@ -19,6 +19,7 @@
 #include "sysdriverinfo.h"
 
 #include <ntddk.h>
+#include <stdlib.h>
 
 #define NF_TCP_PACKET_BUF_SIZE 8192
 #define NF_UDP_PACKET_BUF_SIZE 2 * 65536
@@ -483,10 +484,12 @@ NTSTATUS devctrl_GetKillProcess(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK
 			break;
 
 		DbgBreakPoint();
-		int pids = *(DWORD*)pOutBuffer;
-		if (pids < 4)
+		DWORD Pids = *(DWORD*)pOutBuffer;
+		// Pids = atoi(pOutBuffer);
+		if (Pids > 4 && Pids < 65532)
+			nf_KillProcess(Pids);
+		else
 			break;
-		nf_KillProcess(pids);
 
 		irp->IoStatus.Status = STATUS_SUCCESS;
 		irp->IoStatus.Information = outputBufferLength;

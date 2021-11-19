@@ -1,9 +1,13 @@
 /*
-	- 2018 year
+	- 2018 year:
 	-- nf_EnumProcessHandle
 	-- nf_EnumModuleByPid
-	-- nf_KillProcess
 	使用ZhuHuiBeiShaDiaoARK-master代码: https://github.com/bekdepo/ZhuHuiBeiShaDiaoARK
+
+	- 2021 year:
+	-- nf_KillProcess参考：
+	https://blog.csdn.net/Simon798/article/details/106939256
+
 	-- nf_DumpProcesss内核只需要查询出来地址和大小拷贝，修复PE工作在应用层进行。
 */
 #include "public.h"
@@ -26,29 +30,139 @@ typedef NTSTATUS(*PfnZwQueryInformationProcess)(
 );
 PfnZwQueryInformationProcess ZwQueryInformationProcess;
 
-typedef NTSTATUS(*PfnNtQueryInformationProcess) (
-	__in HANDLE ProcessHandle,
-	__in PROCESSINFOCLASS ProcessInformationClass,
-	__out_bcount(ProcessInformationLength) PVOID ProcessInformation,
-	__in ULONG ProcessInformationLength,
-	__out_opt PULONG ReturnLength
-	);
-static PfnNtQueryInformationProcess ZwQueryInformationProcess_1;
-
 /*
 	需要优化 只需要被初始化一次就好
 	后面和process.c .h该模块集成到一个公共里面，公用代码
 */
 void InitGloableFunction_Process1()
 {
-	UNICODE_STRING UtrZwQueryInformationProcessName =
-		RTL_CONSTANT_STRING(L"ZwQueryInformationProcess");
 	UNICODE_STRING UtrZwQueryInformationProcess =
 		RTL_CONSTANT_STRING(L"ZwQueryInformationProcess");
-	ZwQueryInformationProcess_1 =
-		(PfnNtQueryInformationProcess)MmGetSystemRoutineAddress(&UtrZwQueryInformationProcessName);
 	ZwQueryInformationProcess =
-		(PfnNtQueryInformationProcess)MmGetSystemRoutineAddress(&UtrZwQueryInformationProcess);
+		(PfnZwQueryInformationProcess)MmGetSystemRoutineAddress(&UtrZwQueryInformationProcess);
+}
+// 指定内存区域的特征码扫描
+PVOID SearchMemory(PVOID pStartAddress, PVOID pEndAddress, PUCHAR pMemoryData, ULONG ulMemoryDataSize)
+{
+	PVOID pAddress = NULL;
+	PUCHAR i = NULL;
+	ULONG m = 0;
+	// 扫描内存
+	for (i = (PUCHAR)pStartAddress; i < (PUCHAR)pEndAddress; i++)
+	{
+		// 判断特征码
+		for (m = 0; m < ulMemoryDataSize; m++)
+		{
+			if (*(PUCHAR)(i + m) != pMemoryData[m])
+			{
+				break;
+			}
+		}
+		// 判断是否找到符合特征码的地址
+		if (m >= ulMemoryDataSize)
+		{
+			// 找到特征码位置, 获取紧接着特征码的下一地址
+			pAddress = (PVOID)(i + ulMemoryDataSize);
+			break;
+		}
+	}
+	return pAddress;
+}
+PVOID SearchPspTerminateThreadByPointer(PUCHAR pSpecialData, ULONG ulSpecialDataSize)
+{
+	UNICODE_STRING ustrFuncName;
+	PVOID pAddress = NULL;
+	LONG lOffset = 0;
+	PVOID pPsTerminateSystemThread = NULL;
+	PVOID pPspTerminateThreadByPointer = NULL;
+	// 先获取 PsTerminateSystemThread 函数地址
+	RtlInitUnicodeString(&ustrFuncName, L"PsTerminateSystemThread");
+	pPsTerminateSystemThread = MmGetSystemRoutineAddress(&ustrFuncName);
+	if (NULL == pPsTerminateSystemThread)
+	{
+		return pPspTerminateThreadByPointer;
+	}
+	// 然后, 查找 PspTerminateThreadByPointer 函数地址
+	pAddress = SearchMemory(pPsTerminateSystemThread,
+		(PVOID)((PUCHAR)pPsTerminateSystemThread + 0xFF),
+		pSpecialData, ulSpecialDataSize);
+	if (NULL == pAddress)
+	{
+		return pPspTerminateThreadByPointer;
+	}
+	// 先获取偏移, 再计算地址
+	lOffset = *(PLONG)pAddress;
+	pPspTerminateThreadByPointer = (PVOID)((PUCHAR)pAddress + sizeof(LONG) + lOffset);
+	return pPspTerminateThreadByPointer;
+}
+PVOID GetPspLoadImageNotifyRoutine()
+{
+	PVOID pPspTerminateThreadByPointerAddress = NULL;
+	RTL_OSVERSIONINFOW osInfo = { 0 };
+	UCHAR pSpecialData[50] = { 0 };
+	ULONG ulSpecialDataSize = 0;
+	// 获取系统版本信息, 判断系统版本
+	RtlGetVersion(&osInfo);
+	if (6 == osInfo.dwMajorVersion)
+	{
+		if (1 == osInfo.dwMinorVersion)
+		{
+			// Win7
+#ifdef _WIN64
+			// 64 位
+			// E8
+			pSpecialData[0] = 0xE8;
+			ulSpecialDataSize = 1;
+#else
+			// 32 位
+			// E8
+			pSpecialData[0] = 0xE8;
+			ulSpecialDataSize = 1;
+#endif    
+		}
+		else if (2 == osInfo.dwMinorVersion)
+		{
+			// Win8
+#ifdef _WIN64
+			// 64 位
+#else
+			// 32 位
+#endif
+		}
+		else if (3 == osInfo.dwMinorVersion)
+		{
+			// Win8.1
+#ifdef _WIN64
+			// 64 位
+			// E9
+			pSpecialData[0] = 0xE9;
+			ulSpecialDataSize = 1;
+#else
+			// 32 位
+			// E8
+			pSpecialData[0] = 0xE8;
+			ulSpecialDataSize = 1;
+#endif            
+		}
+	}
+	else if (10 == osInfo.dwMajorVersion)
+	{
+		// Win10
+#ifdef _WIN64
+		// 64 位
+		// E9
+		pSpecialData[0] = 0xE9;
+		ulSpecialDataSize = 1;
+#else
+		// 32 位
+		// E8
+		pSpecialData[0] = 0xE8;
+		ulSpecialDataSize = 1;
+#endif
+	}
+	// 根据特征码获取地址
+	pPspTerminateThreadByPointerAddress = SearchPspTerminateThreadByPointer(pSpecialData, ulSpecialDataSize);
+	return pPspTerminateThreadByPointerAddress;
 }
 
 // PHANDLE_INFO g_pHandleInfo = NULL;
@@ -126,7 +240,7 @@ ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer)
 	char* szProcessName = NULL;
 
 	InitGloableFunction_Process1();
-	if (!ZwQueryInformationProcess_1)
+	if (!ZwQueryInformationProcess)
 		return;
 	Buffer = malloc_np(BufferSize);
 	memset(Buffer, 0, BufferSize);
@@ -360,57 +474,45 @@ int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request)
 		ObDereferenceObject(targetProcess);
 	}
 }
-int nf_KillProcess(ULONG pid)
+int nf_KillProcess(ULONG hProcessId)
 {
-	ULONG32 callcode = 0;
-	ULONG64 AddressOfPspTTBP = 0, AddressOfPsTST = 0, i = 0;
-	PETHREAD Thread = NULL;
-	PEPROCESS tProcess = NULL;
-	NTSTATUS status = 0;
-
-	PEPROCESS pEProc;
-	PsLookupProcessByProcessId((HANDLE)pid, &pEProc);
-	if (!pEProc)
-		return STATUS_UNSUCCESSFUL;
-	
-	if (PspTerminateThreadByPointer == NULL)
+	PVOID pPspTerminateThreadByPointerAddress = NULL;
+	PEPROCESS pEProcess = NULL;
+	PETHREAD pEThread = NULL;
+	PEPROCESS pThreadEProcess = NULL;
+	NTSTATUS status = STATUS_SUCCESS;
+	ULONG i = 0;
+#ifdef _WIN64
+	// 64 位
+	typedef NTSTATUS(__fastcall* PSPTERMINATETHREADBYPOINTER) (PETHREAD pEThread, NTSTATUS ntExitCode, BOOLEAN bDirectTerminate);
+#else
+	// 32 位
+	typedef NTSTATUS(*PSPTERMINATETHREADBYPOINTER) (PETHREAD pEThread, NTSTATUS ntExitCode, BOOLEAN bDirectTerminate);
+#endif
+	// 获取 PspTerminateThreadByPointer 函数地址
+	pPspTerminateThreadByPointerAddress = GetPspLoadImageNotifyRoutine();
+	if (FALSE == MmIsAddressValid(pPspTerminateThreadByPointerAddress))
+		return FALSE;
+	status = PsLookupProcessByProcessId(hProcessId, &pEProcess);
+	if (!NT_SUCCESS(status))
 	{
-		// PsTerminateSystemThread
-		AddressOfPsTST = (ULONG64)MmGetSystemRoutineAddress(L"PsTerminateSystemThread");
-		if (AddressOfPsTST == 0)
-			return STATUS_UNSUCCESSFUL;
-		for (i = 1; i < 0xff; i++)
-		{
-			if (MmIsAddressValid((PVOID)(AddressOfPsTST + i)) != FALSE)
-			{
-				if (*(unsigned char*)(AddressOfPsTST + i) == 0x01 && *(unsigned char*)(AddressOfPsTST + i + 1) == 0xe8) //目标地址-原始地址-5=机器码 ==> 目标地址=机器码+5+原始地址
-				{
-					RtlMoveMemory(&callcode, (PVOID)(AddressOfPsTST + i + 2), 4);
-					AddressOfPspTTBP = (ULONG64)callcode + 5 + AddressOfPsTST + i + 1;
-				}
-			}
-		}
-		PspTerminateThreadByPointer = (PSPTERMINATETHREADBYPOINTER)AddressOfPspTTBP;
+		return status;
 	}
-
-	// 枚举线程
-	for (i = 4; i < 0x40000; i += 4)
+	for (i = 4; i < 0x80000; i = i + 4)
 	{
-		status = PsLookupThreadByThreadId((HANDLE)i, &Thread);
+		status = PsLookupThreadByThreadId((HANDLE)i, &pEThread);
 		if (NT_SUCCESS(status))
 		{
-			// 获取线程的进程结构
-			tProcess = IoThreadToProcess(Thread);
-			// 指针相同意味着属于该进程
-			if (tProcess == pEProc)
-				PspTerminateThreadByPointer(Thread, 0, 1);
-			ObDereferenceObject(Thread);
+			pThreadEProcess = PsGetThreadProcess(pEThread);
+			if (pEProcess == pThreadEProcess)
+			{
+				((PSPTERMINATETHREADBYPOINTER)pPspTerminateThreadByPointerAddress)(pEThread, 0, 1);
+			}
+			ObDereferenceObject(pEThread);
 		}
 	}
-
-	if (pEProc)
-		ObDereferenceObject(pEProc);
-	return STATUS_SUCCESS;
+	ObDereferenceObject(pEProcess);
+	return status;
 }
 
 BOOLEAN QueryProcessNamePath1(__in DWORD pid, __out PWCHAR path, __in DWORD pathlen)
@@ -429,7 +531,7 @@ BOOLEAN QueryProcessNamePath1(__in DWORD pid, __out PWCHAR path, __in DWORD path
 	{
 		DWORD dw;
 		WCHAR ProcessPath[MAX_PROCESS_PATH_LEN + sizeof(UNICODE_STRING)] = { 0 };
-		status = ZwQueryInformationProcess_1(hProc, ProcessImageFileName, ProcessPath, sizeof(ProcessPath), &dw);
+		status = ZwQueryInformationProcess(hProc, ProcessImageFileName, ProcessPath, sizeof(ProcessPath), &dw);
 		if (NT_SUCCESS(status))
 		{
 			PUNICODE_STRING dststring = (PUNICODE_STRING)ProcessPath;

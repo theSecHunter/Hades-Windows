@@ -25,6 +25,8 @@
 
 #include "grpc.h"
 
+#include <stdlib.h>
+
 using namespace std;
 
 const char devSyLinkName[] = "\\??\\KernelDark";
@@ -304,7 +306,6 @@ int main(int argc, char* argv[])
 	// 
 	// @ Grpc Active Online Send to  Server Msg
 	//
-
 	// ca
 	auto rootcert = get_file_contents(rootcrt_path);
 	auto clientkey = get_file_contents(clientkey_path);

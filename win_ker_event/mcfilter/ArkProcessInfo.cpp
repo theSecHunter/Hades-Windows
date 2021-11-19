@@ -73,19 +73,19 @@ bool ArkProcessInfo::nf_KillProcess()
 	DWORD	dwSize = 0;
 	bool	status = false;
 
-	inSize = sizeof(char) * 4;
-	char KillPid[4] = { 0, };
+	inSize = sizeof(DWORD);
+	DWORD KillPidIn = 0;
 	DWORD KillPidOut = 0;
 
 	cout << "Please Kill ProcessPid: ";
-	scanf("%s", &KillPid);
+	scanf("%d", &KillPidIn);
 
 	devobj.devctrl_sendioct(
 		CTL_DEVCTRL_ARK_PROCESSKILL,
-		&KillPid,
+		&KillPidIn,
 		inSize,
-		(LPVOID)&KillPidOut,
-		0,
+		&KillPidOut,
+		inSize,
 		dwSize
 	);
 

@@ -42,6 +42,6 @@ typedef struct _PROCESS_MOD
 ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer);
 VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer);
 int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request);
-int nf_KillProcess(ULONG pid);
+int nf_KillProcess(ULONG hProcessId);
 
 #endif
