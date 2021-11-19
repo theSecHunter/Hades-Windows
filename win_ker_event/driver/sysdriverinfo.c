@@ -1,7 +1,7 @@
 #include "public.h"
 #include "sysdriverinfo.h"
 
-int nf_GetSysDriver()
+int nf_EnumSysDriver()
 {
 
 }

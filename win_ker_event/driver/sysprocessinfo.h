@@ -8,18 +8,6 @@
 #ifndef _SYSPROCESSINFO_H
 #define _SYSPROCESSINFP_H
 
-typedef struct _HANDLE_INFO {
-	ULONG_PTR	ObjectTypeIndex;
-	ULONG_PTR	HandleValue;
-	ULONG_PTR	ReferenceCount;
-	ULONG_PTR	GrantedAccess;
-	ULONG_PTR	CountNum;
-	ULONG_PTR	Object;
-	WCHAR	ProcessName[256 * 2];
-	WCHAR	TypeName[256 * 2];
-	WCHAR	HandleName[256 * 2];
-} HANDLE_INFO, * PHANDLE_INFO;
-
 typedef struct _KERNEL_COPY_MEMORY_OPERATION
 {
 	INT32 targetProcessId;
@@ -28,8 +16,31 @@ typedef struct _KERNEL_COPY_MEMORY_OPERATION
 	INT32 bufferSize;
 } KERNEL_COPY_MEMORY_OPERATION, * PKERNEL_COPY_MEMORY_OPERATION;
 
-ULONG_PTR nf_EnumProcessHandle(HANDLE pid);
-VOID nf_EnumModuleByPid(ULONG pid);
+typedef struct _HANDLE_INFO {
+	ULONG_PTR	ObjectTypeIndex;
+	ULONG_PTR	HandleValue;
+	ULONG_PTR	ReferenceCount;
+	ULONG_PTR	GrantedAccess;
+	ULONG_PTR	CountNum;
+	ULONG_PTR	Object;
+	ULONG		ProcessId;
+	WCHAR		ProcessName[256 * 2];
+	WCHAR		ProcessPath[256 * 2];
+	//WCHAR		TypeName[256 * 2];
+	//WCHAR		HandleName[256 * 2];
+} HANDLE_INFO, * PHANDLE_INFO;
+
+typedef struct _PROCESS_MOD
+{
+	ULONG	DllBase;
+	ULONG	EntryPoint;
+	ULONG	SizeOfImage;
+	WCHAR	FullDllName[260];
+	WCHAR	BaseDllName[260];
+}PROCESS_MOD, * PPROCESS_MOD;
+
+ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer);
+VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer);
 int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request);
 int nf_KillProcess(ULONG pid);
 

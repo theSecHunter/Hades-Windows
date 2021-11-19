@@ -162,11 +162,13 @@
     <ClCompile Include="..\lib_json\json_reader.cpp" />
     <ClCompile Include="..\lib_json\json_value.cpp" />
     <ClCompile Include="..\lib_json\json_writer.cpp" />
+    <ClCompile Include="AkrSysDriverDevInfo.cpp" />
     <ClCompile Include="ArkDpcTimer.cpp" />
     <ClCompile Include="ArkFsd.cpp" />
     <ClCompile Include="ArkIdt.cpp" />
     <ClCompile Include="ArkMouseKeyBoard.cpp" />
     <ClCompile Include="ArkNetwork.cpp" />
+    <ClCompile Include="ArkProcessInfo.cpp" />
     <ClCompile Include="ArkSysEnumNotify.cpp" />
     <ClCompile Include="devctrl.cpp" />
     <ClCompile Include="grpc.cpp" />
@@ -177,11 +179,13 @@
     <ClCompile Include="ArkSsdt.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AkrSysDriverDevInfo.h" />
     <ClInclude Include="ArkDpcTimer.h" />
     <ClInclude Include="ArkFsd.h" />
     <ClInclude Include="ArkIdt.h" />
     <ClInclude Include="ArkMouseKeyBoard.h" />
     <ClInclude Include="ArkNetwork.h" />
+    <ClInclude Include="ArkProcessInfo.h" />
     <ClInclude Include="ArkSysEnumNotify.h" />
     <ClInclude Include="devctrl.h" />
     <ClInclude Include="grpc.h" />

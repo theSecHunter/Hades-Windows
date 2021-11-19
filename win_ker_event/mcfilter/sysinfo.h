@@ -177,6 +177,11 @@ enum AnRootkitId
     NF_FSD_ID,                      // 8
     NF_MOUSEKEYBOARD_ID,            // 9
     NF_NETWORK_ID,                  // 10
+    NF_PROCESS_ENUM,                // 11
+    NF_PROCESS_KILL,                // 12
+    NF_PROCESS_INFO,                // 13
+    NF_PE_DUMP,                     // 14
+    NF_DRIVER_DUMP,                 // 15
     NF_EXIT = 100       
 };
 

@@ -1,0 +1,5 @@
+#include <Windows.h>
+#include "AkrSysDriverDevInfo.h"
+
+#define CTL_DEVCTRL_ARK_DRIVERDEVENUM \
+	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x1080, METHOD_BUFFERED, FILE_ANY_ACCESS)

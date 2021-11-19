@@ -20,6 +20,8 @@
 #include "ArkFsd.h"
 #include "ArkMouseKeyBoard.h"
 #include "ArkNetwork.h"
+#include "ArkProcessInfo.h"
+#include "AkrSysDriverDevInfo.h"
 
 #include "grpc.h"
 
@@ -258,6 +260,7 @@ static ArkDpcTimer			g_dpcobj;
 static ArkFsd				g_fsdobj;
 static ArkMouseKeyBoard		g_mousekeyboardobj;
 static ArkNetwork			g_networkobj;
+static ArkProcessInfo		g_processinfo;
 
 bool gethostip(RawData* ip_liststr)
 {
@@ -329,8 +332,8 @@ int main(int argc, char* argv[])
 	// Set Raw ipv4 List
 	// gethostip(&rawData);
 	//// Set Systme Info
-	//SysNodeOnlineData(&rawData);
-	greeter.Grpc_Transfer(rawData);
+	// SysNodeOnlineData(&rawData);
+	// greeter.Grpc_Transfer(rawData);
 
 
 	int status = 0;
@@ -461,6 +464,16 @@ int main(int argc, char* argv[])
 		
 		}
 		break;
+		case NF_PROCESS_ENUM:
+		{
+			g_processinfo.nf_EnumProcess();
+		}
+		break;
+		case NF_PROCESS_KILL:
+		{
+			g_processinfo.nf_KillProcess();
+		}
+		break;
 		case NF_EXIT:
 		{
 			exit_id = true;
@@ -478,6 +491,7 @@ int main(int argc, char* argv[])
 	exit(0);
 
 	/*
+	*   未开放
 		Json Config Alay
 	*/
 	bool nstatus = false;

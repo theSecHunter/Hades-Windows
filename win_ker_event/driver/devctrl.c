@@ -15,6 +15,8 @@
 #include "sysfsd.h"
 #include "sysmousekeyboard.h"
 #include "sysnetwork.h"
+#include "sysprocessinfo.h"
+#include "sysdriverinfo.h"
 
 #include <ntddk.h>
 
@@ -52,7 +54,7 @@ typedef struct _NF_QUEUE_ENTRY
     int				code;		// IO code
 } NF_QUEUE_ENTRY, * PNF_QUEUE_ENTRY;
 
-// Ark Data Collection
+// ¡î Ark Data Collection
 NTSTATUS devctrl_InitSsdtBase(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	NTSTATUS nStatus = STATUS_SUCCESS;
@@ -256,7 +258,6 @@ NTSTATUS devctrl_GetSysNotify(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_L
 		if (!pOutBuffer && (outputBufferLength <= 0))
 			break;
 
-		DbgBreakPoint();
 		Enum_ProcessNotify(pOutBuffer);
 		Enum_ThreadNotify((ULONG64)pOutBuffer + (ULONG64)(sizeof(PNOTIFY_INFO) * 64));
 		Enum_ImageModNotify((ULONG64)pOutBuffer + (ULONG64)(sizeof(PNOTIFY_INFO) * 72));
@@ -384,7 +385,190 @@ NTSTATUS devctrl_GetNetworkProcessInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PI
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_UNSUCCESSFUL;
 }
+NTSTATUS devctrl_EnumProcessInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
 
+	do {
+
+		if (!pOutBuffer)
+		{
+			pOutBuffer = irp->UserBuffer;
+		}
+		if (MmIsAddressValid(pOutBuffer) == FALSE)
+			break;
+
+		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+		if (!pOutBuffer == FALSE && (outputBufferLength <= 0))
+			break;
+
+		int pids = 0;
+		switch (irpSp->Parameters.DeviceIoControl.IoControlCode)
+		{
+		case CTL_DEVCTRL_ARK_PROCESSINFO:
+			pids = (DWORD)pOutBuffer;
+			nf_GetProcessInfo(0, (HANDLE)pids, (PHANDLE_INFO)pOutBuffer);
+			break;
+		case CTL_DEVCTRL_ARK_PROCESSENUM:
+			nf_GetProcessInfo(1, (HANDLE)0, (PHANDLE_INFO)pOutBuffer);
+			break;
+		}
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = outputBufferLength;
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_UNSUCCESSFUL;
+}
+NTSTATUS devctrl_GetProcessMod(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+
+	do {
+
+		if (!pOutBuffer)
+		{
+			pOutBuffer = irp->UserBuffer;
+		}
+		if (MmIsAddressValid(pOutBuffer) == FALSE)
+			break;
+
+		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+		if (!pOutBuffer == FALSE && (outputBufferLength <= 0))
+			break;
+
+		int pids = (DWORD)pOutBuffer;
+		if (pids < 4)
+			break;
+		nf_EnumModuleByPid(pids, pOutBuffer);
+
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = outputBufferLength;
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_UNSUCCESSFUL;
+}
+NTSTATUS devctrl_GetKillProcess(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+
+	do {
+
+		if (!pOutBuffer)
+		{
+			pOutBuffer = irp->UserBuffer;
+		}
+		if (MmIsAddressValid(pOutBuffer) == FALSE)
+			break;
+
+		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+		if (!pOutBuffer == FALSE && (outputBufferLength <= 0))
+			break;
+
+		DbgBreakPoint();
+		int pids = *(DWORD*)pOutBuffer;
+		if (pids < 4)
+			break;
+		nf_KillProcess(pids);
+
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = outputBufferLength;
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_UNSUCCESSFUL;
+
+}
+NTSTATUS devctrl_DumpProcessMemory(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+
+	do {
+
+		if (!pOutBuffer)
+		{
+			pOutBuffer = irp->UserBuffer;
+		}
+		if (MmIsAddressValid(pOutBuffer) == FALSE)
+			break;
+
+		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+		if (!pOutBuffer == FALSE && (outputBufferLength <= 0))
+			break;
+
+		nf_DumpProcess(pOutBuffer);
+
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = outputBufferLength;
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_UNSUCCESSFUL;
+}
+NTSTATUS devctrl_DrDevEnum(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID pOutBuffer = NULL;
+	pOutBuffer = irp->AssociatedIrp.SystemBuffer;
+
+	do {
+
+		if (!pOutBuffer)
+		{
+			pOutBuffer = irp->UserBuffer;
+		}
+		if (MmIsAddressValid(pOutBuffer) == FALSE)
+			break;
+
+		ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+		if (!pOutBuffer == FALSE && (outputBufferLength <= 0))
+			break;
+
+		nf_EnumSysDriver();
+
+		irp->IoStatus.Status = STATUS_SUCCESS;
+		irp->IoStatus.Information = outputBufferLength;
+		IoCompleteRequest(irp, IO_NO_INCREMENT);
+		return STATUS_SUCCESS;
+
+	} while (FALSE);
+
+	irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return STATUS_UNSUCCESSFUL;
+}
+
+// ¡î Share Memory MDL
 void devctrl_freeSharedMemory(PSHARED_MEMORY pSharedMemory)
 {
 	if (pSharedMemory->mdl)
@@ -556,6 +740,7 @@ NTSTATUS devctrl_openMem(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATI
 	return STATUS_UNSUCCESSFUL;
 }
 
+// ¡î IOCTL
 NTSTATUS devctrl_create(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -840,6 +1025,19 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 
 		case CTL_DEVCTRL_ARK_GETSYNETWORKDDATA:
 			return devctrl_GetNetworkProcessInfo(DeviceObject, irp, irpSp);
+
+		case CTL_DEVCTRL_ARK_PROCESSENUM:
+		case CTL_DEVCTRL_ARK_PROCESSINFO:
+			return devctrl_EnumProcessInfo(DeviceObject, irp, irpSp);
+		case CTL_DEVCTRL_ARK_PROCESSMOD:
+			return devctrl_GetProcessMod(DeviceObject, irp, irpSp);
+		case CTL_DEVCTRL_ARK_PROCESSKILL:
+			return devctrl_GetKillProcess(DeviceObject, irp, irpSp);
+		case CTL_DEVCTRL_ARK_PROCESSDUMP:
+			return devctrl_DumpProcessMemory(DeviceObject, irp, irpSp);
+
+		case CTL_DEVCTRL_ARK_DRIVERDEVENUM:
+			return devctrl_DrDevEnum(DeviceObject, irp, irpSp);
 		}
 		break;
 	default:
@@ -954,10 +1152,7 @@ void devctrl_ioThreadFree() {
 	return STATUS_SUCCESS;
 }
 
-// System Active Monitor
-/*
-* pop
-*/
+// ¡î System Active Monitor
 NTSTATUS devctrl_popprocessinfo(UINT64* pOffset)
 {
 	NTSTATUS			status = STATUS_SUCCESS;
@@ -1021,7 +1216,6 @@ NTSTATUS devctrl_popprocessinfo(UINT64* pOffset)
 	}
 
 }
-
 NTSTATUS devctrl_popthreadinfo(UINT64* pOffset)
 {
 	NTSTATUS			status = STATUS_SUCCESS;
@@ -1083,7 +1277,6 @@ NTSTATUS devctrl_popthreadinfo(UINT64* pOffset)
 		}
 	}
 }
-
 NTSTATUS devctrl_popimagemodinfo(UINT64* pOffset)
 {
 	NTSTATUS			status = STATUS_SUCCESS;
@@ -1149,7 +1342,6 @@ NTSTATUS devctrl_popimagemodinfo(UINT64* pOffset)
 
 	return status;
 }
-
 NTSTATUS devctrl_popregisterinfo(UINT64* pOffset)
 {
 	NTSTATUS			status = STATUS_SUCCESS;
@@ -1215,7 +1407,6 @@ NTSTATUS devctrl_popregisterinfo(UINT64* pOffset)
 
 	return status;
 }
-
 NTSTATUS devctrl_popfileinfo(UINT64* pOffset)
 {
 	NTSTATUS			status = STATUS_SUCCESS;
@@ -1282,7 +1473,6 @@ NTSTATUS devctrl_popfileinfo(UINT64* pOffset)
 	return status;
 
 }
-
 NTSTATUS devctrl_popsessioninfo(UINT64* pOffset)
 {
 	NTSTATUS			status = STATUS_SUCCESS;
@@ -1350,9 +1540,7 @@ NTSTATUS devctrl_popsessioninfo(UINT64* pOffset)
 
 }
 
-/*
-* handler
-*/
+// ¡î Dispatch- Handle
 UINT64 devctrl_fillBuffer()
 {
 	PNF_QUEUE_ENTRY	pEntry;
@@ -1419,7 +1607,6 @@ UINT64 devctrl_fillBuffer()
 	sl_unlock(&lh);
 	return offset;
 }
-
 void devctrl_serviceReads()
 {
 	PIRP                irp = NULL;
@@ -1478,7 +1665,6 @@ void devctrl_serviceReads()
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 
 }
-
 void devctrl_ioThread(void* StartContext)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -1507,15 +1693,10 @@ void devctrl_ioThread(void* StartContext)
 	}
 	PsTerminateSystemThread(STATUS_SUCCESS);
 }
-
 void devctrl_pushversion(BOOLEAN code)
 {
 	g_version = code;
 }
-
-/*
-* push 
-*/
 void devctrl_pushinfo(int code)
 {
 	NTSTATUS status = STATUS_SUCCESS;

@@ -3,7 +3,7 @@
 	-- nf_EnumProcessHandle
 	-- nf_EnumModuleByPid
 	-- nf_KillProcess
-	使用ZhuHuiBeiShaDiaoARK-master代码
+	使用ZhuHuiBeiShaDiaoARK-master代码: https://github.com/bekdepo/ZhuHuiBeiShaDiaoARK
 	-- nf_DumpProcesss内核只需要查询出来地址和大小拷贝，修复PE工作在应用层进行。
 */
 #include "public.h"
@@ -17,8 +17,43 @@ typedef NTSTATUS(__fastcall* PSPTERMINATETHREADBYPOINTER)
 	);
 PSPTERMINATETHREADBYPOINTER PspTerminateThreadByPointer = NULL;
 
-PHANDLE_INFO g_pHandleInfo = NULL;
+typedef NTSTATUS(*PfnZwQueryInformationProcess)(
+	_In_      HANDLE           ProcessHandle,
+	_In_      PROCESSINFOCLASS ProcessInformationClass,
+	_Out_     PVOID            ProcessInformation,
+	_In_      ULONG            ProcessInformationLength,
+	_Out_opt_ PULONG           ReturnLength
+);
+PfnZwQueryInformationProcess ZwQueryInformationProcess;
 
+typedef NTSTATUS(*PfnNtQueryInformationProcess) (
+	__in HANDLE ProcessHandle,
+	__in PROCESSINFOCLASS ProcessInformationClass,
+	__out_bcount(ProcessInformationLength) PVOID ProcessInformation,
+	__in ULONG ProcessInformationLength,
+	__out_opt PULONG ReturnLength
+	);
+static PfnNtQueryInformationProcess ZwQueryInformationProcess_1;
+
+/*
+	需要优化 只需要被初始化一次就好
+	后面和process.c .h该模块集成到一个公共里面，公用代码
+*/
+void InitGloableFunction_Process1()
+{
+	UNICODE_STRING UtrZwQueryInformationProcessName =
+		RTL_CONSTANT_STRING(L"ZwQueryInformationProcess");
+	UNICODE_STRING UtrZwQueryInformationProcess =
+		RTL_CONSTANT_STRING(L"ZwQueryInformationProcess");
+	ZwQueryInformationProcess_1 =
+		(PfnNtQueryInformationProcess)MmGetSystemRoutineAddress(&UtrZwQueryInformationProcessName);
+	ZwQueryInformationProcess =
+		(PfnNtQueryInformationProcess)MmGetSystemRoutineAddress(&UtrZwQueryInformationProcess);
+}
+
+// PHANDLE_INFO g_pHandleInfo = NULL;
+
+BOOLEAN QueryProcessNamePath1(__in DWORD pid, __out PWCHAR path, __in DWORD pathlen);
 VOID CharToWchar(PCHAR src, PWCHAR dst)
 {
 	UNICODE_STRING uString;
@@ -68,7 +103,7 @@ NTSTATUS GetProcessPathByPid(HANDLE pid, WCHAR* szProcessName)
 
 }
 
-ULONG_PTR nf_EnumProcessHandle(HANDLE pid)
+ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer)
 {
 	PVOID Buffer;
 	ULONG BufferSize = 0x20000, rtl = 0;
@@ -80,29 +115,22 @@ ULONG_PTR nf_EnumProcessHandle(HANDLE pid)
 	OBJECT_BASIC_INFORMATION BasicInfo = { 0 };
 	POBJECT_NAME_INFORMATION pNameInfo;
 	POBJECT_TYPE_INFORMATION pTypeInfo;
+	PROCESS_BASIC_INFORMATION	processBasic = { 0, };
 	ULONG ulProcessID;
 	HANDLE hProcess;
 	HANDLE hHandle;
 	HANDLE hDupObj;
 	CLIENT_ID cid;
 	OBJECT_ATTRIBUTES oa;
-	//CHAR szFile[260]={0};
 	ULONG_PTR Count = 0;
 	char* szProcessName = NULL;
 
-	if (g_pHandleInfo)
-	{
-		ExFreePool(g_pHandleInfo);
-		g_pHandleInfo = NULL;
-	}
-
-	g_pHandleInfo = (PHANDLE_INFO)ExAllocatePool(NonPagedPool, sizeof(HANDLE_INFO) * 1024 * 2);
-	if (g_pHandleInfo == NULL)
-		return 0x88888888;
-
+	InitGloableFunction_Process1();
+	if (!ZwQueryInformationProcess_1)
+		return;
 	Buffer = malloc_np(BufferSize);
 	memset(Buffer, 0, BufferSize);
-	Status = ZwQuerySystemInformation(16, Buffer, BufferSize, 0);	//SystemHandleInformation
+	Status = ZwQuerySystemInformation(16, Buffer, BufferSize, 0);	//SystemHandleInformation=16
 	while (Status == 0xC0000004)	//STATUS_INFO_LENGTH_MISMATCH
 	{
 		free_np(Buffer);
@@ -111,17 +139,28 @@ ULONG_PTR nf_EnumProcessHandle(HANDLE pid)
 		memset(Buffer, 0, BufferSize);
 		Status = ZwQuerySystemInformation(16, Buffer, BufferSize, 0);
 	}
-	if (!NT_SUCCESS(Status)) return 0x88888888;
+	if (!NT_SUCCESS(Status))
+		return 0x88888888;
+	
 	qwHandleCount = ((SYSTEM_HANDLE_INFORMATION*)Buffer)->NumberOfHandles;
 	p = (SYSTEM_HANDLE_TABLE_ENTRY_INFO*)((SYSTEM_HANDLE_INFORMATION*)Buffer)->Handles;
-	//clear array
-	memset(g_pHandleInfo, 0, 1024 * sizeof(HANDLE_INFO) * 2);
+	memset(pOutBuffer, 0, 1024 * sizeof(HANDLE_INFO) * 2);
+
 	//ENUM HANDLE PROC
 	for (i = 0; i < qwHandleCount; i++)
 	{
+		// 枚举进程
+		if (p[i].ObjectTypeIndex != 7)
+			continue;
+
+		// Enumbool标志: PID过滤是否生效
+		if (Enumbool)
+		{
+			(ULONG)pid = (ULONG)p[i].UniqueProcessId;
+		}
 
 		if ((ULONG)pid == (ULONG)p[i].UniqueProcessId)
-		{
+		{			
 			ulProcessID = (ULONG)p[i].UniqueProcessId;
 			cid.UniqueProcess = (HANDLE)ulProcessID;
 			cid.UniqueThread = (HANDLE)0;
@@ -129,81 +168,84 @@ ULONG_PTR nf_EnumProcessHandle(HANDLE pid)
 			InitializeObjectAttributes(&oa, NULL, 0, NULL, NULL);
 			ns = ZwOpenProcess(&hProcess, PROCESS_DUP_HANDLE, &oa, &cid);
 			if (!NT_SUCCESS(ns))
-			{
-				KdPrint(("ZwOpenProcess : Fail "));
 				continue;
-			}
 			ns = ZwDuplicateObject(hProcess, hHandle, NtCurrentProcess(), &hDupObj, PROCESS_ALL_ACCESS, 0, DUPLICATE_SAME_ACCESS);
 			if (!NT_SUCCESS(ns))
 			{
 				if (ns == 0xc00000bb)
 				{
 					//KdPrint(( "This is EtwRegistration ZwDuplicateObject Fail Code :0x%x",ns ));
-					g_pHandleInfo[Count].GrantedAccess = p[i].GrantedAccess;
-					g_pHandleInfo[Count].HandleValue = p[i].HandleValue;
-					wcsncpy(g_pHandleInfo[Count].HandleName, L" ", wcslen(L" "));
-					g_pHandleInfo[Count].Object = (ULONG64)p[i].Object;
-					g_pHandleInfo[Count].ObjectTypeIndex = p[i].ObjectTypeIndex;
-					wcsncpy(g_pHandleInfo[Count].TypeName, L"EtwRegistration", wcslen(L"EtwRegistration"));
-					g_pHandleInfo[Count].ReferenceCount = 0;
-					wcsncpy(g_pHandleInfo[Count].ProcessName, L"System", wcslen(L"System"));
+					pOutBuffer[Count].GrantedAccess = p[i].GrantedAccess;
+					pOutBuffer[Count].HandleValue = p[i].HandleValue;
+					//wcsncpy(pOutBuffer[Count].HandleName, L" ", wcslen(L" "));
+					pOutBuffer[Count].Object = (ULONG64)p[i].Object;
+					pOutBuffer[Count].ObjectTypeIndex = p[i].ObjectTypeIndex;
+					// wcsncpy(pOutBuffer[Count].TypeName, L"EtwRegistration", wcslen(L"EtwRegistration"));
+					pOutBuffer[Count].ReferenceCount = 0;
+					wcsncpy(pOutBuffer[Count].ProcessName, L"System", wcslen(L"System"));
 					Count++;
 				}
 				continue;
 			}
-			//get basic information
-			ZwQueryObject(hDupObj, ObjectBasicInformation, &BasicInfo, sizeof(OBJECT_BASIC_INFORMATION), NULL);
 
-			pTypeInfo = ExAllocatePool(PagedPool, 1024);
-			RtlZeroMemory(pTypeInfo, 1024);
-			ZwQueryObject(hDupObj, ObjectTypeInformation, pTypeInfo, 1024, NULL);
-			//get name information
-			pNameInfo = ExAllocatePoolWithTag(PagedPool, 1024, 'ONON');
-			RtlZeroMemory(pNameInfo, 1024);
-			ZwQueryObject(hDupObj, (OBJECT_INFORMATION_CLASS)ObjectNameInformation1, pNameInfo, 1024, &rtl);
-			//get information and close handle
+			// 获取的真实的Pid
+			ZwQueryInformationProcess(hDupObj, ProcessBasicInformation, &processBasic, sizeof(PROCESS_BASIC_INFORMATION), NULL);
+			pOutBuffer[Count].ProcessId = processBasic.UniqueProcessId;
+
+			// get basic information
+			//ZwQueryObject(hDupObj, ObjectBasicInformation, &BasicInfo, sizeof(OBJECT_BASIC_INFORMATION), NULL);
+			//pTypeInfo = ExAllocatePool(PagedPool, 1024);
+			//RtlZeroMemory(pTypeInfo, 1024);
+			//ZwQueryObject(hDupObj, ObjectTypeInformation, pTypeInfo, 1024, NULL);
+
+			//// get name information
+			//pNameInfo = ExAllocatePoolWithTag(PagedPool, 1024, 'ONON');
+			//RtlZeroMemory(pNameInfo, 1024);
+			//ZwQueryObject(hDupObj, (OBJECT_INFORMATION_CLASS)ObjectNameInformation1, pNameInfo, 1024, &rtl);
+
+			// get information and close handle
 			//UnicodeStringToCharArray(&(pNameInfo->Name),szFile);	
 			ZwClose(hDupObj);
 			ZwClose(hProcess);
-			//KdPrint(("HandleName:%wZ---ReferenceCount:%d----Object:0x%llx---Handle:0x%x---ObjeceType:%d\n",pNameInfo->Name,BasicInfo.ReferenceCount,p[i].Object,p[i].HandleValue,p[i].ObjectTypeIndex));	
-			//KdPrint(("ObjectName:%wZ\n",pTypeInfo->TypeName));
-			//KdPrint(("Access:0x%x\n",BasicInfo.DesiredAccess));
-			if (p[i].ObjectTypeIndex == 7)//Process
-			{
-				//KdPrint(("Process:%s\n",PsGetProcessImageFileName((PEPROCESS)p[i].Object)));
-				szProcessName = (PCHAR)PsGetProcessImageFileName((PEPROCESS)p[i].Object);
-				CharToWchar(szProcessName, g_pHandleInfo[Count].ProcessName);
-				//KdPrint(("%ws\n",pHandleInfo[Count].ProcessName));
-			}
-			else if (p[i].ObjectTypeIndex == 8)//Thread
-			{
-				//KdPrint(("Process:%s\n",PsGetProcessImageFileName(IoThreadToProcess((PETHREAD)p[i].Object))));
-				szProcessName = (PCHAR)PsGetProcessImageFileName(IoThreadToProcess((PETHREAD)p[i].Object));
-				CharToWchar(szProcessName, g_pHandleInfo[Count].ProcessName);
-				//KdPrint(("%ws\n",pHandleInfo[Count].ProcessName));
-			}
-			g_pHandleInfo[Count].ObjectTypeIndex = p[i].ObjectTypeIndex;
-			g_pHandleInfo[Count].ReferenceCount = BasicInfo.ReferenceCount;
-			g_pHandleInfo[Count].GrantedAccess = BasicInfo.DesiredAccess;
-			g_pHandleInfo[Count].HandleValue = p[i].HandleValue;
-			g_pHandleInfo[Count].Object = (ULONG64)p[i].Object;
-			wcsncpy(g_pHandleInfo[Count].HandleName, pNameInfo->Name.Buffer, pNameInfo->Name.Length * 2);
-			wcsncpy(g_pHandleInfo[Count].TypeName, pTypeInfo->TypeName.Buffer, pTypeInfo->TypeName.Length * 2);
 
-			ExFreePool(pNameInfo);
-			ExFreePool(pTypeInfo);
+			// Name
+			//if (p[i].ObjectTypeIndex == 7)//Process
+			//{
+			//	szProcessName = (PCHAR)PsGetProcessImageFileName((PEPROCESS)p[i].Object);
+			//	CharToWchar(szProcessName, pOutBuffer[Count].ProcessName);
+			//}
+			//else if (p[i].ObjectTypeIndex == 8)//Thread
+			//{
+			//	szProcessName = (PCHAR)PsGetProcessImageFileName(IoThreadToProcess((PETHREAD)p[i].Object));
+			//	CharToWchar(szProcessName, pOutBuffer[Count].ProcessName);
+			//}
+
+			// ProcessPath
+			QueryProcessNamePath1((DWORD)pOutBuffer[Count].ProcessId, pOutBuffer[Count].ProcessPath, 256 * 2);
+
+			// Process_KernelData
+			pOutBuffer[Count].ObjectTypeIndex = p[i].ObjectTypeIndex;
+			pOutBuffer[Count].ReferenceCount = BasicInfo.ReferenceCount;
+			pOutBuffer[Count].GrantedAccess = BasicInfo.DesiredAccess;
+			pOutBuffer[Count].HandleValue = p[i].HandleValue;
+			pOutBuffer[Count].Object = (ULONG64)p[i].Object;
+	/*		wcsncpy(pOutBuffer[Count].HandleName, pNameInfo->Name.Buffer, pNameInfo->Name.Length * 2);
+			wcsncpy(pOutBuffer[Count].TypeName, pTypeInfo->TypeName.Buffer, pTypeInfo->TypeName.Length * 2);*/
+
+			// ExFreePool(pNameInfo);
+			// ExFreePool(pTypeInfo);
 			Count++;
 
+			// Max_Process
 			if (Count > 2000)
-				return 0x88888888;
+				break;
 
 		}
 	}
-	g_pHandleInfo[0].CountNum = Count;
+	pOutBuffer[0].CountNum = Count;
 	return Count;
 }
-
-VOID nf_EnumModuleByPid(ULONG pid)
+VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer)
 {
 	SIZE_T Peb = 0, Ldr = 0, tmp = 0;
 	PEPROCESS Process = NULL;
@@ -238,10 +280,11 @@ VOID nf_EnumModuleByPid(ULONG pid)
 		Module = ModListHead->Flink;
 		while (ModListHead != Module)
 		{
-			WCHAR ModuleName[260] = { 0 };
-			memcpy(ModuleName,
+
+			// WCHAR ModuleName[260] = { 0 };
+			memcpy(ModBuffer[count].BaseDllName,
 				((PLDR_DATA_TABLE_ENTRY)Module)->BaseDllName.Buffer,
-				((PLDR_DATA_TABLE_ENTRY)Module)->BaseDllName.Length);//DbgPrint("%S\n",ModuleName);
+				((PLDR_DATA_TABLE_ENTRY)Module)->BaseDllName.Length);
 			DbgPrint("[64]Base=%llx Size=%ld Name=%S Path=%S\n",
 				((PLDR_DATA_TABLE_ENTRY)Module)->DllBase,
 				((PLDR_DATA_TABLE_ENTRY)Module)->SizeOfImage,
@@ -282,11 +325,9 @@ VOID nf_EnumModuleByPid(ULONG pid)
 			{
 				if (((PLDR_DATA_TABLE_ENTRY32)Module32)->DllBase)
 				{
-					WCHAR ModuleName[260] = { 0 };
-					memcpy(ModuleName,
+					memcpy(ModBuffer[count].BaseDllName,
 						(PVOID)(((PLDR_DATA_TABLE_ENTRY32)Module32)->BaseDllName.Buffer),
-						((PLDR_DATA_TABLE_ENTRY32)Module32)->BaseDllName.Length);//DbgPrint("ModuleName: %S\n",ModuleName);  
-		 //打印信息：基址、大小、DLL路径
+						((PLDR_DATA_TABLE_ENTRY32)Module32)->BaseDllName.Length);
 					DbgPrint("[32]Base=%x Size=%ld Name=%S Path=%S\n",
 						((PLDR_DATA_TABLE_ENTRY32)Module32)->DllBase,
 						((PLDR_DATA_TABLE_ENTRY32)Module32)->SizeOfImage,
@@ -308,7 +349,6 @@ VOID nf_EnumModuleByPid(ULONG pid)
 	ObDereferenceObject(Process);
 	KdPrint(("Count:%d\n\n", count));
 }
-
 int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request)
 {
 	PEPROCESS targetProcess;
@@ -320,10 +360,8 @@ int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request)
 		ObDereferenceObject(targetProcess);
 	}
 }
-
 int nf_KillProcess(ULONG pid)
 {
-	
 	ULONG32 callcode = 0;
 	ULONG64 AddressOfPspTTBP = 0, AddressOfPsTST = 0, i = 0;
 	PETHREAD Thread = NULL;
@@ -373,4 +411,36 @@ int nf_KillProcess(ULONG pid)
 	if (pEProc)
 		ObDereferenceObject(pEProc);
 	return STATUS_SUCCESS;
+}
+
+BOOLEAN QueryProcessNamePath1(__in DWORD pid, __out PWCHAR path, __in DWORD pathlen)
+{
+	BOOLEAN bRet = FALSE;
+	CLIENT_ID cid;
+	OBJECT_ATTRIBUTES obj;
+	HANDLE hProc = NULL;
+	NTSTATUS status;
+
+	InitializeObjectAttributes(&obj, NULL, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+	cid.UniqueProcess = (HANDLE)pid;
+	cid.UniqueThread = NULL;
+	status = ZwOpenProcess(&hProc, GENERIC_ALL, &obj, &cid);
+	if (NT_SUCCESS(status))
+	{
+		DWORD dw;
+		WCHAR ProcessPath[MAX_PROCESS_PATH_LEN + sizeof(UNICODE_STRING)] = { 0 };
+		status = ZwQueryInformationProcess_1(hProc, ProcessImageFileName, ProcessPath, sizeof(ProcessPath), &dw);
+		if (NT_SUCCESS(status))
+		{
+			PUNICODE_STRING dststring = (PUNICODE_STRING)ProcessPath;
+			// 7/29 可能会遇到length为空，导致拷贝蓝屏 - 已修复
+			if ((pathlen > (DWORD)dststring->Length + sizeof(WCHAR)) && dststring->Length)
+			{
+				RtlMoveMemory(path, dststring->Buffer, dststring->Length + sizeof(WCHAR));
+				bRet = TRUE;
+			}
+		}
+		ZwClose(hProc);
+	}
+	return bRet;
 }

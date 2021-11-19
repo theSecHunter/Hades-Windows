@@ -344,11 +344,11 @@ typedef struct _LDR_DATA_TABLE_ENTRY
     LIST_ENTRY        InLoadOrderLinks;
     LIST_ENTRY        InMemoryOrderLinks;
     LIST_ENTRY        InInitializationOrderLinks;
-    PVOID                        DllBase;
-    PVOID                        EntryPoint;
-    ULONG                        SizeOfImage;
+    PVOID                 DllBase;
+    PVOID                 EntryPoint;
+    ULONG                 SizeOfImage;
     UNICODE_STRING        FullDllName;
-    UNICODE_STRING         BaseDllName;
+    UNICODE_STRING        BaseDllName;
 } LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
 
 typedef struct _LDR_DATA_TABLE_ENTRY32
@@ -356,14 +356,14 @@ typedef struct _LDR_DATA_TABLE_ENTRY32
     LIST_ENTRY32                InLoadOrderLinks;
     LIST_ENTRY32                InMemoryOrderLinks;
     LIST_ENTRY32                InInitializationOrderLinks;
-    ULONG                                DllBase;
-    ULONG                                EntryPoint;
-    ULONG                                SizeOfImage;
-    UNICODE_STRING32        FullDllName;
-    UNICODE_STRING32         BaseDllName;
-    ULONG                                Flags;
-    USHORT                                LoadCount;
-    USHORT                                TlsIndex;
+    ULONG                       DllBase;
+    ULONG                       EntryPoint;
+    ULONG                       SizeOfImage;
+    UNICODE_STRING32            FullDllName;
+    UNICODE_STRING32            BaseDllName;
+    ULONG                       Flags;
+    USHORT                      LoadCount;
+    USHORT                      TlsIndex;
     //下面的省略
 } LDR_DATA_TABLE_ENTRY32, * PLDR_DATA_TABLE_ENTRY32;
 
