@@ -61,9 +61,60 @@ bool ArkProcessInfo::nf_GetProcessInfo()
 
 }
 
-bool ArkProcessInfo::nf_GetProcessMod()
+bool ArkProcessInfo::nf_GetProcessMod(DWORD Pid)
 {
+	DWORD	inSize = sizeof(DWORD);
+	DWORD	dwSize = 0;
+	char*	outBuf = NULL;
+	bool	status = false;
+	const DWORD proessinfosize = sizeof(PROCESS_MOD) * 1024 * 2;
+	outBuf = new char[proessinfosize];
+	if (!outBuf)
+		return false;
+	RtlSecureZeroMemory(outBuf, proessinfosize);
+	do {
 
+		if (false == devobj.devctrl_sendioct(
+			CTL_DEVCTRL_ARK_PROCESSMOD,
+			&Pid,
+			inSize,
+			outBuf,
+			proessinfosize,
+			dwSize)
+			)
+		{
+			status = false;
+			break;
+		}
+
+		if (dwSize > 0)
+		{
+			PPROCESS_MOD modptr = (PPROCESS_MOD)outBuf;
+			if (modptr)
+			{
+				int i = 0;
+				for (i = 0; i < 1024 * 2; ++i)
+				{
+					if (0 == modptr[i].EntryPoint && 0 == modptr[i].SizeOfImage && 0 == modptr[i].DllBase)
+						continue;
+
+					wcout << "Pid: " << Pid << " - DllName: " << modptr[i].FullDllName << " - DllBase: " << modptr[i].DllBase << endl;
+
+				}
+			}
+
+			status = true;
+		}
+
+	} while (false);
+
+	if (outBuf)
+	{
+		delete[] outBuf;
+		outBuf = NULL;
+	}
+
+	return status;
 }
 
 bool ArkProcessInfo::nf_KillProcess()

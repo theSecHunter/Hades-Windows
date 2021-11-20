@@ -362,7 +362,6 @@ ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer)
 VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer)
 {
 	SIZE_T Peb = 0, Ldr = 0, tmp = 0;
-	PEPROCESS Process = NULL;
 	PLIST_ENTRY ModListHead = 0;
 	PLIST_ENTRY Module = 0;
 	KAPC_STATE ks = { 0 };
@@ -378,13 +377,11 @@ VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer)
 #endif
 
 	PEPROCESS eprocess = NULL;
-	if (NT_SUCCESS(PsLookupProcessByProcessId((HANDLE)pid, &eprocess)))
-		return eprocess;
-	else
+	if (!NT_SUCCESS(PsLookupProcessByProcessId((HANDLE)pid, &eprocess)))
 		return NULL;
 
-	Peb = PsGetProcessPeb(Process);
-	KeStackAttachProcess(Process, &ks);
+	Peb = PsGetProcessPeb(eprocess);
+	KeStackAttachProcess(eprocess, &ks);
 	__try
 	{
 		Ldr = Peb + (SIZE_T)LdrInPebOffset;
@@ -396,16 +393,15 @@ VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer)
 		{
 
 			// WCHAR ModuleName[260] = { 0 };
-			memcpy(ModBuffer[count].BaseDllName,
-				((PLDR_DATA_TABLE_ENTRY)Module)->BaseDllName.Buffer,
-				((PLDR_DATA_TABLE_ENTRY)Module)->BaseDllName.Length);
-			DbgPrint("[64]Base=%llx Size=%ld Name=%S Path=%S\n",
-				((PLDR_DATA_TABLE_ENTRY)Module)->DllBase,
-				((PLDR_DATA_TABLE_ENTRY)Module)->SizeOfImage,
-				((PLDR_DATA_TABLE_ENTRY)Module)->BaseDllName.Buffer,
-				((PLDR_DATA_TABLE_ENTRY)Module)->FullDllName.Buffer);
+			memcpy(ModBuffer[count].FullDllName,
+				((PLDR_DATA_TABLE_ENTRY)Module)->FullDllName.Buffer,
+				((PLDR_DATA_TABLE_ENTRY)Module)->FullDllName.Length);
+			ModBuffer[count].DllBase = ((PLDR_DATA_TABLE_ENTRY)Module)->DllBase;
 
 			count++;
+
+			if (count > 2000)
+				break;
 
 			//next module
 			Module = Module->Flink;
@@ -418,7 +414,7 @@ VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer)
 	}
 #ifdef AMD64
 	//遍历LDR-32 枚举32位进程的32位DLL
-	tmp = (SIZE_T)PsGetProcessWow64Process(Process);
+	tmp = (SIZE_T)PsGetProcessWow64Process(eprocess);
 	if (tmp)
 	{
 		SIZE_T peb, ldr;
@@ -439,14 +435,10 @@ VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer)
 			{
 				if (((PLDR_DATA_TABLE_ENTRY32)Module32)->DllBase)
 				{
-					memcpy(ModBuffer[count].BaseDllName,
-						(PVOID)(((PLDR_DATA_TABLE_ENTRY32)Module32)->BaseDllName.Buffer),
-						((PLDR_DATA_TABLE_ENTRY32)Module32)->BaseDllName.Length);
-					DbgPrint("[32]Base=%x Size=%ld Name=%S Path=%S\n",
-						((PLDR_DATA_TABLE_ENTRY32)Module32)->DllBase,
-						((PLDR_DATA_TABLE_ENTRY32)Module32)->SizeOfImage,
-						((PLDR_DATA_TABLE_ENTRY32)Module32)->BaseDllName.Buffer,
-						((PLDR_DATA_TABLE_ENTRY32)Module32)->FullDllName.Buffer);
+					memcpy(ModBuffer[count].FullDllName,
+						((PLDR_DATA_TABLE_ENTRY)Module)->FullDllName.Buffer,
+						((PLDR_DATA_TABLE_ENTRY)Module)->FullDllName.Length);
+					ModBuffer[count].DllBase = ((PLDR_DATA_TABLE_ENTRY)Module)->DllBase;
 				}
 				count++;
 				Module32 = (PLIST_ENTRY32)(Module32->Flink);
@@ -460,8 +452,7 @@ VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer)
 	}
 #endif
 	KeUnstackDetachProcess(&ks);
-	ObDereferenceObject(Process);
-	KdPrint(("Count:%d\n\n", count));
+	ObDereferenceObject(eprocess);
 }
 int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request)
 {

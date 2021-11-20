@@ -405,13 +405,16 @@ NTSTATUS devctrl_EnumProcessInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STAC
 		if (!pOutBuffer == FALSE && (outputBufferLength <= 0))
 			break;
 
-		int pids = 0;
+		DWORD Pids = 0;
 		switch (irpSp->Parameters.DeviceIoControl.IoControlCode)
 		{
 		case CTL_DEVCTRL_ARK_PROCESSINFO:
-			pids = (DWORD)pOutBuffer;
-			nf_GetProcessInfo(0, (HANDLE)pids, (PHANDLE_INFO)pOutBuffer);
-			break;
+		{
+			Pids = *(DWORD*)pOutBuffer;
+			if (Pids > 4 && Pids < 65532)
+				nf_GetProcessInfo(0, (HANDLE)Pids, (PHANDLE_INFO)pOutBuffer);
+		}
+		break;
 		case CTL_DEVCTRL_ARK_PROCESSENUM:
 			nf_GetProcessInfo(1, (HANDLE)0, (PHANDLE_INFO)pOutBuffer);
 			break;
@@ -447,10 +450,11 @@ NTSTATUS devctrl_GetProcessMod(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_
 		if (!pOutBuffer == FALSE && (outputBufferLength <= 0))
 			break;
 
-		int pids = (DWORD)pOutBuffer;
-		if (pids < 4)
+		DWORD Pids = *(DWORD*)pOutBuffer;
+		if (Pids > 4 && Pids < 65532)
+			nf_EnumModuleByPid(Pids, pOutBuffer);
+		else
 			break;
-		nf_EnumModuleByPid(pids, pOutBuffer);
 
 		irp->IoStatus.Status = STATUS_SUCCESS;
 		irp->IoStatus.Information = outputBufferLength;
@@ -483,9 +487,7 @@ NTSTATUS devctrl_GetKillProcess(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK
 		if (!pOutBuffer == FALSE && (outputBufferLength <= 0))
 			break;
 
-		DbgBreakPoint();
 		DWORD Pids = *(DWORD*)pOutBuffer;
-		// Pids = atoi(pOutBuffer);
 		if (Pids > 4 && Pids < 65532)
 			nf_KillProcess(Pids);
 		else

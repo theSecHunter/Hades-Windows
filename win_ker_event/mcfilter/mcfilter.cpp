@@ -471,6 +471,14 @@ int main(int argc, char* argv[])
 			g_processinfo.nf_EnumProcess();
 		}
 		break;
+		case NF_PROCESS_MOD:
+		{
+			int Process_Pid = 0;
+			cout << "Please Input Pid: ";
+			scanf("%d", &Process_Pid);
+			g_processinfo.nf_GetProcessMod(Process_Pid);
+		}
+		break;
 		case NF_PROCESS_KILL:
 		{
 			g_processinfo.nf_KillProcess();

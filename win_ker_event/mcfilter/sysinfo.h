@@ -179,7 +179,7 @@ enum AnRootkitId
     NF_NETWORK_ID,                  // 10
     NF_PROCESS_ENUM,                // 11
     NF_PROCESS_KILL,                // 12
-    NF_PROCESS_INFO,                // 13
+    NF_PROCESS_MOD,                 // 13
     NF_PE_DUMP,                     // 14
     NF_SYSMOD_ENUM,                 // 15
     NF_DRIVER_DUMP,                 // 16
