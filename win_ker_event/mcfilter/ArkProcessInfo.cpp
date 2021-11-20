@@ -80,14 +80,14 @@ bool ArkProcessInfo::nf_KillProcess()
 	cout << "Please Kill ProcessPid: ";
 	scanf("%d", &KillPidIn);
 
-	devobj.devctrl_sendioct(
-		CTL_DEVCTRL_ARK_PROCESSKILL,
-		&KillPidIn,
-		inSize,
-		&KillPidOut,
-		inSize,
-		dwSize
-	);
+	//devobj.devctrl_sendioct(
+	//	CTL_DEVCTRL_ARK_PROCESSKILL,
+	//	&KillPidIn,
+	//	inSize,
+	//	&KillPidOut,
+	//	inSize,
+	//	dwSize
+	//);
 
 	return status;
 }
@@ -132,20 +132,20 @@ bool ArkProcessInfo::nf_EnumProcess()
 			wstring catstr;
 			for (i = 0; i < end; ++i)
 			{
-				wcout << "Pid: " << phandleinfo[i].ProcessId << " - Process: " << phandleinfo[i].ProcessPath << endl;// " - ProcessName: " << phandleinfo[i].ProcessName << endl;
+				//wcout << "Pid: " << phandleinfo[i].ProcessId << " - Process: " << phandleinfo[i].ProcessPath << endl;// " - ProcessName: " << phandleinfo[i].ProcessName << endl;
 				// ШЅжи
-				//catstr = phandleinfo[i].ProcessPath; 
-				//catstr += L" - ";
-				//catstr += phandleinfo[i].ProcessName;
-				//Process_list[phandleinfo[i].ProcessId] = catstr;
-				//catstr.clear();
+				catstr = phandleinfo[i].ProcessPath; 
+				catstr += L" - ";
+				catstr += phandleinfo[i].ProcessName;
+				Process_list[phandleinfo[i].ProcessId] = catstr;
+				catstr.clear();
 			}
 
-			//map<int, wstring>::iterator iter;
-			//for (iter = Process_list.begin(); iter != Process_list.end(); iter++)
-			//{
-			//	wcout << "Pid: " << iter->first << " - Process: " << iter->second << endl;
-			//}
+			map<int, wstring>::iterator iter;
+			for (iter = Process_list.begin(); iter != Process_list.end(); iter++)
+			{
+				wcout << "Pid: " << iter->first << " - Process: " << iter->second << endl;
+			}
 
 			status = true;
 		}

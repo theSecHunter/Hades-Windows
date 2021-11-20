@@ -555,8 +555,8 @@ NTSTATUS devctrl_DrDevEnum(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCA
 
 		if (!pOutBuffer == FALSE && (outputBufferLength <= 0))
 			break;
-
-		nf_EnumSysDriver();
+		memset(pOutBuffer, 0, sizeof(PROCESS_MOD) * 1024 * 2);
+		nf_EnumSysDriver(DeviceObject, pOutBuffer);
 
 		irp->IoStatus.Status = STATUS_SUCCESS;
 		irp->IoStatus.Information = outputBufferLength;

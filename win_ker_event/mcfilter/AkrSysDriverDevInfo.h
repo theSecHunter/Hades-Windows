@@ -5,7 +5,7 @@ public:
 	AkrSysDriverDevInfo();
 	~AkrSysDriverDevInfo();
 
-	bool nf_EnumDriver();
+	bool nf_EnumSysMod();
 	bool nf_GetDriverInfo();
 	bool nf_DumpDriverInfo();
 

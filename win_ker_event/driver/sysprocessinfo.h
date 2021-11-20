@@ -30,15 +30,6 @@ typedef struct _HANDLE_INFO {
 	//WCHAR		HandleName[256 * 2];
 } HANDLE_INFO, * PHANDLE_INFO;
 
-typedef struct _PROCESS_MOD
-{
-	ULONG	DllBase;
-	ULONG	EntryPoint;
-	ULONG	SizeOfImage;
-	WCHAR	FullDllName[260];
-	WCHAR	BaseDllName[260];
-}PROCESS_MOD, * PPROCESS_MOD;
-
 ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer);
 VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer);
 int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request);

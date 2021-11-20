@@ -367,4 +367,13 @@ typedef struct _LDR_DATA_TABLE_ENTRY32
     //下面的省略
 } LDR_DATA_TABLE_ENTRY32, * PLDR_DATA_TABLE_ENTRY32;
 
+typedef struct _PROCESS_MOD
+{
+    ULONG	DllBase;
+    ULONG	EntryPoint;
+    ULONG	SizeOfImage;
+    WCHAR	FullDllName[260];
+    WCHAR	BaseDllName[260];
+}PROCESS_MOD, * PPROCESS_MOD;
+
 #endif

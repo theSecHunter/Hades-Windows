@@ -263,6 +263,7 @@ static ArkFsd				g_fsdobj;
 static ArkMouseKeyBoard		g_mousekeyboardobj;
 static ArkNetwork			g_networkobj;
 static ArkProcessInfo		g_processinfo;
+static AkrSysDriverDevInfo	g_sysmodinfo;
 
 bool gethostip(RawData* ip_liststr)
 {
@@ -473,6 +474,11 @@ int main(int argc, char* argv[])
 		case NF_PROCESS_KILL:
 		{
 			g_processinfo.nf_KillProcess();
+		}
+		break;
+		case NF_SYSMOD_ENUM:
+		{
+			g_sysmodinfo.nf_EnumSysMod();
 		}
 		break;
 		case NF_EXIT:

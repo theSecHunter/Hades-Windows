@@ -181,7 +181,8 @@ enum AnRootkitId
     NF_PROCESS_KILL,                // 12
     NF_PROCESS_INFO,                // 13
     NF_PE_DUMP,                     // 14
-    NF_DRIVER_DUMP,                 // 15
+    NF_SYSMOD_ENUM,                 // 15
+    NF_DRIVER_DUMP,                 // 16
     NF_EXIT = 100       
 };
 
