@@ -72,6 +72,12 @@
     <ClCompile Include="hades_win.pb.cc">
       <Filter>grpc</Filter>
     </ClCompile>
+    <ClCompile Include="ArkProcessInfo.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="AkrSysDriverDevInfo.cpp">
+      <Filter>Arktools</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ntbasic.h">
@@ -127,6 +133,12 @@
     </ClInclude>
     <ClInclude Include="hades_win.pb.h">
       <Filter>grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkProcessInfo.h">
+      <Filter>Arktools</Filter>
+    </ClInclude>
+    <ClInclude Include="AkrSysDriverDevInfo.h">
+      <Filter>Arktools</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

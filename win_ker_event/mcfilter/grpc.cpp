@@ -2,21 +2,13 @@
 
 using namespace std;
 
-Grpc::~Grpc()
-{
-}
-
-bool Grpc::Grpc_Transfer(RawData& rawData)
+bool Grpc::Grpc_Transfer(RawData rawData)
 {
     /*
         Ë«Ïò steam
     */
     Status status;
-    Command nRetCommand;
     ClientContext context;
-
-    std::unique_ptr< ::grpc::ClientReaderWriter< ::proto::RawData, ::proto::Command > >
-        stream(stub_->Transfer(&context));
 
     // Read Server Msg
     //stream->Read(&nRetCommand);
@@ -25,12 +17,12 @@ bool Grpc::Grpc_Transfer(RawData& rawData)
     //{
     //    cout << "Read Buffer Error" << endl;
     //}
-
+    // 
     // Write Server Msg
-    auto nRet = stream->Write(rawData);   
-    stream->WritesDone();
-    status = stream->Finish();
-    if (false == status.ok())
+    bool nRet = false;
+    if(Grpc_Getstream())
+        nRet = m_stream->Write(rawData);
+    if (false == nRet)
     {
         cout << "Write Buffer Error" << endl;
         return false;

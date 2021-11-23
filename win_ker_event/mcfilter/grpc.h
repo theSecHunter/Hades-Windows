@@ -40,13 +40,44 @@ public:
 	Grpc(std::shared_ptr<Channel> channel)
 		: stub_(Transfer::NewStub(channel))
 	{
+		m_stream = nullptr;
 	}
 	
-	~Grpc();
+	~Grpc()
+	{
+		Grpc_steamDon();
+	}
 
-	bool Grpc_Transfer(RawData& rawData);
+	unique_ptr<::grpc::ClientReaderWriter<::proto::RawData, ::proto::Command>>  Grpc_streamInit()
+	{
+		
+		 unique_ptr<::grpc::ClientReaderWriter<::proto::RawData, ::proto::Command>> stream(stub_->Transfer(&m_context));
+		 return stream;
+	}
+
+	bool Grpc_Getstream()
+	{
+		if (!m_stream)
+			m_stream = Grpc_streamInit();
+
+		return true;
+	}
+
+	void Grpc_steamDon()
+	{
+		if (m_stream)
+		{
+			m_stream->WritesDone();
+			m_stream->Finish();
+			m_stream = nullptr;
+		}
+	}
+
+	bool Grpc_Transfer(RawData rawData);
 
 private:
 	unique_ptr<Transfer::Stub> stub_;
+	ClientContext m_context;
+	unique_ptr<::grpc::ClientReaderWriter<::proto::RawData, ::proto::Command>> m_stream;
 };
 

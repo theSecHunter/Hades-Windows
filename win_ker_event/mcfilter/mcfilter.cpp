@@ -3,6 +3,7 @@
 */
 #include "HlprMiniCom.h"
 #include "../lib_json/json/json.h"
+
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -302,41 +303,62 @@ bool SysNodeOnlineData(RawData* sysinfobuffer)
 
 }
 
+typedef struct _SYSTEMONLIENNODE
+{
+	wchar_t platform[260];
+	int id;
+	__int64 id64;
+}SYSTEMONLIENNODE, * PSYSTEMONLIENNODE;
+
 int main(int argc, char* argv[])
 {
 	// 
 	// @ Grpc Active Online Send to  Server Msg
-	//
-	// ca
-	auto rootcert = get_file_contents(rootcrt_path);
-	auto clientkey = get_file_contents(clientkey_path);
-	auto clientcert = get_file_contents(clientcrt_path);
-
-	grpc::SslCredentialsOptions ssl_opts;
-	ssl_opts.pem_root_certs = rootcert;
-	//ssl_opts.pem_private_key = clientkey;
-	//ssl_opts.pem_cert_chain = clientcert;
-	auto channel_creds = grpc::SslCredentials(ssl_opts);
-	//std::shared_ptr<grpc::ChannelCredentials> channel_creds = grpc::SslCredentials(ssl_opts);
-
+	// SSL
+	// auto rootcert = get_file_contents(rootcrt_path);
+	// auto clientkey = get_file_contents(clientkey_path);
+	// auto clientcert = get_file_contents(clientcrt_path);
+	// grpc::SslCredentialsOptions ssl_opts;
+	// ssl_opts.pem_root_certs = rootcert;
+	// ssl_opts.pem_private_key = clientkey;
+	// ssl_opts.pem_cert_chain = clientcert;
+	// std::shared_ptr<grpc::ChannelCredentials> channel_creds = grpc::SslCredentials(ssl_opts);
+	
 	//  grpc::InsecureChannelCredentials()
 	static Grpc greeter(
-		grpc::CreateChannel("localhost:8888", channel_creds));
-
-	RawData rawData;
+		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));
+	
+	proto::RawData rawData;
 	DWORD ComUserLen = MAX_PATH;
-	WCHAR ComUserName[MAX_PATH] = { 0, };
-	GetComputerName(ComUserName, &ComUserLen);
-	//rawData.set_hostname(ComUserName);
-	rawData.set_version("123");
-	rawData.set_agentid("1");
+	CHAR ComUserName[MAX_PATH] = { 0, };
+	GetComputerNameA(ComUserName, &ComUserLen);
+	// Send Agent
+	rawData.set_hostname(ComUserName);
+	rawData.set_version("0.1");
+	rawData.set_agentid("123");
 	rawData.set_timestamp(GetCurrentTime());
-	// Set Raw ipv4 List
-	// gethostip(&rawData);
-	//// Set Systme Info
-	// SysNodeOnlineData(&rawData);
-	// greeter.Grpc_Transfer(rawData);
+	greeter.Grpc_Transfer(rawData);
 
+	// Send System Onliy Buffer 
+	rawData.Clear();
+	rawData.set_hostname(ComUserName);
+	rawData.set_version("0.1");
+	rawData.set_agentid("123");
+	rawData.set_timestamp(GetCurrentTime());
+	::proto::Record* pkg_re = rawData.add_pkg();
+	auto MapMessage = pkg_re->mutable_message();
+	(*MapMessage)["platform"] =  "windows";
+	(*MapMessage)["agent_id"] = "123";
+	(*MapMessage)["timestamp"] = "1111";
+	(*MapMessage)["hostname"] = ComUserName;
+	(*MapMessage)["version"] = "0.1";
+	(*MapMessage)["in_ipv4_list"] = "localhost";
+	(*MapMessage)["in_ipv6_list"] = "localhost";
+	(*MapMessage)["data_type"] = "1";
+	greeter.Grpc_Transfer(rawData);
+
+	// start grpc read thread (Wait server Data)
+	CreateThread();
 
 	int status = 0;
 	// Init devctrl
@@ -373,12 +395,12 @@ int main(int argc, char* argv[])
 		}
 
 		// Enable try Network packte Monitor
-		status = devobj.devctrl_OnMonitor();
-		if (0 > status)
-		{
-			cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
-			break;
-		}
+		//status = devobj.devctrl_OnMonitor();
+		//if (0 > status)
+		//{
+		//	cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+		//	break;
+		//}
 
 		// Enable Event
 		devobj.nf_setEventHandler((PVOID)&eventobj);
@@ -446,26 +468,6 @@ int main(int argc, char* argv[])
 			g_networkobj.nf_GetNteworkProcessInfo();
 		}
 		break;
-		case NF_SYSCALLBACK_ID:
-		{
-		
-		}
-		break;
-		case NF_SYSPROCESSTREE_ID:
-		{
-		
-		}
-		break;
-		case NF_OBJ_ID:
-		{
-		
-		}
-		break;
-		case NF_IRP_ID:
-		{
-		
-		}
-		break;
 		case NF_PROCESS_ENUM:
 		{
 			g_processinfo.nf_EnumProcess();
@@ -508,6 +510,18 @@ int main(int argc, char* argv[])
 	/*
 	*   未开放
 		Json Config Alay
+			Json::FastWriter writer;
+			Json::Value	Jsontestnode;
+			Jsontestnode["platform"] = "windows";
+			Jsontestnode["agent_id"] = "123";
+			Jsontestnode["timestamp"] = "1111";
+			Jsontestnode["hostname"] = ComUserName;
+			Jsontestnode["version"] = "0.1";
+			Jsontestnode["in_ipv4_list"] = "localhost";
+			Jsontestnode["in_ipv6_list"] = "localhost";
+			Jsontestnode["data_type"] = "1";
+			// 序列化
+			string jsonreq = writer.write(Jsontestnode);
 	*/
 	bool nstatus = false;
 	// read rule to mcrule.json
