@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include "devctrl.h"
 #include <iostream>
+#include "sysinfo.h"
 
 using namespace std;
 
@@ -9,14 +10,6 @@ using namespace std;
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x1020, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 static DevctrlIoct devobj;
-
-typedef struct _DPC_TIMERINFO
-{
-	ULONG_PTR	dpc;
-	ULONG_PTR	timerobject;
-	ULONG_PTR	timeroutine;
-	ULONG		period;
-}DPC_TIMERINFO, * PDPC_TIMERINFO;
 
 ArkDpcTimer::ArkDpcTimer()
 {

@@ -14,16 +14,6 @@
 #include "nfevents.h"
 #include "devctrl.h"
 #include "sysinfo.h"
-
-#include "ArkSsdt.h"
-#include "ArkIdt.h"
-#include "ArkDpcTimer.h"
-#include "ArkFsd.h"
-#include "ArkMouseKeyBoard.h"
-#include "ArkNetwork.h"
-#include "ArkProcessInfo.h"
-#include "AkrSysDriverDevInfo.h"
-
 #include "grpc.h"
 
 #include <stdlib.h>
@@ -256,16 +246,6 @@ class EventHandler : public NF_EventHandler
 static DevctrlIoct			devobj;
 static EventHandler			eventobj;
 
-// Rootkit 接口
-static ArkSsdt				g_ssdtobj;
-static ArkIdt				g_idtobj;
-static ArkDpcTimer			g_dpcobj;
-static ArkFsd				g_fsdobj;
-static ArkMouseKeyBoard		g_mousekeyboardobj;
-static ArkNetwork			g_networkobj;
-static ArkProcessInfo		g_processinfo;
-static AkrSysDriverDevInfo	g_sysmodinfo;
-
 bool gethostip(RawData* ip_liststr)
 {
 	WSAData data;
@@ -295,14 +275,12 @@ bool gethostip(RawData* ip_liststr)
 
 	WSACleanup();
 }
-
 bool SysNodeOnlineData(RawData* sysinfobuffer)
 {
 	
 	sysinfobuffer->mutable_pkg();
 
 }
-
 typedef struct _SYSTEMONLIENNODE
 {
 	wchar_t platform[260];
@@ -310,8 +288,18 @@ typedef struct _SYSTEMONLIENNODE
 	__int64 id64;
 }SYSTEMONLIENNODE, * PSYSTEMONLIENNODE;
 
+DWORD pthread_grpread(
+	LPVOID lpThreadParameter
+)
+{
+	Grpc* greeter = (Grpc*)lpThreadParameter;
+	greeter->Grpc_ReadC2Thread(NULL);
+	return 1;
+}
+
 int main(int argc, char* argv[])
 {
+	getchar();
 	// 
 	// @ Grpc Active Online Send to  Server Msg
 	// SSL
@@ -326,7 +314,7 @@ int main(int argc, char* argv[])
 	
 	//  grpc::InsecureChannelCredentials()
 	static Grpc greeter(
-		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));
+		grpc::CreateChannel("10.128.128.23:8888", grpc::InsecureChannelCredentials()));
 	
 	proto::RawData rawData;
 	DWORD ComUserLen = MAX_PATH;
@@ -358,7 +346,8 @@ int main(int argc, char* argv[])
 	greeter.Grpc_Transfer(rawData);
 
 	// start grpc read thread (Wait server Data)
-	CreateThread();
+	// DWORD threadid = 0;
+	// CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
 
 	int status = 0;
 	// Init devctrl
@@ -387,12 +376,12 @@ int main(int argc, char* argv[])
 			break;
 		}
 
-		status = devobj.devctrl_workthread();
-		if (0 > status)
-		{
-			cout << "devctrl_workthread error: main.c --> lines: 367" << endl;
-			break;
-		}
+		//status = devobj.devctrl_workthread();
+		//if (0 > status)
+		//{
+		//	cout << "devctrl_workthread error: main.c --> lines: 367" << endl;
+		//	break;
+		//}
 
 		// Enable try Network packte Monitor
 		//status = devobj.devctrl_OnMonitor();
@@ -415,94 +404,13 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	OutputDebugString(L"Init Driver Success. Json Rule Init Wait.......");
+	Command cmd;
+	cmd.set_agentctrl(100);
+	greeter.Grpc_ReadDispatchHandle(cmd);
+	getchar();
 
-	int id_s = -1;
-	bool exit_id = false;
-
-	while (true)
-	{
-		
-		cout << " Please Input SysCheck Id: ";
-		cin >> id_s;
-
-		switch (id_s)
-		{
-		case NF_SSDT_ID:
-		{
-			if (g_ssdtobj.nf_init())
-			{
-				// Get Sys Current Mem Ssdt Info
-				g_ssdtobj.nf_GetSysCurrentSsdtData();
-				OutputDebugString(L"Init Ssdt Success!");
-				break;
-			}
-			OutputDebugString(L"Init Ssdt Failuer!");
-		}
-		break;
-		case NF_IDT_ID:
-		{
-			if (g_idtobj.nf_init())
-			{
-				g_idtobj.nf_GetIdtData();
-			}
-		}
-		break;
-		case NF_DPC_ID:
-		{
-			g_dpcobj.nf_GetDpcTimerData();
-		}
-		break;
-		case NF_FSD_ID:
-		{
-			g_fsdobj.nf_GetFsdInfo();
-		}
-		break;
-		case NF_MOUSEKEYBOARD_ID:
-		{
-			g_mousekeyboardobj.nf_GetMouseKeyInfoData();
-		}
-		break;
-		case NF_NETWORK_ID:
-		{
-			g_networkobj.nf_GetNteworkProcessInfo();
-		}
-		break;
-		case NF_PROCESS_ENUM:
-		{
-			g_processinfo.nf_EnumProcess();
-		}
-		break;
-		case NF_PROCESS_MOD:
-		{
-			int Process_Pid = 0;
-			cout << "Please Input Pid: ";
-			scanf("%d", &Process_Pid);
-			g_processinfo.nf_GetProcessMod(Process_Pid);
-		}
-		break;
-		case NF_PROCESS_KILL:
-		{
-			g_processinfo.nf_KillProcess();
-		}
-		break;
-		case NF_SYSMOD_ENUM:
-		{
-			g_sysmodinfo.nf_EnumSysMod();
-		}
-		break;
-		case NF_EXIT:
-		{
-			exit_id = true;
-		}
-		break;
-		default:
-			break;
-		}
-
-		if (exit_id)
-			break;
-	}
+	cout << "输入回车结束进程" << endl;
+	getchar();
 
 	devobj.devctrl_free();
 	exit(0);
@@ -523,6 +431,7 @@ int main(int argc, char* argv[])
 			// 序列化
 			string jsonreq = writer.write(Jsontestnode);
 	*/
+	OutputDebugString(L"Init Driver Success. Json Rule Init Wait.......");
 	bool nstatus = false;
 	// read rule to mcrule.json
 	Json::Value root;

@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include "ArkProcessInfo.h"
 #include "devctrl.h"
+#include "sysinfo.h"
 
 #include <iostream>
 #include <map>
@@ -20,29 +21,6 @@ using namespace std;
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x1074, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define CTL_DEVCTRL_ARK_PROCESSENUM \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x1075, METHOD_BUFFERED, FILE_ANY_ACCESS)
-
-typedef struct _HANDLE_INFO {
-	ULONG_PTR	ObjectTypeIndex;
-	ULONG_PTR	HandleValue;
-	ULONG_PTR	ReferenceCount;
-	ULONG_PTR	GrantedAccess;
-	ULONG_PTR	CountNum;
-	ULONG_PTR	Object;
-	ULONG		ProcessId;
-	WCHAR		ProcessName[256 * 2];
-	WCHAR		ProcessPath[256 * 2];
-	//WCHAR		TypeName[256 * 2];
-	//WCHAR		HandleName[256 * 2];
-} HANDLE_INFO, * PHANDLE_INFO;
-
-typedef struct _PROCESS_MOD
-{
-	ULONG	DllBase;
-	ULONG	EntryPoint;
-	ULONG	SizeOfImage;
-	WCHAR	FullDllName[260];
-	WCHAR	BaseDllName[260];
-}PROCESS_MOD, * PPROCESS_MOD;
 
 static DevctrlIoct devobj;
 

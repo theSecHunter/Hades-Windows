@@ -32,7 +32,6 @@ bool ArkSsdt::nf_init()
 	DWORD outSize = sizeof(DWORD);
 
 	do {
-
 		if (false == devobj.devctrl_sendioct(
 			CTL_DEVCTRL_ARK_INITSSDT,
 			NULL,
@@ -53,17 +52,13 @@ bool ArkSsdt::nf_init()
 
 }
 
-bool ArkSsdt::nf_GetSysCurrentSsdtData()
+bool ArkSsdt::nf_GetSysCurrentSsdtData(LPVOID outBuf, const DWORD ssdtinfosize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	char*	outBuf = NULL;
 	bool	status = false;
-	const DWORD ssdtinfosize = sizeof(SSDTINFO) * 0x200;
-	outBuf = new char[ssdtinfosize];
-	if (!outBuf)
+	if (!outBuf || !ssdtinfosize)
 		return false;
-	RtlSecureZeroMemory(outBuf, ssdtinfosize);
 	do {
 
 		if (false == devobj.devctrl_sendioct(
@@ -80,38 +75,35 @@ bool ArkSsdt::nf_GetSysCurrentSsdtData()
 		}
 
 		if (dwSize > 0)
-		{
-			SSDTINFO* ssdtinfo = (SSDTINFO*)outBuf;
-			if (!ssdtinfo)
-			{
-				OutputDebugString(L"Kernel Get Ssdt Failuer");
-				status = false;
-				break;
-			}
+			return true;
 
-			OutputDebugString(L"Get SsdtInfo Success");
-			
-			cout << "SystemCurrent Ssdt Info:" << endl;
-			int i = 0;
-			for (i = 0; i < 0x200; ++i)
-			{
-				if (!ssdtinfo[i].sstd_memoffset)
-					break;
-							
-				cout << hex << "Index: " << ssdtinfo[i].ssdt_id << " - offset: " << ssdtinfo[i].sstd_memoffset << " - SsdtAddr: " << ssdtinfo[i].sstd_memaddr << endl;
-			}
-			cout << "SystemCurrent Ssdt End:" << endl;
+		//if (dwSize > 0)
+		//{
+		//	SSDTINFO* ssdtinfo = (SSDTINFO*)outBuf;
+		//	if (!ssdtinfo)
+		//	{
+		//		OutputDebugString(L"Kernel Get Ssdt Failuer");
+		//		status = false;
+		//		break;
+		//	}
 
-			status = true;
-		}
+		//	OutputDebugString(L"Get SsdtInfo Success");
+		//	
+		//	cout << "SystemCurrent Ssdt Info:" << endl;
+		//	int i = 0;
+		//	for (i = 0; i < 0x200; ++i)
+		//	{
+		//		if (!ssdtinfo[i].sstd_memoffset)
+		//			break;
+		//					
+		//		cout << hex << "Index: " << ssdtinfo[i].ssdt_id << " - offset: " << ssdtinfo[i].sstd_memoffset << " - SsdtAddr: " << ssdtinfo[i].sstd_memaddr << endl;
+		//	}
+		//	cout << "SystemCurrent Ssdt End:" << endl;
+
+		//	status = true;
+		//}
 	
 	} while (false);
-
-	if (outBuf)
-	{
-		delete[] outBuf;
-		outBuf = NULL;
-	}
 
 	return status;
 }

@@ -74,6 +74,8 @@ public:
 	}
 
 	bool Grpc_Transfer(RawData rawData);
+	void Grpc_ReadC2Thread(LPVOID lpThreadParameter);
+	void Grpc_ReadDispatchHandle(Command& command);
 
 private:
 	unique_ptr<Transfer::Stub> stub_;
