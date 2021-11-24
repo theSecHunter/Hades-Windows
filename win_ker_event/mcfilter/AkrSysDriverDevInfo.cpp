@@ -29,18 +29,12 @@ AkrSysDriverDevInfo::~AkrSysDriverDevInfo()
 
 }
 
-bool AkrSysDriverDevInfo::nf_EnumSysMod()
+bool AkrSysDriverDevInfo::nf_EnumSysMod(LPVOID outBuf, const DWORD proessinfosize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	char* outBuf = NULL;
-	bool	status = false;
-	// 默认当前系统有1000个线程
-	const DWORD proessinfosize = sizeof(PROCESS_MOD) * 1024 * 2;
-	outBuf = new char[proessinfosize];
 	if (!outBuf)
 		return false;
-	RtlSecureZeroMemory(outBuf, proessinfosize);
 	do {
 
 		if (false == devobj.devctrl_sendioct(
@@ -52,38 +46,15 @@ bool AkrSysDriverDevInfo::nf_EnumSysMod()
 			dwSize)
 			)
 		{
-			status = false;
-			break;
+			return false;
 		}
 
-		if (dwSize > 0)
-		{
-			PPROCESS_MOD modptr = (PPROCESS_MOD)outBuf;
-			if (modptr)
-			{
-				int i = 0; 
-				for (i = 0; i < 1024 * 2; ++i)
-				{
-					if (0 == modptr[i].EntryPoint && 0 == modptr[i].SizeOfImage && 0 == modptr[i].DllBase)
-						continue;
-
-					wcout << "DllName: " << modptr[i].FullDllName << " - DllBase: " << modptr[i].DllBase << endl;
-
-				}
-			}
-
-			status = true;
-		}
+		if (dwSize >= sizeof(PPROCESS_MOD))
+			return true;
 
 	} while (false);
 
-	if (outBuf)
-	{
-		delete[] outBuf;
-		outBuf = NULL;
-	}
-
-	return status;
+	return false;
 }
 
 bool AkrSysDriverDevInfo::nf_GetDriverInfo()

@@ -5,7 +5,6 @@ public:
 	ArkDpcTimer();
 	~ArkDpcTimer();
 
-	// bool nf_init();
-	bool nf_GetDpcTimerData();
+	bool nf_GetDpcTimerData(LPVOID outBuf, const DWORD DpcTimerinfosize);
 };
 

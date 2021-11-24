@@ -346,10 +346,11 @@ int main(int argc, char* argv[])
 	greeter.Grpc_Transfer(rawData);
 
 	// start grpc read thread (Wait server Data)
-	// DWORD threadid = 0;
-	// CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
+	DWORD threadid = 0;
+	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
 
 	int status = 0;
+
 	// Init devctrl
 	status = devobj.devctrl_init();
 	if (0 > status)
@@ -407,7 +408,38 @@ int main(int argc, char* argv[])
 	Command cmd;
 	cmd.set_agentctrl(100);
 	greeter.Grpc_ReadDispatchHandle(cmd);
-	getchar();
+
+	cmd.Clear();
+	cmd.set_agentctrl(101);
+	greeter.Grpc_ReadDispatchHandle(cmd);
+
+	cmd.Clear();
+	cmd.set_agentctrl(103);
+	greeter.Grpc_ReadDispatchHandle(cmd);
+
+	cmd.Clear();
+	cmd.set_agentctrl(108);
+	greeter.Grpc_ReadDispatchHandle(cmd);
+
+	cmd.Clear();
+	cmd.set_agentctrl(109);
+	greeter.Grpc_ReadDispatchHandle(cmd);
+
+	cmd.Clear();
+	cmd.set_agentctrl(110);
+	greeter.Grpc_ReadDispatchHandle(cmd);
+
+	cmd.Clear();
+	cmd.set_agentctrl(111);
+	greeter.Grpc_ReadDispatchHandle(cmd);
+
+	cmd.Clear();
+	cmd.set_agentctrl(113);
+	greeter.Grpc_ReadDispatchHandle(cmd);
+
+	cmd.Clear();
+	cmd.set_agentctrl(115);
+	greeter.Grpc_ReadDispatchHandle(cmd);
 
 	cout << "输入回车结束进程" << endl;
 	getchar();

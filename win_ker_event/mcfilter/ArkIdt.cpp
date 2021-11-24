@@ -50,17 +50,13 @@ bool ArkIdt::nf_init()
 	return false;
 }
 
-bool ArkIdt::nf_GetIdtData()
+bool ArkIdt::nf_GetIdtData(LPVOID outBuf, const DWORD idtinfosize)
 {
 	DWORD inSize = 0;
 	DWORD dwSize = 0;
-	char* outBuf = NULL;
-	bool  status = false;
-	const DWORD idtinfosize = sizeof(IDTINFO) * 0x100;
-	outBuf = new char[idtinfosize];
 	if (!outBuf)
 		return false;
-	RtlSecureZeroMemory(outBuf, idtinfosize);
+
 	do {
 		
 		if (false == devobj.devctrl_sendioct(
@@ -72,41 +68,13 @@ bool ArkIdt::nf_GetIdtData()
 			dwSize)
 			)
 		{
-			break;
+			return false;
 		}
 
-		if (dwSize > 0)
-		{
-			IDTINFO* idtinfo = (IDTINFO*)outBuf;
-			if (!idtinfo)
-			{
-				OutputDebugString(L"Kernel Get Idt Failuer");
-				return false;
-			}
-
-			OutputDebugString(L"Get IdtInfo Success");
-
-			cout << "SystemCurrent Idt Info:" << endl;
-			int i = 0;
-			for (i = 0; i < 0x100; ++i)
-			{
-				if (!idtinfo[i].idt_isrmemaddr)
-					break;
-
-				cout << hex << "Index: " << idtinfo[i].idt_id << " - IdtAddr: " << idtinfo[i].idt_isrmemaddr << endl;
-			}
-			cout << "SystemCurrent Idt End:" << endl;
-
-			status = true;
-		}
+		if (dwSize >= sizeof(IDTINFO))
+			return true;
 
 	} while (false);
 
-	if (outBuf)
-	{
-		delete[] outBuf;
-		outBuf = NULL;
-	}
-
-	return status;
+	return false;
 }

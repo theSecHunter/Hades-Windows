@@ -39,17 +39,13 @@ bool ArkProcessInfo::nf_GetProcessInfo()
 
 }
 
-bool ArkProcessInfo::nf_GetProcessMod(DWORD Pid)
+bool ArkProcessInfo::nf_GetProcessMod(DWORD Pid, LPVOID outBuf, const DWORD proessinfosize)
 {
 	DWORD	inSize = sizeof(DWORD);
 	DWORD	dwSize = 0;
-	char*	outBuf = NULL;
-	bool	status = false;
-	const DWORD proessinfosize = sizeof(PROCESS_MOD) * 1024 * 2;
-	outBuf = new char[proessinfosize];
 	if (!outBuf)
 		return false;
-	RtlSecureZeroMemory(outBuf, proessinfosize);
+
 	do {
 
 		if (false == devobj.devctrl_sendioct(
@@ -61,38 +57,15 @@ bool ArkProcessInfo::nf_GetProcessMod(DWORD Pid)
 			dwSize)
 			)
 		{
-			status = false;
-			break;
+			return false;
 		}
 
-		if (dwSize > 0)
-		{
-			PPROCESS_MOD modptr = (PPROCESS_MOD)outBuf;
-			if (modptr)
-			{
-				int i = 0;
-				for (i = 0; i < 1024 * 2; ++i)
-				{
-					if (0 == modptr[i].EntryPoint && 0 == modptr[i].SizeOfImage && 0 == modptr[i].DllBase)
-						continue;
-
-					wcout << "Pid: " << Pid << " - DllName: " << modptr[i].FullDllName << " - DllBase: " << modptr[i].DllBase << endl;
-
-				}
-			}
-
-			status = true;
-		}
+		if (dwSize >= sizeof(PPROCESS_MOD))
+			return true;
 
 	} while (false);
 
-	if (outBuf)
-	{
-		delete[] outBuf;
-		outBuf = NULL;
-	}
-
-	return status;
+	return false;
 }
 
 bool ArkProcessInfo::nf_KillProcess()
@@ -126,19 +99,12 @@ bool ArkProcessInfo::nf_DumpProcessMem()
 
 }
 
-bool ArkProcessInfo::nf_EnumProcess()
+bool ArkProcessInfo::nf_EnumProcess(LPVOID outBuf, const DWORD proessinfosize)
 {
-	map<int, wstring> Process_list;
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	char* outBuf = NULL;
-	bool	status = false;
-	// 默认当前系统有1000个线程
-	const DWORD proessinfosize = sizeof(HANDLE_INFO) * 1024 * 2;
-	outBuf = new char[proessinfosize];
 	if (!outBuf)
 		return false;
-	RtlSecureZeroMemory(outBuf, proessinfosize);
 	do {
 
 		if (false == devobj.devctrl_sendioct(
@@ -150,42 +116,13 @@ bool ArkProcessInfo::nf_EnumProcess()
 			dwSize)
 			)
 		{
-			status = false;
-			break;
+			return false;
 		}
 
-		PHANDLE_INFO phandleinfo = (PHANDLE_INFO)outBuf;
-		if (phandleinfo && dwSize > 0 && phandleinfo[0].CountNum)
-		{
-			int i = 0, end = phandleinfo[0].CountNum;
-			wstring catstr;
-			for (i = 0; i < end; ++i)
-			{
-				//wcout << "Pid: " << phandleinfo[i].ProcessId << " - Process: " << phandleinfo[i].ProcessPath << endl;// " - ProcessName: " << phandleinfo[i].ProcessName << endl;
-				// 去重
-				catstr = phandleinfo[i].ProcessPath; 
-				catstr += L" - ";
-				catstr += phandleinfo[i].ProcessName;
-				Process_list[phandleinfo[i].ProcessId] = catstr;
-				catstr.clear();
-			}
-
-			map<int, wstring>::iterator iter;
-			for (iter = Process_list.begin(); iter != Process_list.end(); iter++)
-			{
-				wcout << "Pid: " << iter->first << " - Process: " << iter->second << endl;
-			}
-
-			status = true;
-		}
+		if (dwSize >= sizeof(PHANDLE_INFO))
+			return true;
 
 	} while (false);
 
-	if (outBuf)
-	{
-		delete[] outBuf;
-		outBuf = NULL;
-	}
-
-	return status;
+	return false;
 }

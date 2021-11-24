@@ -56,7 +56,6 @@ bool ArkSsdt::nf_GetSysCurrentSsdtData(LPVOID outBuf, const DWORD ssdtinfosize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	bool	status = false;
 	if (!outBuf || !ssdtinfosize)
 		return false;
 	do {
@@ -70,40 +69,13 @@ bool ArkSsdt::nf_GetSysCurrentSsdtData(LPVOID outBuf, const DWORD ssdtinfosize)
 			dwSize)
 			)
 		{
-			status = false;
-			break;
+			return false;
 		}
 
-		if (dwSize > 0)
+		if (dwSize >= sizeof(SSDTINFO))
 			return true;
 
-		//if (dwSize > 0)
-		//{
-		//	SSDTINFO* ssdtinfo = (SSDTINFO*)outBuf;
-		//	if (!ssdtinfo)
-		//	{
-		//		OutputDebugString(L"Kernel Get Ssdt Failuer");
-		//		status = false;
-		//		break;
-		//	}
-
-		//	OutputDebugString(L"Get SsdtInfo Success");
-		//	
-		//	cout << "SystemCurrent Ssdt Info:" << endl;
-		//	int i = 0;
-		//	for (i = 0; i < 0x200; ++i)
-		//	{
-		//		if (!ssdtinfo[i].sstd_memoffset)
-		//			break;
-		//					
-		//		cout << hex << "Index: " << ssdtinfo[i].ssdt_id << " - offset: " << ssdtinfo[i].sstd_memoffset << " - SsdtAddr: " << ssdtinfo[i].sstd_memaddr << endl;
-		//	}
-		//	cout << "SystemCurrent Ssdt End:" << endl;
-
-		//	status = true;
-		//}
-	
 	} while (false);
 
-	return status;
+	return false;
 }

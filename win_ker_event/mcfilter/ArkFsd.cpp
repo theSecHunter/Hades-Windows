@@ -20,17 +20,13 @@ ArkFsd::~ArkFsd()
 
 }
 
-bool ArkFsd::nf_GetFsdInfo()
+bool ArkFsd::nf_GetFsdInfo(LPVOID outBuf, const DWORD Fsdinfosize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	char*	outBuf = NULL;
-	bool	status = false;
-	const DWORD Fsdinfosize = sizeof(ULONGLONG) * 0x1b * 2 + 1;
-	outBuf = new char[Fsdinfosize];
 	if (!outBuf)
 		return false;
-	RtlSecureZeroMemory(outBuf, Fsdinfosize);
+
 	do {
 
 		if (false == g_devobj.devctrl_sendioct(
@@ -42,45 +38,14 @@ bool ArkFsd::nf_GetFsdInfo()
 			dwSize)
 			)
 		{
-			break;
+			return false;
 		}
 
-		if (dwSize == 0)
-			break;
-
-		int  i = 0;
-		int index = 0;
-		ULONGLONG* MjAddrArry = (ULONGLONG*)outBuf;
-		if (!MjAddrArry)
-		{
-			status = false;
-			break;
-		}
-		cout << "FastFat MjFuction Start" << endl;
-		for (i = 0; i < 0x1b; ++i)
-		{
-			cout << hex << "Mj_Id: " << i << " - MjAddr: " << MjAddrArry[index] << endl;
-			index++;
-		}
-		cout << "FastFat MjFuction End" << endl;
-		cout << "Ntfs MjFuction Start" << endl;
-		for (i = 0; i < 0x1b; ++i)
-		{
-			cout << hex << "Mj_Id: " << i << " - MjAddr: " << MjAddrArry[index] << endl;
-			index++;
-		}
-		cout << "Ntfs MjFuction End" << endl;
-
-		status = true;
+		if (dwSize >= sizeof(ULONG64))
+			return true;
 
 	} while (FALSE);
 
-	if (outBuf)
-	{
-		delete[] outBuf;
-		outBuf = NULL;
-	}
-
-	return status;
+	return false;
 }
 

@@ -20,17 +20,12 @@ ArkMouseKeyBoard::~ArkMouseKeyBoard()
 
 }
 
-int ArkMouseKeyBoard::nf_GetMouseKeyInfoData()
+int ArkMouseKeyBoard::nf_GetMouseKeyInfoData(LPVOID outBuf,const DWORD MouseKeyboardinfosize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	char*	outBuf = NULL;
-	bool	status = false;
-	const DWORD MouseKeyboardinfosize = sizeof(ULONGLONG) * 0x1b * 3 + 1;
-	outBuf = new char[MouseKeyboardinfosize];
 	if (!outBuf)
 		return false;
-	RtlSecureZeroMemory(outBuf, MouseKeyboardinfosize);
 	do {
 
 		if (false == g_mousekeyboardobj.devctrl_sendioct(
@@ -42,53 +37,13 @@ int ArkMouseKeyBoard::nf_GetMouseKeyInfoData()
 			dwSize)
 			)
 		{
-			break;
+			return false;
 		}
 
-		if (dwSize == 0)
-			break;
-
-		int  i = 0;
-		int index = 0;
-		ULONGLONG* MjAddrArry = (ULONGLONG*)outBuf;
-		if (!MjAddrArry)
-		{
-			status = false;
-			break;
-		}
-		cout << "Mouse MjFuction Start" << endl;
-		for (i = 0; i < 0x1b; ++i)
-		{
-			cout << hex << "Mj_Id: " << i << " - MjAddr: " << MjAddrArry[index] << endl;
-			index++;
-		}
-		cout << "Mouse MjFuction End" << endl;
-
-		cout << "i8042 MjFuction Start" << endl;
-		for (i = 0; i < 0x1b; ++i)
-		{
-			cout << hex << "Mj_Id: " << i << " - MjAddr: " << MjAddrArry[index] << endl;
-			index++;
-		}
-		cout << "i8042 MjFuction End" << endl;
-
-		cout << "kbd MjFuction Start" << endl;
-		for (i = 0; i < 0x1b; ++i)
-		{
-			cout << hex << "Mj_Id: " << i << " - MjAddr: " << MjAddrArry[index] << endl;
-			index++;
-		}
-		cout << "kbd MjFuction End" << endl;
-
-		status = true;
+		if (dwSize >= sizeof(ULONG64))
+			return true;
 
 	} while (FALSE);
 
-	if (outBuf)
-	{
-		delete[] outBuf;
-		outBuf = NULL;
-	}
-
-	return status;
+	return false;
 }

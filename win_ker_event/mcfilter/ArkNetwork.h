@@ -5,6 +5,6 @@ public:
 	ArkNetwork();
 	~ArkNetwork();
 
-	int nf_GetNteworkProcessInfo();
+	int nf_GetNteworkProcessInfo(LPVOID outBuf, const DWORD64 Networkinfosize);
 };
 

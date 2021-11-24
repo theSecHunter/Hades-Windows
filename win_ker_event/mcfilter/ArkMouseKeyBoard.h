@@ -5,6 +5,6 @@ public:
 	ArkMouseKeyBoard();
 	~ArkMouseKeyBoard();
 
-	int nf_GetMouseKeyInfoData();
+	int nf_GetMouseKeyInfoData(LPVOID outBuf, const DWORD MouseKeyboardinfosize);
 };
 
