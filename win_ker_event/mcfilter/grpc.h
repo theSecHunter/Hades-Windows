@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <grpcpp/grpcpp.h>
 #include <grpc++/security/credentials.h>
@@ -46,11 +47,11 @@ public:
 	~Grpc()
 	{
 		Grpc_steamDon();
+		ThreadPool_Free();
 	}
 
 	unique_ptr<::grpc::ClientReaderWriter<::proto::RawData, ::proto::Command>>  Grpc_streamInit()
 	{
-		
 		 unique_ptr<::grpc::ClientReaderWriter<::proto::RawData, ::proto::Command>> stream(stub_->Transfer(&m_context));
 		 return stream;
 	}
@@ -77,9 +78,20 @@ public:
 	void Grpc_ReadC2Thread(LPVOID lpThreadParameter);
 	void Grpc_ReadDispatchHandle(Command& command);
 
+	bool Grpc_pushQueue(const int code, const char* buf, int len);
+
+	bool ThreadPool_Init();
+	bool ThreadPool_Free();
+	void threadProc();
+
 private:
 	unique_ptr<Transfer::Stub> stub_;
 	ClientContext m_context;
 	unique_ptr<::grpc::ClientReaderWriter<::proto::RawData, ::proto::Command>> m_stream;
+
+	typedef std::vector<HANDLE> tThreads;
+	tThreads m_threads;
+
+	HANDLE m_jobAvailableEvent;
 };
 

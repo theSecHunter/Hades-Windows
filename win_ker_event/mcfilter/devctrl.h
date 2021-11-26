@@ -41,11 +41,12 @@ public:
 	int devctrl_init();
 	void devctrl_free();
 	int devctrl_opendeviceSylink(const char* devSylinkName);
-	int devctrl_workthread();
+	int devctrl_workthread(LPVOID grpcobj);
 	int devctrl_waitSingeObject();
 	int devctrl_InitshareMem();
 	void nf_setEventHandler(PVOID64 pHandler);
 	int devctrl_OnMonitor();
+	int devctrl_OffMonitor();
 	
 	bool devctrl_sendioct(
 		const int ioctcode,

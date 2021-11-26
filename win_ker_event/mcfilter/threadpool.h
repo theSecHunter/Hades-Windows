@@ -1,16 +1,7 @@
-//
-// 	NetFilterSDK 
-// 	Copyright (C) 2014 Vitaly Sidorov
-//	All rights reserved.
-//
-//	This file is a part of the NetFilter SDK.
-//	The code and information is provided "as-is" without
-//	warranty of any kind, either expressed or implied.
-//
-
-#pragma once
-
+#ifndef _THREADPOOL_H
+#define _THREADPOOL_H
 #include "sync.h"
+#include <Windows.h>
 #include <vector>
 #include <process.h>
 
@@ -23,8 +14,8 @@ public:
 class ThreadJobSource
 {
 public:
-	virtual ThreadJob * getNextJob() = 0;
-	virtual void jobCompleted(ThreadJob * pJob) = 0;
+	virtual ThreadJob* getNextJob() = 0;
+	virtual void jobCompleted(ThreadJob* pJob) = 0;
 	virtual void threadStarted() = 0;
 	virtual void threadStopped() = 0;
 };
@@ -37,13 +28,13 @@ public:
 		m_stopEvent.Attach(CreateEvent(NULL, TRUE, FALSE, NULL));
 		m_pJobSource = NULL;
 	}
-	
+
 	~ThreadPool()
 	{
 		free();
 	}
 
-	bool init(int threadCount, ThreadJobSource * pJobSource)
+	bool init(int threadCount, ThreadJobSource* pJobSource)
 	{
 		HANDLE hThread;
 		unsigned threadId;
@@ -56,7 +47,7 @@ public:
 		if (threadCount <= 0)
 		{
 			SYSTEM_INFO sysinfo;
-			GetSystemInfo( &sysinfo );
+			GetSystemInfo(&sysinfo);
 
 			threadCount = sysinfo.dwNumberOfProcessors;
 			if (threadCount == 0)
@@ -65,13 +56,13 @@ public:
 			}
 		}
 
-		for (i=0; i<threadCount; i++)
+		for (i = 0; i < threadCount; i++)
 		{
 			hThread = (HANDLE)_beginthreadex(0, 0,
-						 _threadProc,
-						 (LPVOID)this,
-						 0,
-						 &threadId);
+				_threadProc,
+				(LPVOID)this,
+				0,
+				&threadId);
 
 			if (hThread != 0 && hThread != (HANDLE)(-1L))
 			{
@@ -107,15 +98,15 @@ protected:
 	void threadProc()
 	{
 		HANDLE handles[] = { m_jobAvailableEvent, m_stopEvent };
-		ThreadJob * pJob;
+		ThreadJob* pJob;
 
 		m_pJobSource->threadStarted();
 
 		for (;;)
 		{
 			DWORD res = WaitForMultipleObjects(2, handles, FALSE, INFINITE);
-			
-			if (res == (WAIT_OBJECT_0+1))
+
+			if (res == (WAIT_OBJECT_0 + 1))
 				break;
 
 			pJob = m_pJobSource->getNextJob();
@@ -137,7 +128,7 @@ protected:
 	}
 
 private:
-	ThreadJobSource * m_pJobSource;
+	ThreadJobSource* m_pJobSource;
 
 	typedef std::vector<HANDLE> tThreads;
 	tThreads m_threads;
@@ -145,3 +136,6 @@ private:
 	AutoEventHandle m_jobAvailableEvent;
 	AutoHandle m_stopEvent;
 };
+
+
+#endif // !_THREADPOOL_H

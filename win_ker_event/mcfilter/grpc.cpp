@@ -10,9 +10,12 @@
 #include "AkrSysDriverDevInfo.h"
 
 #include "sysinfo.h"
+#include "sync.h"
 #include <time.h>
 #include <winsock.h>
 #include <map>
+#include <queue>
+
 
 static ArkSsdt				g_grpc_ssdtobj;
 static ArkIdt				g_grpc_idtobj;
@@ -22,14 +25,23 @@ static ArkMouseKeyBoard		g_grpc_mousekeyboardobj;
 static ArkNetwork			g_grpc_networkobj;
 static ArkProcessInfo		g_grpc_processinfo;
 static AkrSysDriverDevInfo	g_grpc_sysmodinfo;
+static bool                 g_shutdown = false;
 
 using namespace std;
 
+typedef struct _NodeQueue
+{
+    int code;
+    int packlen;
+    char* packbuf;
+}NodeQueue, *PNodeQueue;
+
+queue<NodeQueue> g_queue;
+AutoCriticalSection g_queuecs;
+
+
 bool Grpc::Grpc_Transfer(RawData rawData)
 {
-    Status status;
-    ClientContext context;
-    // Write Server Msg
     bool nRet = false;
     if(Grpc_Getstream())
         nRet = m_stream->Write(rawData);
@@ -42,13 +54,22 @@ bool Grpc::Grpc_Transfer(RawData rawData)
     return true;
 }
 
+void Wchar_tToString(std::string& szDst, wchar_t* wchar)
+{
+    wchar_t* wText = wchar;
+    DWORD dwNum = WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, NULL, 0, NULL, FALSE);
+    char* psText;
+    psText = new char[dwNum];
+    WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, psText, dwNum, NULL, FALSE);
+    szDst = psText;
+    delete[] psText;
+}
 bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
 {
     switch (code)
     {
     case NF_SSDT_ID:
     {
-        OutputDebugString(L"Entry NF_SSDT_ID");
         dwAllocateMemSize = sizeof(SSDTINFO) * 0x200;
     }
     break;
@@ -94,7 +115,7 @@ bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
     break;
     case NF_SYSMOD_ENUM:
     {
-        dwAllocateMemSize = sizeof(NOTIFY_INFO) * 0x100 + sizeof(MINIFILTER_INFO) * 1000 + 100;
+        dwAllocateMemSize = sizeof(PROCESS_MOD) * 1024 * 2;
     }
     break;
     case NF_EXIT:
@@ -113,29 +134,19 @@ bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
     if (ptr)
     {
         RtlSecureZeroMemory(ptr, dwAllocateMemSize);
-        OutputDebugString(L"ptr NF_SSDT_ID Success");
         return true;
     }
 
     return false;
 }
-void Wchar_tToString(std::string& szDst, wchar_t* wchar)
-{
-    wchar_t* wText = wchar;
-    DWORD dwNum = WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, NULL, 0, NULL, FALSE);//WideCharToMultiByte的运用
-    char* psText;  // psText为char*的临时数组，作为赋值给std::string的中间变量
-    psText = new char[dwNum];
-    WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, psText, dwNum, NULL, FALSE);//WideCharToMultiByte的再次运用
-    szDst = psText;// std::string赋值
-    delete[]psText;// psText的清除
-}
-
 void Grpc::Grpc_ReadDispatchHandle(Command& command)
 {
     map<int, wstring>::iterator iter;
     map<int, wstring> Process_list;
     string tmpstr; wstring catstr;
     int i = 0, index = 0;
+
+    AutoCriticalSection m_cs;
 
     DWORD64 dwAllocateMemSize = 0;
     int code = command.agentctrl();
@@ -166,6 +177,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         }
     }
 
+    // 主动采集接口 - 理论上要保证数据采集 成功之后在继续下一个采集
     (*MapMessage)["data_type"] = to_string(code);
     switch (code)
     {
@@ -185,8 +197,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
                     continue;
                 (*MapMessage)["win_rootkit_ssdt_id"] = to_string(ssdtinfo[i].ssdt_id);
                 (*MapMessage)["win_rootkit_ssdt_offsetaddr"] = to_string(ssdtinfo[i].sstd_memoffset);
+                m_cs.Lock();
                 if (Grpc_Getstream())
-                    m_stream->Write(rawData);				
+                    m_stream->Write(rawData);
+                m_cs.Unlock();
             }
             cout << "Grpc Ssdt Send Pkg Success" << endl;
             break;
@@ -209,8 +223,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
                     continue;
                 (*MapMessage)["win_rootkit_idt_id"] = to_string(idtinfo[i].idt_id);
                 (*MapMessage)["win_rootkit_idt_offsetaddr"] = to_string(idtinfo[i].idt_isrmemaddr);
+                m_cs.Lock();
                 if (Grpc_Getstream())
                     m_stream->Write(rawData);
+                m_cs.Unlock();
             }
             cout << "Grpc Ssdt Send Pkg Success" << endl;
         }
@@ -231,8 +247,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             (*MapMessage)["win_rootkit_dpc_timeobj"] = to_string(dpcinfo[i].timeroutine);
             (*MapMessage)["win_rootkit_dpc_timeroutine"] = to_string(dpcinfo[i].timeroutine);
             (*MapMessage)["win_rootkit_dpc_periodtime"] = to_string(dpcinfo[i].period);
+            m_cs.Lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
+            m_cs.Unlock();
         }
         cout << "Grpc Dpc Send Pkg Success" << endl;
     }
@@ -250,8 +268,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_fsdfastfat_id"] = to_string(MjAddrArry[index]);
             (*MapMessage)["win_rootkit_fsdfastfat_mjaddr"] = to_string(MjAddrArry[index]);
+            m_cs.Lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
+            m_cs.Unlock();
             index++;
         }
         cout << "FastFat MjFuction End" << endl;
@@ -261,8 +281,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_fsdntfs_id"] = to_string(MjAddrArry[index]);
             (*MapMessage)["win_rootkit_fsdntfs_mjaddr"] = to_string(MjAddrArry[index]);
+            m_cs.Lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
+            m_cs.Unlock();
             index++;
         }
         cout << "Ntfs MjFuction End" << endl;
@@ -282,8 +304,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_Mouse_id"] = to_string(MjAddrArry[index]);
             (*MapMessage)["win_rootkit_Mouse_mjaddr"] = to_string(MjAddrArry[index]);
+            m_cs.Lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
+            m_cs.Unlock();
             index++;
         }
         cout << "Mouse MjFuction End" << endl;
@@ -293,8 +317,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_i8042_id"] = to_string(MjAddrArry[index]);
             (*MapMessage)["win_rootkit_i8042_mjaddr"] = to_string(MjAddrArry[index]);
+            m_cs.Lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
+            m_cs.Unlock();
             index++;
         }
         cout << "i8042 MjFuction End" << endl;
@@ -304,8 +330,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_kbd_id"] = to_string(MjAddrArry[index]);
             (*MapMessage)["win_rootkit_kbd_mjaddr"] = to_string(MjAddrArry[index]);
+            m_cs.Lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
+            m_cs.Unlock();
             index++;
         }
         cout << "kbd MjFuction End" << endl;
@@ -328,9 +356,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             (*MapMessage)["win_rootkit_tcp_localIp_port"] = to_string(networkinfo->systcpinfo[i].TpcTable.localEntry.dwIP) + ":" + to_string(ntohs(networkinfo->systcpinfo[i].TpcTable.localEntry.Port));
             (*MapMessage)["win_rootkit_tcp_remoteIp_port"] = to_string(networkinfo->systcpinfo[i].TpcTable.remoteEntry.dwIP) + ":" + to_string(ntohs(networkinfo->systcpinfo[i].TpcTable.remoteEntry.Port));
             (*MapMessage)["win_rootkit_tcp_Status"] = to_string(networkinfo->systcpinfo[i].socketStatus.dwState);
-
+            m_cs.Lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
+            m_cs.Unlock();
         }
         cout << "Tpc Port Send Grpc Success" << endl;
 
@@ -339,8 +368,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_udp_pid"] = to_string(networkinfo->sysudpinfo[i].processinfo.dwUdpProId);
             (*MapMessage)["win_rootkit_udp_localIp_port"] = to_string(networkinfo->sysudpinfo[i].UdpTable.dwIP) + ":" + to_string(ntohs(networkinfo->sysudpinfo[i].UdpTable.Port));
+            m_cs.Lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
+            m_cs.Unlock();
         }
         cout << "Udp Port Send Grpc Success" << endl;
     }
@@ -371,9 +402,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, (wchar_t*)iter->second.data());
                 (*MapMessage)["win_rootkit_process_info"] = tmpstr;
-
+                m_cs.Lock();
                 if (Grpc_Getstream())
                     m_stream->Write(rawData);
+                m_cs.Unlock();
             }
 
             cout << "processinfo to server Success" << endl;
@@ -407,11 +439,13 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].FullDllName);
                 (*MapMessage)["win_rootkit_process_FullDllName"] = tmpstr;
-
+                m_cs.Lock();
                 if (Grpc_Getstream())
                     m_stream->Write(rawData);
+                m_cs.Unlock();
             }
         }
+        cout << "Process Mod Success" << endl;
     }
     break;
     case NF_PROCESS_KILL:
@@ -429,6 +463,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             for (i = 0; i < 1024 * 2; ++i)
             {
+                // Bug
                 if (0 == modptr[i].EntryPoint && 0 == modptr[i].SizeOfImage && 0 == modptr[i].DllBase)
                     continue;
 
@@ -441,10 +476,13 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].FullDllName);
                 (*MapMessage)["win_rootkit_sys_FullDllName"] = tmpstr;
+                m_cs.Lock();
                 if (Grpc_Getstream())
                     m_stream->Write(rawData);
+                m_cs.Unlock();
             }
         }
+        cout << "SystemDriver Enum Success" << endl;
     }
     break;
     default:
@@ -457,7 +495,6 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         ptr_Getbuffer = nullptr;
     }
 }
-
 void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
 {
     // Read Server Msg
@@ -469,4 +506,128 @@ void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
         m_stream->Read(&command);
         Grpc_ReadDispatchHandle(command);
     }
+}
+
+void Grpc::threadProc()
+{
+    // wait event handle
+
+    for (;;)
+    {
+        WaitForSingleObject(
+            this->m_jobAvailableEvent,
+            INFINITE
+        );
+
+        if (g_shutdown)
+            break;
+            
+        g_queuecs.Lock();
+        auto queue_node = g_queue.front();
+        switch (queue_node.code)
+        {
+        default:
+            break;
+        }
+
+        cout << "[threadProc] MonitorCode: " << queue_node.code  << endl;
+
+        // delete[] queue_node.packbuf;
+        free(queue_node.packbuf);
+        queue_node.packbuf = nullptr;
+        g_queue.pop();
+        g_queuecs.Unlock();
+    }
+}
+static unsigned WINAPI _threadProc(void* pData)
+{
+    (reinterpret_cast<Grpc*>(pData))->threadProc();
+    return 0;
+}
+bool Grpc::ThreadPool_Init()
+{
+    this->m_jobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+    if (!m_jobAvailableEvent)
+        return false;
+
+    int i = 0;
+    HANDLE hThread;
+    unsigned threadId;
+
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+
+    DWORD threadCount = sysinfo.dwNumberOfProcessors;
+    if (threadCount == 0)
+    {
+        threadCount = 4;
+    }
+
+    for (i = 0; i < threadCount; i++)
+    {
+        hThread = (HANDLE)_beginthreadex(0, 0,
+            _threadProc,
+            (LPVOID)this,
+            0,
+            &threadId);
+
+        if (hThread != 0 && hThread != (HANDLE)(-1L))
+        {
+            m_threads.push_back(hThread);
+        }
+    }
+    return true;
+}
+bool Grpc::ThreadPool_Free()
+{
+    // 设置标志
+    g_shutdown = true;
+    SetEvent(m_jobAvailableEvent);
+    if (m_jobAvailableEvent != INVALID_HANDLE_VALUE)
+    {
+        ::CloseHandle(m_jobAvailableEvent);
+        m_jobAvailableEvent = INVALID_HANDLE_VALUE;
+    }
+
+    // 循环关闭句柄
+    for (tThreads::iterator it = m_threads.begin();
+        it != m_threads.end();
+        it++)
+    {
+        WaitForSingleObject(*it, INFINITE);
+        CloseHandle(*it);
+    }
+
+    m_threads.clear();
+
+    return true;
+}
+bool Grpc::Grpc_pushQueue(const int code, const char* buf, int len)
+{
+    if (code < 150 || code > 200)
+        return false;
+
+    // push 
+    // char* pack = new char[len + 1];
+    char* pack = (char*)malloc(len + 1);
+    if (!pack && !len)
+        return false;
+
+    RtlSecureZeroMemory(pack, len + 1);
+    RtlCopyMemory(pack, buf, len);
+    NodeQueue tmpqueue;
+    RtlSecureZeroMemory(&tmpqueue, sizeof(NodeQueue));
+    tmpqueue.code = code;
+    tmpqueue.packbuf = pack; // 保存指针
+    tmpqueue.packlen = len;
+
+    g_queuecs.Lock();
+    g_queue.push(tmpqueue);
+    g_queuecs.Unlock();
+
+    // 处理pack
+    SetEvent(this->m_jobAvailableEvent);
+
+    return true;
 }

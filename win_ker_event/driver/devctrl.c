@@ -1668,7 +1668,6 @@ void devctrl_serviceReads()
 	irp->IoStatus.Status = STATUS_SUCCESS;
 	irp->IoStatus.Information = sizeof(NF_READ_RESULT);
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
-
 }
 void devctrl_ioThread(void* StartContext)
 {
@@ -1730,7 +1729,7 @@ void devctrl_pushinfo(int code)
 	}
 	break;
 	default:
-		break;
+		return;
 	}
 	// keSetEvent
 	KeSetEvent(&g_ioThreadEvent, IO_NO_INCREMENT, FALSE);

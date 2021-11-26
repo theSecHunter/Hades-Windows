@@ -6,6 +6,7 @@
 #include "sync.h"
 #include "nfevents.h"
 #include "devctrl.h"
+#include "grpc.h"
 #include <xstring>
 #include <vector>
 
@@ -19,8 +20,6 @@ using namespace std;
 
 #define CTL_DEVCTRL_ENABLE_MONITOR \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x801, METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define CTL_DEVCTRL_STOP_MONITOR \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x802, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define CTL_DEVCTRL_OPEN_SHAREMEM \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define CTL_DEVCTRL_DISENTABLE_MONITOR \
@@ -45,7 +44,7 @@ static AutoEventHandle		g_workThreadStoppedEvent;
 
 enum IoctCode
 {
-	NF_PROCESS_INFO = 1,
+	NF_PROCESS_INFO = 150,
 	NF_THREAD_INFO,
 	NF_IMAGEGMOD_INFO,
 	NF_REGISTERTAB_INFO,
@@ -92,14 +91,14 @@ void DevctrlIoct::devctrl_free()
 	}
 }
 
-int DevctrlIoct::devctrl_workthread()
+int DevctrlIoct::devctrl_workthread(LPVOID grpcobj)
 {
 	// start thread
 	m_threadobjhandler = CreateThread(
 		NULL, 
 		0, 
 		nf_workThread,
-		0, 
+		grpcobj,
 		0, 
 		&m_dwthreadid
 	);
@@ -195,6 +194,13 @@ int DevctrlIoct::devctrl_OnMonitor()
 	DWORD OutSize = 0;
 	DWORD dwSize = 0;
 	return devctrl_sendioct(CTL_DEVCTRL_ENABLE_MONITOR, NULL, InSize, NULL, OutSize, dwSize);
+}
+int DevctrlIoct::devctrl_OffMonitor()
+{
+	DWORD InSize = 0;
+	DWORD OutSize = 0;
+	DWORD dwSize = 0;
+	return devctrl_sendioct(CTL_DEVCTRL_DISENTABLE_MONITOR, NULL, InSize, NULL, OutSize, dwSize);
 }
 
 bool DevctrlIoct::devctrl_sendioct(
@@ -354,6 +360,7 @@ bool GetFileSign(LPCWSTR lpFilePath, vector<wstring>& signs)
 
 static void handleEventDispath(PNF_DATA pData)
 {
+	cout << pData->code << endl;
 	switch (pData->code)
 	{
 	case NF_PROCESS_INFO:
@@ -404,10 +411,13 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 	bool abortBatch;
 	int i;
 
+	// Start SysMonitor Grpc
+	Grpc* greeter_sysmonitor = (Grpc*)lpThreadParameter;
+	if (!greeter_sysmonitor)
+		return false;
+
 	OutputDebugString(L"Entry WorkThread");
-
 	SetEvent(g_workThreadStartedEvent);
-
 	for (;;)
 	{
 		waitTimeout = 10;
@@ -477,7 +487,10 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 
 			while (readBytes >= (sizeof(NF_DATA) - 1))
 			{
-				handleEventDispath(pData);
+				// push grpc
+				if (greeter_sysmonitor)
+					greeter_sysmonitor->Grpc_pushQueue(pData->code, pData->buffer, pData->bufferSize);
+				//handleEventDispath(pData);
 
 				if ((pData->code == NF_PROCESS_INFO ||
 					pData->code == NF_THREAD_INFO ||

@@ -15,6 +15,7 @@
 #include "devctrl.h"
 #include "sysinfo.h"
 #include "grpc.h"
+#include "sync.h"
 
 #include <stdlib.h>
 
@@ -56,14 +57,15 @@ void helpPrintf()
 	helpinfo += "1. 进程文件读写访问重定向\n";
 	helpinfo += "2. 进程文件读写访问访问控制\n";
 }
-
 void charTowchar(const char* chr, wchar_t* wchar, int size)
 {
 	MultiByteToWideChar(CP_ACP, 0, chr,
 		strlen(chr) + 1, wchar, size / sizeof(wchar[0]));
 }
 
-// 内核上抛数据
+static AutoCriticalSection	g_cs;
+
+// 后期做规则使用
 class EventHandler : public NF_EventHandler
 {
 	void processPacket(const char* buf, int len) override
@@ -71,7 +73,6 @@ class EventHandler : public NF_EventHandler
 		PROCESSINFO processinfo;
 		RtlSecureZeroMemory(&processinfo, sizeof(PROCESSINFO));
 		RtlCopyMemory(&processinfo, buf, len);
-
 		wstring wstr;
 		WCHAR info[max_size] = { 0, };
 
@@ -101,7 +102,7 @@ class EventHandler : public NF_EventHandler
 			if (lstrlenW(processinfo.queryprocesspath))
 				wstr += processinfo.queryprocesspath;
 		}
-
+		// push grpc handle queue
 		OutputDebugString(wstr.data());
 	}
 
@@ -242,7 +243,6 @@ class EventHandler : public NF_EventHandler
 	}
 };
 
-
 static DevctrlIoct			devobj;
 static EventHandler			eventobj;
 
@@ -279,7 +279,7 @@ bool SysNodeOnlineData(RawData* sysinfobuffer)
 {
 	
 	sysinfobuffer->mutable_pkg();
-
+	return true;
 }
 typedef struct _SYSTEMONLIENNODE
 {
@@ -288,9 +288,7 @@ typedef struct _SYSTEMONLIENNODE
 	__int64 id64;
 }SYSTEMONLIENNODE, * PSYSTEMONLIENNODE;
 
-DWORD pthread_grpread(
-	LPVOID lpThreadParameter
-)
+DWORD pthread_grpread(LPVOID lpThreadParameter)
 {
 	Grpc* greeter = (Grpc*)lpThreadParameter;
 	greeter->Grpc_ReadC2Thread(NULL);
@@ -299,7 +297,7 @@ DWORD pthread_grpread(
 
 int main(int argc, char* argv[])
 {
-	getchar();
+	// getchar();
 	// 
 	// @ Grpc Active Online Send to  Server Msg
 	// SSL
@@ -312,9 +310,11 @@ int main(int argc, char* argv[])
 	// ssl_opts.pem_cert_chain = clientcert;
 	// std::shared_ptr<grpc::ChannelCredentials> channel_creds = grpc::SslCredentials(ssl_opts);
 	
-	//  grpc::InsecureChannelCredentials()
+	//  grpc::InsecureChannelCredentials() 10.128.128.23
 	static Grpc greeter(
-		grpc::CreateChannel("10.128.128.23:8888", grpc::InsecureChannelCredentials()));
+		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));
+
+	printf("greeteraddr %p\n", &greeter);
 	
 	proto::RawData rawData;
 	DWORD ComUserLen = MAX_PATH;
@@ -349,6 +349,9 @@ int main(int argc, char* argv[])
 	DWORD threadid = 0;
 	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
 
+	// start grpc write thread
+	greeter.ThreadPool_Init();
+
 	int status = 0;
 
 	// Init devctrl
@@ -377,22 +380,23 @@ int main(int argc, char* argv[])
 			break;
 		}
 
-		//status = devobj.devctrl_workthread();
-		//if (0 > status)
-		//{
-		//	cout << "devctrl_workthread error: main.c --> lines: 367" << endl;
-		//	break;
-		//}
+		// ReadFile I/O Thread
+		status = devobj.devctrl_workthread((LPVOID)&greeter);
+		if (0 > status)
+		{
+			cout << "devctrl_workthread error: main.c --> lines: 367" << endl;
+			break;
+		}
 
-		// Enable try Network packte Monitor
-		//status = devobj.devctrl_OnMonitor();
-		//if (0 > status)
-		//{
-		//	cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
-		//	break;
-		//}
+		// Off/Enable try Network packte Monitor
+		status = devobj.devctrl_OnMonitor();
+		if (0 > status)
+		{
+			cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+			break;
+		}
 
-		// Enable Event
+		// Enable Event --> 内核提取出来数据以后处理类
 		devobj.nf_setEventHandler((PVOID)&eventobj);
 
 		status = 1;
@@ -405,6 +409,11 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	cout << "下发接口测试请按空格" << endl;
+	system("pause");
+	/*
+		Grpc下发接口测试
+	*/
 	Command cmd;
 	cmd.set_agentctrl(100);
 	greeter.Grpc_ReadDispatchHandle(cmd);
