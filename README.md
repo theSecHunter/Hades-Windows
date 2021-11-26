@@ -16,7 +16,7 @@
 &emsp;&emsp;系统敏感数据采集和ETW事件采集。
 
 #### 框架:
-![image](image-windows.png)
+![image](https://github.com/theSecHunter/Hades-Windows/blob/main/image-windows.png)
 
 <center><h3>v1.0</h3></center>
 
