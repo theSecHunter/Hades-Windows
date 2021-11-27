@@ -59,9 +59,10 @@ bool AkrSysDriverDevInfo::nf_EnumSysMod(LPVOID outBuf, const DWORD proessinfosiz
 
 bool AkrSysDriverDevInfo::nf_GetDriverInfo()
 {
+	return true;
 }
 
 bool AkrSysDriverDevInfo::nf_DumpDriverInfo()
 {
-
+	return true;
 }

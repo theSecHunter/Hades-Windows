@@ -186,6 +186,16 @@ enum AnRootkitId
     NF_EXIT = 1000      
 };
 
+enum IoctCode
+{
+    NF_PROCESS_INFO = 150,
+    NF_THREAD_INFO,
+    NF_IMAGEGMOD_INFO,
+    NF_REGISTERTAB_INFO,
+    NF_FILE_INFO,
+    NF_SESSION_INFO
+};
+
 typedef struct _SSDTINFO
 {
     short			ssdt_id;

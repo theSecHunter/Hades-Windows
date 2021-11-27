@@ -36,7 +36,7 @@ ArkProcessInfo::~ArkProcessInfo()
 
 bool ArkProcessInfo::nf_GetProcessInfo()
 {
-
+	return true;
 }
 
 bool ArkProcessInfo::nf_GetProcessMod(DWORD Pid, LPVOID outBuf, const DWORD proessinfosize)
@@ -96,7 +96,7 @@ bool ArkProcessInfo::nf_KillProcess()
 
 bool ArkProcessInfo::nf_DumpProcessMem()
 {
-
+	return true;
 }
 
 bool ArkProcessInfo::nf_EnumProcess(LPVOID outBuf, const DWORD proessinfosize)

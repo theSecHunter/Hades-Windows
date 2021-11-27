@@ -1,5 +1,5 @@
-#include "ArkDpcTimer.h"
 #include <Windows.h>
+#include "ArkDpcTimer.h"
 #include "devctrl.h"
 #include <iostream>
 #include "sysinfo.h"

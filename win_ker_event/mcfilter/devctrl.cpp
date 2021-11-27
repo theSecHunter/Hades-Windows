@@ -7,6 +7,7 @@
 #include "nfevents.h"
 #include "devctrl.h"
 #include "grpc.h"
+#include "sysinfo.h"
 #include <xstring>
 #include <vector>
 
@@ -41,16 +42,6 @@ static DWORD WINAPI	nf_workThread(LPVOID lpThreadParameter);
 static AutoCriticalSection	g_cs;
 static AutoEventHandle		g_workThreadStartedEvent;
 static AutoEventHandle		g_workThreadStoppedEvent;
-
-enum IoctCode
-{
-	NF_PROCESS_INFO = 150,
-	NF_THREAD_INFO,
-	NF_IMAGEGMOD_INFO,
-	NF_REGISTERTAB_INFO,
-	NF_FILE_INFO,
-	NF_SESSION_INFO
-};
 
 PVOID DevctrlIoct::get_eventhandler()
 {
@@ -360,7 +351,6 @@ bool GetFileSign(LPCWSTR lpFilePath, vector<wstring>& signs)
 
 static void handleEventDispath(PNF_DATA pData)
 {
-	cout << pData->code << endl;
 	switch (pData->code)
 	{
 	case NF_PROCESS_INFO:
