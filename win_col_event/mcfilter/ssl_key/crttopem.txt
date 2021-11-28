@@ -1,0 +1,5 @@
+1. openssl  x509 -in ca.crt -inform DER -out ca.pem -outform PEM
+2. openssl x509 -in ca.crt  -out ca.pem
+3. openssl rsa -in client.key -out client_key.pem
+使用2  
+1报错。

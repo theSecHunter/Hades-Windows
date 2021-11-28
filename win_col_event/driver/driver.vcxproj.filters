@@ -1,0 +1,165 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="driver.c" />
+    <ClCompile Include="devctrl.c">
+      <Filter>devctrl</Filter>
+    </ClCompile>
+    <ClCompile Include="process.c">
+      <Filter>sysmonitor</Filter>
+    </ClCompile>
+    <ClCompile Include="register.c">
+      <Filter>sysmonitor</Filter>
+    </ClCompile>
+    <ClCompile Include="thread.c">
+      <Filter>sysmonitor</Filter>
+    </ClCompile>
+    <ClCompile Include="imagemod.c">
+      <Filter>sysmonitor</Filter>
+    </ClCompile>
+    <ClCompile Include="syswmi.c">
+      <Filter>sysmonitor</Filter>
+    </ClCompile>
+    <ClCompile Include="sysfile.c">
+      <Filter>sysmonitor</Filter>
+    </ClCompile>
+    <ClCompile Include="syssession.c">
+      <Filter>sysmonitor</Filter>
+    </ClCompile>
+    <ClCompile Include="sysssdt.c">
+      <Filter>sysrootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="sysidt.c">
+      <Filter>sysrootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="sysdpctimer.c">
+      <Filter>sysrootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="sysenumnotify.c">
+      <Filter>sysrootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="sysprocessinfo.c">
+      <Filter>sysrootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="sysnetwork.c">
+      <Filter>sysrootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="syshive.c">
+      <Filter>sysrootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="sysfsd.c">
+      <Filter>sysrootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="sysmousekeyboard.c">
+      <Filter>sysrootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="sysworkthreadinfo.c">
+      <Filter>sysrootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="sysdriverinfo.c">
+      <Filter>sysrootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="mbr.c">
+      <Filter>sysbootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="bios.c">
+      <Filter>sysbootkit</Filter>
+    </ClCompile>
+    <ClCompile Include="uefi.c">
+      <Filter>sysbootkit</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="driver.h" />
+    <ClInclude Include="public.h" />
+    <ClInclude Include="devctrl.h">
+      <Filter>devctrl</Filter>
+    </ClInclude>
+    <ClInclude Include="process.h">
+      <Filter>sysmonitor</Filter>
+    </ClInclude>
+    <ClInclude Include="register.h">
+      <Filter>sysmonitor</Filter>
+    </ClInclude>
+    <ClInclude Include="thread.h">
+      <Filter>sysmonitor</Filter>
+    </ClInclude>
+    <ClInclude Include="imagemod.h">
+      <Filter>sysmonitor</Filter>
+    </ClInclude>
+    <ClInclude Include="object.h" />
+    <ClInclude Include="ntdefines.h" />
+    <ClInclude Include="syswmi.h">
+      <Filter>sysmonitor</Filter>
+    </ClInclude>
+    <ClInclude Include="sysfile.h">
+      <Filter>sysmonitor</Filter>
+    </ClInclude>
+    <ClInclude Include="syssession.h">
+      <Filter>sysmonitor</Filter>
+    </ClInclude>
+    <ClInclude Include="sysssdt.h">
+      <Filter>sysrootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="sysidt.h">
+      <Filter>sysrootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="sysdpctimer.h">
+      <Filter>sysrootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="sysenumnotify.h">
+      <Filter>sysrootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="util.h" />
+    <ClInclude Include="sysprocessinfo.h">
+      <Filter>sysrootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="sysnetwork.h">
+      <Filter>sysrootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="syshive.h">
+      <Filter>sysrootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="sysfsd.h">
+      <Filter>sysrootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="sysmousekeyboard.h">
+      <Filter>sysrootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="sysworkthreadinfo.h">
+      <Filter>sysrootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="sysdriverinfo.h">
+      <Filter>sysrootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="mbr.h">
+      <Filter>sysbootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="bios.h">
+      <Filter>sysbootkit</Filter>
+    </ClInclude>
+    <ClInclude Include="uefi.h">
+      <Filter>sysbootkit</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="driver.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Inf Include="driver.inf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="devctrl">
+      <UniqueIdentifier>{0c440d3a-f981-4eb0-91cc-80ac436bb1b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sysmonitor">
+      <UniqueIdentifier>{c930406d-5d8f-4048-b248-e35aa76238e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sysbootkit">
+      <UniqueIdentifier>{a48c34c2-2a98-439e-8b49-d6187ef425f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sysrootkit">
+      <UniqueIdentifier>{6c91ef1a-0cdf-4da6-9a06-9031b2fa1495}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -24,10 +24,6 @@
 | WFP文档          | win_wfp_event.md    |
 | Grpc 传输结构(c) | windows struct_c.md |
 
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 #### 框架:
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/image-windows.png)
 
