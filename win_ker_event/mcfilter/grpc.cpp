@@ -39,7 +39,7 @@ typedef struct _NodeQueue
 queue<NodeQueue> g_queue;
 AutoCriticalSection g_queuecs;
 
-
+// Grpc双向steam接口
 bool Grpc::Grpc_Transfer(RawData rawData)
 {
     bool nRet = false;
@@ -54,6 +54,7 @@ bool Grpc::Grpc_Transfer(RawData rawData)
     return true;
 }
 
+// rootkit采集接口
 void Wchar_tToString(std::string& szDst, wchar_t* wchar)
 {
     wchar_t* wText = wchar;
@@ -507,6 +508,7 @@ void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
     }
 }
 
+// Rootkit上抛
 void Choose_session(string& events, const int code)
 {
     switch (code)
