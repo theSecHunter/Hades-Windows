@@ -24,6 +24,9 @@ using namespace std;
 const char devSyLinkName[] = "\\??\\KernelDark";
 const int max_size = MAX_PATH * 3;
 
+// kernel monitor flag
+static bool kerne_mon = false;
+
 typedef struct _PE_CONTROL{
 	string name;
 	unsigned int type;
@@ -354,105 +357,158 @@ int main(int argc, char* argv[])
 
 	int status = 0;
 
-	// Init devctrl
-	status = devobj.devctrl_init();
-	if (0 > status)
+	// kernel mod
+	if (true == kerne_mon)
 	{
-		cout << "devctrl_init error: main.c --> lines: 342" << endl;
-		return -1;
+		// Init devctrl
+		status = devobj.devctrl_init();
+		if (0 > status)
+		{
+			cout << "devctrl_init error: main.c --> lines: 342" << endl;
+			return -1;
+		}
+
+		do
+		{
+			// Open driver
+			status = devobj.devctrl_opendeviceSylink(devSyLinkName);
+			if (0 > status)
+			{
+				cout << "devctrl_opendeviceSylink error: main.c --> lines: 352" << endl;
+				break;
+			}
+
+			// Init share Mem
+			status = devobj.devctrl_InitshareMem();
+			if (0 > status)
+			{
+				cout << "devctrl_InitshareMem error: main.c --> lines: 360" << endl;
+				break;
+			}
+
+			// ReadFile I/O Thread
+			status = devobj.devctrl_workthread((LPVOID)&greeter);
+			if (0 > status)
+			{
+				cout << "devctrl_workthread error: main.c --> lines: 367" << endl;
+				break;
+			}
+
+			// Off/Enable try Network packte Monitor
+			status = devobj.devctrl_OnMonitor();
+			if (0 > status)
+			{
+				cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+				break;
+			}
+
+			// Enable Event --> 内核提取出来数据以后处理类
+			devobj.nf_setEventHandler((PVOID)&eventobj);
+
+			status = 1;
+
+		} while (false);
+
+		if (!status)
+		{
+			OutputDebugString(L"Init Driver Failuer");
+			return -1;
+		}
+
+		cout << "Rootkit下发接口测试请按空格" << endl;
+		system("pause");
+		/*
+			Grpc下发接口测试
+		*/
+		Command cmd;
+		cmd.set_agentctrl(100);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(101);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(103);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(108);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(109);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(110);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(111);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(113);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(115);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 	}
 
-	do
+	// user mod
+	if (false == kerne_mon)
 	{
-		// Open driver
-		status = devobj.devctrl_opendeviceSylink(devSyLinkName);
-		if (0 > status)
-		{
-			cout << "devctrl_opendeviceSylink error: main.c --> lines: 352" << endl;
-			break;
-		}
+		cout << "User下发接口测试" << endl;
+		Command cmd;
+		cmd.set_agentctrl(UF_PROCESS_ENUM);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		// Init share Mem
-		status = devobj.devctrl_InitshareMem();
-		if (0 > status)
-		{
-			cout << "devctrl_InitshareMem error: main.c --> lines: 360" << endl;
-			break;
-		}
+		cmd.Clear();
+		cmd.set_agentctrl(UF_PROCESS_PID_TREE);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		// ReadFile I/O Thread
-		status = devobj.devctrl_workthread((LPVOID)&greeter);
-		if (0 > status)
-		{
-			cout << "devctrl_workthread error: main.c --> lines: 367" << endl;
-			break;
-		}
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSAUTO_START);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		// Off/Enable try Network packte Monitor
-		status = devobj.devctrl_OnMonitor();
-		if (0 > status)
-		{
-			cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
-			break;
-		}
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSNET_INFO);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		// Enable Event --> 内核提取出来数据以后处理类
-		devobj.nf_setEventHandler((PVOID)&eventobj);
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSSESSION_INFO);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		status = 1;
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSINFO_ID);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
-	} while (false);
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSLOG_ID);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
-	if (!status)
-	{
-		OutputDebugString(L"Init Driver Failuer");
-		return -1;
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSUSER_ID);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSSERVICE_SOFTWARE_ID);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSFILE_ID);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(UF_ROOTKIT_ID);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 	}
 
-	cout << "下发接口测试请按空格" << endl;
-	system("pause");
-	/*
-		Grpc下发接口测试
-	*/
-	Command cmd;
-	cmd.set_agentctrl(100);
-	greeter.Grpc_ReadDispatchHandle(cmd);
-
-	cmd.Clear();
-	cmd.set_agentctrl(101);
-	greeter.Grpc_ReadDispatchHandle(cmd);
-
-	cmd.Clear();
-	cmd.set_agentctrl(103);
-	greeter.Grpc_ReadDispatchHandle(cmd);
-
-	cmd.Clear();
-	cmd.set_agentctrl(108);
-	greeter.Grpc_ReadDispatchHandle(cmd);
-
-	cmd.Clear();
-	cmd.set_agentctrl(109);
-	greeter.Grpc_ReadDispatchHandle(cmd);
-
-	cmd.Clear();
-	cmd.set_agentctrl(110);
-	greeter.Grpc_ReadDispatchHandle(cmd);
-
-	cmd.Clear();
-	cmd.set_agentctrl(111);
-	greeter.Grpc_ReadDispatchHandle(cmd);
-
-	cmd.Clear();
-	cmd.set_agentctrl(113);
-	greeter.Grpc_ReadDispatchHandle(cmd);
-
-	cmd.Clear();
-	cmd.set_agentctrl(115);
-	greeter.Grpc_ReadDispatchHandle(cmd);
 
 	cout << "输入回车结束进程" << endl;
 	getchar();
-
 	devobj.devctrl_free();
 	exit(0);
 

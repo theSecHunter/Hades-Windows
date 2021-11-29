@@ -9,6 +9,11 @@
 #include "ArkProcessInfo.h"
 #include "AkrSysDriverDevInfo.h"
 
+#include "uautostart.h"
+#include "unet.h"
+#include "usysuser.h"
+#include "uprocesstree.h"
+
 #include "sysinfo.h"
 #include "sync.h"
 #include <time.h>
@@ -26,6 +31,11 @@ static ArkNetwork			g_grpc_networkobj;
 static ArkProcessInfo		g_grpc_processinfo;
 static AkrSysDriverDevInfo	g_grpc_sysmodinfo;
 static bool                 g_shutdown = false;
+
+static UAutoStart           g_grpc_uautostrobj;
+static UNet                 g_grpc_unetobj;
+static NSysUser             g_grpc_usysuser;
+static UProcess             g_grpc_uprocesstree;
 
 using namespace std;
 
@@ -54,7 +64,7 @@ bool Grpc::Grpc_Transfer(RawData rawData)
     return true;
 }
 
-// rootkit采集接口
+// rootkit/User采集接口
 void Wchar_tToString(std::string& szDst, wchar_t* wchar)
 {
     wchar_t* wText = wchar;
@@ -140,6 +150,7 @@ bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
 
     return false;
 }
+// 接口测试时候public - 否则private
 void Grpc::Grpc_ReadDispatchHandle(Command& command)
 {
     map<int, wstring>::iterator iter;
@@ -147,6 +158,8 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
     string tmpstr; wstring catstr;
     int i = 0, index = 0;
 
+    // grpc write 需不需要加锁？
+    // 内部如果有队列理论上不需要加锁
     AutoCriticalSection m_cs;
     DWORD64 dwAllocateMemSize = 0;
     int code = command.agentctrl();
@@ -239,6 +252,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         DPC_TIMERINFO* dpcinfo = (DPC_TIMERINFO*)ptr_Getbuffer;
         if (!dpcinfo)
             break;
+
         for (i = 0; i < 0x100; ++i)
         {
             if (!dpcinfo[i].dpc)
@@ -263,6 +277,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         ULONGLONG* MjAddrArry = (ULONGLONG*)ptr_Getbuffer;
         if (!MjAddrArry)
             break;
+
         (*MapMessage)["win_rootkit_is_fsdmod"] = "1";
         for (i = 0; i < 0x1b; ++i)
         {
@@ -288,6 +303,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             index++;
         }
         cout << "Ntfs MjFuction End" << endl;
+    }
+    break;
+    case NF_SYSCALLBACK_ID:
+    {
     }
     break;
     case NF_MOUSEKEYBOARD_ID:
@@ -325,6 +344,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         }
         cout << "i8042 MjFuction End" << endl;
 
+        
         (*MapMessage)["win_rootkit_is_mousekeymod"] = "3";
         for (i = 0; i < 0x1b; ++i)
         {
@@ -349,6 +369,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             break;
 
         // Tcp
+        
         (*MapMessage)["win_rootkit_is_mod"] = "1";
         for (i = 0; i < networkinfo->tcpcout; ++i)
         {
@@ -363,6 +384,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         }
         cout << "Tpc Port Send Grpc Success" << endl;
 
+        
         (*MapMessage)["win_rootkit_is_mod"] = "2";
         for (i = 0; i < networkinfo->udpcout; ++i)
         {
@@ -384,7 +406,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         PHANDLE_INFO phandleinfo = (PHANDLE_INFO)ptr_Getbuffer;
         if (phandleinfo && phandleinfo[0].CountNum)
         {
-
+            
             for (i = 0; i < phandleinfo[0].CountNum; ++i)
             {
                 //wcout << "Pid: " << phandleinfo[i].ProcessId << " - Process: " << phandleinfo[i].ProcessPath << endl;// " - ProcessName: " << phandleinfo[i].ProcessName << endl;
@@ -396,6 +418,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
                 catstr.clear();
             }
 
+            
             for (iter = Process_list.begin(); iter != Process_list.end(); iter++)
             {
                 (*MapMessage)["win_rootkit_process_pid"] = to_string(iter->first);
@@ -424,6 +447,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         PPROCESS_MOD modptr = (PPROCESS_MOD)ptr_Getbuffer;
         if (modptr)
         {
+            
             (*MapMessage)["win_rootkit_processmod_pid"] = to_string(Process_Pid);
             for (i = 0; i < 1024 * 2; ++i)
             {
@@ -458,6 +482,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         if (false == g_grpc_sysmodinfo.nf_EnumSysMod(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
+        
         PPROCESS_MOD modptr = (PPROCESS_MOD)ptr_Getbuffer;
         if (modptr)
         {
@@ -485,6 +510,183 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         cout << "SystemDriver Enum Success" << endl;
     }
     break;
+    case UF_PROCESS_ENUM:
+    {
+        if (false == g_grpc_uprocesstree.uf_EnumProcess(ptr_Getbuffer))
+            break;
+        PUProcessNode procesNode = (PUProcessNode)ptr_Getbuffer;
+        if (!procesNode)
+            break;
+
+        for (i = 0; i < procesNode->processcount; ++i)
+        {
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, procesNode->sysprocess[i].fullprocesspath);
+            (*MapMessage)["win_user_process_Path"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, procesNode->sysprocess[i].szExeFile);
+            (*MapMessage)["win_user_process_szExeFile"] = tmpstr;
+            (*MapMessage)["win_user_process_pid"] = procesNode->sysprocess[i].pid;
+            (*MapMessage)["win_user_process_pribase"] = procesNode->sysprocess[i].priclassbase;
+            (*MapMessage)["win_user_process_parenid"] = procesNode->sysprocess[i].th32ParentProcessID;
+            (*MapMessage)["win_user_process_thrcout"] = procesNode->sysprocess[i].threadcout;
+
+            m_cs.Lock();
+            if (Grpc_Getstream())
+                m_stream->Write(rawData);
+            m_cs.Unlock();
+        }
+
+    }
+    break;
+    case UF_PROCESS_PID_TREE:
+    {
+        // Command - pid
+        if (false == g_grpc_uprocesstree.uf_GetProcessInfo(4, ptr_Getbuffer))
+            break;
+    }
+    break;
+    case UF_SYSAUTO_START:
+    {
+        if (false == g_grpc_uautostrobj.uf_EnumAutoStartask(ptr_Getbuffer, dwAllocateMemSize))
+            break;
+
+        PUAutoStartNode autorunnode = (PUAutoStartNode)ptr_Getbuffer;
+        if (!autorunnode)
+            break;
+
+
+        (*MapMessage)["win_user_autorun_flag"] = "1";
+        for (i = 0; i < autorunnode->regnumber; ++i)
+        {
+
+            (*MapMessage)["win_user_autorun_regName"] = autorunnode->regrun[i].szValueName;
+            (*MapMessage)["win_user_autorun_regKey"] = autorunnode->regrun[i].szValueKey;
+
+            m_cs.Lock();
+            if (Grpc_Getstream())
+                m_stream->Write(rawData);
+            m_cs.Unlock();
+        }
+
+
+        (*MapMessage)["win_user_autorun_flag"] = "2";
+        for (i = 0; i < autorunnode->taskrunnumber; ++i)
+        {
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, autorunnode->taskschrun[i].szValueName);
+            (*MapMessage)["win_user_autorun_tschname"] = tmpstr;
+            (*MapMessage)["win_user_autorun_tscState"] = autorunnode->taskschrun[i].State;
+            (*MapMessage)["win_user_autorun_tscLastTime"] = autorunnode->taskschrun[i].LastTime;
+            (*MapMessage)["win_user_autorun_tscNextTime"] = autorunnode->taskschrun[i].NextTime;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, autorunnode->taskschrun[i].TaskCommand);
+            (*MapMessage)["win_user_autorun_tscCommand"] = tmpstr;
+
+            m_cs.Lock();
+            if (Grpc_Getstream())
+                m_stream->Write(rawData);
+            m_cs.Unlock();
+        }
+
+        cout << "[User] SystemAutoStartRun Enum Success" << endl;
+    }
+    break;
+    case UF_SYSNET_INFO:
+    {
+        if (false == g_grpc_unetobj.uf_EnumNetwork(ptr_Getbuffer))
+            break;
+
+        PUNetNode netnode = (PUNetNode)ptr_Getbuffer;
+        if (!netnode)
+            break;
+
+        (*MapMessage)["win_user_net_flag"] = "1";
+        for (i = 0; i < netnode->tcpnumber; i++)
+        {
+            (*MapMessage)["win_user_net_src"] = netnode->tcpnode[i].szlip;
+            (*MapMessage)["win_user_net_dst"] = netnode->tcpnode[i].szrip;
+            (*MapMessage)["win_user_net_status"] = netnode->tcpnode[i].TcpState;
+            (*MapMessage)["win_user_net_pid"] = netnode->tcpnode[i].PidString;
+            m_cs.Lock();
+            if (Grpc_Getstream())
+                m_stream->Write(rawData);
+            m_cs.Unlock();
+        }
+
+        (*MapMessage)["win_user_net_flag"] = "2";
+        for (i = 0; i < netnode->udpnumber; i++)
+        {
+            (*MapMessage)["win_user_net_src"] = netnode->tcpnode[i].szlip;
+            (*MapMessage)["win_user_net_pid"] = netnode->tcpnode[i].PidString;
+            m_cs.Lock();
+            if (Grpc_Getstream())
+                m_stream->Write(rawData);
+            m_cs.Unlock();
+        }
+
+    }
+    break;
+    case UF_SYSSESSION_INFO:
+    {
+
+
+    }
+    break;
+    case UF_SYSINFO_ID:
+    {
+
+    }
+    break;
+    case UF_SYSLOG_ID:
+    {
+
+    }
+    break;
+    case UF_SYSUSER_ID:
+    {
+        if (false == g_grpc_usysuser.uf_EnumSysUser(ptr_Getbuffer))
+            break;
+
+        PUUserNode pusernode = (PUUserNode)ptr_Getbuffer;
+        if (!pusernode)
+            break;
+
+        for (i = 0; i < pusernode->usernumber; ++i)
+        {
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pusernode->usernode[i].serveruser);
+            (*MapMessage)["win_user_sysuser_user"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pusernode->usernode[i].servername);
+            (*MapMessage)["win_user_sysuser_name"] = tmpstr;
+            (*MapMessage)["win_user_sysuser_sid"] = to_string((ULONGLONG)pusernode->usernode[i].serverusid);
+            (*MapMessage)["win_user_sysuser_flag"] = to_string(pusernode->usernode[i].serveruflag);
+
+            m_cs.Lock();
+            if (Grpc_Getstream())
+                m_stream->Write(rawData);
+            m_cs.Unlock();
+        }
+
+    }
+    break;
+    case UF_SYSSERVICE_SOFTWARE_ID:
+    {
+
+    }
+    break;
+    case UF_SYSFILE_ID:
+    {
+        // Command 获取 目录
+    }
+    break;
+    case UF_ROOTKIT_ID:
+    {
+        // 
+    
+    }
+    break;
     default:
         break;
     }
@@ -508,7 +710,7 @@ void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
     }
 }
 
-// Rootkit上抛
+// Kernel/Etw上抛
 void Choose_session(string& events, const int code)
 {
     switch (code)

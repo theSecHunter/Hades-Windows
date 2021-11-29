@@ -163,7 +163,7 @@ typedef struct _SESSIONINFO
     char            iosessioninfo[sizeof(IO_SESSION_STATE_INFORMATION)];
 }SESSIONINFO, * PSESSIONINFO;
 
-
+// rootkit id
 enum AnRootkitId
 {
     NF_SSDT_ID = 100,               // 100 + 0
@@ -186,6 +186,7 @@ enum AnRootkitId
     NF_EXIT = 1000      
 };
 
+// kernel id
 enum IoctCode
 {
     NF_PROCESS_INFO = 150,
@@ -194,6 +195,22 @@ enum IoctCode
     NF_REGISTERTAB_INFO,
     NF_FILE_INFO,
     NF_SESSION_INFO
+};
+
+// user id
+enum USystemCollId
+{
+    UF_PROCESS_ENUM = 200,
+    UF_PROCESS_PID_TREE,
+    UF_SYSAUTO_START,
+    UF_SYSNET_INFO,
+    UF_SYSSESSION_INFO,
+    UF_SYSINFO_ID,
+    UF_SYSLOG_ID,
+    UF_SYSUSER_ID,
+    UF_SYSSERVICE_SOFTWARE_ID,
+    UF_SYSFILE_ID,
+    UF_ROOTKIT_ID
 };
 
 typedef struct _SSDTINFO
@@ -322,5 +339,75 @@ typedef struct _MINIFILTER_INFO
     CHAR	PreImgPath[MAX_PATH];
     CHAR	PostImgPath[MAX_PATH];
 }MINIFILTER_INFO, * PMINIFILTER_INFO;
+
+typedef struct _URegRun
+{
+    CHAR szValueName[MAXBYTE];
+    CHAR szValueKey[MAXBYTE];
+}RegRun, * PURegRun;
+typedef struct _UTaskSchedulerRun
+{
+    WCHAR szValueName[MAXBYTE];
+    ULONG State;
+    ULONG LastTime;
+    ULONG NextTime;
+    WCHAR TaskCommand[1024];
+}UTaskSchedulerRun, *PUTaskSchedulerRun;
+typedef struct _UAutoStartNode
+{
+    ULONG   regnumber;
+    RegRun  regrun[1000];
+    ULONG   taskrunnumber;
+    UTaskSchedulerRun   taskschrun[1000];
+}UAutoStartNode, * PUAutoStartNode;
+
+typedef struct _UNetTcpNode
+{
+    char  szrip[32];
+    char  szlip[32];
+    char  PidString[20];
+    char  TcpState[32];
+}UNetTcpNode, * PUNetTcpNode;
+typedef struct _UNetUdpNode
+{
+    char  szrip[32];
+    char  PidString[20];
+}UNetUdpNode, * PUNetUdpNode;
+typedef struct _UNetNode
+{
+    ULONG		tcpnumber;
+    UNetTcpNode tcpnode[0x1024];
+    ULONG		udpnumber;
+    UNetUdpNode udpnode[0x1024];
+}UNetNode, * PUNetNode;
+
+typedef struct _USysUserNode
+{
+    wchar_t serveruser[MAX_PATH];
+    wchar_t servername[MAX_PATH];
+    PSID    serverusid;
+    DWORD   serveruflag;
+}USysUserNode, * PUSysUserNode;
+typedef struct _UUserNode
+{
+    ULONG usernumber;
+    USysUserNode usernode[30];
+}UUserNode, *PUUserNode;
+
+typedef struct _UProcessEnum
+{
+    int pid;
+    int th32ParentProcessID;
+    wchar_t szExeFile[MAX_PATH];
+    char priclassbase[50];
+    int threadcout;
+    wchar_t fullprocesspath[MAX_PATH];
+}UProcessEnum, * PUProcessEnum;
+typedef struct _UProcessNode
+{
+    int processcount;
+    UProcessEnum sysprocess[0x1024];
+}UProcessNode, * PUProcessNode;
+
 
 #endif // !_SYSINFO_H

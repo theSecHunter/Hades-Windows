@@ -2,17 +2,9 @@
 #include "AkrSysDriverDevInfo.h"
 #include "devctrl.h"
 #include <iostream>
+#include "sysinfo.h"
 
 using namespace std;
-
-typedef struct _PROCESS_MOD
-{
-	ULONG	DllBase;
-	ULONG	EntryPoint;
-	ULONG	SizeOfImage;
-	WCHAR	FullDllName[260];
-	WCHAR	BaseDllName[260];
-}PROCESS_MOD, * PPROCESS_MOD;
 
 #define CTL_DEVCTRL_ARK_DRIVERDEVENUM \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x1080, METHOD_BUFFERED, FILE_ANY_ACCESS)
