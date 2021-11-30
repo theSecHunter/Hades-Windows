@@ -93,5 +93,7 @@ private:
 	tThreads m_threads;
 
 	HANDLE m_jobAvailableEvent;
+
+	// void Grpc_ReadDispatchHandle(Command& command);
 };
 

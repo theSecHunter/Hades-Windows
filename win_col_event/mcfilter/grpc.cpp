@@ -13,6 +13,8 @@
 #include "unet.h"
 #include "usysuser.h"
 #include "uprocesstree.h"
+#include "uservicesoftware.h"
+#include "ufile.h"
 
 #include "sysinfo.h"
 #include "sync.h"
@@ -36,6 +38,8 @@ static UAutoStart           g_grpc_uautostrobj;
 static UNet                 g_grpc_unetobj;
 static NSysUser             g_grpc_usysuser;
 static UProcess             g_grpc_uprocesstree;
+static UServerSoftware      g_grpc_userversoftware;
+static UFile                g_grpc_ufile;
 
 using namespace std;
 
@@ -64,19 +68,11 @@ bool Grpc::Grpc_Transfer(RawData rawData)
     return true;
 }
 
-// rootkit/User采集接口
-void Wchar_tToString(std::string& szDst, wchar_t* wchar)
-{
-    wchar_t* wText = wchar;
-    DWORD dwNum = WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, NULL, 0, NULL, FALSE);
-    char* psText;
-    psText = new char[dwNum];
-    WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, psText, dwNum, NULL, FALSE);
-    szDst = psText;
-    delete[] psText;
-}
 bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
 {
+    dwAllocateMemSize = 0;
+
+    // kernel
     switch (code)
     {
     case NF_SSDT_ID:
@@ -135,7 +131,74 @@ bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
     }
     break;
     default:
-        return false;
+        break;
+    }
+
+    // user
+    switch (code)
+    {
+    case UF_PROCESS_ENUM:
+    {
+        dwAllocateMemSize = sizeof(UProcessNode) + 1;
+    }
+    break;
+    case UF_PROCESS_PID_TREE:
+    {
+        dwAllocateMemSize = 0;
+    }
+    break;
+    case UF_SYSAUTO_START:
+    {
+        dwAllocateMemSize = sizeof(UAutoStartNode) + 1;
+    }
+    break;
+    case UF_SYSNET_INFO:
+    {
+        dwAllocateMemSize = sizeof(UNetNode) + 1;
+    }
+    break;
+    case UF_SYSSESSION_INFO:
+    {
+        dwAllocateMemSize = 0;
+    }
+    break;
+    case UF_SYSINFO_ID:
+    {
+        dwAllocateMemSize = 0;
+    }
+    break;
+    case UF_SYSLOG_ID:
+    {
+        dwAllocateMemSize = 0;
+    }
+    break;
+    case UF_SYSUSER_ID:
+    {
+        dwAllocateMemSize = sizeof(UUserNode) + 1;
+    }
+    break;
+    case UF_SYSSERVICE_SOFTWARE_ID:
+    {
+        dwAllocateMemSize = sizeof(UAllServerSoftware) + 1;
+    }
+    break;
+    case UF_SYSFILE_ID:
+    {
+        dwAllocateMemSize = sizeof(UDriectInfo) + 1;
+    }
+    break;
+    case UF_FILE_INFO:
+    {
+        dwAllocateMemSize = sizeof(UFileInfo) + 1;
+    }
+    break;
+    case UF_ROOTKIT_ID:
+    {
+        dwAllocateMemSize = 0;
+    }
+    break;
+    default:
+        break;
     }
 
     if (0 == dwAllocateMemSize)
@@ -150,7 +213,19 @@ bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
 
     return false;
 }
-// 接口测试时候public - 否则private
+
+// rootkit/User采集接口
+void Wchar_tToString(std::string& szDst, wchar_t* wchar)
+{
+    wchar_t* wText = wchar;
+    DWORD dwNum = WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, NULL, 0, NULL, FALSE);
+    char* psText;
+    psText = new char[dwNum];
+    WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, psText, dwNum, NULL, FALSE);
+    szDst = psText;
+    delete[] psText;
+}
+// 接口测试public - 否则private
 void Grpc::Grpc_ReadDispatchHandle(Command& command)
 {
     map<int, wstring>::iterator iter;
@@ -627,20 +702,16 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
 
     }
     break;
-    case UF_SYSSESSION_INFO:
+    case UF_SYSSESSION_INFO: // v2.0
     {
-
-
     }
     break;
-    case UF_SYSINFO_ID:
+    case UF_SYSINFO_ID:     // v1.0 --> 是否上线时候主动发送?非被动采集
     {
-
     }
     break;
-    case UF_SYSLOG_ID:
+    case UF_SYSLOG_ID:      // 待定 --> etw完全可以取代
     {
-
     }
     break;
     case UF_SYSUSER_ID:
@@ -673,18 +744,149 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
     break;
     case UF_SYSSERVICE_SOFTWARE_ID:
     {
+        if (false != g_grpc_userversoftware.EnumAll(ptr_Getbuffer))
+            break;
+
+        PUAllServerSoftware pNode = (PUAllServerSoftware)ptr_Getbuffer;
+        if (!pNode)
+            break;
+
+        (*MapMessage)["win_user_softwareserver_flag"] = "1";
+        for (i = 0; i < pNode->servicenumber; ++i)
+        {
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpServiceName);
+            (*MapMessage)["win_user_server_lpsName"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpDisplayName);
+            (*MapMessage)["win_user_server_lpdName"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpBinaryPathName);
+            (*MapMessage)["win_user_server_lpPath"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpDescription);
+            (*MapMessage)["win_user_server_lpDescr"] = tmpstr;
+            (*MapMessage)["win_user_server_status"] = pNode->uSericeinfo[i].dwCurrentState;
+
+            m_cs.Lock();
+            if (Grpc_Getstream())
+                m_stream->Write(rawData);
+            m_cs.Unlock();
+        }
+
+        (*MapMessage)["win_user_softwareserver_flag"] = "2";
+        for (i = 0; i < pNode->softwarenumber; ++i)
+        {
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftName);
+            (*MapMessage)["win_user_software_lpsName"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftSize);
+            (*MapMessage)["win_user_software_Size"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftVer);
+            (*MapMessage)["win_user_software_Ver"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftInsPath);
+            (*MapMessage)["win_user_software_installpath"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftUniPath);
+            (*MapMessage)["win_user_software_uninstallpath"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftDate);
+            (*MapMessage)["win_user_software_data"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftVenRel);
+            (*MapMessage)["win_user_software_venrel"] = tmpstr;
+
+            m_cs.Lock();
+            if (Grpc_Getstream())
+                m_stream->Write(rawData);
+            m_cs.Unlock();
+        }
 
     }
     break;
     case UF_SYSFILE_ID:
     {
-        // Command 获取 目录
+        // Command 获取 目录路径
+        if (false == g_grpc_ufile.uf_GetDirectoryFile((char*)"c:\\direct\\", ptr_Getbuffer))
+            break;
+
+        PUDriectInfo directinfo = (PUDriectInfo)ptr_Getbuffer;
+        if (!directinfo)
+            break;
+
+        // 先回发送一次cout和总目录大小
+        (*MapMessage)["win_user_driectinfo_flag"] = "1";
+        (*MapMessage)["win_user_driectinfo_filecout"] = to_string(directinfo->FileNumber);
+        (*MapMessage)["win_user_driectinfo_size"] = to_string(directinfo->DriectAllSize);
+        m_cs.Lock();
+        if (Grpc_Getstream())
+            m_stream->Write(rawData);
+        m_cs.Unlock();
+
+        // 枚举的文件发送
+        (*MapMessage)["win_user_driectinfo_flag"] = "2";
+        for (i = 0; i < directinfo->FileNumber; ++i)
+        {
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, directinfo->fileEntry[i].filename);
+            (*MapMessage)["win_user_driectinfo_filename"] = tmpstr;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, directinfo->fileEntry[i].filepath);
+            (*MapMessage)["win_user_driectinfo_filePath"] = tmpstr;
+            (*MapMessage)["win_user_driectinfo_fileSize"] = to_string(directinfo->fileEntry[i].filesize);
+
+            m_cs.Lock();
+            if (Grpc_Getstream())
+                m_stream->Write(rawData);
+            m_cs.Unlock();
+        }
     }
     break;
-    case UF_ROOTKIT_ID:
+    case UF_FILE_INFO:
     {
-        // 
-    
+        // Command 获取 文件绝对路径
+        if (false == g_grpc_ufile.uf_GetFileInfo((char*)"c:\\1.text", ptr_Getbuffer))
+            break;
+
+        PUFileInfo fileinfo = (PUFileInfo)ptr_Getbuffer;
+        if (!fileinfo)
+            break;
+
+        tmpstr.clear();
+        Wchar_tToString(tmpstr, fileinfo->cFileName);
+        (*MapMessage)["win_user_fileinfo_filename"] = tmpstr;
+        tmpstr.clear();
+        Wchar_tToString(tmpstr, fileinfo->dwFileAttributes);
+        (*MapMessage)["win_user_fileinfo_dwFileAttributes"] = tmpstr;
+        tmpstr.clear();
+        Wchar_tToString(tmpstr, fileinfo->dwFileAttributesHide);
+        (*MapMessage)["win_user_fileinfo_dwFileAttributesHide"] = tmpstr;
+        tmpstr.clear();
+        (*MapMessage)["win_user_fileinfo_md5"] = fileinfo->md5;
+        tmpstr.clear();
+        Wchar_tToString(tmpstr, fileinfo->m_seFileSizeof);
+        (*MapMessage)["win_user_fileinfo_m_seFileSizeof"] = tmpstr;
+        tmpstr.clear();
+        Wchar_tToString(tmpstr, fileinfo->seFileAccess);
+        (*MapMessage)["win_user_fileinfo_seFileAccess"] = tmpstr;
+        tmpstr.clear();
+        Wchar_tToString(tmpstr, fileinfo->seFileCreate);
+        (*MapMessage)["win_user_fileinfo_seFileCreate"] = tmpstr;
+        tmpstr.clear();
+        Wchar_tToString(tmpstr, fileinfo->seFileModify);
+        (*MapMessage)["win_user_fileinfo_seFileModify"] = tmpstr;
+
+        m_cs.Lock();
+        if (Grpc_Getstream())
+            m_stream->Write(rawData);
+        m_cs.Unlock();
+    }
+    break;
+    case UF_ROOTKIT_ID:     // v2.0
+    {
     }
     break;
     default:

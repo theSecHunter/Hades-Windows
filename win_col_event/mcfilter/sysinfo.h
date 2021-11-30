@@ -1,6 +1,62 @@
 #ifndef _SYSINFO_H
 #define _SYSINFO_H
 
+#include <string>
+using namespace std;
+
+
+// kernel id
+enum IoctCode
+{
+    NF_PROCESS_INFO = 150,
+    NF_THREAD_INFO,
+    NF_IMAGEGMOD_INFO,
+    NF_REGISTERTAB_INFO,
+    NF_FILE_INFO,
+    NF_SESSION_INFO
+};
+
+// rootkit id
+enum AnRootkitId
+{
+    NF_SSDT_ID = 100,               // 100 + 0
+    NF_IDT_ID,                      // 100 + 1
+    NF_GDT_ID,                      // 100 + 2
+    NF_DPC_ID,                      // 100 + 3
+    NF_SYSCALLBACK_ID,              // 100 + 4
+    NF_SYSPROCESSTREE_ID,           // 100 + 5
+    NF_OBJ_ID,                      // 100 + 6
+    NF_IRP_ID,                      // 100 + 7
+    NF_FSD_ID,                      // 100 + 8
+    NF_MOUSEKEYBOARD_ID,            // 100 + 9
+    NF_NETWORK_ID,                  // 100 + 10
+    NF_PROCESS_ENUM,                // 100 + 11
+    NF_PROCESS_KILL,                // 100 + 12
+    NF_PROCESS_MOD,                 // 100 + 13
+    NF_PE_DUMP,                     // 100 + 14
+    NF_SYSMOD_ENUM,                 // 100 + 15
+    NF_DRIVER_DUMP,                 // 100 + 16
+    NF_EXIT = 1000
+};
+
+// user id
+enum USystemCollId
+{
+    UF_PROCESS_ENUM = 200,
+    UF_PROCESS_PID_TREE,
+    UF_SYSAUTO_START,
+    UF_SYSNET_INFO,
+    UF_SYSSESSION_INFO,
+    UF_SYSINFO_ID,
+    UF_SYSLOG_ID,
+    UF_SYSUSER_ID,
+    UF_SYSSERVICE_SOFTWARE_ID,
+    UF_SYSFILE_ID,
+    UF_FILE_INFO,
+    UF_ROOTKIT_ID
+};
+
+// NF_PROCESS_INFO
 typedef struct _PROCESSINFO
 {
 	int processid;
@@ -10,6 +66,7 @@ typedef struct _PROCESSINFO
 	wchar_t queryprocesspath[260 * 2];
 }PROCESSINFO, * PPROCESSINFO;
 
+// NF_THREAD_INFO
 typedef struct _THREADINFO
 {
 	int processid;
@@ -17,6 +74,7 @@ typedef struct _THREADINFO
 	int createid;
 }THREADINFO, * PTHREADINFO;
 
+// NF_IMAGEGMOD_INFO
 typedef struct _IMAGEMODINFO
 {
     int		processid;
@@ -26,6 +84,7 @@ typedef struct _IMAGEMODINFO
     wchar_t	imagename[260 * 2];
 }IMAGEMODINFO, * PIMAGEMODINFO;
 
+// NF_REGISTERTAB_INFO
 typedef enum _USER_REG_NOTIFY_CLASS {
     RegNtDeleteKey,
     RegNtPreDeleteKey = RegNtDeleteKey,
@@ -112,6 +171,7 @@ typedef struct _REGISTERINFO
 	int opeararg;
 }REGISTERINFO, * PREGISTERINFO;
 
+// NF_FILE_INFO
 typedef struct _FILEINFO
 {
     int				processid;
@@ -135,8 +195,8 @@ typedef struct _FILEINFO
 
 }FILEINFO, * PFILEINFO;
 
+// NF_SESSION_INFO
 #define IO_SESSION_MAX_PAYLOAD_SIZE             256L
-
 typedef enum _IO_SESSION_STATE {
     IoSessionStateCreated = 1,
     IoSessionStateInitialized,          // 2
@@ -148,13 +208,11 @@ typedef enum _IO_SESSION_STATE {
     IoSessionStateTerminated,           // 8
     IoSessionStateMax
 } IO_SESSION_STATE, * PIO_SESSION_STATE;
-
 typedef struct _IO_SESSION_STATE_INFORMATION {
     ULONG            SessionId;
     IO_SESSION_STATE SessionState;
     BOOLEAN          LocalSession;
 } IO_SESSION_STATE_INFORMATION, * PIO_SESSION_STATE_INFORMATION;
-
 typedef struct _SESSIONINFO
 {
     int             processid;
@@ -163,56 +221,7 @@ typedef struct _SESSIONINFO
     char            iosessioninfo[sizeof(IO_SESSION_STATE_INFORMATION)];
 }SESSIONINFO, * PSESSIONINFO;
 
-// rootkit id
-enum AnRootkitId
-{
-    NF_SSDT_ID = 100,               // 100 + 0
-    NF_IDT_ID,                      // 100 + 1
-    NF_GDT_ID,                      // 100 + 2
-    NF_DPC_ID,                      // 100 + 3
-    NF_SYSCALLBACK_ID,              // 100 + 4
-    NF_SYSPROCESSTREE_ID,           // 100 + 5
-    NF_OBJ_ID,                      // 100 + 6
-    NF_IRP_ID,                      // 100 + 7
-    NF_FSD_ID,                      // 100 + 8
-    NF_MOUSEKEYBOARD_ID,            // 100 + 9
-    NF_NETWORK_ID,                  // 100 + 10
-    NF_PROCESS_ENUM,                // 100 + 11
-    NF_PROCESS_KILL,                // 100 + 12
-    NF_PROCESS_MOD,                 // 100 + 13
-    NF_PE_DUMP,                     // 100 + 14
-    NF_SYSMOD_ENUM,                 // 100 + 15
-    NF_DRIVER_DUMP,                 // 100 + 16
-    NF_EXIT = 1000      
-};
-
-// kernel id
-enum IoctCode
-{
-    NF_PROCESS_INFO = 150,
-    NF_THREAD_INFO,
-    NF_IMAGEGMOD_INFO,
-    NF_REGISTERTAB_INFO,
-    NF_FILE_INFO,
-    NF_SESSION_INFO
-};
-
-// user id
-enum USystemCollId
-{
-    UF_PROCESS_ENUM = 200,
-    UF_PROCESS_PID_TREE,
-    UF_SYSAUTO_START,
-    UF_SYSNET_INFO,
-    UF_SYSSESSION_INFO,
-    UF_SYSINFO_ID,
-    UF_SYSLOG_ID,
-    UF_SYSUSER_ID,
-    UF_SYSSERVICE_SOFTWARE_ID,
-    UF_SYSFILE_ID,
-    UF_ROOTKIT_ID
-};
-
+// rootkit struct
 typedef struct _SSDTINFO
 {
     short			ssdt_id;
@@ -233,7 +242,6 @@ typedef struct _DPC_TIMERINFO
     ULONG_PTR	timeroutine;
     ULONG		period;
 }DPC_TIMERINFO, * PDPC_TIMERINFO;
-
 
 typedef struct _NSI_STATUS_ENTRY
 {
@@ -339,7 +347,9 @@ typedef struct _MINIFILTER_INFO
     CHAR	PreImgPath[MAX_PATH];
     CHAR	PostImgPath[MAX_PATH];
 }MINIFILTER_INFO, * PMINIFILTER_INFO;
+// rootkit struct end
 
+// u_autorun
 typedef struct _URegRun
 {
     CHAR szValueName[MAXBYTE];
@@ -361,6 +371,7 @@ typedef struct _UAutoStartNode
     UTaskSchedulerRun   taskschrun[1000];
 }UAutoStartNode, * PUAutoStartNode;
 
+// u_network
 typedef struct _UNetTcpNode
 {
     char  szrip[32];
@@ -381,6 +392,7 @@ typedef struct _UNetNode
     UNetUdpNode udpnode[0x1024];
 }UNetNode, * PUNetNode;
 
+// u_user
 typedef struct _USysUserNode
 {
     wchar_t serveruser[MAX_PATH];
@@ -394,6 +406,7 @@ typedef struct _UUserNode
     USysUserNode usernode[30];
 }UUserNode, *PUUserNode;
 
+// u_process
 typedef struct _UProcessEnum
 {
     int pid;
@@ -409,5 +422,56 @@ typedef struct _UProcessNode
     UProcessEnum sysprocess[0x1024];
 }UProcessNode, * PUProcessNode;
 
+// u_software_service
+typedef struct _USOFTINFO
+{
+    WCHAR szSoftName[50];				// 软件名称 
+    WCHAR szSoftVer[50];				// 软件版本号
+    WCHAR szSoftDate[20];				// 软件安装日期
+    WCHAR szSoftSize[MAX_PATH];			// 软件大小
+    WCHAR strSoftInsPath[MAX_PATH];		// 软件安装路径
+    WCHAR strSoftUniPath[MAX_PATH];		// 软件卸载路径
+    WCHAR strSoftVenRel[50];			// 软件发布厂商
+    WCHAR strSoftIco[MAX_PATH];			// 软件图标路径
+}USOFTINFO, * PUSOFTINFO;
+typedef struct _UServicesNode
+{
+    wchar_t lpDisplayName[MAX_PATH];
+    wchar_t lpServiceName[MAX_PATH];
+    wchar_t lpBinaryPathName[MAX_PATH];
+    wchar_t lpDescription[MAX_PATH];
+    string dwCurrentState;
+}UServicesNode, * PUServicesNode;
+typedef struct _UAllServerSoftware {
+    ULONG softwarenumber;
+    USOFTINFO uUsoinfo[0x1000];
+    ULONG servicenumber;
+    UServicesNode uSericeinfo[0x1000];
+}UAllServerSoftware, *PUAllServerSoftware;
+
+// u_file
+typedef struct _UFileInfo
+{
+    WCHAR cFileName[MAX_PATH];
+    TCHAR seFileCreate[100];
+    TCHAR seFileModify[100];
+    TCHAR seFileAccess[100];
+    TCHAR dwFileAttributes[20];
+    TCHAR m_seFileSizeof[20];
+    TCHAR dwFileAttributesHide[20];
+    string md5;
+}UFileInfo, * PUFileInfo;
+typedef struct _UDriectFile
+{
+    ULONG filesize;
+    wchar_t filename[MAX_PATH];
+    wchar_t filepath[MAX_PATH * 2];
+}UDriectFile, * PUDriectFile;
+typedef struct _UDriectInfo
+{
+    DWORD   DriectAllSize;
+    DWORD   FileNumber;
+    UDriectFile fileEntry[0xffff];
+}UDriectInfo, *PUDriectInfo;
 
 #endif // !_SYSINFO_H
