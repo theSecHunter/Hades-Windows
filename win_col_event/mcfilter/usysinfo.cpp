@@ -111,4 +111,6 @@ bool USysBaseInfo::uf_GetSystemBaseInfo(LPVOID outbuf)
 	// 系统运行信息
 	//GetCpuUsage();
 	//GetMemoryInfo();
+
+	return true;
 }

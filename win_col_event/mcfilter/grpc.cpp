@@ -16,6 +16,8 @@
 #include "uservicesoftware.h"
 #include "ufile.h"
 
+#include "uetw.h"
+
 #include "sysinfo.h"
 #include "sync.h"
 #include <time.h>
@@ -40,6 +42,8 @@ static NSysUser             g_grpc_usysuser;
 static UProcess             g_grpc_uprocesstree;
 static UServerSoftware      g_grpc_userversoftware;
 static UFile                g_grpc_ufile;
+
+static UEtw                 g_grpc_etw;
 
 using namespace std;
 
@@ -200,6 +204,9 @@ bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
     default:
         break;
     }
+
+    // etw
+    
 
     if (0 == dwAllocateMemSize)
         return false;

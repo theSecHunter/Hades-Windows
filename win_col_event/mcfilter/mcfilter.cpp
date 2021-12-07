@@ -17,6 +17,8 @@
 #include "grpc.h"
 #include "sync.h"
 
+#include "uetw.h"
+
 #include <stdlib.h>
 
 using namespace std;
@@ -26,6 +28,7 @@ const int max_size = MAX_PATH * 3;
 
 // kernel monitor flag
 static bool kerne_mon = false;
+static bool etw_mon = true;
 
 typedef struct _PE_CONTROL{
 	string name;
@@ -67,6 +70,8 @@ void charTowchar(const char* chr, wchar_t* wchar, int size)
 }
 
 static AutoCriticalSection	g_cs;
+
+static UEtw g_testetw;
 
 // 后期做规则使用
 class EventHandler : public NF_EventHandler
@@ -300,7 +305,10 @@ DWORD pthread_grpread(LPVOID lpThreadParameter)
 
 int main(int argc, char* argv[])
 {
-	// getchar();
+	// g_testetw.uf_init();
+
+	cout << "etw test" << endl;
+	getchar();
 	// 
 	// @ Grpc Active Online Send to  Server Msg
 	// SSL
@@ -506,6 +514,12 @@ int main(int argc, char* argv[])
 		greeter.Grpc_ReadDispatchHandle(cmd);
 	}
 
+
+	// etw mod
+	if (true == etw_mon)
+	{
+
+	}
 
 	cout << "输入回车结束进程" << endl;
 	getchar();

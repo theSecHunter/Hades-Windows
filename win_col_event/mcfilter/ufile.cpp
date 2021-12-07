@@ -53,6 +53,7 @@ bool EnumDriectFile(CString Path, LPVOID outbuf)
 
 		} while (FindNextFile(hFile, &FileData));
 	}
+	return true;
 }
 
 bool UFile::uf_GetFileInfo(char* filepath,LPVOID outbuf)
