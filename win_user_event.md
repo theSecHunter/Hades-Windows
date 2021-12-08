@@ -3,7 +3,7 @@
 #### 应用层采集
 
 | 功能          | 代码                            | API/描述                                                     |
-| ------------- | ------------------------------- | ------------------------------------------------------------ |
+| ------------- | :------------------------------ | ------------------------------------------------------------ |
 | 自启动        | see code:uautostart.h/cpp       | 注册表、计划任务检测，gpedit.msc待定                         |
 | 网络          | see code:unet.h/cpp             | GetExtendedTcpTable/GetExtendedUdpTable                      |
 | 系统用户      | see code:usysuser.h/cpp         | NetUserEnum                                                  |
@@ -16,4 +16,12 @@
 
 
 #### ETW
+
+| 功能                 | 代码                 | TracGuid                                                     |
+| -------------------- | -------------------- | ------------------------------------------------------------ |
+| Process/Thread/Image | see code: uetw.h/cpp | EVENT_TRACE_FLAG_PROCESS<br>EVENT_TRACE_FLAG_THREAD<br>EVENT_TRACE_FLAG_IMAGE_LOAD |
+| Network              | see code: uetw.h/cpp | EVENT_TRACE_FLAG_NETWORK_TCPIP                               |
+| File                 | see code: uetw.h/cpp | EVENT_TRACE_FLAG_FILE_IO <br>EVENT_TRACE_FLAG_FILE_IO_INIT   |
+| Register             | see code: uetw.h/cpp | EVENT_TRACE_FLAG_REGISTRY                                    |
+| systemcall           | see code: uetw.h/cpp | EVENT_TRACE_FLAG_SYSTEMCALL                                  |
 
