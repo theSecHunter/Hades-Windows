@@ -152,6 +152,7 @@ bool UEtw::uf_RegisterTrace(
     const int dwEnableFlags
 )
 {
+    printf("uf_RegisterTrace Entry\n");
     ULONG status = 0;
     TRACEHANDLE hSession;
     uint32_t event_buffer = sizeof(EVENT_TRACE_PROPERTIES) + sizeof(KERNEL_LOGGER_NAME);

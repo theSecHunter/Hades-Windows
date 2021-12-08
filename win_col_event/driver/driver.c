@@ -97,7 +97,7 @@ NTSTATUS
 	ExInitializeDriverRuntime(DrvRtPoolNxOptIn);
 	PT_DBG_PRINT(PTDBG_TRACE_ROUTINES,
 		("driver!DriverEntry: Entered\n"));
-
+    
     int i = 0;
     for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)
     {

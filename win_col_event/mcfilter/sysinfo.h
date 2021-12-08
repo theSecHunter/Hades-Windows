@@ -444,9 +444,9 @@ typedef struct _UServicesNode
 }UServicesNode, * PUServicesNode;
 typedef struct _UAllServerSoftware {
     ULONG softwarenumber;
-    USOFTINFO uUsoinfo[0x1000];
+    USOFTINFO uUsoinfo[0x100];
     ULONG servicenumber;
-    UServicesNode uSericeinfo[0x1000];
+    UServicesNode uSericeinfo[0x500];
 }UAllServerSoftware, *PUAllServerSoftware;
 
 // u_file

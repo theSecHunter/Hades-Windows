@@ -99,10 +99,14 @@ DWORD UServerSoftware::EnumService(LPVOID outbuf)
 				if (QueryServiceConfig2(service_curren, SERVICE_CONFIG_DESCRIPTION,
 					(BYTE*)lpqscBuf2, dwNeeded, &dwNeeded))
 				{
-					lstrcpyW(serinfo[count].lpDescription, lpqscBuf2->lpDescription);
-					// fwprintf(g_pFile, L" Description: %s\n", lpqscBuf2->lpDescription);
+					if (lstrlenW(lpqscBuf2->lpDescription))
+						lstrcpyW(serinfo[count].lpDescription, lpqscBuf2->lpDescription);
 				}
-				LocalFree(lpqscBuf2);
+				if (lpqscBuf2)
+				{
+					LocalFree(lpqscBuf2);
+					lpqscBuf2 = NULL;
+				}
 			}
 			
 			count++;

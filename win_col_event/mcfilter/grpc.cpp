@@ -817,7 +817,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
     case UF_SYSFILE_ID:
     {
         // Command 获取 目录路径
-        if (false == g_grpc_ufile.uf_GetDirectoryFile((char*)"c:\\direct\\", ptr_Getbuffer))
+        if (false == g_grpc_ufile.uf_GetDirectoryFile((char*)"D:\\bin\\vpn", ptr_Getbuffer))
             break;
 
         PUDriectInfo directinfo = (PUDriectInfo)ptr_Getbuffer;

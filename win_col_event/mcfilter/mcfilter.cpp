@@ -26,7 +26,7 @@ using namespace std;
 const char devSyLinkName[] = "\\??\\KernelDark";
 const int max_size = MAX_PATH * 3;
 
-// kernel monitor flag
+// 标志控制 - 后续config里面配置
 static bool kerne_mon = false;
 static bool etw_mon = true;
 
@@ -305,10 +305,14 @@ DWORD pthread_grpread(LPVOID lpThreadParameter)
 
 int main(int argc, char* argv[])
 {
-	// g_testetw.uf_init();
+	// Etw 单独模块测试
+	//cout << "etw test start" << endl;
+	//g_testetw.uf_init();
+	//getchar();
+	//g_testetw.uf_close();
+	//cout << "etw test End" << endl;
+	//exit(0);
 
-	cout << "etw test" << endl;
-	getchar();
 	// 
 	// @ Grpc Active Online Send to  Server Msg
 	// SSL
@@ -321,7 +325,7 @@ int main(int argc, char* argv[])
 	// ssl_opts.pem_cert_chain = clientcert;
 	// std::shared_ptr<grpc::ChannelCredentials> channel_creds = grpc::SslCredentials(ssl_opts);
 	
-	//  grpc::InsecureChannelCredentials() 10.128.128.23
+	// Grpc_SSL模式目前不支持 - 认证还有问题
 	static Grpc greeter(
 		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));
 
@@ -514,16 +518,16 @@ int main(int argc, char* argv[])
 		greeter.Grpc_ReadDispatchHandle(cmd);
 	}
 
-
 	// etw mod
 	if (true == etw_mon)
 	{
-
+		g_testetw.uf_init();
 	}
 
 	cout << "输入回车结束进程" << endl;
 	getchar();
 	devobj.devctrl_free();
+	g_testetw.uf_close();
 	exit(0);
 
 	/*
