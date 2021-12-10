@@ -144,19 +144,19 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Tdh.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -172,12 +172,23 @@
     <ClCompile Include="ArkProcessInfo.cpp" />
     <ClCompile Include="ArkSysEnumNotify.cpp" />
     <ClCompile Include="devctrl.cpp" />
+    <ClCompile Include="uetw.cpp" />
     <ClCompile Include="grpc.cpp" />
     <ClCompile Include="hades_win.grpc.pb.cc" />
     <ClCompile Include="hades_win.pb.cc" />
     <ClCompile Include="HlprMiniCom.cpp" />
     <ClCompile Include="mcfilter.cpp" />
     <ClCompile Include="ArkSsdt.cpp" />
+    <ClCompile Include="MD5.cpp" />
+    <ClCompile Include="uautostart.cpp" />
+    <ClCompile Include="ufile.cpp" />
+    <ClCompile Include="unet.cpp" />
+    <ClCompile Include="uprocesstree.cpp" />
+    <ClCompile Include="urootkit.cpp" />
+    <ClCompile Include="uservicesoftware.cpp" />
+    <ClCompile Include="usession.cpp" />
+    <ClCompile Include="usysinfo.cpp" />
+    <ClCompile Include="usysuser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AkrSysDriverDevInfo.h" />
@@ -193,6 +204,7 @@
     <ClInclude Include="hades_win.grpc.pb.h" />
     <ClInclude Include="hades_win.pb.h" />
     <ClInclude Include="HlprMiniCom.h" />
+    <ClInclude Include="MD5.h" />
     <ClInclude Include="nfevents.h" />
     <ClInclude Include="nf_api.h" />
     <ClInclude Include="ntbasic.h" />
@@ -200,6 +212,16 @@
     <ClInclude Include="sync.h" />
     <ClInclude Include="sysinfo.h" />
     <ClInclude Include="threadpool.h" />
+    <ClInclude Include="uautostart.h" />
+    <ClInclude Include="uetw.h" />
+    <ClInclude Include="ufile.h" />
+    <ClInclude Include="unet.h" />
+    <ClInclude Include="uprocesstree.h" />
+    <ClInclude Include="urootkit.h" />
+    <ClInclude Include="uservicesoftware.h" />
+    <ClInclude Include="usession.h" />
+    <ClInclude Include="usysinfo.h" />
+    <ClInclude Include="usysuser.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

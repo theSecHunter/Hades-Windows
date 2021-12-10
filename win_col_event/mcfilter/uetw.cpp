@@ -1,7 +1,7 @@
-#include <stdio.h>
-#include <stdint.h>
+#include <winsock2.h>
 #include <Windows.h>
 #include <memory>
+#include <Psapi.h>
 
 #define INITGUID
 #include <evntrace.h>
@@ -9,13 +9,27 @@
 #include <tdh.h>
 #include <in6addr.h>
 
-#include "uetw.h"
+#include "sysinfo.h"
 #include "sync.h"
+#include "uetw.h"
 
 #include <map>
+#include <mutex>
 #include <vector>
+#include <string>
+#include <wchar.h>
+
+#pragma comment(lib,"psapi.lib")
+#pragma comment(lib, "Ws2_32.lib")
 
 using namespace std;
+
+//  映射ProcessInfo 和 NetWork 关系
+//  如果都在数据库做分析，这里可以不适用这套方案。
+static mutex g_mutx;
+static map<DWORD64, NF_CALLOUT_FLOWESTABLISHED_INFO> flowestablished_map;
+static mutex g_mutx_pidpath;
+static map<int, PROCESS_INFO> mutxpidpath_map;
 
 // Session - Guid - tracconfig
 typedef struct _TracGuidNode
@@ -28,59 +42,6 @@ static map<TRACEHANDLE, TracGuidNode> g_tracMap;
 static AutoCriticalSection g_th;
 static vector<HANDLE> g_thrhandle;
 
-////////////////////////////////////
-// CallBack
-// 回调可以使用同一个函数，这里是不通模块做测试
-void WINAPI ProcessEvent(PEVENT_RECORD pEvent);
-void WINAPI ThreadEvent(PEVENT_RECORD pEvent);
-void WINAPI ImageEvent(PEVENT_RECORD pEvent);
-void WINAPI TcpIpEvent(PEVENT_RECORD pEvent);
-void WINAPI RegisterEvent(PEVENT_RECORD pEvent);
-void WINAPI FileEvent(PEVENT_RECORD pEvent);
-void WINAPI SystemInfoEvent(PEVENT_RECORD pEvent);
-
-///////////////////////////////////
-// Session回调启用跟踪
-DWORD WINAPI tracDispaththread(LPVOID param)
-{
-    EVENT_TRACE_LOGFILE trace;
-    memset(&trace, 0, sizeof(trace));
-    trace.LoggerName = const_cast<wchar_t*>(KERNEL_LOGGER_NAME);
-    trace.LogFileName = NULL;
-    trace.ProcessTraceMode = PROCESS_TRACE_MODE_REAL_TIME | PROCESS_TRACE_MODE_EVENT_RECORD;
-    trace.Context = NULL;
-
-    if (!param)
-        return 0;
-    switch ((int)param)
-    {
-    case EVENT_TRACE_FLAG_PROCESS:
-        trace.EventRecordCallback = ProcessEvent;
-        break;
-    case EVENT_TRACE_FLAG_THREAD:
-        trace.EventRecordCallback = ThreadEvent;
-        break;
-    case EVENT_TRACE_FLAG_IMAGE_LOAD:
-        trace.EventRecordCallback = ImageEvent;
-        break;
-    case EVENT_TRACE_FLAG_FILE_IO_INIT:
-        trace.EventRecordCallback = FileEvent;
-        break;
-    case EVENT_TRACE_FLAG_NETWORK_TCPIP:
-        trace.EventRecordCallback = TcpIpEvent;
-        break;
-    default:
-        return 0;
-    }
-
-    TRACEHANDLE handle = OpenTrace(&trace);
-    if (handle == (TRACEHANDLE)INVALID_HANDLE_VALUE)
-        return 0;
-    ProcessTrace(&handle, 1, 0, 0);
-    CloseTrace(handle);
-    return 0;
-}
-
 UEtw::UEtw()
 {
 }
@@ -88,69 +49,343 @@ UEtw::~UEtw()
 {
 }
 
-/*
-    只开放了一个网络进行测试 - 其余自行开启测试
-    目前该功能只是单独代码测试，未grpc联调
-*/
-bool UEtw::uf_init()
+// Pid Get ProcessPath
+DWORD GetPathByProcessId(wchar_t* path, const  DWORD dwPid)
 {
-    //// process
-    // this->uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS);
-    //// thread
-    //this->uf_RegisterTrace(EVENT_TRACE_FLAG_THREAD);
-    //// image
-    //this->uf_RegisterTrace(EVENT_TRACE_FLAG_IMAGE_LOAD);
-    //// file
-    //this->uf_RegisterTrace(EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT);
-    // disk EVENT_TRACE_FLAG_DISK_IO | EVENT_TRACE_FLAG_DISK_IO_INIT | EVENT_TRACE_FLAG_DISK_FILE_IO
-    // network
-    this->uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP);
-    //// register
-    // this->uf_RegisterTrace(EVENT_TRACE_FLAG_REGISTRY);
-    //// syscall
-    // this->uf_RegisterTrace(EVENT_TRACE_FLAG_SYSTEMCALL);
-    return true;
+    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPid);
+    if (hProcess == NULL)
+        return false;
+    return GetModuleFileNameEx(hProcess, NULL, path, MAX_PATH);
 }
-bool UEtw::uf_close()
+DWORD uf_GetProcessEventStr(wstring& propName)
 {
-    map<TRACEHANDLE, TracGuidNode>::iterator  iter;
+    DWORD Code = 0;
 
-    for (iter = g_tracMap.begin(); iter != g_tracMap.end();)
+    if (0 == lstrcmpW(propName.c_str(), L"PID"))
+        Code = 1;
+    else if (0 == lstrcmpW(propName.c_str(), L"size"))
+        Code = 2;
+    else if (0 == lstrcmpW(propName.c_str(), L"daddr"))
+        Code = 3;
+    else if (0 == lstrcmpW(propName.c_str(), L"saddr"))
+        Code = 4;
+    else if (0 == lstrcmpW(propName.c_str(), L"dport"))
+        Code = 5;
+    else if (0 == lstrcmpW(propName.c_str(), L"sport"))
+        Code = 6;
+
+    return Code;
+}
+
+///////////////////////////////////////////////////
+// Network Event_callback
+void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
+
+    NF_CALLOUT_FLOWESTABLISHED_INFO flowestablished_processinfo;
+    RtlZeroMemory(&flowestablished_processinfo, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
+
+    // TCPIP or UDPIP
+    wstring taskName;
+    if (info->TaskNameOffset)
     {
+        taskName = (PCWSTR)((BYTE*)info + info->TaskNameOffset);
+    }
+    else
+        return;
 
-        if (iter->first && iter->second.bufconfig)
-            ControlTrace(iter->first, KERNEL_LOGGER_NAME, iter->second.bufconfig, EVENT_TRACE_CONTROL_STOP);
+    size_t task_tcplen = taskName.find(L"TcpIp");
+    size_t task_udplen = taskName.find(L"UdpIp");
+    if (task_tcplen >= 0 && task_tcplen <= 100)
+    {
+        flowestablished_processinfo.protocol = IPPROTO_TCP;
+    }
+    else if (task_udplen >= 0 && task_udplen <= 100)
+    {
+        flowestablished_processinfo.protocol = IPPROTO_UDP;
+    }
+    else
+        return;
 
-        if (iter->second.bufconfig)
-        {
-            delete[] iter->second.bufconfig;
-            iter->second.bufconfig = NULL;
+    // properties data length and pointer
+    auto userlen = rec->UserDataLength;
+    auto data = (PBYTE)rec->UserData;
+    auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
+
+    ULONG len; WCHAR value[512];
+    string  tmpstr; wstring propName; DWORD nCode = 0;
+    wchar_t cProcessPath[MAX_PATH] = { 0 };
+    map<int, PROCESS_INFO>::iterator iter;
+    PROCESS_INFO process_info = { 0, };
+    for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
+
+        propName.clear(); nCode = 0; tmpstr.clear();
+
+        auto& pi = info->EventPropertyInfoArray[i];
+        propName = (PCWSTR)((BYTE*)info + pi.NameOffset);
+
+        nCode = uf_GetProcessEventStr(propName);
+
+        len = pi.length;
+        if ((pi.Flags & (PropertyStruct | PropertyParamCount)) == 0) {
+            PEVENT_MAP_INFO mapInfo = nullptr;
+            std::unique_ptr<BYTE[]> mapBuffer;
+            PWSTR mapName = nullptr;
+            if (pi.nonStructType.MapNameOffset) {
+                ULONG size = 0;
+                mapName = (PWSTR)((BYTE*)info + pi.nonStructType.MapNameOffset);
+                if (ERROR_INSUFFICIENT_BUFFER == ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size)) {
+                    mapBuffer = std::make_unique<BYTE[]>(size);
+                    mapInfo = reinterpret_cast<PEVENT_MAP_INFO>(mapBuffer.get());
+                    if (ERROR_SUCCESS != ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size))
+                        mapInfo = nullptr;
+                }
+            }
+
+            ULONG size = sizeof(value);
+            USHORT consumed;
+
+            // special case for IPv6 address
+            if (pi.nonStructType.InType == TDH_INTYPE_BINARY && pi.nonStructType.OutType == TDH_OUTTYPE_IPV6)
+                len = sizeof(IN6_ADDR);
+
+            auto error = ::TdhFormatProperty(info, mapInfo, pointerSize,
+                pi.nonStructType.InType, pi.nonStructType.OutType,
+                (USHORT)len, userlen, data, &size, value, &consumed);
+
+            // 提取数据
+            if (ERROR_SUCCESS == error) {
+                len = consumed;
+                if (mapName)
+                    lstrcatW(value, mapName);
+            }
+            else if (mapInfo) {
+                error = ::TdhFormatProperty(info, nullptr, pointerSize,
+                    pi.nonStructType.InType, pi.nonStructType.OutType,
+                    (USHORT)len, userlen, data, &size, value, &consumed);
+            }
+
+
+            userlen -= (USHORT)len;
+            data += len;
+
+
+            // 保存数据
+            if (ERROR_SUCCESS == error)
+            {
+                switch (nCode)
+                {
+                case 1: // PID
+                {
+                    // wtoi不可以转换16进制宽字符 - 这里valuse内存是十进制 - 否则用wcstol
+                    flowestablished_processinfo.processId = _wtoi(value);
+                    iter = mutxpidpath_map.find(flowestablished_processinfo.processId);
+                    if (iter != mutxpidpath_map.end())
+                    {
+                        process_info = iter->second;
+                        RtlCopyMemory(flowestablished_processinfo.processPath, process_info.processPath, MAX_PATH);
+                    }
+                    else
+                    {
+                        flowestablished_processinfo.processPathSize = GetPathByProcessId(cProcessPath, flowestablished_processinfo.processId);
+                        if (flowestablished_processinfo.processPathSize)
+                            RtlCopyMemory(flowestablished_processinfo.processPath, cProcessPath, MAX_PATH);
+                    }
+                }
+                break;
+                case 3: // daddr
+                    Wchar_tToString(tmpstr, value);
+                    flowestablished_processinfo.ipv4toRemoteAddr = inet_addr(tmpstr.c_str());
+                    break;
+                case 4: // saddr
+                    Wchar_tToString(tmpstr, value);
+                    flowestablished_processinfo.ipv4LocalAddr = inet_addr(tmpstr.c_str());
+                    break;
+                case 5: // dport
+                    flowestablished_processinfo.toRemotePort = _wtoi(value);
+                    break;
+                case 6: // sport
+                    flowestablished_processinfo.toLocalPort = _wtoi(value);
+                    break;
+                }
+            }
+
+        }
+    }
+
+    // 映射
+    DWORD64 keyLocalPort = flowestablished_processinfo.toLocalPort;
+    switch (flowestablished_processinfo.protocol)
+    {
+    case IPPROTO_TCP:
+        keyLocalPort += 1000000;
+        break;
+    case IPPROTO_UDP:
+        keyLocalPort += 2000000;
+        break;
+    }
+
+    if (lstrlenW(flowestablished_processinfo.processPath))
+    {
+        g_mutx.lock();
+        flowestablished_map[keyLocalPort] = flowestablished_processinfo;
+        g_mutx.unlock();
+    }
+
+    //WCHAR outputinfo[MAX_PATH] = { 0, };
+    //swprintf(outputinfo, MAX_PATH, L"[PushKey] PortKey %d", keyLocalPort);
+    //OutputDebugString(outputinfo);
+}
+void ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
+{
+    wstring taskName;
+    if (info->TaskNameOffset)
+    {
+        taskName = (PCWSTR)((BYTE*)info + info->TaskNameOffset);
+    }
+    else
+        return;
+
+    // properties data length and pointer
+    auto userlen = rec->UserDataLength;
+    auto data = (PBYTE)rec->UserData;
+    auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
+
+    ULONG len; WCHAR value[512];
+    wstring  tmpstr; wstring propName;
+    PROCESS_INFO process_info = { 0, };
+    wchar_t* end;
+
+    for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
+
+        propName.clear(); tmpstr.clear();
+
+        auto& pi = info->EventPropertyInfoArray[i];
+        propName = (PCWSTR)((BYTE*)info + pi.NameOffset);
+        len = pi.length;
+        if ((pi.Flags & (PropertyStruct | PropertyParamCount)) == 0) {
+            PEVENT_MAP_INFO mapInfo = nullptr;
+            std::unique_ptr<BYTE[]> mapBuffer;
+            PWSTR mapName = nullptr;
+            if (pi.nonStructType.MapNameOffset) {
+                ULONG size = 0;
+                mapName = (PWSTR)((BYTE*)info + pi.nonStructType.MapNameOffset);
+                if (ERROR_INSUFFICIENT_BUFFER == ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size)) {
+                    mapBuffer = std::make_unique<BYTE[]>(size);
+                    mapInfo = reinterpret_cast<PEVENT_MAP_INFO>(mapBuffer.get());
+                    if (ERROR_SUCCESS != ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size))
+                        mapInfo = nullptr;
+                }
+            }
+
+            ULONG size = sizeof(value);
+            USHORT consumed;
+            auto error = ::TdhFormatProperty(info, mapInfo, pointerSize,
+                pi.nonStructType.InType, pi.nonStructType.OutType,
+                (USHORT)len, userlen, data, &size, value, &consumed);
+
+            // 提取数据
+            if (ERROR_SUCCESS == error) {
+                len = consumed;
+                if (mapName)
+                    lstrcatW(value, mapName);
+            }
+            else if (mapInfo) {
+                error = ::TdhFormatProperty(info, nullptr, pointerSize,
+                    pi.nonStructType.InType, pi.nonStructType.OutType,
+                    (USHORT)len, userlen, data, &size, value, &consumed);
+            }
+
         }
 
-        g_ms.Lock();
-        g_tracMap.erase(iter++);
-        g_ms.Unlock();
+        userlen -= (USHORT)len;
+        data += len;
+
+        if (0 == lstrcmpW(L"ProcessId", propName.c_str()))
+        {
+            process_info.processId = wcstol(value, &end, 16);
+        }
+        else if (0 == lstrcmpW(L"ExitStatus", propName.c_str()))
+        {
+            // 进程 Exit 不关注
+            if (0 >= _wtoi(value))
+                return;
+        }
+        else if (0 == lstrcmpW(L"CommandLine", propName.c_str()))
+        {
+            if (0 >= lstrlenW(value))
+                return;
+            // 以' '截取[0].Str();
+            if (0 >= lstrlenW(value))
+                return;
+            tmpstr = value;
+            auto nums = tmpstr.find(L".exe");
+            tmpstr = tmpstr.substr(0, nums + 4);
+            if (0 >= tmpstr.size())
+                return;
+            lstrcpyW(process_info.processPath, tmpstr.c_str());
+        }
     }
 
-    size_t  i = 0;
+    if (0 >= lstrlenW(process_info.processPath))
+        return;
+    g_mutx_pidpath.lock();
+    mutxpidpath_map[process_info.processId] = process_info;
+    g_mutx_pidpath.unlock();
+}
+void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
+{
+    WCHAR sguid[64];
+    auto& header = pEvent->EventHeader;
+    ::StringFromGUID2(header.ProviderId, sguid, _countof(sguid));
 
-    g_th.Lock();
-    for (i = 0; i < g_thrhandle.size(); ++i)
-    {
-        WaitForSingleObject(g_thrhandle[i], 2000);
-        CloseHandle(g_thrhandle[i]);
+    ULONG size = 0;
+    auto status = ::TdhGetEventInformation(pEvent, 0, nullptr, nullptr, &size);
+    if (size <= 0)
+        return;
+
+    auto buffer = std::make_unique<BYTE[]>(size);
+    if (!buffer) {
+        OutputDebugString(L"buffer Error Exit Etw Monitor");
+        ::ExitProcess(1);
     }
-    g_thrhandle.clear();
-    g_th.Unlock();
 
-    return true;
+    auto info = reinterpret_cast<PTRACE_EVENT_INFO>(buffer.get());
+    status = ::TdhGetEventInformation(pEvent, 0, nullptr, info, &size);
+    if (status != ERROR_SUCCESS)
+        return;
+
+    // {3D6FA8D0-FE05-11D0-9DDA-00C04FD7BA7C} Process
+    // {3D6FA8D1-FE05-11D0-9DDA-00C04FD7BA7C} ThreadGuid
+    // {9A280AC0-C8E0-11D1-84E2-00C04FB998A2} TcpIp
+    if (0 == lstrcmpW(L"{9A280AC0-C8E0-11D1-84E2-00C04FB998A2}", sguid))
+        NetWorkEventInfo(pEvent, info);
+    //else if (0 == lstrcmpW(L"3D6FA8D1-FE05-11D0-9DDA-00C04FD7BA7C", sguid))
+    //    ThreadEventInfo(pEvent, info);
+    else if (0 == lstrcmpW(L"{3D6FA8D0-FE05-11D0-9DDA-00C04FD7BA7C}", sguid))
+        ProcessEventInfo(pEvent, info);
 }
 
 ///////////////////////////////////
-// 注册ETW事件
-bool UEtw::uf_RegisterTrace(
-    const int dwEnableFlags
-)
+// Session注册启动/跟踪/回调
+static DWORD WINAPI tracDispaththread(LPVOID param)
+{
+    EVENT_TRACE_LOGFILE trace;
+    memset(&trace, 0, sizeof(trace));
+    trace.LoggerName = const_cast<wchar_t*>(KERNEL_LOGGER_NAME);
+    trace.LogFileName = NULL;
+    trace.ProcessTraceMode = PROCESS_TRACE_MODE_REAL_TIME | PROCESS_TRACE_MODE_EVENT_RECORD;
+    trace.Context = NULL;
+    trace.EventRecordCallback = DispatchEventHandle;
+
+    TRACEHANDLE handle = OpenTrace(&trace);
+    if (handle == (TRACEHANDLE)INVALID_HANDLE_VALUE)
+        return 0;
+    OutputDebugString(L"ProcessTrace Start");
+    ProcessTrace(&handle, 1, 0, 0);
+    CloseTrace(handle);
+    return 0;
+}
+bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
 {
     printf("uf_RegisterTrace Entry\n");
     ULONG status = 0;
@@ -191,7 +426,7 @@ bool UEtw::uf_RegisterTrace(
                     if (m_traceconfig)
                         delete[] m_traceconfig;
                     return false;
-                }      
+                }
             }
         }
         else
@@ -221,6 +456,53 @@ bool UEtw::uf_RegisterTrace(
 
     return true;
 }
+bool UEtw::uf_init()
+{
+    OutputDebugString(L"Etw nf_init - uf_RegisterTrace");
+#ifdef _DEBUG
+    // EVENT_TRACE_FLAG_NETWORK_TCPIP EVENT_TRACE_FLAG_THREAD
+    uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS | EVENT_TRACE_FLAG_NETWORK_TCPIP);
+    getchar();
+    return 1;
+#else
+    // EVENT_TRACE_FLAG_THREAD
+    return uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | EVENT_TRACE_FLAG_PROCESS);
+#endif
+}
+bool UEtw::uf_close()
+{
+    map<TRACEHANDLE, TracGuidNode>::iterator  iter;
+
+    for (iter = g_tracMap.begin(); iter != g_tracMap.end();)
+    {
+
+        if (iter->first && iter->second.bufconfig)
+            ControlTrace(iter->first, KERNEL_LOGGER_NAME, iter->second.bufconfig, EVENT_TRACE_CONTROL_STOP);
+
+        if (iter->second.bufconfig)
+        {
+            delete[] iter->second.bufconfig;
+            iter->second.bufconfig = NULL;
+        }
+
+        g_ms.Lock();
+        g_tracMap.erase(iter++);
+        g_ms.Unlock();
+    }
+
+    size_t  i = 0;
+
+    g_th.Lock();
+    for (i = 0; i < g_thrhandle.size(); ++i)
+    {
+        WaitForSingleObject(g_thrhandle[i], 2000);
+        CloseHandle(g_thrhandle[i]);
+    }
+    g_thrhandle.clear();
+    g_th.Unlock();
+
+    return true;
+}
 
 /// <summary>
 /// 设置某事件状态
@@ -247,170 +529,4 @@ unsigned long UEtw::uf_setmonitor(
     }
 
     return nRet;
-}
-
-
-/// <summary>
-/// 事件分发处理
-/// </summary>
-/// <param name="rec"></param>
-/// <param name="info"></param>
-/// 引用：https://github.com/zodiacon/Win10SysProgBookSamples/blob/3e7a7e4d4898ec1c197421127b652737164a668f/Chapter20/KernelETW/KernelETW.cpp
-void DisplayEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
-    if (info->KeywordsNameOffset)
-        printf("Keywords: %ws ", (PCWSTR)((BYTE*)info + info->KeywordsNameOffset));
-    if (info->OpcodeNameOffset)
-        printf("Opcode: %ws ", (PCWSTR)((BYTE*)info + info->OpcodeNameOffset));
-    if (info->LevelNameOffset)
-        printf("Level: %ws ", (PCWSTR)((BYTE*)info + info->LevelNameOffset));
-    if (info->TaskNameOffset)
-        printf("Task: %ws ", (PCWSTR)((BYTE*)info + info->TaskNameOffset));
-    if (info->EventMessageOffset)
-        printf("\nMessage: %ws", (PCWSTR)((BYTE*)info + info->EventMessageOffset));
-
-    printf("\nProperties: %u\n", info->TopLevelPropertyCount);
-
-    // properties data length and pointer
-    auto userlen = rec->UserDataLength;
-    auto data = (PBYTE)rec->UserData;
-
-    auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
-    ULONG len;
-    WCHAR value[512];
-
-    for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
-        auto& pi = info->EventPropertyInfoArray[i];
-        auto propName = (PCWSTR)((BYTE*)info + pi.NameOffset);
-        printf(" Name: %ws ", propName);
-
-        len = pi.length;
-        if ((pi.Flags & (PropertyStruct | PropertyParamCount)) == 0) {
-            //
-            // deal with simple properties only
-            //
-            PEVENT_MAP_INFO mapInfo = nullptr;
-            std::unique_ptr<BYTE[]> mapBuffer;
-            PWSTR mapName = nullptr;
-            //
-            // retrieve map information (if any)
-            //
-            if (pi.nonStructType.MapNameOffset) {
-                ULONG size = 0;
-                mapName = (PWSTR)((BYTE*)info + pi.nonStructType.MapNameOffset);
-                if (ERROR_INSUFFICIENT_BUFFER == ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size)) {
-                    mapBuffer = std::make_unique<BYTE[]>(size);
-                    mapInfo = reinterpret_cast<PEVENT_MAP_INFO>(mapBuffer.get());
-                    if (ERROR_SUCCESS != ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size))
-                        mapInfo = nullptr;
-                }
-            }
-
-            ULONG size = sizeof(value);
-            USHORT consumed;
-            // special case for IPv6 address
-            if (pi.nonStructType.InType == TDH_INTYPE_BINARY && pi.nonStructType.OutType == TDH_OUTTYPE_IPV6)
-                len = sizeof(IN6_ADDR);
-
-            auto error = ::TdhFormatProperty(info, mapInfo, pointerSize,
-                pi.nonStructType.InType, pi.nonStructType.OutType,
-                (USHORT)len, userlen, data, &size, value, &consumed);
-            if (ERROR_SUCCESS == error) {
-                printf("Value: %ws", value);
-                len = consumed;
-                if (mapName)
-                    printf(" (%ws)", (PCWSTR)mapName);
-                printf("\n");
-            }
-            else if (mapInfo) {
-                error = ::TdhFormatProperty(info, nullptr, pointerSize,
-                    pi.nonStructType.InType, pi.nonStructType.OutType,
-                    (USHORT)len, userlen, data, &size, value, &consumed);
-                if (ERROR_SUCCESS == error)
-                    printf("Value: %ws\n", value);
-            }
-            if (ERROR_SUCCESS != error)
-                printf("(failed to get value)\n");
-        }
-        else {
-            printf("(not a simple property)\n");
-        }
-        userlen -= (USHORT)len;
-        data += len;
-    }
-
-    printf("\n");
-}
-void DisplayGeneralEventInfo(PEVENT_RECORD rec) {
-    WCHAR sguid[64];
-    auto& header = rec->EventHeader;
-    ::StringFromGUID2(header.ProviderId, sguid, _countof(sguid));
-    //printf("Provider: %ws Time: %ws PID: %u TID: %u\n",
-    //    sguid, (PCWSTR)CTime(*(FILETIME*)&header.TimeStamp).Format(L"%c"),
-    //    header.ProcessId, header.ThreadId);
-}
-
-///////////////////////////////////////////////////
-// ProcessEvent_callback
-void WINAPI ProcessEvent(PEVENT_RECORD pEvent)
-{
-    DisplayGeneralEventInfo(pEvent);
-
-    ULONG size = 0;
-    // 检索元数据 - 拿大小
-    auto status = ::TdhGetEventInformation(pEvent, 0, nullptr, nullptr, &size);
-    if (size <= 0)
-        return;
-
-    auto buffer = std::make_unique<BYTE[]>(size);
-    if (!buffer) {
-        ::ExitProcess(1);
-    }
-
-    // 拿数据
-    auto info = reinterpret_cast<PTRACE_EVENT_INFO>(buffer.get());
-    status = ::TdhGetEventInformation(pEvent, 0, nullptr, info, &size);
-    if (status != ERROR_SUCCESS)
-        return;
-
-    // 分发处理
-    DisplayEventInfo(pEvent, info);
-}
-void WINAPI ThreadEvent(PEVENT_RECORD pEvent)
-{
-}
-void WINAPI ImageEvent(PEVENT_RECORD pEvent)
-{
-}
-void WINAPI TcpIpEvent(PEVENT_RECORD pEvent)
-{
-    DisplayGeneralEventInfo(pEvent);
-
-    ULONG size = 0;
-    // 检索元数据 - 拿大小
-    auto status = ::TdhGetEventInformation(pEvent, 0, nullptr, nullptr, &size);
-    if (size <= 0)
-        return;
-
-    auto buffer = std::make_unique<BYTE[]>(size);
-    if (!buffer) {
-        ::ExitProcess(1);
-    }
-
-    // 拿数据
-    auto info = reinterpret_cast<PTRACE_EVENT_INFO>(buffer.get());
-    status = ::TdhGetEventInformation(pEvent, 0, nullptr, info, &size);
-    if (status != ERROR_SUCCESS)
-        return;
-
-    // 分发处理
-    DisplayEventInfo(pEvent, info);
-}
-void WINAPI RegisterEvent(PEVENT_RECORD pEvent) 
-{
-}
-void WINAPI FileEvent(PEVENT_RECORD pEvent)
-{
-}
-void WINAPI SystemInfoEvent(PEVENT_RECORD pEvent)
-{
 }

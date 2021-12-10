@@ -71,7 +71,6 @@ bool Grpc::Grpc_Transfer(RawData rawData)
 
     return true;
 }
-
 bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
 {
     dwAllocateMemSize = 0;

@@ -474,4 +474,50 @@ typedef struct _UDriectInfo
     UDriectFile fileEntry[0xffff];
 }UDriectInfo, *PUDriectInfo;
 
+////////////////////////////////////
+// Etw
+typedef struct _PROCESS_INFO
+{
+    WCHAR  processPath[MAX_PATH * 2];
+    UINT64 processId;
+}PROCESS_INFO, * PPROCESS_INFO;
+typedef USHORT ADDRESS_FAMILY;
+#define FWP_BYTE_ARRAY6_SIZE 6
+typedef struct FWP_BYTE_ARRAY16_
+{
+    UINT8 byteArray16[16];
+} 	FWP_BYTE_ARRAY16;
+typedef struct _NF_CALLOUT_FLOWESTABLISHED_INFO
+{
+    ADDRESS_FAMILY addressFamily;
+#pragma warning(push)
+#pragma warning(disable: 4201) //NAMELESS_STRUCT_UNION
+    union
+    {
+        FWP_BYTE_ARRAY16 localAddr;
+        UINT32 ipv4LocalAddr;
+    };
+#pragma warning(pop)
+    UINT16 toLocalPort;
+
+    UINT8 protocol;
+
+#pragma warning(push)
+#pragma warning(disable: 4201) //NAMELESS_STRUCT_UNION
+    union
+    {
+        FWP_BYTE_ARRAY16 RemoteAddr;
+        UINT32 ipv4toRemoteAddr;
+    };
+#pragma warning(pop)
+    UINT16 toRemotePort;
+
+    WCHAR  processPath[MAX_PATH * 2];
+    int	   processPathSize;
+    ULONG  processId;
+}NF_CALLOUT_FLOWESTABLISHED_INFO, * PNF_CALLOUT_FLOWESTABLISHED_INFO;
+
+// wchar to string
+void Wchar_tToString(std::string& szDst, wchar_t* wchar);
+
 #endif // !_SYSINFO_H
