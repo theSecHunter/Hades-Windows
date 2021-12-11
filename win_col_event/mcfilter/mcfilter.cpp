@@ -303,6 +303,8 @@ DWORD pthread_grpread(LPVOID lpThreadParameter)
 	return 1;
 }
 
+//////////////////////////////////////////////
+// Example
 int main(int argc, char* argv[])
 {
 	// Etw 单独模块测试

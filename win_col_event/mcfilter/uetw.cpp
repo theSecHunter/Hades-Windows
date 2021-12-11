@@ -57,7 +57,7 @@ DWORD GetPathByProcessId(wchar_t* path, const  DWORD dwPid)
         return false;
     return GetModuleFileNameEx(hProcess, NULL, path, MAX_PATH);
 }
-DWORD uf_GetProcessEventStr(wstring& propName)
+DWORD uf_GetNetWrokEventStr(wstring& propName)
 {
     DWORD Code = 0;
 
@@ -123,7 +123,7 @@ void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
         auto& pi = info->EventPropertyInfoArray[i];
         propName = (PCWSTR)((BYTE*)info + pi.NameOffset);
 
-        nCode = uf_GetProcessEventStr(propName);
+        nCode = uf_GetNetWrokEventStr(propName);
 
         len = pi.length;
         if ((pi.Flags & (PropertyStruct | PropertyParamCount)) == 0) {
@@ -332,6 +332,356 @@ void ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     mutxpidpath_map[process_info.processId] = process_info;
     g_mutx_pidpath.unlock();
 }
+void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
+{
+    wstring taskName;
+    if (info->TaskNameOffset)
+    {
+        taskName = (PCWSTR)((BYTE*)info + info->TaskNameOffset);
+    }
+    else
+        return;
+
+    // properties data length and pointer
+    auto userlen = rec->UserDataLength;
+    auto data = (PBYTE)rec->UserData;
+    auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
+
+    ULONG len; WCHAR value[512];
+    wstring  tmpstr; wstring propName;
+    PROCESS_INFO process_info = { 0, };
+    wchar_t* end;
+
+    for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
+
+        propName.clear(); tmpstr.clear();
+
+        auto& pi = info->EventPropertyInfoArray[i];
+        propName = (PCWSTR)((BYTE*)info + pi.NameOffset);
+        len = pi.length;
+        if ((pi.Flags & (PropertyStruct | PropertyParamCount)) == 0) {
+            PEVENT_MAP_INFO mapInfo = nullptr;
+            std::unique_ptr<BYTE[]> mapBuffer;
+            PWSTR mapName = nullptr;
+            if (pi.nonStructType.MapNameOffset) {
+                ULONG size = 0;
+                mapName = (PWSTR)((BYTE*)info + pi.nonStructType.MapNameOffset);
+                if (ERROR_INSUFFICIENT_BUFFER == ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size)) {
+                    mapBuffer = std::make_unique<BYTE[]>(size);
+                    mapInfo = reinterpret_cast<PEVENT_MAP_INFO>(mapBuffer.get());
+                    if (ERROR_SUCCESS != ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size))
+                        mapInfo = nullptr;
+                }
+            }
+
+            ULONG size = sizeof(value);
+            USHORT consumed;
+            auto error = ::TdhFormatProperty(info, mapInfo, pointerSize,
+                pi.nonStructType.InType, pi.nonStructType.OutType,
+                (USHORT)len, userlen, data, &size, value, &consumed);
+
+            // 提取数据
+            if (ERROR_SUCCESS == error) {
+                len = consumed;
+                if (mapName)
+                    lstrcatW(value, mapName);
+            }
+            else if (mapInfo) {
+                error = ::TdhFormatProperty(info, nullptr, pointerSize,
+                    pi.nonStructType.InType, pi.nonStructType.OutType,
+                    (USHORT)len, userlen, data, &size, value, &consumed);
+            }
+
+        }
+
+        userlen -= (USHORT)len;
+        data += len;
+
+        if (0 == lstrcmpW(propName.c_str(), L"ProcessId")){
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"TThreadId")){
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"StackBase")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"StackLimit")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"UserStackBase")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"UserStackLimit")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"Affinity")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"Win32StartAddr")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"TebBase")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"SubProcessTag")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"BasePriority")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"PagePriority")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"IoPriority")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"ThreadFlags")) {
+        }
+    }
+
+}
+void FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
+{
+    wstring taskName;
+    if (info->TaskNameOffset)
+    {
+        taskName = (PCWSTR)((BYTE*)info + info->TaskNameOffset);
+    }
+    else
+        return;
+
+    // properties data length and pointer
+    auto userlen = rec->UserDataLength;
+    auto data = (PBYTE)rec->UserData;
+    auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
+
+    ULONG len; WCHAR value[512];
+    wstring  tmpstr; wstring propName;
+    PROCESS_INFO process_info = { 0, };
+    wchar_t* end;
+
+    for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
+
+        propName.clear(); tmpstr.clear();
+
+        auto& pi = info->EventPropertyInfoArray[i];
+        propName = (PCWSTR)((BYTE*)info + pi.NameOffset);
+        len = pi.length;
+        if ((pi.Flags & (PropertyStruct | PropertyParamCount)) == 0) {
+            PEVENT_MAP_INFO mapInfo = nullptr;
+            std::unique_ptr<BYTE[]> mapBuffer;
+            PWSTR mapName = nullptr;
+            if (pi.nonStructType.MapNameOffset) {
+                ULONG size = 0;
+                mapName = (PWSTR)((BYTE*)info + pi.nonStructType.MapNameOffset);
+                if (ERROR_INSUFFICIENT_BUFFER == ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size)) {
+                    mapBuffer = std::make_unique<BYTE[]>(size);
+                    mapInfo = reinterpret_cast<PEVENT_MAP_INFO>(mapBuffer.get());
+                    if (ERROR_SUCCESS != ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size))
+                        mapInfo = nullptr;
+                }
+            }
+
+            ULONG size = sizeof(value);
+            USHORT consumed;
+            auto error = ::TdhFormatProperty(info, mapInfo, pointerSize,
+                pi.nonStructType.InType, pi.nonStructType.OutType,
+                (USHORT)len, userlen, data, &size, value, &consumed);
+
+            // 提取数据
+            if (ERROR_SUCCESS == error) {
+                len = consumed;
+                if (mapName)
+                    lstrcatW(value, mapName);
+            }
+            else if (mapInfo) {
+                error = ::TdhFormatProperty(info, nullptr, pointerSize,
+                    pi.nonStructType.InType, pi.nonStructType.OutType,
+                    (USHORT)len, userlen, data, &size, value, &consumed);
+            }
+
+        }
+
+        userlen -= (USHORT)len;
+        data += len;
+
+        if (0 == lstrcmpW(propName.c_str(), L"Offset")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"IrpPtr")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"FileObject")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"FileKey")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"TTID")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"IoSize")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"IoFlags")) {
+        }
+    }
+}
+void RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
+{
+    wstring taskName;
+    if (info->TaskNameOffset)
+    {
+        taskName = (PCWSTR)((BYTE*)info + info->TaskNameOffset);
+    }
+    else
+        return;
+
+    // properties data length and pointer
+    auto userlen = rec->UserDataLength;
+    auto data = (PBYTE)rec->UserData;
+    auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
+
+    ULONG len; WCHAR value[512];
+    wstring  tmpstr; wstring propName;
+    PROCESS_INFO process_info = { 0, };
+    wchar_t* end;
+
+    for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
+
+        propName.clear(); tmpstr.clear();
+
+        auto& pi = info->EventPropertyInfoArray[i];
+        propName = (PCWSTR)((BYTE*)info + pi.NameOffset);
+        len = pi.length;
+        if ((pi.Flags & (PropertyStruct | PropertyParamCount)) == 0) {
+            PEVENT_MAP_INFO mapInfo = nullptr;
+            std::unique_ptr<BYTE[]> mapBuffer;
+            PWSTR mapName = nullptr;
+            if (pi.nonStructType.MapNameOffset) {
+                ULONG size = 0;
+                mapName = (PWSTR)((BYTE*)info + pi.nonStructType.MapNameOffset);
+                if (ERROR_INSUFFICIENT_BUFFER == ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size)) {
+                    mapBuffer = std::make_unique<BYTE[]>(size);
+                    mapInfo = reinterpret_cast<PEVENT_MAP_INFO>(mapBuffer.get());
+                    if (ERROR_SUCCESS != ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size))
+                        mapInfo = nullptr;
+                }
+            }
+
+            ULONG size = sizeof(value);
+            USHORT consumed;
+            auto error = ::TdhFormatProperty(info, mapInfo, pointerSize,
+                pi.nonStructType.InType, pi.nonStructType.OutType,
+                (USHORT)len, userlen, data, &size, value, &consumed);
+
+            // 提取数据
+            if (ERROR_SUCCESS == error) {
+                len = consumed;
+                if (mapName)
+                    lstrcatW(value, mapName);
+            }
+            else if (mapInfo) {
+                error = ::TdhFormatProperty(info, nullptr, pointerSize,
+                    pi.nonStructType.InType, pi.nonStructType.OutType,
+                    (USHORT)len, userlen, data, &size, value, &consumed);
+            }
+
+        }
+
+        userlen -= (USHORT)len;
+        data += len;
+
+        if (0 == lstrcmpW(propName.c_str(), L"InitialTime")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"Status")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"Index")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"KeyHandle")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"KeyName")) {
+        }
+    }
+
+}
+void ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
+{
+    wstring taskName;
+    if (info->TaskNameOffset)
+    {
+        taskName = (PCWSTR)((BYTE*)info + info->TaskNameOffset);
+    }
+    else
+        return;
+
+    // properties data length and pointer
+    auto userlen = rec->UserDataLength;
+    auto data = (PBYTE)rec->UserData;
+    auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
+
+    ULONG len; WCHAR value[512];
+    wstring  tmpstr; wstring propName;
+    PROCESS_INFO process_info = { 0, };
+    wchar_t* end;
+
+    for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
+
+        propName.clear(); tmpstr.clear();
+
+        auto& pi = info->EventPropertyInfoArray[i];
+        propName = (PCWSTR)((BYTE*)info + pi.NameOffset);
+        len = pi.length;
+        if ((pi.Flags & (PropertyStruct | PropertyParamCount)) == 0) {
+            PEVENT_MAP_INFO mapInfo = nullptr;
+            std::unique_ptr<BYTE[]> mapBuffer;
+            PWSTR mapName = nullptr;
+            if (pi.nonStructType.MapNameOffset) {
+                ULONG size = 0;
+                mapName = (PWSTR)((BYTE*)info + pi.nonStructType.MapNameOffset);
+                if (ERROR_INSUFFICIENT_BUFFER == ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size)) {
+                    mapBuffer = std::make_unique<BYTE[]>(size);
+                    mapInfo = reinterpret_cast<PEVENT_MAP_INFO>(mapBuffer.get());
+                    if (ERROR_SUCCESS != ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size))
+                        mapInfo = nullptr;
+                }
+            }
+
+            ULONG size = sizeof(value);
+            USHORT consumed;
+            auto error = ::TdhFormatProperty(info, mapInfo, pointerSize,
+                pi.nonStructType.InType, pi.nonStructType.OutType,
+                (USHORT)len, userlen, data, &size, value, &consumed);
+
+            // 提取数据
+            if (ERROR_SUCCESS == error) {
+                len = consumed;
+                if (mapName)
+                    lstrcatW(value, mapName);
+            }
+            else if (mapInfo) {
+                error = ::TdhFormatProperty(info, nullptr, pointerSize,
+                    pi.nonStructType.InType, pi.nonStructType.OutType,
+                    (USHORT)len, userlen, data, &size, value, &consumed);
+            }
+
+        }
+
+        userlen -= (USHORT)len;
+        data += len;
+
+        if (0 == lstrcmpW(propName.c_str(), L"ImageBase")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"ImageSize")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"ProcessId")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"ImageChecksum")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"TimeDateStamp")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"SignatureLevel")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"SignatureType")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"Reserved0")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"DefaultBase")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"Reserved1")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"Reserved2")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"Reserved3")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"Reserved4")) {
+        }
+        else if (0 == lstrcmpW(propName.c_str(), L"FileName")) {
+        }
+    }
+}
 void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
 {
     WCHAR sguid[64];
@@ -354,15 +704,19 @@ void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
     if (status != ERROR_SUCCESS)
         return;
 
-    // {3D6FA8D0-FE05-11D0-9DDA-00C04FD7BA7C} Process
-    // {3D6FA8D1-FE05-11D0-9DDA-00C04FD7BA7C} ThreadGuid
-    // {9A280AC0-C8E0-11D1-84E2-00C04FB998A2} TcpIp
-    if (0 == lstrcmpW(L"{9A280AC0-C8E0-11D1-84E2-00C04FB998A2}", sguid))
+    if (0 == lstrcmpW(L"{9A280AC0-C8E0-11D1-84E2-00C04FB998A2}", sguid) || \
+        0 == lstrcmpW(L"{BF3A50C5-A9C9-4988-A005-2DF0B7C80F80}", sguid))
         NetWorkEventInfo(pEvent, info);
-    //else if (0 == lstrcmpW(L"3D6FA8D1-FE05-11D0-9DDA-00C04FD7BA7C", sguid))
-    //    ThreadEventInfo(pEvent, info);
+    else if (0 == lstrcmpW(L"{3D6FA8D1-FE05-11D0-9DDA-00C04FD7BA7C}", sguid))
+        ThreadEventInfo(pEvent, info);
     else if (0 == lstrcmpW(L"{3D6FA8D0-FE05-11D0-9DDA-00C04FD7BA7C}", sguid))
         ProcessEventInfo(pEvent, info);
+    else if (0 == lstrcmpW(L"{90CBDC39-4A3E-11D1-84F4-0000F80464E3}", sguid))
+        FileEventInfo(pEvent, info);
+    else if (0 == lstrcmpW(L"{AE53722E-C863-11D2-8659-00C04FA321A1}", sguid))
+        RegisterTabEventInfo(pEvent, info);
+    else if (0 == lstrcmpW(L"{2CB15D1D-5FC1-11D2-ABE1-00A0C911F518}", sguid))
+        ImageModEventInfo(pEvent, info);
 }
 
 ///////////////////////////////////
@@ -465,8 +819,17 @@ bool UEtw::uf_init()
     getchar();
     return 1;
 #else
-    // EVENT_TRACE_FLAG_THREAD
-    return uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | EVENT_TRACE_FLAG_PROCESS);
+    // 目前使用用一个Session: 优点不用管理，缺点没办法单独监控某个事件。
+    // 如果单独监控，创建多个Session来管理，注册多个uf_RegisterTrace即可。
+    // EVENT_TRACE_FLAG_SYSTEMCALL
+    return uf_RegisterTrace(
+        EVENT_TRACE_FLAG_NETWORK_TCPIP | \
+        EVENT_TRACE_FLAG_PROCESS | \
+        EVENT_TRACE_FLAG_THREAD | \
+        EVENT_TRACE_FLAG_IMAGE_LOAD | \
+        EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
+        EVENT_TRACE_FLAG_REGISTRY
+    );
 #endif
 }
 bool UEtw::uf_close()
