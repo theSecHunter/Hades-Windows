@@ -478,9 +478,9 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 			while (readBytes >= (sizeof(NF_DATA) - 1))
 			{
 				// push grpc
-				if (greeter_sysmonitor)
-					greeter_sysmonitor->Grpc_pushQueue(pData->code, pData->buffer, pData->bufferSize);
-				//handleEventDispath(pData);
+				//if (greeter_sysmonitor)
+				//	greeter_sysmonitor->Grpc_pushQueue(pData->code, pData->buffer, pData->bufferSize);
+				handleEventDispath(pData);
 
 				if ((pData->code == NF_PROCESS_INFO ||
 					pData->code == NF_THREAD_INFO ||

@@ -27,8 +27,9 @@ const char devSyLinkName[] = "\\??\\KernelDark";
 const int max_size = MAX_PATH * 3;
 
 // 标志控制 - 后续config里面配置
-static bool kerne_mon = false;
-static bool etw_mon = true;
+static bool kerne_mon = true;
+static bool user_mod = false;	// grpc开启后在开启
+static bool etw_mon = false;	// 可以直接开启
 
 typedef struct _PE_CONTROL{
 	string name;
@@ -429,50 +430,52 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
-		cout << "Rootkit下发接口测试请按空格" << endl;
-		system("pause");
-		/*
-			Grpc下发接口测试
-		*/
-		Command cmd;
-		cmd.set_agentctrl(100);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		getchar();
 
-		cmd.Clear();
-		cmd.set_agentctrl(101);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cout << "Rootkit下发接口测试请按空格" << endl;
+		//system("pause");
+		///*
+		//	Grpc下发接口测试
+		//*/
+		//Command cmd;
+		//cmd.set_agentctrl(100);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(103);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(101);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(108);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(103);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(109);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(108);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(110);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(109);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(111);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(110);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(113);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(111);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(115);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(113);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
+
+		//cmd.Clear();
+		//cmd.set_agentctrl(115);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 	}
 
 	// user mod
-	if (false == kerne_mon)
+	if (true == user_mod)
 	{
 		cout << "User下发接口测试" << endl;
 		Command cmd;
