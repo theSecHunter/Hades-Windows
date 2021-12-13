@@ -29,30 +29,6 @@
 
 <center><h3>v1.0</h3></center>
 
-##### WFP v3.0
-
-| 网络层       | 描述  |
-| :--------- | :---- |
-| Established层 | ProcessInfo |
-| 传输层     | TCP - UDP |
-| 网络层   | IP |
-| 数据链路层 | OS >= Windows10 |
-
-**v3.0引入WFP流量隔离**
-
-Json配置流量规则(未生效):
-
- ```
- (流量规则)
- Json:
-  {
-  Bypass:
- 	1 - 单要素：目标 port 或者 ip 
- 	2 - 双要素：目标 ip:port  
- 	3 - 重定向标志位 - 暂时不开启(流量隔离)
-  }
- ```
-
 ##### 内核回调上抛事件 v1.0
 
 | 事件   | 描述  |
@@ -91,6 +67,8 @@ Json配置内核上抛事件管理(未生效):
 | GDT | 系统GDT - (原始偏移 - 内存已加载偏移) HOOK检测 |
 | 回调检测   | 枚举系统注册的回调 |
 
+**Win7上Rootkit接口未测试，接口Win10 1903测试**
+
 ##### 应用接口采集事件 v1.0
 
 前身：https://github.com/TimelifeCzy/Windows-emergency-servicetools，集成至该项目.
@@ -120,7 +98,29 @@ Json配置内核上抛事件管理(未生效):
 
 **Etw事件结构See: etw_event_struct.md**
 
-**v2.0引入ETW应用层实时监控**
+##### WFP v3.0
+
+| 网络层        | 描述            |
+| :------------ | :-------------- |
+| Established层 | ProcessInfo     |
+| 传输层        | TCP - UDP       |
+| 网络层        | IP              |
+| 数据链路层    | OS >= Windows10 |
+
+**v3.0引入WFP流量隔离**
+
+Json配置流量规则(未生效):
+
+```
+(流量规则)
+Json:
+ {
+ Bypass:
+	1 - 单要素：目标 port 或者 ip 
+	2 - 双要素：目标 ip:port  
+	3 - 重定向标志位 - 暂时不开启(流量隔离)
+ }
+```
 
 ##### GRPC v1.0
 
@@ -138,9 +138,9 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 
 #### 规划：
 
-&emsp;&emsp;**项目处于入门级，很多设计需要时间打磨和重构。关于Minifilter驱动，仅文件监控不会引入该模块，应用层ETW日志弥补，后期如果有文件隔离相关规划将会纳入。**
+&emsp;&emsp;**项目处于入门级，很多设计需要时间打磨和重构。关于WFP/Minifilter驱动，仅流量文件监控不会引入，应用层ETW日志弥补。**
 
-&emsp;&emsp;**它并不是以产品形态诞生，希望日后它变得更加灵活更健壮，以插件提供lib/dll，集成至任意终端产品，包括办公软件 - 游戏音频，提供更多软件第三方安全能力建设和数据检测。**
+&emsp;&emsp;**它并不是以产品形态诞生，起步扮演的角色是Hids，希望日后更灵活更健壮，以插件提供lib/dll，集成至任意终端产品，包括办公软件 - 游戏音频，提供更多终端软件第三方安全建设/检测的能力。**
 
 ##### v2.0
 
@@ -153,10 +153,12 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 
 ##### v3.0
 
+**从v3.0开始，流量和文件不局限于监控分析，有更多的玩法扩展。**
+
 | 任务                                                         | 优先级 |
 | ------------------------------------------------------------ | ------ |
-| 流量隔离：WFP进程指定重定向和bypass                          | 高     |
-| 文件备份：Minfilter，如Cmd - Powershell - Vbs下载文件，Minifilter自动备份至指定目录 | 高     |
+| 流量隔离：基于WFP对进程/IP:PORT重定向和bypass.               | 高     |
+| 文件备份：基于Minfilter对进程文件rwx隔离，对脚本命令和IE下载文件备份.<br>命令不局限于curl/cmd/powershell/vbs/js等形式. | 高     |
 | 优化通信：Win下目前使用Grpc，但是有诸多不变。引入IOCP模块，后续如果server使用Epoll，无缝对接。 | 中     |
 
 #### 参考：
