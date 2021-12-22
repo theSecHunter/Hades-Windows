@@ -144,12 +144,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -209,6 +209,7 @@
     <ClInclude Include="nf_api.h" />
     <ClInclude Include="ntbasic.h" />
     <ClInclude Include="ArkSsdt.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="sync.h" />
     <ClInclude Include="sysinfo.h" />
     <ClInclude Include="threadpool.h" />
@@ -225,6 +226,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mcfilter.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="C:\Users\zy.chen\Desktop\hunter_Win_x64_v1.0\hunter.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

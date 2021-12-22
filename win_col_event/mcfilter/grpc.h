@@ -20,7 +20,7 @@ using proto::Command;
 
 using namespace std;
 
-const  char rootcrt_path[] = "./ssl_key/ca.crt";
+const  char rootcrt_path[] = "./ssl_key/ca.pem";
 const  char clientcrt_path[] = "./ssl_key/client.pem";
 const  char clientkey_path[] = "./ssl_key/client_key.pem";
 

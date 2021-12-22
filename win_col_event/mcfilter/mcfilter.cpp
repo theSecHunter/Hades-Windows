@@ -27,9 +27,10 @@ const char devSyLinkName[] = "\\??\\KernelDark";
 const int max_size = MAX_PATH * 3;
 
 // 标志控制 - 后续config里面配置
-static bool kerne_mon = true;
-static bool user_mod = false;	// grpc开启后在开启
-static bool etw_mon = false;	// 可以直接开启
+static bool kerne_mon = true;	// grpc_send = true - rootkit接口开启
+static bool user_mod = true;	// grpc_send = true - user接口开启
+static bool etw_mon = true;
+static bool grpc_send = false;
 
 typedef struct _PE_CONTROL{
 	string name;
@@ -85,7 +86,7 @@ class EventHandler : public NF_EventHandler
 		wstring wstr;
 		WCHAR info[max_size] = { 0, };
 
-		swprintf(info, max_size, L"[Process_Log] Pid: %d\t", processinfo.processid);
+		swprintf(info, max_size, L"[Hades_Kernel][Process_Log] Pid: %d\t", processinfo.processid);
 		if (processinfo.endprocess)
 		{
 			wstr = info;
@@ -122,7 +123,7 @@ class EventHandler : public NF_EventHandler
 		RtlCopyMemory(&threadinfo, buf, len);
 
 		WCHAR info[max_size] = { 0, };
-		swprintf(info, max_size, L"[Thread_Log] Pid: %d Threadid: %d ExitStatus: %d", threadinfo.processid, threadinfo.threadid, threadinfo.createid);
+		swprintf(info, max_size, L"[Hades_Kernel][Thread_Log] Pid: %d Threadid: %d ExitStatus: %d", threadinfo.processid, threadinfo.threadid, threadinfo.createid);
 		OutputDebugString(info);
 	}
 
@@ -133,7 +134,7 @@ class EventHandler : public NF_EventHandler
 		RtlCopyMemory(&imageinfo, buf, len);
 
 		WCHAR info[max_size] = { 0, };
-		swprintf(info, max_size, L"[Image_Log] Pid: %d ImageBase: %p ImageSize: %d \n ImageBasePath: %s", imageinfo.processid, imageinfo.imagebase, imageinfo.imagesize, imageinfo.imagename);
+		swprintf(info, max_size, L"[Hades_Kernel][Image_Log] Pid: %d ImageBase: %p ImageSize: %d \n ImageBasePath: %s", imageinfo.processid, imageinfo.imagebase, imageinfo.imagesize, imageinfo.imagename);
 		OutputDebugString(info);
 	}
 
@@ -188,7 +189,7 @@ class EventHandler : public NF_EventHandler
 		if (opearestring.size())
 		{
 			WCHAR info[max_size] = { 0, };
-			swprintf(info, max_size, L"[Register_Log] Pid: %d Threadid:%d\t%s", registerinfo.processid, registerinfo.threadid, opearestring.data());
+			swprintf(info, max_size, L"[Hades_Kernel][Register_Log] Pid: %d Threadid:%d\t%s", registerinfo.processid, registerinfo.threadid, opearestring.data());
 			OutputDebugString(info);
 		}
 	}
@@ -200,7 +201,7 @@ class EventHandler : public NF_EventHandler
 		RtlCopyMemory(&fileinfo, buf, len);
 
 		WCHAR info[max_size] = { 0, };
-		swprintf(info, max_size, L"[File_Log]: Pid %d Threadid:%d\nDosPath: %s - FileName: %s", fileinfo.processid, fileinfo.threadid, fileinfo.DosName, fileinfo.FileName);
+		swprintf(info, max_size, L"[Hades_Kernel][File_Log]: Pid %d Threadid:%d\nDosPath: %s - FileName: %s", fileinfo.processid, fileinfo.threadid, fileinfo.DosName, fileinfo.FileName);
 		OutputDebugString(info);
 	}
 
@@ -247,7 +248,7 @@ class EventHandler : public NF_EventHandler
 			events += L" - User Remote Login";
 
 		WCHAR info[max_size] = { 0, };
-		swprintf(info, max_size, L"[Session_Log]: Pid %d Threadid:%d\n%s - EventId: %d", sessioninfo.processid, sessioninfo.threadid, events.data(), iosession.SessionId);
+		swprintf(info, max_size, L"[Hades_Kernel][Session_Log]: Pid %d Threadid:%d\n%s - EventId: %d", sessioninfo.processid, sessioninfo.threadid, events.data(), iosession.SessionId);
 		OutputDebugString(info);
 	}
 };
@@ -315,20 +316,21 @@ int main(int argc, char* argv[])
 	//g_testetw.uf_close();
 	//cout << "etw test End" << endl;
 	//exit(0);
-
+	// system("pause");
 	// 
 	// @ Grpc Active Online Send to  Server Msg
 	// SSL
-	// auto rootcert = get_file_contents(rootcrt_path);
-	// auto clientkey = get_file_contents(clientkey_path);
-	// auto clientcert = get_file_contents(clientcrt_path);
-	// grpc::SslCredentialsOptions ssl_opts;
-	// ssl_opts.pem_root_certs = rootcert;
-	// ssl_opts.pem_private_key = clientkey;
-	// ssl_opts.pem_cert_chain = clientcert;
-	// std::shared_ptr<grpc::ChannelCredentials> channel_creds = grpc::SslCredentials(ssl_opts);
+	auto rootcert = get_file_contents(rootcrt_path);
+	auto clientkey = get_file_contents(clientkey_path);
+	auto clientcert = get_file_contents(clientcrt_path);
+	grpc::SslCredentialsOptions ssl_opts;
+	ssl_opts.pem_root_certs = rootcert;
+	ssl_opts.pem_cert_chain = clientcert;
+	ssl_opts.pem_private_key = clientkey;
+	std::shared_ptr<grpc::ChannelCredentials> channel_creds = grpc::SslCredentials(ssl_opts);
 	
 	// Grpc_SSL模式目前不支持 - 认证还有问题
+	// grpc::InsecureChannelCredentials()
 	static Grpc greeter(
 		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));
 
@@ -343,7 +345,10 @@ int main(int argc, char* argv[])
 	rawData.set_version("0.1");
 	rawData.set_agentid("123");
 	rawData.set_timestamp(GetCurrentTime());
-	greeter.Grpc_Transfer(rawData);
+	if (false == greeter.Grpc_Transfer(rawData))
+		grpc_send = false;
+	else
+		grpc_send = true;
 
 	// Send System Onliy Buffer 
 	rawData.Clear();
@@ -361,7 +366,10 @@ int main(int argc, char* argv[])
 	(*MapMessage)["in_ipv4_list"] = "localhost";
 	(*MapMessage)["in_ipv6_list"] = "localhost";
 	(*MapMessage)["data_type"] = "1";
-	greeter.Grpc_Transfer(rawData);
+	if (false == greeter.Grpc_Transfer(rawData))
+		grpc_send = false;
+	else
+		grpc_send = true;
 
 	// start grpc read thread (Wait server Data)
 	DWORD threadid = 0;
@@ -430,52 +438,51 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
-		getchar();
+		if (true == grpc_send)
+		{
+			cout << "Rootkit上报接口测试:" << endl;
 
-		//cout << "Rootkit下发接口测试请按空格" << endl;
-		//system("pause");
-		///*
-		//	Grpc下发接口测试
-		//*/
-		//Command cmd;
-		//cmd.set_agentctrl(100);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+			Command cmd;
+			cmd.set_agentctrl(100);
+			greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(101);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+			cmd.Clear();
+			cmd.set_agentctrl(101);
+			greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(103);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+			cmd.Clear();
+			cmd.set_agentctrl(103);
+			greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(108);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+			cmd.Clear();
+			cmd.set_agentctrl(108);
+			greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(109);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+			cmd.Clear();
+			cmd.set_agentctrl(109);
+			greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(110);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+			cmd.Clear();
+			cmd.set_agentctrl(110);
+			greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(111);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+			cmd.Clear();
+			cmd.set_agentctrl(111);
+			greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(113);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+			cmd.Clear();
+			cmd.set_agentctrl(113);
+			greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(115);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+			cmd.Clear();
+			cmd.set_agentctrl(115);
+			greeter.Grpc_ReadDispatchHandle(cmd);
+		}
+
 	}
 
 	// user mod
-	if (true == user_mod)
+	if (true == grpc_send && true == user_mod)
 	{
 		cout << "User下发接口测试" << endl;
 		Command cmd;

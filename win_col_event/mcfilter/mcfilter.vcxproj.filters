@@ -31,11 +31,17 @@
     <Filter Include="arktools">
       <UniqueIdentifier>{9f63d77f-b3d2-46eb-b893-9f2d2700685d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="md5">
+      <UniqueIdentifier>{ebfa04fc-300f-4e1a-9151-cdf67f7ca9a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="example">
+      <UniqueIdentifier>{9275f2c1-3e58-4a60-8443-fe417ee3446d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="iocp">
+      <UniqueIdentifier>{73a06ba6-f81d-4a6e-b112-3447f113b8ad}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="mcfilter.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\lib_json\json_reader.cpp">
       <Filter>json</Filter>
     </ClCompile>
@@ -46,9 +52,6 @@
       <Filter>json</Filter>
     </ClCompile>
     <ClCompile Include="HlprMiniCom.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="devctrl.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="ArkDpcTimer.cpp">
@@ -86,6 +89,45 @@
     </ClCompile>
     <ClCompile Include="AkrSysDriverDevInfo.cpp">
       <Filter>arktools</Filter>
+    </ClCompile>
+    <ClCompile Include="usysinfo.cpp">
+      <Filter>userevent</Filter>
+    </ClCompile>
+    <ClCompile Include="uautostart.cpp">
+      <Filter>userevent</Filter>
+    </ClCompile>
+    <ClCompile Include="unet.cpp">
+      <Filter>userevent</Filter>
+    </ClCompile>
+    <ClCompile Include="usession.cpp">
+      <Filter>userevent</Filter>
+    </ClCompile>
+    <ClCompile Include="uprocesstree.cpp">
+      <Filter>userevent</Filter>
+    </ClCompile>
+    <ClCompile Include="usysuser.cpp">
+      <Filter>userevent</Filter>
+    </ClCompile>
+    <ClCompile Include="ufile.cpp">
+      <Filter>userevent</Filter>
+    </ClCompile>
+    <ClCompile Include="urootkit.cpp">
+      <Filter>userevent</Filter>
+    </ClCompile>
+    <ClCompile Include="uservicesoftware.cpp">
+      <Filter>userevent</Filter>
+    </ClCompile>
+    <ClCompile Include="MD5.cpp">
+      <Filter>md5</Filter>
+    </ClCompile>
+    <ClCompile Include="uetw.cpp">
+      <Filter>etw</Filter>
+    </ClCompile>
+    <ClCompile Include="mcfilter.cpp">
+      <Filter>example</Filter>
+    </ClCompile>
+    <ClCompile Include="devctrl.cpp">
+      <Filter>example</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -149,8 +191,54 @@
     <ClInclude Include="threadpool.h">
       <Filter>public</Filter>
     </ClInclude>
+    <ClInclude Include="usysinfo.h">
+      <Filter>userevent</Filter>
+    </ClInclude>
+    <ClInclude Include="uautostart.h">
+      <Filter>userevent</Filter>
+    </ClInclude>
+    <ClInclude Include="unet.h">
+      <Filter>userevent</Filter>
+    </ClInclude>
+    <ClInclude Include="usession.h">
+      <Filter>userevent</Filter>
+    </ClInclude>
+    <ClInclude Include="uprocesstree.h">
+      <Filter>userevent</Filter>
+    </ClInclude>
+    <ClInclude Include="usysuser.h">
+      <Filter>userevent</Filter>
+    </ClInclude>
+    <ClInclude Include="uservicesoftware.h">
+      <Filter>userevent</Filter>
+    </ClInclude>
+    <ClInclude Include="ufile.h">
+      <Filter>userevent</Filter>
+    </ClInclude>
+    <ClInclude Include="urootkit.h">
+      <Filter>userevent</Filter>
+    </ClInclude>
+    <ClInclude Include="MD5.h">
+      <Filter>md5</Filter>
+    </ClInclude>
+    <ClInclude Include="uetw.h">
+      <Filter>etw</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mcfilter.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="C:\Users\zy.chen\Desktop\hunter_Win_x64_v1.0\hunter.ico">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>
