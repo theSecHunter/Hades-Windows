@@ -13,80 +13,86 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="etw">
-      <UniqueIdentifier>{e4ea6fe8-9b5d-4b4b-997c-c6e503cc9bf4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="common">
-      <UniqueIdentifier>{0678ec58-e096-4259-9fd8-00a3b6ab15f5}</UniqueIdentifier>
+      <UniqueIdentifier>{89cd539c-d17c-40f8-8dee-86ccf3bc9623}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="uautostart.cpp">
+    <ClCompile Include="AkrSysDriverDevInfo.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="ufile.cpp">
+    <ClCompile Include="ArkDpcTimer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="unet.cpp">
+    <ClCompile Include="ArkFsd.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="uprocesstree.cpp">
+    <ClCompile Include="ArkIdt.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="uservicesoftware.cpp">
+    <ClCompile Include="ArkMouseKeyBoard.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="usession.cpp">
+    <ClCompile Include="ArkNetwork.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="usysinfo.cpp">
+    <ClCompile Include="ArkProcessInfo.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="usysuser.cpp">
+    <ClCompile Include="ArkSsdt.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="MD5.cpp">
-      <Filter>common</Filter>
+    <ClCompile Include="ArkSysEnumNotify.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="uetw.cpp">
-      <Filter>etw</Filter>
+    <ClCompile Include="devctrl.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="sync.h">
-      <Filter>common</Filter>
+    <ClInclude Include="AkrSysDriverDevInfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkDpcTimer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkFsd.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkIdt.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkMouseKeyBoard.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkNetwork.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkProcessInfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkSsdt.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ArkSysEnumNotify.h">
+      <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="sysinfo.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="MD5.h">
+    <ClInclude Include="nf_api.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="uetw.h">
-      <Filter>etw</Filter>
+    <ClInclude Include="nfevents.h">
+      <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="uautostart.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="ntbasic.h">
+      <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="ufile.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="sync.h">
+      <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="unet.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="uprocesstree.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="uservicesoftware.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="usession.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="usysinfo.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="usysuser.h">
+    <ClInclude Include="devctrl.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -595,10 +595,9 @@ int nf_driverInstall()
 	}
 }
 
-int main(void)
-//int nf_init(void)
+//int main(void)
+int nf_init(void)
 {
-	getchar();
 	int status = 0;
 	DWORD nSeriverstatus = -1;
 	wstring pszCmd = L"sc start wfpdriver";
@@ -829,7 +828,7 @@ BOOL DeviceDosPathToNtPath(wchar_t* pszDosPath, wchar_t* pszNtPath)
 
             cchDevName = lstrlenW(szDevName);
 
-            if (wcsnicmp(pszDosPath, szDevName, cchDevName) == 0)//命中  
+            if (_wcsnicmp(pszDosPath, szDevName, cchDevName) == 0)//命中  
             {
                 lstrcpyW(pszNtPath, szDrive);//复制驱动器  
                 lstrcatW(pszNtPath, pszDosPath + cchDevName);//复制路径  

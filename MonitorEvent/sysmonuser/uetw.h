@@ -7,7 +7,6 @@ public:
 	UEtw();
 	~UEtw();
 
-
 	bool uf_init();
 	bool uf_close();
 	bool uf_RegisterTrace(const int dwEnableFlags);

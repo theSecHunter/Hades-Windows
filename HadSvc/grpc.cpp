@@ -220,7 +220,7 @@ bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
     return false;
 }
 
-// rootkit/User采集接口
+// 主动:rootkit/User采集接口
 void Wchar_tToString(std::string& szDst, wchar_t* wchar)
 {
     wchar_t* wText = wchar;
@@ -918,7 +918,7 @@ void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
     }
 }
 
-// Kernel/Etw上抛
+// 被动:Kernel/Etw上抛
 void Choose_session(string& events, const int code)
 {
     switch (code)

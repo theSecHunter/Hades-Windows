@@ -6,7 +6,6 @@
 #include "sync.h"
 #include "nfevents.h"
 #include "devctrl.h"
-#include "grpc.h"
 #include "sysinfo.h"
 #include <xstring>
 #include <vector>
@@ -132,7 +131,7 @@ int DevctrlIoct::devctrl_InitshareMem()
 	{
 		OutputDebugString(L"Attach m_devhandler Success");
 		g_hDevice.Attach(m_devhandler);
-		strncpy(g_driverName, "driver", sizeof(g_driverName));
+		strncpy_s(g_driverName, "driver", sizeof(g_driverName));
 	}
 
 	DWORD dwBytesReturned = 0;
@@ -402,9 +401,9 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 	int i;
 
 	// Start SysMonitor Grpc
-	Grpc* greeter_sysmonitor = (Grpc*)lpThreadParameter;
-	if (!greeter_sysmonitor)
-		return false;
+	//Grpc* greeter_sysmonitor = (Grpc*)lpThreadParameter;
+	//if (!greeter_sysmonitor)
+	//	return false;
 
 	OutputDebugString(L"Entry WorkThread");
 	SetEvent(g_workThreadStartedEvent);

@@ -102,7 +102,7 @@ int DevctrlIoct::devctrl_InitshareMem()
 	{
 		OutputDebugString(L"Attach m_devhandler Success");
 		g_hDevice.Attach(m_devhandler);
-		strncpy(g_driverName, "wfpdriver", sizeof(g_driverName));
+		strncpy_s(g_driverName, "wfpdriver", sizeof(g_driverName));
 	}
 
 	DWORD dwBytesReturned = 0;

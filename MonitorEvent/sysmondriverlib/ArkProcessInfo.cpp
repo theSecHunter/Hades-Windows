@@ -80,7 +80,7 @@ bool ArkProcessInfo::nf_KillProcess()
 	DWORD KillPidOut = 0;
 
 	cout << "Please Kill ProcessPid: ";
-	scanf("%d", &KillPidIn);
+	scanf_s("%d", &KillPidIn);
 
 	//devobj.devctrl_sendioct(
 	//	CTL_DEVCTRL_ARK_PROCESSKILL,
