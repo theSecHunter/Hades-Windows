@@ -25,7 +25,7 @@
 | Grpc 传输结构(c) | windows struct_c.md(see sysinfo.h) |
 
 #### 框架:
-![image](https://github.com/theSecHunter/Hades-Windows/blob/main/image-windows.png)
+![image](https://github.com/theSecHunter/Hades-Windows/blob/main/img/image-windows.png)
 
 <center><h3>v1.0</h3></center>
 
