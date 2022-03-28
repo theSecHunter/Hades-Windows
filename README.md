@@ -25,7 +25,7 @@
 | Grpc 传输结构(c) | windows struct_c.md(see sysinfo.h) |
 
 #### 框架:
-![image](https://github.com/theSecHunter/Hades-Windows/blob/main/image-windows.png)
+![image](https://github.com/theSecHunter/Hades-Windows/blob/main/img/image-windows.png)
 
 <center><h3>v1.0</h3></center>
 
@@ -170,3 +170,8 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 ```c++
 std::cout << "项目将零散代码组织到一起，业余投入精力并不多。部分cpp可能以前学习中编写，遗憾的是时间太久，忘记了具体引用的项目，部分代码中有参考github_url，有兴趣可以去学习一番。" << std::endl
 ```
+
+#### 历史版本：
+v1.0 实现：主要实现引擎探针和上层数据-上报流程打通。
+
+v2.0 重构：设计模式mvp和代码质量优化，包括xp - win7 - win10等平台的兼容性。
