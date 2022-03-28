@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window size="600,400" caption="0,0,0,36">
+	<Font name="微软雅黑" size="15" bold="true" id="0"/>
+	<VerticalLayout bordersize="1" bordercolor="#FF33374A" bkcolor="#FF17212E" childalign="left">
+		<HorizontalLayout width="600" childpadding="2" inset="0,0,0,0">
+			<Label width="48" height="48" bkimage="file='img/normal/hunter.png'" />
+			<Button padding="460,0,0,0" name="MainMenuBtn" width="28" height="28" normalimage="file='img/normal/icon_menu.png' source='0,0,28,28'" hotimage="file='img/normal/icon_menu.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_menu.png' source='56,0,84,28'" />
+			<Button name="MainMinsizeBtn" width="28" height="28" normalimage="file='img/normal/icon_min.png' source='0,0,28,28'" hotimage="file='img/normal/icon_min.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_min.png' source='56,0,84,28'" />
+			<Button name="MainCloseBtn" width="28" height="28" normalimage="file='img/normal/icon_close.png' source='0,0,28,28'" hotimage="file='img/normal/icon_close.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_close.png' source='0,0,28,28'" />
+		</HorizontalLayout>
+	</VerticalLayout>
+</Window>

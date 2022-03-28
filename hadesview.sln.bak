@@ -13,7 +13,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SysMonUserlib", "monitoreve
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SysMonDrv", "monitorevent\sysmondrv\driver.vcxproj", "{CFB7E59A-AB36-4B24-B28E-D34537FC1DAA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SysMonDrvlib", "monitorevent\sysmondrvlib\sysmondriverlib.vcxproj", "{3C56DD02-AB77-40EF-940F-B3359A52D554}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SysMonDrvlib", "monitorevent\sysmondriverlib\sysmondriverlib.vcxproj", "{3C56DD02-AB77-40EF-940F-B3359A52D554}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "app", "app", "{D5064C41-F40A-453C-BDA7-B9307EED48F8}"
 EndProject
