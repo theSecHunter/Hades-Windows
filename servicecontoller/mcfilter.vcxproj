@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\vcpkg.D.vcpkg.1.0.0\build\native\vcpkg.D.vcpkg.props" Condition="Exists('..\packages\vcpkg.D.vcpkg.1.0.0\build\native\vcpkg.D.vcpkg.props')" />
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{4282416d-0415-4a0a-a0dc-033de19f3cfe}</ProjectGuid>
+    <RootNamespace>mcfilter</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <ProjectName>servercon</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>..\bin\$(Configuration)\$(Platform)\</OutDir>
+    <LibraryPath>../lib/Debug/Win32;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\bin\$(Configuration)\$(Platform)\</OutDir>
+    <LibraryPath>../lib/Release/Win32;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>..\bin\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <LibraryPath>../lib/Debug/x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>../../;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <ReferencePath>../../;$(VC_ReferencesPath_x64);</ReferencePath>
+    <OutDir>..\bin\$(Configuration)\$(Platform)\</OutDir>
+    <LibraryPath>../lib/Release/x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
+      <AdditionalDependencies>FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <Optimization>MaxSpeed</Optimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Tdh.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\lib_json\json_reader.cpp" />
+    <ClCompile Include="..\lib_json\json_value.cpp" />
+    <ClCompile Include="..\lib_json\json_writer.cpp" />
+    <ClCompile Include="AkrSysDriverDevInfo.cpp" />
+    <ClCompile Include="ArkDpcTimer.cpp" />
+    <ClCompile Include="ArkFsd.cpp" />
+    <ClCompile Include="ArkIdt.cpp" />
+    <ClCompile Include="ArkMouseKeyBoard.cpp" />
+    <ClCompile Include="ArkNetwork.cpp" />
+    <ClCompile Include="ArkProcessInfo.cpp" />
+    <ClCompile Include="ArkSysEnumNotify.cpp" />
+    <ClCompile Include="devctrl.cpp" />
+    <ClCompile Include="uetw.cpp" />
+    <ClCompile Include="grpc.cpp" />
+    <ClCompile Include="hades_win.grpc.pb.cc" />
+    <ClCompile Include="hades_win.pb.cc" />
+    <ClCompile Include="HlprMiniCom.cpp" />
+    <ClCompile Include="mcfilter.cpp" />
+    <ClCompile Include="ArkSsdt.cpp" />
+    <ClCompile Include="MD5.cpp" />
+    <ClCompile Include="uautostart.cpp" />
+    <ClCompile Include="ufile.cpp" />
+    <ClCompile Include="unet.cpp" />
+    <ClCompile Include="uprocesstree.cpp" />
+    <ClCompile Include="urootkit.cpp" />
+    <ClCompile Include="uservicesoftware.cpp" />
+    <ClCompile Include="usession.cpp" />
+    <ClCompile Include="usysinfo.cpp" />
+    <ClCompile Include="usysuser.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AkrSysDriverDevInfo.h" />
+    <ClInclude Include="ArkDpcTimer.h" />
+    <ClInclude Include="ArkFsd.h" />
+    <ClInclude Include="ArkIdt.h" />
+    <ClInclude Include="ArkMouseKeyBoard.h" />
+    <ClInclude Include="ArkNetwork.h" />
+    <ClInclude Include="ArkProcessInfo.h" />
+    <ClInclude Include="ArkSysEnumNotify.h" />
+    <ClInclude Include="devctrl.h" />
+    <ClInclude Include="grpc.h" />
+    <ClInclude Include="hades_win.grpc.pb.h" />
+    <ClInclude Include="hades_win.pb.h" />
+    <ClInclude Include="HlprMiniCom.h" />
+    <ClInclude Include="MD5.h" />
+    <ClInclude Include="nfevents.h" />
+    <ClInclude Include="nf_api.h" />
+    <ClInclude Include="ntbasic.h" />
+    <ClInclude Include="ArkSsdt.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="sync.h" />
+    <ClInclude Include="sysinfo.h" />
+    <ClInclude Include="threadpool.h" />
+    <ClInclude Include="uautostart.h" />
+    <ClInclude Include="uetw.h" />
+    <ClInclude Include="ufile.h" />
+    <ClInclude Include="unet.h" />
+    <ClInclude Include="uprocesstree.h" />
+    <ClInclude Include="urootkit.h" />
+    <ClInclude Include="uservicesoftware.h" />
+    <ClInclude Include="usession.h" />
+    <ClInclude Include="usysinfo.h" />
+    <ClInclude Include="usysuser.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mcfilter.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="C:\Users\zy.chen\Desktop\hunter_Win_x64_v1.0\hunter.ico" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\vcpkg.D.vcpkg.1.0.0\build\native\vcpkg.D.vcpkg.targets" Condition="Exists('..\packages\vcpkg.D.vcpkg.1.0.0\build\native\vcpkg.D.vcpkg.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>这台计算机上缺少此项目引用的 NuGet 程序包。使用“NuGet 程序包还原”可下载这些程序包。有关更多信息，请参见 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 {0}。</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\vcpkg.D.vcpkg.1.0.0\build\native\vcpkg.D.vcpkg.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\vcpkg.D.vcpkg.1.0.0\build\native\vcpkg.D.vcpkg.props'))" />
+    <Error Condition="!Exists('..\packages\vcpkg.D.vcpkg.1.0.0\build\native\vcpkg.D.vcpkg.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\vcpkg.D.vcpkg.1.0.0\build\native\vcpkg.D.vcpkg.targets'))" />
+  </Target>
+</Project>
