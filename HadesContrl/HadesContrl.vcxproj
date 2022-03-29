@@ -158,10 +158,12 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Wnd\MainWindow.h" />
+    <ClInclude Include="Wnd\Menu.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HadesContrl.cpp" />
     <ClCompile Include="Wnd\MainWindow.cpp" />
+    <ClCompile Include="Wnd\Menu.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="HadesContrl.rc" />
@@ -172,6 +174,7 @@
   </ItemGroup>
   <ItemGroup>
     <Xml Include="skin\MainWindow.xml" />
+    <Xml Include="skin\Menu.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="skin.zip" />

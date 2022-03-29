@@ -1,5 +1,6 @@
 #pragma once
 #include <UIlib.h>
+#include "Menu.h"
 
 using namespace DuiLib;
 
@@ -15,5 +16,8 @@ public:
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+
+private:
+	Menu* m_pMenu;
 };
 

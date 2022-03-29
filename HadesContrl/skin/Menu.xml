@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Window size="100,33">
+    <VerticalLayout name="MenuBK_VLayout" hole="false" bkcolor="#FF343D4F">
+        <Button name="AboutBtn" width="100" height="32" hotbkcolor="#FF2AA2F9" normalimage="file='img/normal/icon_about.png' dest='8,8,24,24'" hotimage="file='img/normal/icon_about.png' dest='8,8,24,24'" pushedimage="file='img/normal/icon_about.png' dest='8,8,24,24'" text="关于我们" align="left" textpadding="32,0,0,0" textcolor="#FFA4B8C8" hottextcolor="#FFFFFFFF" pushedtextcolor="#FFA4B8C8" font="2" />
+    </VerticalLayout>
+</Window>

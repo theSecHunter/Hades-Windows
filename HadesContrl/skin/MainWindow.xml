@@ -1,12 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Window size="600,400" caption="0,0,0,36">
-	<Font name="微软雅黑" size="15" bold="true" id="0"/>
-	<VerticalLayout bordersize="1" bordercolor="#FF33374A" bkcolor="#FF17212E" childalign="left">
-		<HorizontalLayout width="600" childpadding="2" inset="0,0,0,0">
-			<Label width="48" height="48" bkimage="file='img/normal/hunter.png'" />
-			<Button padding="460,0,0,0" name="MainMenuBtn" width="28" height="28" normalimage="file='img/normal/icon_menu.png' source='0,0,28,28'" hotimage="file='img/normal/icon_menu.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_menu.png' source='56,0,84,28'" />
+	<Font shared="true" id="1" name="Microsoft YaHei" size="10" />
+    <Font shared="true" id="2" name="Microsoft YaHei" size="12" />
+    <Font shared="true" id="3" name="Microsoft YaHei" size="14" />
+    <Font shared="true" id="4" name="Microsoft YaHei" size="12" />
+    <Font shared="true" id="5" name="Microsoft YaHei" size="16" />
+    <Font shared="true" id="6" name="Microsoft YaHei" size="26" />
+    <Font shared="true" id="7" name="Microsoft YaHei" size="24" underline="true"/>
+    <Font shared="true" id="8" name="Microsoft YaHei" bold="true" size="20" />
+	
+	<VerticalLayout bordersize="1" bordercolor="#FF33374A" bkcolor="#FFFFFFFF" >
+		
+		<HorizontalLayout heigth="28" childpadding="2" >
+			<Label height="28" text="Hades监控" textpadding="5,0,0,0" font="4" />
+			<Button name="MainMenuBtn" width="28" height="28" normalimage="file='img/normal/icon_menu.png' source='0,0,28,28'" hotimage="file='img/normal/icon_menu.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_menu.png' source='56,0,84,28'" />
 			<Button name="MainMinsizeBtn" width="28" height="28" normalimage="file='img/normal/icon_min.png' source='0,0,28,28'" hotimage="file='img/normal/icon_min.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_min.png' source='56,0,84,28'" />
 			<Button name="MainCloseBtn" width="28" height="28" normalimage="file='img/normal/icon_close.png' source='0,0,28,28'" hotimage="file='img/normal/icon_close.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_close.png' source='0,0,28,28'" />
 		</HorizontalLayout>
-	</VerticalLayout>
+		
+		<HorizontalLayout height="370">
+			<Option float="true" pos="100,100,0,0" name="MonUserBtn" width="120" height="33" text="用户态监控" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />	
+			<Option float="true" pos="100,150,0,0" name="MonKerBtn" width="120" height="33" text="内核态监控" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />
+			<Button float="true" pos="100,200,0,0" name="MonCveBtn" width="120" height="33" text="规则设置" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />
+			
+			<VerticalLayout padding="350,80,0,0" height="200" >
+				<Label width="180" height="130" bkimage="file='img/normal/Computerlog.png'" />
+				<Label height="32" font="3" text="状态良好" padding="70,10,0,0"/>
+			</VerticalLayout>
+		
+		</HorizontalLayout>
+	
+</VerticalLayout>
+	
+
 </Window>

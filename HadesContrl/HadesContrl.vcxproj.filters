@@ -36,12 +36,18 @@
     <ClInclude Include="Wnd\MainWindow.h">
       <Filter>Wnd</Filter>
     </ClInclude>
+    <ClInclude Include="Wnd\Menu.h">
+      <Filter>Wnd</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HadesContrl.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Wnd\MainWindow.cpp">
+      <Filter>Wnd</Filter>
+    </ClCompile>
+    <ClCompile Include="Wnd\Menu.cpp">
       <Filter>Wnd</Filter>
     </ClCompile>
   </ItemGroup>
@@ -60,6 +66,9 @@
   </ItemGroup>
   <ItemGroup>
     <Xml Include="skin\MainWindow.xml">
+      <Filter>Xml</Filter>
+    </Xml>
+    <Xml Include="skin\Menu.xml">
       <Filter>Xml</Filter>
     </Xml>
   </ItemGroup>

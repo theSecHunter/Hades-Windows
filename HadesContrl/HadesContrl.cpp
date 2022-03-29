@@ -3,13 +3,10 @@
 
 #include "framework.h"
 #include "HadesContrl.h"
-
 #include "Wnd/MainWindow.h"
-
 #include "resource.h"
 
 using namespace DuiLib;
-
 #define MAX_LOADSTRING 100
 
 BOOL EnableShutDownPriv()
@@ -37,7 +34,6 @@ BOOL EnableShutDownPriv()
 	}
 	return TRUE;
 }
-
 void LoadResourceZip()
 {
 	HRSRC hResource = ::FindResource(CPaintManagerUI::GetResourceDll(), MAKEINTRESOURCE(IDR_ZIPRES1), L"ZIPRES");
@@ -98,7 +94,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	CPaintManagerUI::SetInstance(hInstance);
 
 	LoadResourceZip();
-
 
 	// 初始化窗口
 	MainWindow mainwin;

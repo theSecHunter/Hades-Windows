@@ -17,6 +17,11 @@ CDuiString MainWindow::GetSkinFolder()
 LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	LRESULT lRes = __super::OnCreate(uMsg, wParam, lParam, bHandled);
+
+	m_pMenu = new Menu();
+	m_pMenu->Create(m_hWnd, _T(""), WS_POPUP, WS_EX_TOOLWINDOW);
+	m_pMenu->ShowWindow(false);
+
 	return lRes;
 }
 LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -35,6 +40,16 @@ void MainWindow::Notify(TNotifyUI& msg)
 		{
 			if (strControlName == _T("MainCloseBtn"))
 				Close();
+			//²Ëµ¥
+			else if (strControlName == _T("MainMenuBtn"))
+			{
+				int xPos = msg.pSender->GetPos().left - 36;
+				int yPos = msg.pSender->GetPos().bottom;
+				POINT pt = { xPos, yPos };
+				ClientToScreen(m_hWnd, &pt);
+				m_pMenu->ShowWindow(true);
+				::SetWindowPos(m_pMenu->GetHWND(), NULL, pt.x, pt.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+			}
 		}
 	}
 }
