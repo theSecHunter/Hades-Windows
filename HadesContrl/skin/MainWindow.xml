@@ -10,27 +10,58 @@
     <Font shared="true" id="8" name="Microsoft YaHei" bold="true" size="20" />
 	
 	<VerticalLayout bordersize="1" bordercolor="#FF33374A" bkcolor="#FFFFFFFF" >
-		
+
 		<HorizontalLayout heigth="28" childpadding="2" >
 			<Label height="28" text="Hades监控" textpadding="5,0,0,0" font="4" />
 			<Button name="MainMenuBtn" width="28" height="28" normalimage="file='img/normal/icon_menu.png' source='0,0,28,28'" hotimage="file='img/normal/icon_menu.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_menu.png' source='56,0,84,28'" />
 			<Button name="MainMinsizeBtn" width="28" height="28" normalimage="file='img/normal/icon_min.png' source='0,0,28,28'" hotimage="file='img/normal/icon_min.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_min.png' source='56,0,84,28'" />
 			<Button name="MainCloseBtn" width="28" height="28" normalimage="file='img/normal/icon_close.png' source='0,0,28,28'" hotimage="file='img/normal/icon_close.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_close.png' source='0,0,28,28'" />
 		</HorizontalLayout>
-		
-		<HorizontalLayout height="370">
-			<Option float="true" pos="100,100,0,0" name="MonUserBtn" width="120" height="33" text="用户态监控" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />	
-			<Option float="true" pos="100,150,0,0" name="MonKerBtn" width="120" height="33" text="内核态监控" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />
-			<Button float="true" pos="100,200,0,0" name="MonCveBtn" width="120" height="33" text="规则设置" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />
-			
-			<VerticalLayout padding="350,80,0,0" height="200" >
+				
+		<HorizontalLayout height="300" >
+			<VerticalLayout padding="30,35,0,0" height="200" >
 				<Label width="180" height="130" bkimage="file='img/normal/Computerlog.png'" />
 				<Label height="32" font="3" text="状态良好" padding="70,10,0,0"/>
 			</VerticalLayout>
-		
+			<Option float="true" pos="60,250,0,0" name="MainMonUserBtn" width="120" height="33" text="用户态监控" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />
+			<Option float="true" pos="250,250,0,0" name="MainMonKerBtn" width="120" height="33" text="内核态监控" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />
+			<Button float="true" pos="430,250,0,0" name="MainMonCveBtn" width="120" height="33" text="规则设置" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />
+			<Label float="true" width="120" height="28" pos="370,20,0,0" text="当前系统账户: " font="2" />
+			<Label float="true" width="120" height="28" pos="370,40,0,0" text="处理器: " font="2" />
+			<Label float="true" width="120" height="28" pos="370,60,0,0" text="内核版本: " font="2" />
+			<Label float="true" width="120" height="28" pos="370,80,0,0" text="主板: " font="2" />
+			<Label float="true" width="120" height="28" pos="370,100,0,0" text="显示器: " font="2" />
+			<Label float="true" width="120" height="28" pos="370,120,0,0" text="网卡: " font="2" />
+			<Label float="true" width="120" height="28" pos="370,140,0,0" text="电池: " font="2" />
+			<Label float="true" width="120" height="28" pos="370,160,0,0" text="摄像头: " font="2" />
+			<Label float="true" width="120" height="28" pos="370,180,0,0" text="蓝牙: " font="2" />
+			<Label float="true" width="120" height="28" pos="370,200,0,0" text="语音: " font="2" />
 		</HorizontalLayout>
-	
-</VerticalLayout>
-	
 
+		<HorizontalLayout height="20" >
+			<Option float="true" pos="70,0,0,0" name="MainMontemperatureOpt" group="MainOpView" selected="true" width="80" height="20" text="温度监控" textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" hotimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" />
+			<Option float="true" pos="260,0,0,0" name="MainMonCpuOpt" group="MainOpView" width="180" height="20" text="CPU监控"  textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_cpu.png' dest='0,0,16,16'" hotimage="file='img/normal/op_cpu.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_cpu.png' dest='0,0,16,16'"  />
+			<Option float="true" pos="460,0,0,0" name="MainMonBoxOpt" group="MainOpView" width="280" height="20" text="百宝箱"   textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_box.png' dest='0,0,16,16'" hotimage="file='img/normal/op_box.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_box.png' dest='0,0,16,16'"  />
+		</HorizontalLayout>
+
+		<Container name="MainOp_Container" >
+	
+			<HorizontalLayout name="MainOptemperature_VLayout" float="true" pos="0,0" width="600" height="30">
+				<Label padding="150,0,0,0" width="120" height="28" text="CPU温度: " font="2" />
+				<Label padding="100,0,0,0" width="120" height="28" text="显卡温度: " font="2" />
+			</HorizontalLayout>
+			
+			<HorizontalLayout name="MainOpCpu_VLayout" float="true" pos="0,0" visible="false"  width="600" height="30">
+				<Label padding="150,0,0,0" width="120" height="28" text="内存大小: " font="2" />
+				<Label padding="100,0,0,0" width="120" height="28" text="已使用: " font="2" />
+			</HorizontalLayout>
+
+			<HorizontalLayout name="MainOpBox_VLayout" float="true" pos="0,0" visible="false"  width="600" height="30">
+				<Label padding="150,0,0,0" width="120" height="28" text="百宝箱: " font="2" />
+				<Label padding="100,0,0,0" width="120" height="28" text="Text1: " font="2" />
+			</HorizontalLayout>
+		
+		</Container>
+		
+</VerticalLayout>
 </Window>

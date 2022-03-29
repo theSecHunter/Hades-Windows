@@ -51,6 +51,38 @@ void MainWindow::Notify(TNotifyUI& msg)
 				::SetWindowPos(m_pMenu->GetHWND(), NULL, pt.x, pt.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 			}
 		}
+		else if (strClassName == DUI_CTR_OPTION)
+		{
+			if (_tcscmp(static_cast<COptionUI*>(msg.pSender)->GetGroup(), _T("MainOpView")) == 0)
+			{
+				CHorizontalLayoutUI* pMainOptemp = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOptemperature_VLayout")));
+				CHorizontalLayoutUI* pMainOpcpu = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOpCpu_VLayout")));
+				CHorizontalLayoutUI* pMainOpbox = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOpBox_VLayout")));
+
+				if (strControlName == _T("MainMontemperatureOpt"))
+				{
+					// MainOptemperature_VLayout
+					pMainOptemp->SetVisible(true);
+					pMainOpcpu->SetVisible(false);
+					pMainOpbox->SetVisible(false);
+				}
+				else if (strControlName == _T("MainMonCpuOpt"))
+				{
+					// MainOpCpu_VLayout
+					pMainOptemp->SetVisible(false);
+					pMainOpcpu->SetVisible(true);
+					pMainOpbox->SetVisible(false);
+				}
+				else if (strControlName == _T("MainMonBoxOpt"))
+				{
+					// MainOpBox_VLayout
+					pMainOptemp->SetVisible(false);
+					pMainOpcpu->SetVisible(false);
+					pMainOpbox->SetVisible(true);
+				}
+			}
+
+		}
 	}
 }
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
