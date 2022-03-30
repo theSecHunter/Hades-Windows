@@ -157,11 +157,13 @@
     <ClInclude Include="HadesContrl.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Wnd\AboutUsWindow.h" />
     <ClInclude Include="Wnd\MainWindow.h" />
     <ClInclude Include="Wnd\Menu.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HadesContrl.cpp" />
+    <ClCompile Include="Wnd\AboutUsWindow.cpp" />
     <ClCompile Include="Wnd\MainWindow.cpp" />
     <ClCompile Include="Wnd\Menu.cpp" />
   </ItemGroup>
@@ -173,6 +175,7 @@
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
+    <Xml Include="skin\AboutUsWindow.xml" />
     <Xml Include="skin\MainWindow.xml" />
     <Xml Include="skin\Menu.xml" />
   </ItemGroup>

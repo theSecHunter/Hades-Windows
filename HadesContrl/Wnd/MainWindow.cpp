@@ -1,6 +1,5 @@
 #include "MainWindow.h"
 
-
 LPCTSTR MainWindow::GetWindowClassName() const
 {
 	return _T("HadesMainWindow");
@@ -13,15 +12,12 @@ CDuiString MainWindow::GetSkinFolder()
 {
 	return _T("");
 }
-
 LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	LRESULT lRes = __super::OnCreate(uMsg, wParam, lParam, bHandled);
-
 	m_pMenu = new Menu();
 	m_pMenu->Create(m_hWnd, _T(""), WS_POPUP, WS_EX_TOOLWINDOW);
 	m_pMenu->ShowWindow(false);
-
 	return lRes;
 }
 LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -89,13 +85,5 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT lRes = 0;
 	BOOL bHandled = TRUE;
-
-	switch (uMsg)
-	{
-	default:
-		lRes = __super::HandleMessage(uMsg, wParam, lParam);
-		break;
-	};
-
-	return lRes;
+	return __super::HandleMessage(uMsg, wParam, lParam);
 }

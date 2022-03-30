@@ -1,1 +1,68 @@
-﻿
+﻿cl : 命令行 warning D9035: “Gm”选项已否决，并将在将来的版本中移除
+  StdAfx.cpp
+D:\Hades\Hades-Windows\DuiLib\Core\UIManager.h(45,2): warning C4091: “typedef ”: 没有声明变量时忽略“DuiLib::EVENTTYPE_UI”的左侧
+cl : 命令行 warning D9035: “Gm”选项已否决，并将在将来的版本中移除
+  WndShadow.cpp
+  WinImplBase.cpp
+  Utils.cpp
+  UIDelegate.cpp
+  UIlib.cpp
+  UIVerticalLayout.cpp
+D:\Hades\Hades-Windows\DuiLib\Layout\UIVerticalLayout.cpp(348,37): warning C4302: “类型强制转换”: 从“LPWSTR”到“WORD”截断
+  UITileLayout.cpp
+  UITabLayout.cpp
+  UIHorizontalLayout.cpp
+D:\Hades\Hades-Windows\DuiLib\Layout\UIHorizontalLayout.cpp(358,37): warning C4302: “类型强制转换”: 从“LPWSTR”到“WORD”截断
+  UIChildLayout.cpp
+  UIRender.cpp
+D:\Hades\Hades-Windows\DuiLib\Core\UIRender.cpp(1202,61): warning C4838: 从“int”转换到“COLOR16”需要收缩转换
+D:\Hades\Hades-Windows\DuiLib\Core\UIRender.cpp(1202,86): warning C4838: 从“int”转换到“COLOR16”需要收缩转换
+D:\Hades\Hades-Windows\DuiLib\Core\UIRender.cpp(1202,111): warning C4838: 从“int”转换到“COLOR16”需要收缩转换
+D:\Hades\Hades-Windows\DuiLib\Core\UIRender.cpp(1203,66): warning C4838: 从“int”转换到“COLOR16”需要收缩转换
+D:\Hades\Hades-Windows\DuiLib\Core\UIRender.cpp(1203,92): warning C4838: 从“int”转换到“COLOR16”需要收缩转换
+D:\Hades\Hades-Windows\DuiLib\Core\UIRender.cpp(1203,118): warning C4838: 从“int”转换到“COLOR16”需要收缩转换
+  UIMarkup.cpp
+  UIManager.cpp
+D:\Hades\Hades-Windows\DuiLib\Core\UIManager.cpp(1045,39): warning C4838: 从“DWORD”转换到“LONG”需要收缩转换
+D:\Hades\Hades-Windows\DuiLib\Core\UIManager.cpp(1045,48): warning C4838: 从“DWORD”转换到“LONG”需要收缩转换
+  UIDlgBuilder.cpp
+  UIControl.cpp
+D:\Hades\Hades-Windows\DuiLib\Core\UIControl.cpp(846,40): warning C4302: “类型强制转换”: 从“LPWSTR”到“WORD”截断
+  UIContainer.cpp
+  UIBase.cpp
+  UIWebBrowser.cpp
+  UITreeView.cpp
+  UIText.cpp
+D:\Hades\Hades-Windows\DuiLib\Control\UIText.cpp(52,37): warning C4302: “类型强制转换”: 从“LPWSTR”到“WORD”截断
+  正在生成代码...
+  正在编译...
+  UISlider.cpp
+D:\Hades\Hades-Windows\DuiLib\Control\UISlider.cpp(212,36): warning C4302: “类型强制转换”: 从“LPWSTR”到“WORD”截断
+  UIScrollBar.cpp
+  UIRichEdit.cpp
+  UIProgress.cpp
+  UIOption.cpp
+  UIList.cpp
+D:\Hades\Hades-Windows\DuiLib\Control\UIList.cpp(1781,44): warning C4302: “类型强制转换”: 从“LPWSTR”到“WORD”截断
+D:\Hades\Hades-Windows\DuiLib\Control\UIList.cpp(2417,48): warning C4302: “类型强制转换”: 从“LPWSTR”到“WORD”截断
+  UILabel.cpp
+D:\Hades\Hades-Windows\DuiLib\Control\UILabel.cpp(390,38): warning C4806: “|”: 不安全操作: 从类型“bool”提升到类型“int”的值不能等于给定的常量
+D:\Hades\Hades-Windows\DuiLib\Control\UILabel.cpp(390,51): warning C4554: “|”: 检查运算符优先级是否存在的可能的错误；使用括号阐明优先级
+  UIGifAnim.cpp
+D:\Hades\Hades-Windows\DuiLib\Control\UIGifAnim.cpp(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+  UIEdit.cpp
+D:\Hades\Hades-Windows\DuiLib\Control\UIEdit.cpp(288,35): warning C4302: “类型强制转换”: 从“LPWSTR”到“WORD”截断
+  UIDateTime.cpp
+D:\Hades\Hades-Windows\DuiLib\Control\UIDateTime.cpp(297,35): warning C4302: “类型强制转换”: 从“LPWSTR”到“WORD”截断
+  UICombo.cpp
+  UICheckBox.cpp
+  UIButton.cpp
+D:\Hades\Hades-Windows\DuiLib\Control\UIButton.cpp(131,35): warning C4302: “类型强制转换”: 从“LPWSTR”到“WORD”截断
+  UIActiveX.cpp
+  正在生成代码...
+cl : 命令行 warning D9035: “Gm”选项已否决，并将在将来的版本中移除
+  stb_image.c
+cl : 命令行 warning D9035: “Gm”选项已否决，并将在将来的版本中移除
+  XUnzip.cpp
+    正在创建库 ../lib/DuiLib_d.lib 和对象 ../lib/DuiLib_d.exp
+  DuiLib.vcxproj -> D:\Hades\Hades-Windows\bin\HadesUI_d.dll

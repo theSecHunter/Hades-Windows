@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Window size="600,400" caption="0,0,0,36">
+<Window size="600,420" caption="0,0,0,36">
 	<Font shared="true" id="1" name="Microsoft YaHei" size="10" />
     <Font shared="true" id="2" name="Microsoft YaHei" size="12" />
     <Font shared="true" id="3" name="Microsoft YaHei" size="14" />
@@ -38,27 +38,33 @@
 			<Label float="true" width="120" height="28" pos="370,200,0,0" text="语音: " font="2" />
 		</HorizontalLayout>
 
-		<HorizontalLayout height="20" >
-			<Option float="true" pos="70,0,0,0" name="MainMontemperatureOpt" group="MainOpView" selected="true" width="80" height="20" text="温度监控" textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" hotimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" />
-			<Option float="true" pos="260,0,0,0" name="MainMonCpuOpt" group="MainOpView" width="180" height="20" text="CPU监控"  textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_cpu.png' dest='0,0,16,16'" hotimage="file='img/normal/op_cpu.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_cpu.png' dest='0,0,16,16'"  />
-			<Option float="true" pos="460,0,0,0" name="MainMonBoxOpt" group="MainOpView" width="280" height="20" text="百宝箱"   textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_box.png' dest='0,0,16,16'" hotimage="file='img/normal/op_box.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_box.png' dest='0,0,16,16'"  />
+		<HorizontalLayout height="20" childpadding="150,0,0,0" bkcolor="#FF2AA2F9" >
+			<Option padding="70,0,0,0" hotbkcolor="#FF2AA2F9"  hottextcolor="#FFFFFFFF" pushedtextcolor="#FFA4B8C8" name="MainMontemperatureOpt" group="MainOpView" selected="true" width="50" height="20" text="温度" textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" hotimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" />
+			<Option  hotbkcolor="#FF2AA2F9"  hottextcolor="#FFFFFFFF" pushedtextcolor="#FFA4B8C8" name="MainMonCpuOpt" group="MainOpView" width="50" height="20" text="性能"  textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_cpu.png' dest='0,0,16,16'" hotimage="file='img/normal/op_cpu.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_cpu.png' dest='0,0,16,16'"  />
+			<Option  hotbkcolor="#FF2AA2F9"  hottextcolor="#FFFFFFFF" pushedtextcolor="#FFA4B8C8" name="MainMonBoxOpt" group="MainOpView" width="50" height="20" text="功能"   textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_box.png' dest='0,0,16,16'" hotimage="file='img/normal/op_box.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_box.png' dest='0,0,16,16'"  />
 		</HorizontalLayout>
 
-		<Container name="MainOp_Container" >
+		<Container name="MainOp_Container" padding="0,20,0,0" >
 	
-			<HorizontalLayout name="MainOptemperature_VLayout" float="true" pos="0,0" width="600" height="30">
-				<Label padding="150,0,0,0" width="120" height="28" text="CPU温度: " font="2" />
-				<Label padding="100,0,0,0" width="120" height="28" text="显卡温度: " font="2" />
+			<HorizontalLayout name="MainOptemperature_VLayout" float="true" pos="0,0" width="600" height="100" childpadding="50,0,0,0" >
+				<Label padding="50,0,0,0" width="100" height="28" text="CPU温度: " font="2" />
+				<Label width="100" height="28" text="显卡温度: " font="2" />
+				<Label width="100" height="28" text="主板温度: " font="2" />
+				<Label width="100" height="28" text="硬盘温度: " font="2" />
 			</HorizontalLayout>
 			
-			<HorizontalLayout name="MainOpCpu_VLayout" float="true" pos="0,0" visible="false"  width="600" height="30">
-				<Label padding="150,0,0,0" width="120" height="28" text="内存大小: " font="2" />
-				<Label padding="100,0,0,0" width="120" height="28" text="已使用: " font="2" />
+			<HorizontalLayout name="MainOpCpu_VLayout" float="true" pos="0,0" visible="false"  width="600" height="100" padding="50,0,0,0" childpadding="50,0,0,0" >
+				<Label padding="50,0,0,0" width="100" height="28" text="CPU: " font="2" />
+				<Label width="100" height="28" text="内存: " font="2" />
+				<Label width="100" height="28" text="磁盘: " font="2" />
+				<Label width="100" height="28" text="GPU: " font="2" />
 			</HorizontalLayout>
 
-			<HorizontalLayout name="MainOpBox_VLayout" float="true" pos="0,0" visible="false"  width="600" height="30">
-				<Label padding="150,0,0,0" width="120" height="28" text="百宝箱: " font="2" />
-				<Label padding="100,0,0,0" width="120" height="28" text="Text1: " font="2" />
+			<HorizontalLayout name="MainOpBox_VLayout" float="true" pos="0,0" visible="false"  width="600" height="100" padding="50,0,0,0" childpadding="50,0,0,0" >
+				<Label padding="50,0,0,0" width="100" height="28" text="清理优化: " font="2" />
+				<Label width="100" height="28" text="软件管理: " font="2" />
+				<Label width="100" height="28" text="文件管理: " font="2" />
+				<Label width="100" height="28" text="其他: " font="2" />
 			</HorizontalLayout>
 		
 		</Container>

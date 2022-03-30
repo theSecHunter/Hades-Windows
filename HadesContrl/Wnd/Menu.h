@@ -12,8 +12,6 @@ public:
 
 	UINT GetClassStyle() const;
 	void Notify(TNotifyUI& msg);
-
 	LRESULT OnKillFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	void SetAuthorityShow(bool bShow);
 };
 
