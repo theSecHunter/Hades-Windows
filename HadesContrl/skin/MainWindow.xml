@@ -38,7 +38,7 @@
 			<Label float="true" width="120" height="28" pos="370,200,0,0" text="语音: " font="2" />
 		</HorizontalLayout>
 
-		<HorizontalLayout height="20" childpadding="150,0,0,0" bkcolor="#FF2AA2F9" >
+		<HorizontalLayout height="20" childpadding="150,0,0,0" >
 			<Option padding="70,0,0,0" hotbkcolor="#FF2AA2F9"  hottextcolor="#FFFFFFFF" pushedtextcolor="#FFA4B8C8" name="MainMontemperatureOpt" group="MainOpView" selected="true" width="50" height="20" text="温度" textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" hotimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_temperature.png' dest='0,0,16,16'" />
 			<Option  hotbkcolor="#FF2AA2F9"  hottextcolor="#FFFFFFFF" pushedtextcolor="#FFA4B8C8" name="MainMonCpuOpt" group="MainOpView" width="50" height="20" text="性能"  textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_cpu.png' dest='0,0,16,16'" hotimage="file='img/normal/op_cpu.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_cpu.png' dest='0,0,16,16'"  />
 			<Option  hotbkcolor="#FF2AA2F9"  hottextcolor="#FFFFFFFF" pushedtextcolor="#FFA4B8C8" name="MainMonBoxOpt" group="MainOpView" width="50" height="20" text="功能"   textpadding="20,0,0,0" font="4" align="left" normalimage="file='img/normal/op_box.png' dest='0,0,16,16'" hotimage="file='img/normal/op_box.png' dest='0,0,16,16'" selectedimage="file='img/normal/op_box.png' dest='0,0,16,16'"  />

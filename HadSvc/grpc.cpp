@@ -1,13 +1,13 @@
 #include "grpc.h"
 
-#include "ArkSsdt.h"
-#include "ArkIdt.h"
-#include "ArkDpcTimer.h"
-#include "ArkFsd.h"
-#include "ArkMouseKeyBoard.h"
-#include "ArkNetwork.h"
-#include "ArkProcessInfo.h"
-#include "AkrSysDriverDevInfo.h"
+//#include "ArkSsdt.h"
+//#include "ArkIdt.h"
+//#include "ArkDpcTimer.h"
+//#include "ArkFsd.h"
+//#include "ArkMouseKeyBoard.h"
+//#include "ArkNetwork.h"
+//#include "ArkProcessInfo.h"
+//#include "AkrSysDriverDevInfo.h"
 
 #include "uautostart.h"
 #include "unet.h"
@@ -19,21 +19,22 @@
 #include "uetw.h"
 
 #include "sysinfo.h"
-#include "sync.h"
+//#include "sync.h"
 #include <time.h>
 #include <winsock.h>
 #include <map>
 #include <queue>
+#include <mutex>
 
 
-static ArkSsdt				g_grpc_ssdtobj;
-static ArkIdt				g_grpc_idtobj;
-static ArkDpcTimer			g_grpc_dpcobj;
-static ArkFsd				g_grpc_fsdobj;
-static ArkMouseKeyBoard		g_grpc_mousekeyboardobj;
-static ArkNetwork			g_grpc_networkobj;
-static ArkProcessInfo		g_grpc_processinfo;
-static AkrSysDriverDevInfo	g_grpc_sysmodinfo;
+//static ArkSsdt				g_grpc_ssdtobj;
+//static ArkIdt				g_grpc_idtobj;
+//static ArkDpcTimer			g_grpc_dpcobj;
+//static ArkFsd				g_grpc_fsdobj;
+//static ArkMouseKeyBoard		g_grpc_mousekeyboardobj;
+//static ArkNetwork			g_grpc_networkobj;
+//static ArkProcessInfo		g_grpc_processinfo;
+//static AkrSysDriverDevInfo	g_grpc_sysmodinfo;
 static bool                 g_shutdown = false;
 
 static UAutoStart           g_grpc_uautostrobj;
@@ -42,7 +43,6 @@ static NSysUser             g_grpc_usysuser;
 static UProcess             g_grpc_uprocesstree;
 static UServerSoftware      g_grpc_userversoftware;
 static UFile                g_grpc_ufile;
-
 static UEtw                 g_grpc_etw;
 
 using namespace std;
@@ -55,7 +55,8 @@ typedef struct _NodeQueue
 }NodeQueue, *PNodeQueue;
 
 queue<NodeQueue> g_queue;
-AutoCriticalSection g_queuecs;
+static std::mutex            g_queuecs;
+static std::mutex            m_cs;
 
 // Grpc双向steam接口
 bool Grpc::Grpc_Transfer(RawData rawData)
@@ -241,7 +242,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
 
     // grpc write 需不需要加锁？
     // 内部如果有队列理论上不需要加锁
-    AutoCriticalSection m_cs;
+    //AutoCriticalSection m_cs;
     DWORD64 dwAllocateMemSize = 0;
     int code = command.agentctrl();
     char* ptr_Getbuffer;
@@ -275,6 +276,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
     (*MapMessage)["data_type"] = to_string(code);
     switch (code)
     {
+    /*
     case NF_SSDT_ID:
     {
         if (g_grpc_ssdtobj.nf_init())
@@ -291,10 +293,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
                     continue;
                 (*MapMessage)["win_rootkit_ssdt_id"] = to_string(ssdtinfo[i].ssdt_id);
                 (*MapMessage)["win_rootkit_ssdt_offsetaddr"] = to_string(ssdtinfo[i].sstd_memoffset);
-                m_cs.Lock();
+                m_cs.lock();
                 if (Grpc_Getstream())
                     m_stream->Write(rawData);
-                m_cs.Unlock();
+                m_cs.unlock();
             }
             cout << "Grpc Ssdt Send Pkg Success" << endl;
             break;
@@ -317,10 +319,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
                     continue;
                 (*MapMessage)["win_rootkit_idt_id"] = to_string(idtinfo[i].idt_id);
                 (*MapMessage)["win_rootkit_idt_offsetaddr"] = to_string(idtinfo[i].idt_isrmemaddr);
-                m_cs.Lock();
+                m_cs.lock();
                 if (Grpc_Getstream())
                     m_stream->Write(rawData);
-                m_cs.Unlock();
+                m_cs.unlock();
             }
             cout << "Grpc Ssdt Send Pkg Success" << endl;
         }
@@ -342,10 +344,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             (*MapMessage)["win_rootkit_dpc_timeobj"] = to_string(dpcinfo[i].timeroutine);
             (*MapMessage)["win_rootkit_dpc_timeroutine"] = to_string(dpcinfo[i].timeroutine);
             (*MapMessage)["win_rootkit_dpc_periodtime"] = to_string(dpcinfo[i].period);
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
         cout << "Grpc Dpc Send Pkg Success" << endl;
     }
@@ -364,10 +366,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_fsdfastfat_id"] = to_string(MjAddrArry[index]);
             (*MapMessage)["win_rootkit_fsdfastfat_mjaddr"] = to_string(MjAddrArry[index]);
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
             index++;
         }
         cout << "FastFat MjFuction End" << endl;
@@ -377,10 +379,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_fsdntfs_id"] = to_string(MjAddrArry[index]);
             (*MapMessage)["win_rootkit_fsdntfs_mjaddr"] = to_string(MjAddrArry[index]);
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
             index++;
         }
         cout << "Ntfs MjFuction End" << endl;
@@ -404,10 +406,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_Mouse_id"] = to_string(MjAddrArry[index]);
             (*MapMessage)["win_rootkit_Mouse_mjaddr"] = to_string(MjAddrArry[index]);
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
             index++;
         }
         cout << "Mouse MjFuction End" << endl;
@@ -417,10 +419,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_i8042_id"] = to_string(MjAddrArry[index]);
             (*MapMessage)["win_rootkit_i8042_mjaddr"] = to_string(MjAddrArry[index]);
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
             index++;
         }
         cout << "i8042 MjFuction End" << endl;
@@ -431,10 +433,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_kbd_id"] = to_string(MjAddrArry[index]);
             (*MapMessage)["win_rootkit_kbd_mjaddr"] = to_string(MjAddrArry[index]);
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
             index++;
         }
         cout << "kbd MjFuction End" << endl;
@@ -458,10 +460,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             (*MapMessage)["win_rootkit_tcp_localIp_port"] = to_string(networkinfo->systcpinfo[i].TpcTable.localEntry.dwIP) + ":" + to_string(ntohs(networkinfo->systcpinfo[i].TpcTable.localEntry.Port));
             (*MapMessage)["win_rootkit_tcp_remoteIp_port"] = to_string(networkinfo->systcpinfo[i].TpcTable.remoteEntry.dwIP) + ":" + to_string(ntohs(networkinfo->systcpinfo[i].TpcTable.remoteEntry.Port));
             (*MapMessage)["win_rootkit_tcp_Status"] = to_string(networkinfo->systcpinfo[i].socketStatus.dwState);
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
         cout << "Tpc Port Send Grpc Success" << endl;
 
@@ -471,10 +473,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_rootkit_udp_pid"] = to_string(networkinfo->sysudpinfo[i].processinfo.dwUdpProId);
             (*MapMessage)["win_rootkit_udp_localIp_port"] = to_string(networkinfo->sysudpinfo[i].UdpTable.dwIP) + ":" + to_string(ntohs(networkinfo->sysudpinfo[i].UdpTable.Port));
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
         cout << "Udp Port Send Grpc Success" << endl;
     }
@@ -506,10 +508,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, (wchar_t*)iter->second.data());
                 (*MapMessage)["win_rootkit_process_info"] = tmpstr;
-                m_cs.Lock();
+                m_cs.lock();
                 if (Grpc_Getstream())
                     m_stream->Write(rawData);
-                m_cs.Unlock();
+                m_cs.unlock();
             }
 
             cout << "processinfo to server Success" << endl;
@@ -544,10 +546,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].FullDllName);
                 (*MapMessage)["win_rootkit_process_FullDllName"] = tmpstr;
-                m_cs.Lock();
+                m_cs.lock();
                 if (Grpc_Getstream())
                     m_stream->Write(rawData);
-                m_cs.Unlock();
+                m_cs.unlock();
             }
         }
         cout << "Process Mod Success" << endl;
@@ -582,15 +584,16 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].FullDllName);
                 (*MapMessage)["win_rootkit_sys_FullDllName"] = tmpstr;
-                m_cs.Lock();
+                m_cs.lock();
                 if (Grpc_Getstream())
                     m_stream->Write(rawData);
-                m_cs.Unlock();
+                m_cs.unlock();
             }
         }
         cout << "SystemDriver Enum Success" << endl;
     }
     break;
+    */
     case UF_PROCESS_ENUM:
     {
         if (false == g_grpc_uprocesstree.uf_EnumProcess(ptr_Getbuffer))
@@ -612,10 +615,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             (*MapMessage)["win_user_process_parenid"] = procesNode->sysprocess[i].th32ParentProcessID;
             (*MapMessage)["win_user_process_thrcout"] = procesNode->sysprocess[i].threadcout;
 
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
 
     }
@@ -644,10 +647,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             (*MapMessage)["win_user_autorun_regName"] = autorunnode->regrun[i].szValueName;
             (*MapMessage)["win_user_autorun_regKey"] = autorunnode->regrun[i].szValueKey;
 
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
 
 
@@ -664,10 +667,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             Wchar_tToString(tmpstr, autorunnode->taskschrun[i].TaskCommand);
             (*MapMessage)["win_user_autorun_tscCommand"] = tmpstr;
 
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
 
         cout << "[User] SystemAutoStartRun Enum Success" << endl;
@@ -689,10 +692,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             (*MapMessage)["win_user_net_dst"] = netnode->tcpnode[i].szrip;
             (*MapMessage)["win_user_net_status"] = netnode->tcpnode[i].TcpState;
             (*MapMessage)["win_user_net_pid"] = netnode->tcpnode[i].PidString;
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
 
         (*MapMessage)["win_user_net_flag"] = "2";
@@ -700,10 +703,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         {
             (*MapMessage)["win_user_net_src"] = netnode->tcpnode[i].szlip;
             (*MapMessage)["win_user_net_pid"] = netnode->tcpnode[i].PidString;
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
 
     }
@@ -740,10 +743,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             (*MapMessage)["win_user_sysuser_sid"] = to_string((ULONGLONG)pusernode->usernode[i].serverusid);
             (*MapMessage)["win_user_sysuser_flag"] = to_string(pusernode->usernode[i].serveruflag);
 
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
 
     }
@@ -774,10 +777,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             (*MapMessage)["win_user_server_lpDescr"] = tmpstr;
             (*MapMessage)["win_user_server_status"] = pNode->uSericeinfo[i].dwCurrentState;
 
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
 
         (*MapMessage)["win_user_softwareserver_flag"] = "2";
@@ -805,10 +808,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftVenRel);
             (*MapMessage)["win_user_software_venrel"] = tmpstr;
 
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
 
     }
@@ -827,10 +830,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         (*MapMessage)["win_user_driectinfo_flag"] = "1";
         (*MapMessage)["win_user_driectinfo_filecout"] = to_string(directinfo->FileNumber);
         (*MapMessage)["win_user_driectinfo_size"] = to_string(directinfo->DriectAllSize);
-        m_cs.Lock();
+        m_cs.lock();
         if (Grpc_Getstream())
             m_stream->Write(rawData);
-        m_cs.Unlock();
+        m_cs.unlock();
 
         // 枚举的文件发送
         (*MapMessage)["win_user_driectinfo_flag"] = "2";
@@ -844,10 +847,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
             (*MapMessage)["win_user_driectinfo_filePath"] = tmpstr;
             (*MapMessage)["win_user_driectinfo_fileSize"] = to_string(directinfo->fileEntry[i].filesize);
 
-            m_cs.Lock();
+            m_cs.lock();
             if (Grpc_Getstream())
                 m_stream->Write(rawData);
-            m_cs.Unlock();
+            m_cs.unlock();
         }
     }
     break;
@@ -885,10 +888,10 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
         Wchar_tToString(tmpstr, fileinfo->seFileModify);
         (*MapMessage)["win_user_fileinfo_seFileModify"] = tmpstr;
 
-        m_cs.Lock();
+        m_cs.lock();
         if (Grpc_Getstream())
             m_stream->Write(rawData);
-        m_cs.Unlock();
+        m_cs.unlock();
     }
     break;
     case UF_ROOTKIT_ID:     // v2.0
@@ -1021,13 +1024,13 @@ void Grpc::threadProc()
         if (!pkg)
             continue;
 
-        g_queuecs.Lock();
+        g_queuecs.lock();
         
         pkg->Clear();
         auto MapMessage = pkg->mutable_message();
         if (!MapMessage)
         {
-            g_queuecs.Unlock();
+            g_queuecs.unlock();
             // 防止因msg一直失败 - 导致一直continue
             if (g_indexlock++ > 1000)
                 break;
@@ -1167,7 +1170,7 @@ void Grpc::threadProc()
         queue_node.packbuf = nullptr;
         g_queue.pop();
 
-        g_queuecs.Unlock();
+        g_queuecs.unlock();
     }
 
 }
@@ -1254,9 +1257,9 @@ bool Grpc::Grpc_pushQueue(const int code, const char* buf, int len)
     tmpqueue.packbuf = pack; // 保存指针
     tmpqueue.packlen = len;
 
-    g_queuecs.Lock();
+    g_queuecs.lock();
     g_queue.push(tmpqueue);
-    g_queuecs.Unlock();
+    g_queuecs.unlock();
 
     // 处理pack
     SetEvent(this->m_jobAvailableEvent);

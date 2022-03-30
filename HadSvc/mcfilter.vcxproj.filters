@@ -13,20 +13,8 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="json">
-      <UniqueIdentifier>{f4395451-c10f-4037-ada8-418be5414f46}</UniqueIdentifier>
-    </Filter>
     <Filter Include="grpc">
       <UniqueIdentifier>{f5786f9a-b4d8-4337-aa63-296c32994e28}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="public">
-      <UniqueIdentifier>{b29f3f59-f278-47c0-a65d-0230e4c16eec}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="example">
-      <UniqueIdentifier>{9275f2c1-3e58-4a60-8443-fe417ee3446d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="asio">
-      <UniqueIdentifier>{33adc783-5c91-4e63-88fa-35dd6f2f09c5}</UniqueIdentifier>
     </Filter>
     <Filter Include="pipserver">
       <UniqueIdentifier>{5fa7c6ca-ee87-412b-9a54-25f3ab596d5c}</UniqueIdentifier>
@@ -36,15 +24,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\lib_json\json_reader.cpp">
-      <Filter>json</Filter>
-    </ClCompile>
-    <ClCompile Include="..\lib_json\json_value.cpp">
-      <Filter>json</Filter>
-    </ClCompile>
-    <ClCompile Include="..\lib_json\json_writer.cpp">
-      <Filter>json</Filter>
-    </ClCompile>
     <ClCompile Include="grpc.cpp">
       <Filter>grpc</Filter>
     </ClCompile>
@@ -54,9 +33,6 @@
     <ClCompile Include="hades_win.pb.cc">
       <Filter>grpc</Filter>
     </ClCompile>
-    <ClCompile Include="mcfilter.cpp">
-      <Filter>example</Filter>
-    </ClCompile>
     <ClCompile Include="pipe.cpp">
       <Filter>pipserver</Filter>
     </ClCompile>
@@ -65,6 +41,9 @@
     </ClCompile>
     <ClCompile Include="HlprMiniCom.cpp">
       <Filter>minifilterport</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -99,5 +78,8 @@
     <Image Include="C:\Users\zy.chen\Desktop\hunter_Win_x64_v1.0\hunter.ico">
       <Filter>资源文件</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

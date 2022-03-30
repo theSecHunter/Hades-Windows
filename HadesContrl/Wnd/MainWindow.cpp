@@ -36,15 +36,18 @@ void MainWindow::Notify(TNotifyUI& msg)
 		{
 			if (strControlName == _T("MainCloseBtn"))
 				Close();
-			//菜单
 			else if (strControlName == _T("MainMenuBtn"))
-			{
+			{//菜单
 				int xPos = msg.pSender->GetPos().left - 36;
 				int yPos = msg.pSender->GetPos().bottom;
 				POINT pt = { xPos, yPos };
 				ClientToScreen(m_hWnd, &pt);
 				m_pMenu->ShowWindow(true);
 				::SetWindowPos(m_pMenu->GetHWND(), NULL, pt.x, pt.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+			}
+			else if (strControlName == _T("MainMonCveBtn"))
+			{//规则配置
+
 			}
 		}
 		else if (strClassName == DUI_CTR_OPTION)
@@ -77,7 +80,14 @@ void MainWindow::Notify(TNotifyUI& msg)
 					pMainOpbox->SetVisible(true);
 				}
 			}
+			else if (strControlName == _T("MainMonUserBtn"))
+			{//下发用户态监控指令
 
+			}
+			else if (strControlName == _T("MainMonKerBtn"))
+			{//下发内核态监控指令
+
+			}
 		}
 	}
 }
