@@ -2,14 +2,12 @@
 //		负责和驱动交互
 //		处理驱动传递过来的established_layer & mac_frame_layer 数据
 #include <Windows.h>
-
 #include "sync.h"
 #include "nfevents.h"
 #include "devctrl.h"
 #include "sysinfo.h"
 #include <xstring>
 #include <vector>
-
 #include <fltuser.h>
 
 using namespace std;
@@ -399,11 +397,6 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 	DWORD waitTimeout;
 	bool abortBatch;
 	int i;
-
-	// Start SysMonitor Grpc
-	//Grpc* greeter_sysmonitor = (Grpc*)lpThreadParameter;
-	//if (!greeter_sysmonitor)
-	//	return false;
 
 	OutputDebugString(L"Entry WorkThread");
 	SetEvent(g_workThreadStartedEvent);

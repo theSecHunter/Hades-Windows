@@ -77,6 +77,9 @@ public:
 	bool Grpc_Transfer(RawData rawData);
 	void Grpc_ReadC2Thread(LPVOID lpThreadParameter);
 	void Grpc_ReadDispatchHandle(Command& command);
+	void Grpc_write();
+	void Grpc_writeEx(RawData& raw);
+	void Grpc_WriteDispatchHandle(const int code, string& data);
 
 	bool Grpc_pushQueue(const int code, const char* buf, int len);
 
@@ -93,7 +96,6 @@ private:
 	tThreads m_threads;
 
 	HANDLE m_jobAvailableEvent;
-
 	// void Grpc_ReadDispatchHandle(Command& command);
 };
 

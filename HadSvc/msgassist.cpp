@@ -1,0 +1,163 @@
+#include <Windows.h>
+#include "sysinfo.h"
+#include "msgassist.h"
+
+void Wchar_tToString(std::string& szDst, wchar_t* wchar)
+{
+    wchar_t* wText = wchar;
+    DWORD dwNum = WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, NULL, 0, NULL, FALSE);
+    char* psText;
+    psText = new char[dwNum];
+    WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, psText, dwNum, NULL, FALSE);
+    szDst = psText;
+    delete[] psText;
+}
+
+bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
+{
+    dwAllocateMemSize = 0;
+
+    // kernel
+    switch (code)
+    {
+    case NF_SSDT_ID:
+    {
+        dwAllocateMemSize = sizeof(SSDTINFO) * 0x200;
+    }
+    break;
+    case NF_IDT_ID:
+    {
+        dwAllocateMemSize = sizeof(IDTINFO) * 0x100;
+    }
+    break;
+    case NF_DPC_ID:
+    {
+        dwAllocateMemSize = sizeof(DPC_TIMERINFO) * 0x200;
+    }
+    break;
+    case NF_FSD_ID:
+    {
+        dwAllocateMemSize = sizeof(ULONGLONG) * 0x1b * 2 + 1;
+    }
+    break;
+    case NF_MOUSEKEYBOARD_ID:
+    {
+        dwAllocateMemSize = sizeof(ULONGLONG) * 0x1b * 3 + 1;
+    }
+    break;
+    case NF_NETWORK_ID:
+    {
+        dwAllocateMemSize = sizeof(SYSNETWORKINFONODE);
+    }
+    break;
+    case NF_PROCESS_ENUM:
+    {
+        dwAllocateMemSize = sizeof(HANDLE_INFO) * 1024 * 2;
+    }
+    break;
+    case NF_PROCESS_MOD:
+    {
+        dwAllocateMemSize = sizeof(PROCESS_MOD) * 1024 * 2;
+    }
+    break;
+    case NF_PROCESS_KILL:
+    {
+        dwAllocateMemSize = 1;
+    }
+    break;
+    case NF_SYSMOD_ENUM:
+    {
+        dwAllocateMemSize = sizeof(PROCESS_MOD) * 1024 * 2;
+    }
+    break;
+    case NF_EXIT:
+    {
+        dwAllocateMemSize = 1;
+    }
+    break;
+    default:
+        break;
+    }
+
+    // user
+    switch (code)
+    {
+    case UF_PROCESS_ENUM:
+    {
+        dwAllocateMemSize = sizeof(UProcessNode) + 1;
+    }
+    break;
+    case UF_PROCESS_PID_TREE:
+    {
+        dwAllocateMemSize = 0;
+    }
+    break;
+    case UF_SYSAUTO_START:
+    {
+        dwAllocateMemSize = sizeof(UAutoStartNode) + 1;
+    }
+    break;
+    case UF_SYSNET_INFO:
+    {
+        dwAllocateMemSize = sizeof(UNetNode) + 1;
+    }
+    break;
+    case UF_SYSSESSION_INFO:
+    {
+        dwAllocateMemSize = 0;
+    }
+    break;
+    case UF_SYSINFO_ID:
+    {
+        dwAllocateMemSize = 0;
+    }
+    break;
+    case UF_SYSLOG_ID:
+    {
+        dwAllocateMemSize = 0;
+    }
+    break;
+    case UF_SYSUSER_ID:
+    {
+        dwAllocateMemSize = sizeof(UUserNode) + 1;
+    }
+    break;
+    case UF_SYSSERVICE_SOFTWARE_ID:
+    {
+        dwAllocateMemSize = sizeof(UAllServerSoftware) + 1;
+    }
+    break;
+    case UF_SYSFILE_ID:
+    {
+        dwAllocateMemSize = sizeof(UDriectInfo) + 1;
+    }
+    break;
+    case UF_FILE_INFO:
+    {
+        dwAllocateMemSize = sizeof(UFileInfo) + 1;
+    }
+    break;
+    case UF_ROOTKIT_ID:
+    {
+        dwAllocateMemSize = 0;
+    }
+    break;
+    default:
+        break;
+    }
+
+    // etw
+
+
+    if (0 == dwAllocateMemSize)
+        return false;
+
+    ptr = new char[dwAllocateMemSize];
+    if (ptr)
+    {
+        RtlSecureZeroMemory(ptr, dwAllocateMemSize);
+        return true;
+    }
+
+    return false;
+}

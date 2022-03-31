@@ -104,10 +104,12 @@
     <TargetName>$(ProjectName)64</TargetName>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
-    <VcpkgEnabled>true</VcpkgEnabled>
+    <VcpkgEnabled>
+    </VcpkgEnabled>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <VcpkgUseStatic>false</VcpkgUseStatic>
+    <VcpkgUseStatic>
+    </VcpkgUseStatic>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -180,18 +182,25 @@
     <ClCompile Include="hades_win.grpc.pb.cc" />
     <ClCompile Include="hades_win.pb.cc" />
     <ClCompile Include="HlprMiniCom.cpp" />
+    <ClCompile Include="kmsginterface.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="msgassist.cpp" />
     <ClCompile Include="pipe.cpp" />
     <ClCompile Include="time_stamp.cpp" />
+    <ClCompile Include="umsginterface.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="grpc.h" />
     <ClInclude Include="hades_win.grpc.pb.h" />
     <ClInclude Include="hades_win.pb.h" />
     <ClInclude Include="HlprMiniCom.h" />
+    <ClInclude Include="kmsginterface.h" />
+    <ClInclude Include="msgassist.h" />
     <ClInclude Include="pipe.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="sysinfo.h" />
     <ClInclude Include="time_stamp.h" />
+    <ClInclude Include="umsginterface.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="mcfilter.rc" />
