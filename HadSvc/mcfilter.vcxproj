@@ -79,14 +79,14 @@
     <OutDir>..\bin\</OutDir>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
     <TargetName>$(ProjectName)_d32</TargetName>
-    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;$(IncludePath)</IncludePath>
+    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;D:\Hades\Hades-Windows\HadesSdk\sysmondrv\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\</OutDir>
     <LibraryPath>../lib/Release/Win32;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
-    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmondrv\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>

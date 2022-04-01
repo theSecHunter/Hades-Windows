@@ -6,11 +6,13 @@
 #include <queue>
 #include <mutex>
 #include "umsginterface.h"
+#include "kmsginterface.h"
 
 using namespace std;
 
 static bool                 g_shutdown = false;
 static uMsgInterface        g_user_interface;
+static kMsgInterface        g_kern_interface;
 
 typedef struct _NodeQueue
 {
@@ -52,8 +54,15 @@ void Grpc::Grpc_write()
     const int taskid = ggrpc_taskid.front();
     ggrpc_taskcs.unlock();
     
+    // task_id
     std::vector<std::string> task_array_data;
-    g_user_interface.uMsg_taskPush(taskid, task_array_data);
+    if ((taskid >= 100) && (taskid < 200))
+        g_user_interface.uMsg_taskPush(taskid, task_array_data);
+    else if ((taskid >= 200) && (taskid < 300))
+        g_kern_interface.kMsg_taskPush(taskid, task_array_data);
+    else
+        return;
+    
 
     ::proto::RawData rawData;
     ::proto::Record* pkg = rawData.add_pkg();

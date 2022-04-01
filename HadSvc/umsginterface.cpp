@@ -1,12 +1,13 @@
 #include "sysinfo.h"
+#include <iostream>
 #include <Windows.h>
 #include <map>
 #include <vector>
 #include <string>
 
+
 #include "msgassist.h"
 #include "umsginterface.h"
-using namespace std;
 
 #include "uautostart.h"
 #include "unet.h"
@@ -26,8 +27,6 @@ static UEtw                 g_grpc_etw;
 
 void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& vec_task_string)
 {
-    map<int, wstring>::iterator iter;
-    map<int, wstring> Process_list;
     std::string tmpstr; wstring catstr;
     int i = 0, index = 0;
     DWORD64 dwAllocateMemSize = 0;
@@ -64,7 +63,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     (*MapMessage)["win_user_process_parenid"] = procesNode->sysprocess[i].th32ParentProcessID;
                     (*MapMessage)["win_user_process_thrcout"] = procesNode->sysprocess[i].threadcout;
                 }
-
+                std::cout << "[User] Process Enum Success" << std::endl;
             }
             break;
             case UF_PROCESS_PID_TREE:
@@ -90,11 +89,6 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
 
                     (*MapMessage)["win_user_autorun_regName"] = autorunnode->regrun[i].szValueName;
                     (*MapMessage)["win_user_autorun_regKey"] = autorunnode->regrun[i].szValueKey;
-
-                    m_cs.lock();
-                    if (Grpc_Getstream())
-                        m_stream->Write(rawData);
-                    m_cs.unlock();
                 }
 
 
@@ -110,14 +104,9 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, autorunnode->taskschrun[i].TaskCommand);
                     (*MapMessage)["win_user_autorun_tscCommand"] = tmpstr;
-
-                    m_cs.lock();
-                    if (Grpc_Getstream())
-                        m_stream->Write(rawData);
-                    m_cs.unlock();
                 }
 
-                cout << "[User] SystemAutoStartRun Enum Success" << endl;
+                std::cout << "[User] SystemAutoStartRun Enum Success" << std::endl;
             }
             break;
             case UF_SYSNET_INFO:
@@ -136,10 +125,6 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     (*MapMessage)["win_user_net_dst"] = netnode->tcpnode[i].szrip;
                     (*MapMessage)["win_user_net_status"] = netnode->tcpnode[i].TcpState;
                     (*MapMessage)["win_user_net_pid"] = netnode->tcpnode[i].PidString;
-                    m_cs.lock();
-                    if (Grpc_Getstream())
-                        m_stream->Write(rawData);
-                    m_cs.unlock();
                 }
 
                 (*MapMessage)["win_user_net_flag"] = "2";
@@ -147,10 +132,6 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 {
                     (*MapMessage)["win_user_net_src"] = netnode->tcpnode[i].szlip;
                     (*MapMessage)["win_user_net_pid"] = netnode->tcpnode[i].PidString;
-                    m_cs.lock();
-                    if (Grpc_Getstream())
-                        m_stream->Write(rawData);
-                    m_cs.unlock();
                 }
 
             }
@@ -186,11 +167,6 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     (*MapMessage)["win_user_sysuser_name"] = tmpstr;
                     (*MapMessage)["win_user_sysuser_sid"] = to_string((ULONGLONG)pusernode->usernode[i].serverusid);
                     (*MapMessage)["win_user_sysuser_flag"] = to_string(pusernode->usernode[i].serveruflag);
-
-                    m_cs.lock();
-                    if (Grpc_Getstream())
-                        m_stream->Write(rawData);
-                    m_cs.unlock();
                 }
 
             }
@@ -220,11 +196,6 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpDescription);
                     (*MapMessage)["win_user_server_lpDescr"] = tmpstr;
                     (*MapMessage)["win_user_server_status"] = pNode->uSericeinfo[i].dwCurrentState;
-
-                    m_cs.lock();
-                    if (Grpc_Getstream())
-                        m_stream->Write(rawData);
-                    m_cs.unlock();
                 }
 
                 (*MapMessage)["win_user_softwareserver_flag"] = "2";
@@ -251,11 +222,6 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftVenRel);
                     (*MapMessage)["win_user_software_venrel"] = tmpstr;
-
-                    m_cs.lock();
-                    if (Grpc_Getstream())
-                        m_stream->Write(rawData);
-                    m_cs.unlock();
                 }
 
             }
@@ -290,11 +256,6 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     Wchar_tToString(tmpstr, directinfo->fileEntry[i].filepath);
                     (*MapMessage)["win_user_driectinfo_filePath"] = tmpstr;
                     (*MapMessage)["win_user_driectinfo_fileSize"] = to_string(directinfo->fileEntry[i].filesize);
-
-                    m_cs.lock();
-                    if (Grpc_Getstream())
-                        m_stream->Write(rawData);
-                    m_cs.unlock();
                 }
             }
             break;
@@ -331,11 +292,6 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->seFileModify);
                 (*MapMessage)["win_user_fileinfo_seFileModify"] = tmpstr;
-
-                m_cs.lock();
-                if (Grpc_Getstream())
-                    m_stream->Write(rawData);
-                m_cs.unlock();
             }
             break;
             case UF_ROOTKIT_ID:     // v2.0
