@@ -1,6 +1,12 @@
 HadesContrl/Debug
+HadesContrl/Release
 HadesView/Debug
+HadesView/Release
 HadSvc/Debug
+HadSvc/Release
 .vs/
 bin/
-Duilib/
+DuiLib/Release
+DuiLib/Debug
+MonitorEvent/sysmondrv/Release
+MonitorEvent/sysmondrv/Debug

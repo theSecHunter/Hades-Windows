@@ -1,11 +1,10 @@
-#include "sysinfo.h"
 #include <iostream>
 #include <Windows.h>
 #include <map>
 #include <vector>
 #include <string>
 
-
+#include "sysinfo.h"
 #include "msgassist.h"
 #include "umsginterface.h"
 
@@ -16,6 +15,12 @@
 #include "uservicesoftware.h"
 #include "ufile.h"
 #include "uetw.h"
+
+//rapidjson
+#include <rapidjson/rapidjson.h>
+#include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 static UAutoStart           g_grpc_uautostrobj;
 static UNet                 g_grpc_unetobj;
@@ -28,12 +33,17 @@ static UEtw                 g_grpc_etw;
 void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& vec_task_string)
 {
     std::string tmpstr; wstring catstr;
-    int i = 0, index = 0;
+    int i = 0, index = 0, veclist_cout = 0;
     DWORD64 dwAllocateMemSize = 0;
     char* ptr_Getbuffer;
     bool nstatus = Choose_mem(ptr_Getbuffer, dwAllocateMemSize, taskcode);
     if (false == nstatus || nullptr == ptr_Getbuffer || dwAllocateMemSize == 0)
         return;
+
+    rapidjson::Document document;
+    document.SetObject();
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     
     try
     {
@@ -52,16 +62,19 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
 
                 for (i = 0; i < procesNode->processcount; ++i)
                 {
+                    document.Clear();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, procesNode->sysprocess[i].fullprocesspath);
-                    (*MapMessage)["win_user_process_Path"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_process_Path"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, procesNode->sysprocess[i].szExeFile);
-                    (*MapMessage)["win_user_process_szExeFile"] = tmpstr;
-                    (*MapMessage)["win_user_process_pid"] = procesNode->sysprocess[i].pid;
-                    (*MapMessage)["win_user_process_pribase"] = procesNode->sysprocess[i].priclassbase;
-                    (*MapMessage)["win_user_process_parenid"] = procesNode->sysprocess[i].th32ParentProcessID;
-                    (*MapMessage)["win_user_process_thrcout"] = procesNode->sysprocess[i].threadcout;
+                    document.AddMember(rapidjson::StringRef("win_user_process_szExeFile"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_process_pid"), rapidjson::StringRef(to_string(procesNode->sysprocess[i].pid).c_str()), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_process_pribase"), rapidjson::StringRef(procesNode->sysprocess[i].priclassbase), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_process_parenid"), rapidjson::StringRef(to_string(procesNode->sysprocess[i].th32ParentProcessID).c_str()), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_process_thrcout"), rapidjson::StringRef(to_string(procesNode->sysprocess[i].threadcout).c_str()), document.GetAllocator());
+                    document.Accept(writer);
+                    vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
                 }
                 std::cout << "[User] Process Enum Success" << std::endl;
             }
@@ -82,28 +95,30 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 if (!autorunnode)
                     break;
 
-
-                (*MapMessage)["win_user_autorun_flag"] = "1";
+                document.Clear();
+                document.AddMember(rapidjson::StringRef("win_user_autorun_flag"), rapidjson::StringRef("1"), document.GetAllocator());
                 for (i = 0; i < autorunnode->regnumber; ++i)
                 {
-
-                    (*MapMessage)["win_user_autorun_regName"] = autorunnode->regrun[i].szValueName;
-                    (*MapMessage)["win_user_autorun_regKey"] = autorunnode->regrun[i].szValueKey;
+                    document.AddMember(rapidjson::StringRef("win_user_autorun_regName"), rapidjson::StringRef(autorunnode->regrun[i].szValueName), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_autorun_regKey"), rapidjson::StringRef(autorunnode->regrun[i].szValueKey), document.GetAllocator());
+                    document.Accept(writer);
+                    vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
                 }
 
-
-                (*MapMessage)["win_user_autorun_flag"] = "2";
+                document.AddMember(rapidjson::StringRef("win_user_autorun_flag"), rapidjson::StringRef("2"), document.GetAllocator());
                 for (i = 0; i < autorunnode->taskrunnumber; ++i)
                 {
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, autorunnode->taskschrun[i].szValueName);
-                    (*MapMessage)["win_user_autorun_tschname"] = tmpstr;
-                    (*MapMessage)["win_user_autorun_tscState"] = autorunnode->taskschrun[i].State;
-                    (*MapMessage)["win_user_autorun_tscLastTime"] = autorunnode->taskschrun[i].LastTime;
-                    (*MapMessage)["win_user_autorun_tscNextTime"] = autorunnode->taskschrun[i].NextTime;
+                    document.AddMember(rapidjson::StringRef("win_user_autorun_tschname"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_autorun_tscState"), rapidjson::StringRef(to_string(autorunnode->taskschrun[i].State).c_str()), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_autorun_tscLastTime"), rapidjson::StringRef(to_string(autorunnode->taskschrun[i].LastTime).c_str()), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_autorun_tscNextTime"), rapidjson::StringRef(to_string(autorunnode->taskschrun[i].NextTime).c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, autorunnode->taskschrun[i].TaskCommand);
-                    (*MapMessage)["win_user_autorun_tscCommand"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_autorun_tscCommand"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
+                    document.Accept(writer);
+                    vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
                 }
 
                 std::cout << "[User] SystemAutoStartRun Enum Success" << std::endl;
@@ -118,20 +133,24 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 if (!netnode)
                     break;
 
-                (*MapMessage)["win_user_net_flag"] = "1";
+                document.AddMember(rapidjson::StringRef("win_user_net_flag"), rapidjson::StringRef("1"), document.GetAllocator());
                 for (i = 0; i < netnode->tcpnumber; i++)
                 {
-                    (*MapMessage)["win_user_net_src"] = netnode->tcpnode[i].szlip;
-                    (*MapMessage)["win_user_net_dst"] = netnode->tcpnode[i].szrip;
-                    (*MapMessage)["win_user_net_status"] = netnode->tcpnode[i].TcpState;
-                    (*MapMessage)["win_user_net_pid"] = netnode->tcpnode[i].PidString;
+                    document.AddMember(rapidjson::StringRef("win_user_net_src"), rapidjson::StringRef(netnode->tcpnode[i].szlip), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_net_dst"), rapidjson::StringRef(netnode->tcpnode[i].szrip), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_net_status"), rapidjson::StringRef(netnode->tcpnode[i].TcpState), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_net_pid"), rapidjson::StringRef(netnode->tcpnode[i].PidString), document.GetAllocator());
+                    document.Accept(writer);
+                    vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
                 }
 
-                (*MapMessage)["win_user_net_flag"] = "2";
+                document.AddMember(rapidjson::StringRef("win_user_net_flag"), rapidjson::StringRef("2"), document.GetAllocator());
                 for (i = 0; i < netnode->udpnumber; i++)
                 {
-                    (*MapMessage)["win_user_net_src"] = netnode->tcpnode[i].szlip;
-                    (*MapMessage)["win_user_net_pid"] = netnode->tcpnode[i].PidString;
+                    document.AddMember(rapidjson::StringRef("win_user_net_src"), rapidjson::StringRef(netnode->tcpnode[i].szlip), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_net_pid"), rapidjson::StringRef(netnode->tcpnode[i].PidString), document.GetAllocator());
+                    document.Accept(writer);
+                    vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
                 }
 
             }
@@ -161,12 +180,14 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 {
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pusernode->usernode[i].serveruser);
-                    (*MapMessage)["win_user_sysuser_user"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_sysuser_user"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pusernode->usernode[i].servername);
-                    (*MapMessage)["win_user_sysuser_name"] = tmpstr;
-                    (*MapMessage)["win_user_sysuser_sid"] = to_string((ULONGLONG)pusernode->usernode[i].serverusid);
-                    (*MapMessage)["win_user_sysuser_flag"] = to_string(pusernode->usernode[i].serveruflag);
+                    document.AddMember(rapidjson::StringRef("win_user_sysuser_name"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_sysuser_sid"), rapidjson::StringRef(to_string((ULONGLONG)pusernode->usernode[i].serverusid).c_str()), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_sysuser_flag"), rapidjson::StringRef(to_string(pusernode->usernode[i].serveruflag).c_str()), document.GetAllocator());
+                    document.Accept(writer);
+                    vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
                 }
 
             }
@@ -180,48 +201,52 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 if (!pNode)
                     break;
 
-                (*MapMessage)["win_user_softwareserver_flag"] = "1";
+                document.AddMember(rapidjson::StringRef("win_user_softwareserver_flag"), rapidjson::StringRef("1"), document.GetAllocator());
                 for (i = 0; i < pNode->servicenumber; ++i)
                 {
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpServiceName);
-                    (*MapMessage)["win_user_server_lpsName"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_server_lpsName"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpDisplayName);
-                    (*MapMessage)["win_user_server_lpdName"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_server_lpdName"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpBinaryPathName);
-                    (*MapMessage)["win_user_server_lpPath"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_server_lpPath"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpDescription);
-                    (*MapMessage)["win_user_server_lpDescr"] = tmpstr;
-                    (*MapMessage)["win_user_server_status"] = pNode->uSericeinfo[i].dwCurrentState;
+                    document.AddMember(rapidjson::StringRef("win_user_server_lpDescr"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_server_status"), rapidjson::StringRef(pNode->uSericeinfo[i].dwCurrentState.c_str()), document.GetAllocator());
+                    document.Accept(writer);
+                    vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
                 }
 
-                (*MapMessage)["win_user_softwareserver_flag"] = "2";
+                document.AddMember(rapidjson::StringRef("win_user_softwareserver_flag"), rapidjson::StringRef("2"), document.GetAllocator());
                 for (i = 0; i < pNode->softwarenumber; ++i)
                 {
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftName);
-                    (*MapMessage)["win_user_software_lpsName"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_software_lpsName"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftSize);
-                    (*MapMessage)["win_user_software_Size"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_software_Size"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftVer);
-                    (*MapMessage)["win_user_software_Ver"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_software_Ver"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftInsPath);
-                    (*MapMessage)["win_user_software_installpath"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_software_installpath"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftUniPath);
-                    (*MapMessage)["win_user_software_uninstallpath"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_software_uninstallpath"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftDate);
-                    (*MapMessage)["win_user_software_data"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_software_data"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftVenRel);
-                    (*MapMessage)["win_user_software_venrel"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_software_venrel"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
+                    document.Accept(writer);
+                    vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
                 }
 
             }
@@ -237,25 +262,26 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     break;
 
                 // 先回发送一次cout和总目录大小
-                (*MapMessage)["win_user_driectinfo_flag"] = "1";
-                (*MapMessage)["win_user_driectinfo_filecout"] = to_string(directinfo->FileNumber);
-                (*MapMessage)["win_user_driectinfo_size"] = to_string(directinfo->DriectAllSize);
-                m_cs.lock();
-                if (Grpc_Getstream())
-                    m_stream->Write(rawData);
-                m_cs.unlock();
+                document.AddMember(rapidjson::StringRef("win_user_driectinfo_flag"), rapidjson::StringRef("1"), document.GetAllocator());
+                document.AddMember(rapidjson::StringRef("win_user_driectinfo_filecout"), rapidjson::StringRef(to_string(directinfo->FileNumber).c_str()), document.GetAllocator());
+                document.AddMember(rapidjson::StringRef("win_user_driectinfo_size"), rapidjson::StringRef(to_string(directinfo->DriectAllSize).c_str()), document.GetAllocator());
+                document.Accept(writer);
+                vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
 
+                document.Clear();
                 // 枚举的文件发送
-                (*MapMessage)["win_user_driectinfo_flag"] = "2";
+                document.AddMember(rapidjson::StringRef("win_user_driectinfo_flag"), rapidjson::StringRef("2"), document.GetAllocator());
                 for (i = 0; i < directinfo->FileNumber; ++i)
                 {
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, directinfo->fileEntry[i].filename);
-                    (*MapMessage)["win_user_driectinfo_filename"] = tmpstr;
+                    document.AddMember(rapidjson::StringRef("win_user_driectinfo_filename"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, directinfo->fileEntry[i].filepath);
-                    (*MapMessage)["win_user_driectinfo_filePath"] = tmpstr;
-                    (*MapMessage)["win_user_driectinfo_fileSize"] = to_string(directinfo->fileEntry[i].filesize);
+                    document.AddMember(rapidjson::StringRef("win_user_driectinfo_filePath"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
+                    document.AddMember(rapidjson::StringRef("win_user_driectinfo_fileSize"), rapidjson::StringRef(to_string(directinfo->fileEntry[i].filesize).c_str()), document.GetAllocator());
+                    document.Accept(writer);
+                    vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
                 }
             }
             break;
@@ -271,27 +297,29 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
 
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->cFileName);
-                (*MapMessage)["win_user_fileinfo_filename"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_user_fileinfo_filename"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->dwFileAttributes);
-                (*MapMessage)["win_user_fileinfo_dwFileAttributes"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_user_fileinfo_dwFileAttributes"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->dwFileAttributesHide);
-                (*MapMessage)["win_user_fileinfo_dwFileAttributesHide"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_user_fileinfo_dwFileAttributesHide"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                 tmpstr.clear();
-                (*MapMessage)["win_user_fileinfo_md5"] = fileinfo->md5;
+                document.AddMember(rapidjson::StringRef("win_user_fileinfo_md5"), rapidjson::StringRef(fileinfo->md5.c_str()), document.GetAllocator());
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->m_seFileSizeof);
-                (*MapMessage)["win_user_fileinfo_m_seFileSizeof"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_user_fileinfo_m_seFileSizeof"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->seFileAccess);
-                (*MapMessage)["win_user_fileinfo_seFileAccess"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_user_fileinfo_seFileAccess"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->seFileCreate);
-                (*MapMessage)["win_user_fileinfo_seFileCreate"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_user_fileinfo_seFileCreate"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->seFileModify);
-                (*MapMessage)["win_user_fileinfo_seFileModify"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_user_fileinfo_seFileModify"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
+                document.Accept(writer);
+                vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
             }
             break;
             case UF_ROOTKIT_ID:     // v2.0

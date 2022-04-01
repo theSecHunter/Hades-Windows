@@ -17,6 +17,12 @@
 #include "sysinfo.h"
 #include "msgassist.h"
 
+//rapidjson
+#include <rapidjson/rapidjson.h>
+#include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
 static ArkSsdt		        g_grpc_ssdtobj;
 static ArkIdt				    g_grpc_idtobj;
 static ArkDpcTimer		    g_grpc_dpcobj;
@@ -31,12 +37,17 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     map<int, wstring>::iterator iter;
     map<int, wstring> Process_list;
     std::string tmpstr; wstring catstr;
-    int i = 0, index = 0;
+    int i = 0, index = 0, veclist_cout = 0;
     DWORD64 dwAllocateMemSize = 0;
     char* ptr_Getbuffer;
     bool nstatus = Choose_mem(ptr_Getbuffer, dwAllocateMemSize, taskcode);
     if (false == nstatus || nullptr == ptr_Getbuffer || dwAllocateMemSize == 0)
         return;
+
+    rapidjson::Document document;
+    document.SetObject();
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
     switch (taskcode)
     {
@@ -54,8 +65,11 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             {
                 if (!ssdtinfo[i].sstd_memoffset)
                     continue;
-                (*MapMessage)["win_rootkit_ssdt_id"] = to_string(ssdtinfo[i].ssdt_id);
-                (*MapMessage)["win_rootkit_ssdt_offsetaddr"] = to_string(ssdtinfo[i].sstd_memoffset);
+                document.Clear();
+                document.AddMember(rapidjson::StringRef("win_rootkit_ssdt_id"), rapidjson::StringRef(to_string(ssdtinfo[i].ssdt_id).c_str()), document.GetAllocator());
+                document.AddMember(rapidjson::StringRef("win_rootkit_ssdt_offsetaddr"), rapidjson::StringRef(to_string(ssdtinfo[i].sstd_memoffset).c_str()), document.GetAllocator());
+                document.Accept(writer);
+                vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
             }
             std::cout << "Grpc Ssdt Send Pkg Success" << std::endl;
             break;
@@ -76,8 +90,11 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             {
                 if (!idtinfo[i].idt_isrmemaddr)
                     continue;
-                (*MapMessage)["win_rootkit_idt_id"] = to_string(idtinfo[i].idt_id);
-                (*MapMessage)["win_rootkit_idt_offsetaddr"] = to_string(idtinfo[i].idt_isrmemaddr);
+                document.Clear();
+                document.AddMember(rapidjson::StringRef("win_rootkit_idt_id"), rapidjson::StringRef(to_string(idtinfo[i].idt_id).c_str()), document.GetAllocator());
+                document.AddMember(rapidjson::StringRef("win_rootkit_idt_offsetaddr"), rapidjson::StringRef(to_string(idtinfo[i].idt_isrmemaddr).c_str()), document.GetAllocator());
+                document.Accept(writer);
+                vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
             }
             std::cout << "Grpc Ssdt Send Pkg Success" << std::endl;
         }
@@ -95,10 +112,13 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         {
             if (!dpcinfo[i].dpc)
                 continue;
-            (*MapMessage)["win_rootkit_dpc"] = to_string(dpcinfo[i].dpc);
-            (*MapMessage)["win_rootkit_dpc_timeobj"] = to_string(dpcinfo[i].timeroutine);
-            (*MapMessage)["win_rootkit_dpc_timeroutine"] = to_string(dpcinfo[i].timeroutine);
-            (*MapMessage)["win_rootkit_dpc_periodtime"] = to_string(dpcinfo[i].period);
+            document.Clear();
+            document.AddMember(rapidjson::StringRef("win_rootkit_dpc"), rapidjson::StringRef(to_string(dpcinfo[i].dpc).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_dpc_timeobj"), rapidjson::StringRef(to_string(dpcinfo[i].timeroutine).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_dpc_timeroutine"), rapidjson::StringRef(to_string(dpcinfo[i].timeroutine).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_dpc_periodtime"), rapidjson::StringRef(to_string(dpcinfo[i].period).c_str()), document.GetAllocator());
+            document.Accept(writer);
+            vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
         }
         std::cout << "Grpc Dpc Send Pkg Success" << std::endl;
     }
@@ -112,20 +132,25 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (!MjAddrArry)
             break;
 
-        (*MapMessage)["win_rootkit_is_fsdmod"] = "1";
+        document.Clear();
+        document.AddMember(rapidjson::StringRef("win_rootkit_is_fsdmod"), rapidjson::StringRef("1"), document.GetAllocator());
         for (i = 0; i < 0x1b; ++i)
         {
-            (*MapMessage)["win_rootkit_fsdfastfat_id"] = to_string(MjAddrArry[index]);
-            (*MapMessage)["win_rootkit_fsdfastfat_mjaddr"] = to_string(MjAddrArry[index]);
+            document.AddMember(rapidjson::StringRef("win_rootkit_fsdfastfat_id"), rapidjson::StringRef(to_string(MjAddrArry[index]).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_fsdfastfat_mjaddr"), rapidjson::StringRef(to_string(MjAddrArry[index]).c_str()), document.GetAllocator());
+            document.Accept(writer);
+            vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
             index++;
         }
         std::cout << "FastFat MjFuction End" << std::endl;
 
-        (*MapMessage)["win_rootkit_is_fsdmod"] = "2";
+        document.AddMember(rapidjson::StringRef("win_rootkit_is_fsdmod"), rapidjson::StringRef("2"), document.GetAllocator());
         for (i = 0; i < 0x1b; ++i)
         {
-            (*MapMessage)["win_rootkit_fsdntfs_id"] = to_string(MjAddrArry[index]);
-            (*MapMessage)["win_rootkit_fsdntfs_mjaddr"] = to_string(MjAddrArry[index]);
+            document.AddMember(rapidjson::StringRef("win_rootkit_fsdntfs_id"), rapidjson::StringRef(to_string(MjAddrArry[index]).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_fsdntfs_mjaddr"), rapidjson::StringRef(to_string(MjAddrArry[index]).c_str()), document.GetAllocator());
+            document.Accept(writer);
+            vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
             index++;
         }
         std::cout << "Ntfs MjFuction End" << std::endl;
@@ -144,30 +169,36 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (!MjAddrArry)
             break;
 
-        (*MapMessage)["win_rootkit_is_mousekeymod"] = "1";
+        document.Clear();
+        document.AddMember(rapidjson::StringRef("win_rootkit_is_mousekeymod"), rapidjson::StringRef("1"), document.GetAllocator());
         for (i = 0; i < 0x1b; ++i)
         {
-            (*MapMessage)["win_rootkit_Mouse_id"] = to_string(MjAddrArry[index]);
-            (*MapMessage)["win_rootkit_Mouse_mjaddr"] = to_string(MjAddrArry[index]);
+            document.AddMember(rapidjson::StringRef("win_rootkit_Mouse_id"), rapidjson::StringRef(to_string(MjAddrArry[index]).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_Mouse_mjaddr"), rapidjson::StringRef(to_string(MjAddrArry[index]).c_str()), document.GetAllocator());
+            document.Accept(writer);
+            vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
             index++;
         }
         std::cout << "Mouse MjFuction End" << std::endl;
 
-        (*MapMessage)["win_rootkit_is_mousekeymod"] = "2";
+        document.AddMember(rapidjson::StringRef("win_rootkit_is_mousekeymod"), rapidjson::StringRef("2"), document.GetAllocator());
         for (i = 0; i < 0x1b; ++i)
         {
-            (*MapMessage)["win_rootkit_i8042_id"] = to_string(MjAddrArry[index]);
-            (*MapMessage)["win_rootkit_i8042_mjaddr"] = to_string(MjAddrArry[index]);
+            document.AddMember(rapidjson::StringRef("win_rootkit_i8042_id"), rapidjson::StringRef(to_string(MjAddrArry[index]).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_i8042_mjaddr"), rapidjson::StringRef(to_string(MjAddrArry[index]).c_str()), document.GetAllocator());
+            document.Accept(writer);
+            vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
             index++;
         }
         std::cout << "i8042 MjFuction End" << std::endl;
 
-
-        (*MapMessage)["win_rootkit_is_mousekeymod"] = "3";
+        document.AddMember(rapidjson::StringRef("win_rootkit_is_mousekeymod"), rapidjson::StringRef("3"), document.GetAllocator());
         for (i = 0; i < 0x1b; ++i)
         {
-            (*MapMessage)["win_rootkit_kbd_id"] = to_string(MjAddrArry[index]);
-            (*MapMessage)["win_rootkit_kbd_mjaddr"] = to_string(MjAddrArry[index]);
+            document.AddMember(rapidjson::StringRef("win_rootkit_kbd_id"), rapidjson::StringRef(to_string(MjAddrArry[index]).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_kbd_mjaddr"), rapidjson::StringRef(to_string(MjAddrArry[index]).c_str()), document.GetAllocator());
+            document.Accept(writer);
+            vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
             index++;
         }
         std::cout << "kbd MjFuction End" << std::endl;
@@ -182,24 +213,29 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (!networkinfo)
             break;
 
+        document.Clear();
         // Tcp
-
-        (*MapMessage)["win_rootkit_is_mod"] = "1";
+        document.AddMember(rapidjson::StringRef("win_rootkit_is_mod"), rapidjson::StringRef("1"), document.GetAllocator());
         for (i = 0; i < networkinfo->tcpcout; ++i)
         {
-            (*MapMessage)["win_rootkit_tcp_pid"] = to_string(networkinfo->systcpinfo[i].processinfo.dwTcpProId);
-            (*MapMessage)["win_rootkit_tcp_localIp_port"] = to_string(networkinfo->systcpinfo[i].TpcTable.localEntry.dwIP) + ":" + to_string(ntohs(networkinfo->systcpinfo[i].TpcTable.localEntry.Port));
-            (*MapMessage)["win_rootkit_tcp_remoteIp_port"] = to_string(networkinfo->systcpinfo[i].TpcTable.remoteEntry.dwIP) + ":" + to_string(ntohs(networkinfo->systcpinfo[i].TpcTable.remoteEntry.Port));
-            (*MapMessage)["win_rootkit_tcp_Status"] = to_string(networkinfo->systcpinfo[i].socketStatus.dwState);
+            document.AddMember(rapidjson::StringRef("win_rootkit_tcp_pid"), rapidjson::StringRef(to_string(networkinfo->systcpinfo[i].processinfo.dwTcpProId).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_tcp_localIp_port"), rapidjson::StringRef(to_string(networkinfo->systcpinfo[i].TpcTable.localEntry.dwIP).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_tcp_remoteIp_port"), rapidjson::StringRef(to_string(networkinfo->systcpinfo[i].TpcTable.remoteEntry.dwIP).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_tcp_Status"), rapidjson::StringRef(to_string(networkinfo->systcpinfo[i].socketStatus.dwState).c_str()), document.GetAllocator());
+            document.Accept(writer);
+            vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
         }
         std::cout << "Tpc Port Send Grpc Success" << std::endl;
 
-
-        (*MapMessage)["win_rootkit_is_mod"] = "2";
+        document.AddMember(rapidjson::StringRef("win_rootkit_is_mod"), rapidjson::StringRef("2"), document.GetAllocator());
+        std::string udpipport;
         for (i = 0; i < networkinfo->udpcout; ++i)
         {
-            (*MapMessage)["win_rootkit_udp_pid"] = to_string(networkinfo->sysudpinfo[i].processinfo.dwUdpProId);
-            (*MapMessage)["win_rootkit_udp_localIp_port"] = to_string(networkinfo->sysudpinfo[i].UdpTable.dwIP) + ":" + to_string(ntohs(networkinfo->sysudpinfo[i].UdpTable.Port));
+            udpipport = to_string(networkinfo->sysudpinfo[i].UdpTable.dwIP) + ":" + to_string(ntohs(networkinfo->sysudpinfo[i].UdpTable.Port));
+            document.AddMember(rapidjson::StringRef("win_rootkit_udp_pid"), rapidjson::StringRef(to_string(networkinfo->sysudpinfo[i].processinfo.dwUdpProId).c_str()), document.GetAllocator());
+            document.AddMember(rapidjson::StringRef("win_rootkit_udp_localIp_port"), rapidjson::StringRef(udpipport.c_str()), document.GetAllocator());
+            document.Accept(writer);
+            vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
         }
         std::cout << "Udp Port Send Grpc Success" << std::endl;
     }
@@ -227,10 +263,12 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
 
             for (iter = Process_list.begin(); iter != Process_list.end(); iter++)
             {
-                (*MapMessage)["win_rootkit_process_pid"] = to_string(iter->first);
+                document.AddMember(rapidjson::StringRef("win_rootkit_process_pid"), rapidjson::StringRef(to_string(iter->first).c_str()), document.GetAllocator());
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, (wchar_t*)iter->second.data());
-                (*MapMessage)["win_rootkit_process_info"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_rootkit_process_info"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
+                document.Accept(writer);
+                vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
             }
 
             std::cout << "processinfo to server Success" << std::endl;
@@ -249,22 +287,23 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         PPROCESS_MOD modptr = (PPROCESS_MOD)ptr_Getbuffer;
         if (modptr)
         {
-
-            (*MapMessage)["win_rootkit_processmod_pid"] = to_string(Process_Pid);
+            document.AddMember(rapidjson::StringRef("win_rootkit_processmod_pid"), rapidjson::StringRef(to_string(Process_Pid).c_str()), document.GetAllocator());
             for (i = 0; i < 1024 * 2; ++i)
             {
                 if (0 == modptr[i].EntryPoint && 0 == modptr[i].SizeOfImage && 0 == modptr[i].DllBase)
                     continue;
-
-                (*MapMessage)["win_rootkit_process_DllBase"] = to_string(modptr[i].DllBase);
-                (*MapMessage)["win_rootkit_process_SizeofImage"] = to_string(modptr[i].SizeOfImage);
-                (*MapMessage)["win_rootkit_process_EntryPoint"] = to_string(modptr[i].EntryPoint);
+                document.Clear();
+                document.AddMember(rapidjson::StringRef("win_rootkit_process_DllBase"), rapidjson::StringRef(to_string(modptr[i].DllBase).c_str()), document.GetAllocator());
+                document.AddMember(rapidjson::StringRef("win_rootkit_process_SizeofImage"), rapidjson::StringRef(to_string(modptr[i].SizeOfImage).c_str()), document.GetAllocator());
+                document.AddMember(rapidjson::StringRef("win_rootkit_process_EntryPoint"), rapidjson::StringRef(to_string(modptr[i].EntryPoint).c_str()), document.GetAllocator());
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].BaseDllName);
-                (*MapMessage)["win_rootkit_process_BaseDllName"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_rootkit_process_BaseDllName"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].FullDllName);
-                (*MapMessage)["win_rootkit_process_FullDllName"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_rootkit_process_FullDllName"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
+                document.Accept(writer);
+                vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
             }
         }
         std::cout << "Process Mod Success" << std::endl;
@@ -289,16 +328,18 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 // Bug
                 if (0 == modptr[i].EntryPoint && 0 == modptr[i].SizeOfImage && 0 == modptr[i].DllBase)
                     continue;
-
-                (*MapMessage)["win_rootkit_sys_DllBase"] = to_string(modptr[i].DllBase);
-                (*MapMessage)["win_rootkit_sys_SizeofImage"] = to_string(modptr[i].SizeOfImage);
-                (*MapMessage)["win_rootkit_sys_EntryPoint"] = to_string(modptr[i].EntryPoint);
+                document.Clear();
+                document.AddMember(rapidjson::StringRef("win_rootkit_sys_DllBase"), rapidjson::StringRef(to_string(modptr[i].DllBase).c_str()), document.GetAllocator());
+                document.AddMember(rapidjson::StringRef("win_rootkit_sys_SizeofImage"), rapidjson::StringRef(to_string(modptr[i].SizeOfImage).c_str()), document.GetAllocator());
+                document.AddMember(rapidjson::StringRef("win_rootkit_sys_EntryPoint"), rapidjson::StringRef(to_string(modptr[i].EntryPoint).c_str()), document.GetAllocator());
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].BaseDllName);
-                (*MapMessage)["win_rootkit_sys_BaseDllName"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_rootkit_sys_BaseDllName"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].FullDllName);
-                (*MapMessage)["win_rootkit_sys_FullDllName"] = tmpstr;
+                document.AddMember(rapidjson::StringRef("win_rootkit_sys_FullDllName"), rapidjson::StringRef(tmpstr.c_str()), document.GetAllocator());
+                document.Accept(writer);
+                vec_task_string[veclist_cout++].assign(buffer.GetString(), buffer.GetLength());
             }
         }
         std::cout << "SystemDriver Enum Success" << std::endl;
