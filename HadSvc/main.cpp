@@ -1,69 +1,47 @@
 ﻿/*
 	* mcfilter :  该程序负责r3的规则逻辑处理
 */
-#include "HlprMiniCom.h"
-#include <fstream>
 #include <iostream>
 #include <string>
 #include <map>
 #include <vector>
-#include <fltuser.h>
+#include <WinSock2.h>
+#pragma comment(lib, "ws2_32.lib")
+
+#include "sysinfo.h"
 #include "grpc.h"
+
+#include "drvlib.h"
 #include "uetw.h"
+#ifdef _WIN64
+	#ifdef _DEBUG
+	#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmondrv\\lib\\SysMonDrvlib_d64.lib")
+	#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib64.lib")
+	#else
+	#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmondrv\\lib\\SysMonDrvlib64.lib")
+	#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib64.lib")
+	#endif
+#else
+	#ifdef _DEBUG
+	#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmondrv\\lib\\SysMonDrvlib_d.lib")
+	#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib_d.lib")
+	#else
+	#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmondrv\\lib\\SysMonDrvlib.lib")
+	#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib.lib")
+	#endif
+#endif
 
-#include <stdlib.h>
-
-using namespace std;
+static UEtw			g_testetw;
+static DevctrlIoct	g_kermonlib;
 
 const char devSyLinkName[] = "\\??\\KernelDark";
 const int max_size = MAX_PATH * 3;
 
 // 标志控制 - 后续config里面配置
-static bool kerne_mon = true;	// grpc_send = true - rootkit接口开启
-static bool user_mod = true;	// grpc_send = true - user接口开启
-static bool etw_mon = true;
+static bool kerne_mon = false;	// rootkit接口/内核采集
+static bool user_mod = true;	// user接口
+static bool etw_mon = true;		// user采集
 static bool grpc_send = false;
-
-typedef struct _PE_CONTROL{
-	string name;
-	unsigned int type;
-	unsigned int Permissions;
-}PE_CONTROL, *PPE_CONTROL;
-
-typedef struct _RULE_NODE {
-	// rule public
-	unsigned int module;
-	string processname;
-
-	// mode 1
-	unsigned int redirectflag;
-	string redirectdirectory;
-	string filewhitelist;
-
-
-	// mode 2
-	vector<PE_CONTROL> pecontrol;
-
-	// mode 3
-	// ......
-
-}RULE_NODE,*PRULE_NODE;
-
-vector<RULE_NODE> g_ruleNode;
-
-void helpPrintf() 
-{
-	string helpinfo = "支持功能规则如下\n";
-	helpinfo += "1. 进程文件读写访问重定向\n";
-	helpinfo += "2. 进程文件读写访问访问控制\n";
-}
-void charTowchar(const char* chr, wchar_t* wchar, int size)
-{
-	MultiByteToWideChar(CP_ACP, 0, chr,
-		strlen(chr) + 1, wchar, size / sizeof(wchar[0]));
-}
-
-static UEtw g_testetw;
 
 bool gethostip(RawData* ip_liststr)
 {
@@ -93,20 +71,14 @@ bool gethostip(RawData* ip_liststr)
 	} while (false);
 
 	WSACleanup();
+
+	return true;
 }
 bool SysNodeOnlineData(RawData* sysinfobuffer)
 {
-	
 	sysinfobuffer->mutable_pkg();
 	return true;
 }
-typedef struct _SYSTEMONLIENNODE
-{
-	wchar_t platform[260];
-	int id;
-	__int64 id64;
-}SYSTEMONLIENNODE, * PSYSTEMONLIENNODE;
-
 DWORD pthread_grpread(LPVOID lpThreadParameter)
 {
 	Grpc* greeter = (Grpc*)lpThreadParameter;
@@ -114,34 +86,8 @@ DWORD pthread_grpread(LPVOID lpThreadParameter)
 	return 1;
 }
 
-// user id
-enum USystemCollId1
-{
-	UF_PROCESS_ENUM = 200,
-	UF_PROCESS_PID_TREE,
-	UF_SYSAUTO_START,
-	UF_SYSNET_INFO,
-	UF_SYSSESSION_INFO,
-	UF_SYSINFO_ID,
-	UF_SYSLOG_ID,
-	UF_SYSUSER_ID,
-	UF_SYSSERVICE_SOFTWARE_ID,
-	UF_SYSFILE_ID,
-	UF_FILE_INFO,
-	UF_ROOTKIT_ID
-};
-
-//////////////////////////////////////////////
-// Example
 int main(int argc, char* argv[])
 {
-	// Etw Start
-	cout << "etw test start" << endl;
-	g_testetw.uf_init();
-	getchar();
-	g_testetw.uf_close();
-	cout << "etw test End" << endl;
-	system("pause");
 	// 
 	// @ Grpc Active Online Send to  Server Msg
 	// SSL
@@ -155,12 +101,9 @@ int main(int argc, char* argv[])
 	std::shared_ptr<grpc::ChannelCredentials> channel_creds = grpc::SslCredentials(ssl_opts);
 	
 	// Grpc_SSL模式目前不支持 - 认证还有问题
-	// grpc::InsecureChannelCredentials()
+	// grpc::InsecureChannelCredentials() localhost 10.128.129.64
 	static Grpc greeter(
-		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));
-
-	printf("greeteraddr %p\n", &greeter);
-	
+		grpc::CreateChannel("10.128.129.64:8888", grpc::InsecureChannelCredentials()));	
 	proto::RawData rawData;
 	DWORD ComUserLen = MAX_PATH;
 	CHAR ComUserName[MAX_PATH] = { 0, };
@@ -198,18 +141,17 @@ int main(int argc, char* argv[])
 
 	// start grpc read thread (Wait server Data)
 	DWORD threadid = 0;
-	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
+	// start grpc C2_Msg loop
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
 	// start grpc write thread
 	greeter.ThreadPool_Init();
 
 	int status = 0;
-
-	/*
 	// kernel mod
 	if (true == kerne_mon)
 	{
 		// Init devctrl
-		status = devobj.devctrl_init();
+		status = g_kermonlib.devctrl_init();
 		if (0 > status)
 		{
 			cout << "devctrl_init error: main.c --> lines: 342" << endl;
@@ -219,7 +161,7 @@ int main(int argc, char* argv[])
 		do
 		{
 			// Open driver
-			status = devobj.devctrl_opendeviceSylink(devSyLinkName);
+			status = g_kermonlib.devctrl_opendeviceSylink(devSyLinkName);
 			if (0 > status)
 			{
 				cout << "devctrl_opendeviceSylink error: main.c --> lines: 352" << endl;
@@ -227,7 +169,7 @@ int main(int argc, char* argv[])
 			}
 
 			// Init share Mem
-			status = devobj.devctrl_InitshareMem();
+			status = g_kermonlib.devctrl_InitshareMem();
 			if (0 > status)
 			{
 				cout << "devctrl_InitshareMem error: main.c --> lines: 360" << endl;
@@ -235,7 +177,7 @@ int main(int argc, char* argv[])
 			}
 
 			// ReadFile I/O Thread
-			status = devobj.devctrl_workthread((LPVOID)&greeter);
+			status = g_kermonlib.devctrl_workthread((LPVOID)&greeter);
 			if (0 > status)
 			{
 				cout << "devctrl_workthread error: main.c --> lines: 367" << endl;
@@ -243,7 +185,7 @@ int main(int argc, char* argv[])
 			}
 
 			// Off/Enable try Network packte Monitor
-			status = devobj.devctrl_OnMonitor();
+			status = g_kermonlib.devctrl_OnMonitor();
 			if (0 > status)
 			{
 				cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
@@ -251,7 +193,7 @@ int main(int argc, char* argv[])
 			}
 
 			// Enable Event --> 内核提取出来数据以后处理类
-			devobj.nf_setEventHandler((PVOID)&eventobj);
+			//g_kermonlib.nf_setEventHandler((PVOID)&eventobj);
 
 			status = 1;
 
@@ -303,10 +245,8 @@ int main(int argc, char* argv[])
 			cmd.set_agentctrl(115);
 			greeter.Grpc_ReadDispatchHandle(cmd);
 		}
-
 	}
-	*/
-
+	
 	// user mod
 	if (true == grpc_send && true == user_mod)
 	{
@@ -364,7 +304,9 @@ int main(int argc, char* argv[])
 
 	cout << "输入回车结束进程" << endl;
 	getchar();
-	//dev	obj.devctrl_free();
-	g_testetw.uf_close();
+	if (kerne_mon)
+		g_kermonlib.devctrl_free();
+	if(etw_mon)
+		g_testetw.uf_close();
 	return 0;
 }

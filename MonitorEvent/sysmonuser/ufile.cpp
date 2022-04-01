@@ -62,7 +62,7 @@ bool UFile::uf_GetFileInfo(char* filepath,LPVOID outbuf)
 	if (!outbuf && (0 >= filestr.GetLength()))
 		return false;
 
-	MD5VAL md5;
+	//MD5VAL md5;
 	// 获取文件路径
 	TCHAR Path[MAX_PATH] = {};
 	SYSTEMTIME System = { 0 };
@@ -78,42 +78,42 @@ bool UFile::uf_GetFileInfo(char* filepath,LPVOID outbuf)
 	stFileData.cFileName;
 	// 2. 添加创建时间
 	FileTimeToSystemTime(&stFileData.ftCreationTime, &System);
-	_stprintf(TempBuffer, TEXT("%d/%d/%d %d:%d:%d"), System.wYear,
+	_stprintf_s(TempBuffer, TEXT("%d/%d/%d %d:%d:%d"), System.wYear,
 		System.wMonth, System.wDay, System.wHour, System.wMinute, System.wSecond);
 	// 3. 添加文件修改时间
 	FileTimeToSystemTime(&stFileData.ftLastWriteTime, &System);
-	_stprintf(TempBuffer, TEXT("%d/%d/%d %d:%d:%d"), System.wYear,
+	_stprintf_s(TempBuffer, TEXT("%d/%d/%d %d:%d:%d"), System.wYear,
 		System.wMonth, System.wDay, System.wHour, System.wMinute, System.wSecond);
 	// 4. 添加最后访问
 	FileTimeToSystemTime(&stFileData.ftLastAccessTime, &System);
-	_stprintf(TempBuffer, TEXT("%d/%d/%d %d:%d:%d"), System.wYear,
+	_stprintf_s(TempBuffer, TEXT("%d/%d/%d %d:%d:%d"), System.wYear,
 		System.wMonth, System.wDay, System.wHour, System.wMinute, System.wSecond);
 	TempBuffer[0] = 0;
 	// 5. 判断是不是目录  
 	if (stFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-		_tcscat(TempBuffer, TEXT("目录 "));
+		_tcscat_s(TempBuffer, TEXT("目录 "));
 	else
-		_tcscat(TempBuffer, TEXT("文件 "));
+		_tcscat_s(TempBuffer, TEXT("文件 "));
 	// 6. 显示当前文件的大小
 	TempBuffer[0] = 0;
 	if (stFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-		_tcscat(TempBuffer, TEXT("-"));
+		_tcscat_s(TempBuffer, TEXT("-"));
 	else
 	{
 		if (stFileData.nFileSizeLow > 1073741824)
-			_stprintf(TempBuffer, TEXT("%.2lfGB"), stFileData.nFileSizeLow / 1024.0 / 1024.0 / 1024.0);
+			_stprintf_s(TempBuffer, TEXT("%.2lfGB"), stFileData.nFileSizeLow / 1024.0 / 1024.0 / 1024.0);
 		else if (stFileData.nFileSizeLow > 1048576)
-			_stprintf(TempBuffer, TEXT("%.2lfMB"), stFileData.nFileSizeLow / 1024.0 / 1024.0);
+			_stprintf_s(TempBuffer, TEXT("%.2lfMB"), stFileData.nFileSizeLow / 1024.0 / 1024.0);
 		else
-			_stprintf(TempBuffer, TEXT("%.2lfKB"), stFileData.nFileSizeLow / 1024.0 / 1024.0);
+			_stprintf_s(TempBuffer, TEXT("%.2lfKB"), stFileData.nFileSizeLow / 1024.0 / 1024.0);
 	}
 	// 7. 属性
 	// 判断是不是隐藏的
 	if (stFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN)
-		_tcscat(TempBuffer, TEXT("隐藏 "));
+		_tcscat_s(TempBuffer, TEXT("隐藏 "));
 	// 判断是不是只读的
 	if (stFileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
-		_tcscat(TempBuffer, TEXT("只读"));
+		_tcscat_s(TempBuffer, TEXT("只读"));
 	// MD5计算
 	char FileName[MAX_PATH] = { 0 };
 	char* p = FileName;
@@ -122,13 +122,13 @@ bool UFile::uf_GetFileInfo(char* filepath,LPVOID outbuf)
 	// sprintf 不可行
 	// p = (LPSTR)(LPCSTR)str;
 	// 转成宽字符
-	sprintf(FileName, "%ws", filestr);
+	sprintf_s(FileName, "%ws", filestr.GetBuffer());
 	md5FileValue(FileName);
 	// 获取信息
 	//GetModuleFileNameEx(hFile, NULL, Path, MAX_PATH);
 	//SHFILEINFOW shfileinfo;
 	//SHGetFileInfo(Path, 0, &shfileinfo, sizeof(SHFILEINFOW), SHGFI_ICON);
-
+	return true;
 }
 bool UFile::uf_GetDirectoryFile(char* DriPath, LPVOID outbuf)
 {

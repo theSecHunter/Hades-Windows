@@ -195,9 +195,9 @@ DWORD EnumTCPTablePid(UNetTcpNode* outbuf)
 			pTcpTable->table[i].dwRemotePort = 0;
 
 		//dwLocalPort，dwRemotePort 是网络字节
-		_snprintf(szlip, sizeof(szlip), "%s:%d", inet_ntoa(lip), htons((u_short)pTcpTable->table[i].dwLocalPort));
-		_snprintf(szrip, sizeof(szrip), "%s:%d", inet_ntoa(rip), htons((u_short)pTcpTable->table[i].dwRemotePort));
-		_ultoa(pTcpTable->table[i].dwOwningPid, PidString, 10);
+		_snprintf_s(szlip, sizeof(szlip), "%s:%d", inet_ntoa(lip), htons((u_short)pTcpTable->table[i].dwLocalPort));
+		_snprintf_s(szrip, sizeof(szrip), "%s:%d", inet_ntoa(rip), htons((u_short)pTcpTable->table[i].dwRemotePort));
+		_ultoa_s(pTcpTable->table[i].dwOwningPid, PidString, 10);
 
 		RtlCopyMemory(outbuf[i].szlip, szlip, sizeof(szlip));
 		RtlCopyMemory(outbuf[i].szrip, szrip, sizeof(szrip));
@@ -232,8 +232,8 @@ DWORD EnumUDPTablePid(UNetUdpNode* outbuf)
 		lip.S_un.S_addr = pUdpTable->table[i].dwLocalAddr;
 
 		//dwLocalPort，dwRemotePort 是网络字节
-		_snprintf(szlip, sizeof(szlip), "%s:%d", inet_ntoa(lip), htons((u_short)pUdpTable->table[i].dwLocalPort));
-		_ultoa(pUdpTable->table[i].dwOwningPid, PidString, 10);
+		_snprintf_s(szlip, sizeof(szlip), "%s:%d", inet_ntoa(lip), htons((u_short)pUdpTable->table[i].dwLocalPort));
+		_ultoa_s(pUdpTable->table[i].dwOwningPid, PidString, 10);
 
 		RtlCopyMemory(outbuf[i].szrip, szlip, sizeof(szlip));
 		RtlCopyMemory(outbuf[i].PidString, PidString, sizeof(PidString));

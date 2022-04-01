@@ -4,12 +4,14 @@
 #include <Windows.h>
 #include "sync.h"
 #include "nfevents.h"
-#include "devctrl.h"
+#include "drvlib.h"
 #include "sysinfo.h"
 #include <xstring>
 #include <vector>
 #include <fltuser.h>
 
+#pragma comment(lib,"Crypt32.lib")
+#pragma comment(lib, "Tdh.lib")
 using namespace std;
 
 #define TCP_TIMEOUT_CHECK_PERIOD	5 * 1000

@@ -20,6 +20,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{AC0F57C7-C37D-4CFF-8978-1FE5B6B36F73}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HadesSvc", "HadSvc\mcfilter.vcxproj", "{4282416D-0415-4A0A-A0DC-033DE19F3CFE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3C56DD02-AB77-40EF-940F-B3359A52D554} = {3C56DD02-AB77-40EF-940F-B3359A52D554}
+		{10298E04-A4E9-4A4E-B516-85200544874B} = {10298E04-A4E9-4A4E-B516-85200544874B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HadesContrl", "HadesContrl\HadesContrl.vcxproj", "{85509CE5-DB1D-4DD3-AA5B-580815E5433A}"
 	ProjectSection(ProjectDependencies) = postProject

@@ -21,6 +21,7 @@
 
 #pragma comment(lib,"psapi.lib")
 #pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "Tdh.lib")
 
 using namespace std;
 
@@ -47,6 +48,17 @@ UEtw::UEtw()
 }
 UEtw::~UEtw()
 {
+}
+
+void Wchar_tToString(std::string& szDst, wchar_t* wchar)
+{
+    wchar_t* wText = wchar;
+    DWORD dwNum = WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, NULL, 0, NULL, FALSE);
+    char* psText;
+    psText = new char[dwNum];
+    WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, psText, dwNum, NULL, FALSE);
+    szDst = psText;
+    delete[] psText;
 }
 
 // Pid Get ProcessPath
@@ -350,7 +362,6 @@ void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
     PROCESS_INFO process_info = { 0, };
-    wchar_t* end;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -446,7 +457,6 @@ void FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
     PROCESS_INFO process_info = { 0, };
-    wchar_t* end;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -527,7 +537,6 @@ void RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
     PROCESS_INFO process_info = { 0, };
-    wchar_t* end;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -605,7 +614,6 @@ void ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
     PROCESS_INFO process_info = { 0, };
-    wchar_t* end;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -806,8 +814,6 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
     g_ms.Unlock();
 
     OutputDebugString(L"Register TracGuid Success");
-    printf("Trac Guid: 0x%u - Register TracGuid Success\n", dwEnableFlags);
-
     return true;
 }
 bool UEtw::uf_init()
@@ -816,7 +822,6 @@ bool UEtw::uf_init()
 #ifdef _DEBUG
     // EVENT_TRACE_FLAG_NETWORK_TCPIP EVENT_TRACE_FLAG_THREAD
     uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS | EVENT_TRACE_FLAG_NETWORK_TCPIP);
-    getchar();
     return 1;
 #else
     // 目前使用用一个Session: 优点不用管理，缺点没办法单独监控某个事件。

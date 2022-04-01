@@ -380,7 +380,7 @@ DWORD EnumProcess(LPVOID outbuf)
 			if (GetProcessPath(p_32.th32ProcessID, ProcessPath))
 				lstrcpyW(processbuf[procesnumber].fullprocesspath, ProcessPath);
 
-			strcpy(processbuf[procesnumber].priclassbase, pri.c_str());
+			strcpy_s(processbuf[procesnumber].priclassbase, pri.c_str());
 			lstrcpyW(processbuf[procesnumber].szExeFile, p_32.szExeFile);
 
 

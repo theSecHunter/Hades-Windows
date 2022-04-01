@@ -517,7 +517,4 @@ typedef struct _NF_CALLOUT_FLOWESTABLISHED_INFO
     ULONG  processId;
 }NF_CALLOUT_FLOWESTABLISHED_INFO, * PNF_CALLOUT_FLOWESTABLISHED_INFO;
 
-// wchar to string
-void Wchar_tToString(std::string& szDst, wchar_t* wchar);
-
 #endif // !_SYSINFO_H

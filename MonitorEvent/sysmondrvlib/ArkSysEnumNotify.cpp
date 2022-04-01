@@ -1,6 +1,6 @@
 #include <Windows.h>
 #include "ArkSysEnumNotify.h"
-#include "devctrl.h"
+#include "drvlib.h"
 #include "sysinfo.h"
 
 #define CTL_DEVCTRL_ARK_GETSYSENUMNOTIFYDATA \

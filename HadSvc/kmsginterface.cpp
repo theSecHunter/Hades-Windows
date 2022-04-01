@@ -1,12 +1,3 @@
-#include "ArkSsdt.h"
-#include "ArkIdt.h"
-#include "ArkDpcTimer.h"
-#include "ArkFsd.h"
-#include "ArkMouseKeyBoard.h"
-#include "ArkNetwork.h"
-#include "ArkProcessInfo.h"
-#include "AkrSysDriverDevInfo.h"
-
 #include <iostream>
 #include <Windows.h>
 #include <vector>
@@ -16,6 +7,15 @@
 #include "kmsginterface.h"
 #include "sysinfo.h"
 #include "msgassist.h"
+
+#include "ArkSsdt.h"
+#include "ArkIdt.h"
+#include "ArkDpcTimer.h"
+#include "ArkFsd.h"
+#include "ArkMouseKeyBoard.h"
+#include "ArkNetwork.h"
+#include "ArkProcessInfo.h"
+#include "AkrSysDriverDevInfo.h"
 
 //rapidjson
 #include <rapidjson/rapidjson.h>
@@ -38,7 +38,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     map<int, wstring> Process_list;
     std::string tmpstr; wstring catstr;
     int i = 0, index = 0, veclist_cout = 0;
-    DWORD64 dwAllocateMemSize = 0;
+    DWORD dwAllocateMemSize = 0;
     char* ptr_Getbuffer;
     bool nstatus = Choose_mem(ptr_Getbuffer, dwAllocateMemSize, taskcode);
     if (false == nstatus || nullptr == ptr_Getbuffer || dwAllocateMemSize == 0)

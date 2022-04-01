@@ -92,7 +92,7 @@
     <ClInclude Include="sync.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="devctrl.h">
+    <ClInclude Include="drvlib.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

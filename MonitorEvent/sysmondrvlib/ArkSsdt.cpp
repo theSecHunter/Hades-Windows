@@ -1,5 +1,5 @@
 #include <Windows.h>
-#include "devctrl.h"
+#include "drvlib.h"
 #include "ArkSsdt.h"
 #include "sysinfo.h"
 

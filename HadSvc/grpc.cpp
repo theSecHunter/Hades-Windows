@@ -73,7 +73,7 @@ void Grpc::Grpc_write()
         return;
 
     size_t coutwrite = task_array_data.size();
-    for (size_t idx; idx < coutwrite; ++idx)
+    for (size_t idx = 0; idx < coutwrite; ++idx)
     {
         (*MapMessage)["data_type"] = to_string(taskid);
         if (task_array_data[idx].size())
@@ -86,6 +86,7 @@ void Grpc::Grpc_write()
 inline DWORD WINAPI QueueTaskThread(LPVOID lpThreadParameter)
 {
     ((Grpc*)lpThreadParameter)->Grpc_write();
+    return 0;
 }
 inline void Grpc::Grpc_ReadDispatchHandle(Command& command)
 {

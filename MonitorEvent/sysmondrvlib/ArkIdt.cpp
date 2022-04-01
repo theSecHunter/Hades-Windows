@@ -1,6 +1,6 @@
 #include <Windows.h>
 #include "ArkIdt.h"
-#include "devctrl.h"
+#include "drvlib.h"
 #include "sysinfo.h"
 #include <iostream>
 

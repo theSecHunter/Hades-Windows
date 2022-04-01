@@ -34,7 +34,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
 {
     std::string tmpstr; wstring catstr;
     int i = 0, index = 0, veclist_cout = 0;
-    DWORD64 dwAllocateMemSize = 0;
+    DWORD dwAllocateMemSize = 0;
     char* ptr_Getbuffer;
     bool nstatus = Choose_mem(ptr_Getbuffer, dwAllocateMemSize, taskcode);
     if (false == nstatus || nullptr == ptr_Getbuffer || dwAllocateMemSize == 0)

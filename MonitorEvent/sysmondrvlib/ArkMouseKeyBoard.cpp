@@ -1,6 +1,6 @@
 #include <Windows.h>
 #include "ArkMouseKeyBoard.h"
-#include "devctrl.h"
+#include "drvlib.h"
 #include <iostream>
 
 using namespace std;

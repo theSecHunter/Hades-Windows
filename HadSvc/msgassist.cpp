@@ -2,18 +2,7 @@
 #include "sysinfo.h"
 #include "msgassist.h"
 
-void Wchar_tToString(std::string& szDst, wchar_t* wchar)
-{
-    wchar_t* wText = wchar;
-    DWORD dwNum = WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, NULL, 0, NULL, FALSE);
-    char* psText;
-    psText = new char[dwNum];
-    WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, psText, dwNum, NULL, FALSE);
-    szDst = psText;
-    delete[] psText;
-}
-
-bool Choose_mem(char*& ptr, DWORD64& dwAllocateMemSize, const int code)
+bool Choose_mem(char*& ptr, DWORD& dwAllocateMemSize, const int code)
 {
     dwAllocateMemSize = 0;
 
