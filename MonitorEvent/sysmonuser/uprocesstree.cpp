@@ -377,6 +377,7 @@ DWORD EnumProcess(LPVOID outbuf)
 			else if (p_32.pcPriClassBase >= 0)
 				pri = "ื๎ตอ(idle)";
 
+			ProcessPath[0] = '\x00';
 			if (GetProcessPath(p_32.th32ProcessID, ProcessPath))
 				lstrcpyW(processbuf[procesnumber].fullprocesspath, ProcessPath);
 

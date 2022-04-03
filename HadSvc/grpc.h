@@ -56,11 +56,10 @@ public:
 		 return stream;
 	}
 
-	bool Grpc_Getstream()
+	inline bool Grpc_Getstream()
 	{
 		if (!m_stream)
 			m_stream = Grpc_streamInit();
-
 		return true;
 	}
 

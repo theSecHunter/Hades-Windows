@@ -62,7 +62,6 @@ bool UFile::uf_GetFileInfo(char* filepath,LPVOID outbuf)
 	if (!outbuf && (0 >= filestr.GetLength()))
 		return false;
 
-	//MD5VAL md5;
 	// 获取文件路径
 	TCHAR Path[MAX_PATH] = {};
 	SYSTEMTIME System = { 0 };

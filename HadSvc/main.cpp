@@ -40,7 +40,7 @@ const int max_size = MAX_PATH * 3;
 // 标志控制 - 后续config里面配置
 static bool kerne_mon = false;	// rootkit接口/内核采集
 static bool user_mod = true;	// user接口
-static bool etw_mon = true;		// user采集
+static bool etw_mon = false;		// user采集
 static bool grpc_send = false;
 
 bool gethostip(RawData* ip_liststr)
@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 	// Grpc_SSL模式目前不支持 - 认证还有问题
 	// grpc::InsecureChannelCredentials() localhost 10.128.129.64
 	static Grpc greeter(
-		grpc::CreateChannel("10.128.129.64:8888", grpc::InsecureChannelCredentials()));	
+		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));	
 	proto::RawData rawData;
 	DWORD ComUserLen = MAX_PATH;
 	CHAR ComUserName[MAX_PATH] = { 0, };
@@ -248,52 +248,59 @@ int main(int argc, char* argv[])
 	}
 	
 	// user mod
-	if (true == grpc_send && true == user_mod)
+	if (false == grpc_send && true == user_mod)
 	{
 		cout << "User下发接口测试" << endl;
 		Command cmd;
-		cmd.set_agentctrl(UF_PROCESS_ENUM);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		// Bug
+		//cmd.set_agentctrl(UF_PROCESS_ENUM);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(UF_PROCESS_PID_TREE);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_PROCESS_PID_TREE);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSAUTO_START);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_SYSAUTO_START);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSNET_INFO);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_SYSNET_INFO);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSSESSION_INFO);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_SYSSESSION_INFO);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSINFO_ID);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_SYSINFO_ID);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSLOG_ID);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_SYSLOG_ID);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSUSER_ID);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_SYSUSER_ID);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSSERVICE_SOFTWARE_ID);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		// Bug
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_SYSSERVICE_SOFTWARE_ID);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSFILE_ID);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		// Bug
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_SYSFILE_ID);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(UF_ROOTKIT_ID);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_FILE_INFO);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
+
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_ROOTKIT_ID);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 	}
 
 	// etw mod

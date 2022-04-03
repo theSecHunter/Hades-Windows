@@ -50,20 +50,23 @@ inline void Grpc::Grpc_writeEx(RawData& raw)
 }
 void Grpc::Grpc_write()
 {
-    ggrpc_taskcs.lock();
-    const int taskid = ggrpc_taskid.front();
-    ggrpc_taskcs.unlock();
-    
-    // task_id
-    std::vector<std::string> task_array_data;
-    if ((taskid >= 100) && (taskid < 200))
-        g_user_interface.uMsg_taskPush(taskid, task_array_data);
-    else if ((taskid >= 200) && (taskid < 300))
-        g_kern_interface.kMsg_taskPush(taskid, task_array_data);
+    int taskid = 0;
+    if (!ggrpc_taskid.empty())
+        taskid = ggrpc_taskid.front();
     else
         return;
-    
-
+    ggrpc_taskcs.lock();
+    ggrpc_taskid.pop();
+    ggrpc_taskcs.unlock();
+    // task_id
+    std::vector<std::string> task_array_data;
+    task_array_data.clear();
+    if ((taskid >= 100) && (taskid < 200))
+        g_kern_interface.kMsg_taskPush(taskid, task_array_data);
+    else if ((taskid >= 200) && (taskid < 300))
+        g_user_interface.uMsg_taskPush(taskid, task_array_data);   
+    else
+        return;
     ::proto::RawData rawData;
     ::proto::Record* pkg = rawData.add_pkg();
     if (!pkg)
@@ -88,11 +91,14 @@ inline DWORD WINAPI QueueTaskThread(LPVOID lpThreadParameter)
     ((Grpc*)lpThreadParameter)->Grpc_write();
     return 0;
 }
-inline void Grpc::Grpc_ReadDispatchHandle(Command& command)
+void Grpc::Grpc_ReadDispatchHandle(Command& command)
 {
+    const int taskid = command.agentctrl();
+    if (100 < taskid && taskid > 300)
+        return;
     ggrpc_taskcs.lock();
-    ggrpc_taskid.push(command.agentctrl());
-    ggrpc_taskcs.lock();
+    ggrpc_taskid.push(taskid);
+    ggrpc_taskcs.unlock();
     QueueUserWorkItem(QueueTaskThread, this, WT_EXECUTEDEFAULT);
 }
 void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
