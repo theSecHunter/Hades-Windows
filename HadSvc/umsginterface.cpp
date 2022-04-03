@@ -44,7 +44,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
     if (false == nstatus || nullptr == ptr_Getbuffer || dwAllocateMemSize == 0)
         return;
     json_t j;
-    //try
+    try
     {
         // ptr_Getbuffer
         do
@@ -64,15 +64,18 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 {   
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, procesNode->sysprocess[i].fullprocesspath);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_process_Path"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, procesNode->sysprocess[i].szExeFile);
-                    j["win_user_process_szExeFile"] = tmpstr.c_str();
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_process_szExeFile"] = tmpstr.c_str();
                     j["win_user_process_pid"] = to_string(procesNode->sysprocess[i].pid).c_str();
-                    //j["win_user_process_pribase"] = procesNode->sysprocess[i].priclassbase;
-                    j["win_user_process_parenid"] = procesNode->sysprocess[i].th32ParentProcessID;
-                    j["win_user_process_thrcout"] = procesNode->sysprocess[i].threadcout;
+                    tmpstr.clear();
+                    tmpstr = String_ToUtf8(procesNode->sysprocess[i].priclassbase);
+                    j["win_user_process_pribase"] = tmpstr.c_str();
+                    j["win_user_process_parenid"] = to_string(procesNode->sysprocess[i].th32ParentProcessID).c_str();
+                    j["win_user_process_thrcout"] = to_string(procesNode->sysprocess[i].threadcout).c_str();
                     vec_task_string.push_back(j.dump());
                 }
                 std::cout << "[User] Process Enum Success" << std::endl;
@@ -98,8 +101,12 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 j["win_user_autorun_flag"] = "1";
                 for (i = 0; i < autorunnode->regnumber; ++i)
                 {
-                    j["win_user_autorun_regName"] = autorunnode->regrun[i].szValueName;
-                    j["win_user_autorun_regKey"] = autorunnode->regrun[i].szValueKey;
+                    tmpstr.clear();
+                    tmpstr = String_ToUtf8(autorunnode->regrun[i].szValueName);
+                    j["win_user_autorun_regName"] = tmpstr.c_str();
+                    tmpstr.clear();
+                    tmpstr = String_ToUtf8(autorunnode->regrun[i].szValueKey);
+                    j["win_user_autorun_regKey"] = tmpstr.c_str();
                     vec_task_string.push_back(j.dump());
                 }
 
@@ -109,12 +116,14 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 {
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, autorunnode->taskschrun[i].szValueName);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_autorun_tschname"] = tmpstr.c_str();
                     j["win_user_autorun_tscState"] = to_string(autorunnode->taskschrun[i].State).c_str();
                     j["win_user_autorun_tscLastTime"] = to_string(autorunnode->taskschrun[i].LastTime).c_str();
                     j["win_user_autorun_tscNextTime"] = to_string(autorunnode->taskschrun[i].NextTime).c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, autorunnode->taskschrun[i].TaskCommand);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_autorun_tscCommand"] = tmpstr.c_str();
                     vec_task_string.push_back(j.dump());
                 }
@@ -177,9 +186,11 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 {
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pusernode->usernode[i].serveruser);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_sysuser_user"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pusernode->usernode[i].servername);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_sysuser_name"] = tmpstr.c_str();
                     j["win_user_sysuser_sid"] = to_string((ULONGLONG)pusernode->usernode[i].serverusid).c_str();
                     j["win_user_sysuser_flag"] = to_string(pusernode->usernode[i].serveruflag).c_str();
@@ -203,17 +214,21 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     j.clear();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpServiceName);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_server_lpsName"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpDisplayName);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_server_lpdName"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpBinaryPathName);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_server_lpPath"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpDescription);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_server_lpDescr"] = tmpstr.c_str();
-                    j["win_user_server_status"] = pNode->uSericeinfo[i].dwCurrentState.c_str();
+                    j["win_user_server_status"] = pNode->uSericeinfo[i].dwCurrentState;
                     vec_task_string.push_back(j.dump());
                 }
 
@@ -223,28 +238,35 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 {
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftName);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_software_lpsName"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftSize);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_software_Size"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftVer);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_software_Ver"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftInsPath);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_software_installpath"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftUniPath);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_software_uninstallpath"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftDate);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_software_data"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftVenRel);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_software_venrel"] = tmpstr.c_str();
                     vec_task_string.push_back(j.dump());
                 }
-
+                std::cout << "[User] Software_Server Enum Success" << std::endl;
             }
             break;
             case UF_SYSFILE_ID:
@@ -269,14 +291,18 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 j["win_user_driectinfo_flag"] = "2";
                 for (i = 0; i < directinfo->FileNumber; ++i)
                 {
+                    tmpstr.clear();
                     Wchar_tToString(tmpstr, directinfo->fileEntry[i].filename);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_driectinfo_filename"] = tmpstr.c_str();
                     tmpstr.clear();
                     Wchar_tToString(tmpstr, directinfo->fileEntry[i].filepath);
+                    tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_driectinfo_filePath"] = tmpstr.c_str();
                     j["win_user_driectinfo_fileSize"] = to_string(directinfo->fileEntry[i].filesize).c_str();
                     vec_task_string.push_back(j.dump());
                 }
+                std::cout << "[User] GetDirectoryFile Enum Success" << std::endl;
             }
             break;
             case UF_FILE_INFO:
@@ -291,19 +317,23 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
 
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->cFileName);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_user_fileinfo_filename"] = tmpstr.c_str();
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->dwFileAttributes);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_user_fileinfo_dwFileAttributes"] = tmpstr.c_str();
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->dwFileAttributesHide);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_user_fileinfo_dwFileAttributesHide"] = tmpstr.c_str();
-                j["win_user_fileinfo_md5"] = fileinfo->md5.c_str();
+                j["win_user_fileinfo_md5"] = fileinfo->md5;
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->m_seFileSizeof);
                 j["win_user_fileinfo_m_seFileSizeof"] = tmpstr.c_str();
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->seFileAccess);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_user_fileinfo_seFileAccess"] = tmpstr.c_str();
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->seFileCreate);
@@ -312,6 +342,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 Wchar_tToString(tmpstr, fileinfo->seFileModify);
                 j["win_user_fileinfo_seFileModify"] = tmpstr.c_str();
                 vec_task_string.push_back(j.dump());
+                std::cout << "[User] GetFIleInfo Success" << std::endl;
             }
             break;
             case UF_ROOTKIT_ID:     // v2.0
@@ -323,10 +354,10 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             }
         } while (false);
     }
-    //catch (const std::exception&)
-    //{
+    catch (const std::exception&)
+    {
 
-    //}
+    }
 
     if (ptr_Getbuffer)
     {

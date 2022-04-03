@@ -440,7 +440,7 @@ typedef struct _UServicesNode
     wchar_t lpServiceName[MAX_PATH];
     wchar_t lpBinaryPathName[MAX_PATH];
     wchar_t lpDescription[MAX_PATH];
-    string dwCurrentState;
+    char dwCurrentState[50];
 }UServicesNode, * PUServicesNode;
 typedef struct _UAllServerSoftware {
     ULONG softwarenumber;
@@ -459,7 +459,7 @@ typedef struct _UFileInfo
     TCHAR dwFileAttributes[20];
     TCHAR m_seFileSizeof[20];
     TCHAR dwFileAttributesHide[20];
-    string md5;
+    char md5[40];
 }UFileInfo, * PUFileInfo;
 typedef struct _UDriectFile
 {

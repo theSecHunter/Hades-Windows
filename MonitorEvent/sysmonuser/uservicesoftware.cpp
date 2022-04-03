@@ -46,37 +46,33 @@ DWORD UServerSoftware::EnumService(LPVOID outbuf)
 		if (ESS == NULL) {
 			break;
 		}
-
-		string str;
-	
 		for (int i = 0; i < static_cast<int>(ServicesReturned); i++) {
 
 			lstrcpyW(serinfo[count].lpDisplayName, service_status[i].lpDisplayName);
 			
 			switch (service_status[i].ServiceStatus.dwCurrentState) { // 服务状态
 			case SERVICE_CONTINUE_PENDING:
-				str = "CONTINUE_PENDING\n";
+				strcpy_s(serinfo[count].dwCurrentState, "CONTINUE_PENDING");
 				break;
 			case SERVICE_PAUSE_PENDING:
-				str = "PAUSE_PENDING\n";
+				strcpy_s(serinfo[count].dwCurrentState, "PAUSE_PENDING");
 				break;
 			case SERVICE_PAUSED:
-				str = "PAUSED\n";
+				strcpy_s(serinfo[count].dwCurrentState, "PAUSED");
 				break;
 			case SERVICE_RUNNING:
-				str = "RUNNING\n";
+				strcpy_s(serinfo[count].dwCurrentState, "RUNNING");
 				break;
 			case SERVICE_START_PENDING:
-				str = "START_PENDING\n";
+				strcpy_s(serinfo[count].dwCurrentState, "START_PENDING");
 				break;
 			case SERVICE_STOPPED:
-				str = "STOPPED\n";
+				strcpy_s(serinfo[count].dwCurrentState, "STOPPED");
 				break;
 			default:
-				str = "UNKNOWN\n";
+				strcpy_s(serinfo[count].dwCurrentState, "UNKNOWN");
 				break;
 			}
-			serinfo[count].dwCurrentState = str;
 			LPQUERY_SERVICE_CONFIG lpServiceConfig = NULL;          // 服务详细信息结构
 			SC_HANDLE service_curren = NULL;                        // 当前的服务句柄
 			LPSERVICE_DESCRIPTION lpqscBuf2 = NULL;					// 服务描述信息
@@ -100,7 +96,7 @@ DWORD UServerSoftware::EnumService(LPVOID outbuf)
 					(BYTE*)lpqscBuf2, dwNeeded, &dwNeeded))
 				{
 					if (lstrlenW(lpqscBuf2->lpDescription))
-						lstrcpyW(serinfo[count].lpDescription, lpqscBuf2->lpDescription);
+						lstrcpynW(serinfo[count].lpDescription, lpqscBuf2->lpDescription, MAX_PATH);
 				}
 				if (lpqscBuf2)
 				{

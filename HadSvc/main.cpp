@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 	// start grpc read thread (Wait server Data)
 	DWORD threadid = 0;
 	// start grpc C2_Msg loop
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
+	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
 	// start grpc write thread
 	greeter.ThreadPool_Init();
 
@@ -252,52 +252,53 @@ int main(int argc, char* argv[])
 	{
 		cout << "User下发接口测试" << endl;
 		Command cmd;
-		// Bug
-		//cmd.set_agentctrl(UF_PROCESS_ENUM);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+		cmd.set_agentctrl(UF_PROCESS_ENUM);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
+		// 数据未清理
 		//cmd.Clear();
 		//cmd.set_agentctrl(UF_PROCESS_PID_TREE);
 		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(UF_SYSAUTO_START);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSAUTO_START);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(UF_SYSNET_INFO);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSNET_INFO);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(UF_SYSSESSION_INFO);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSSESSION_INFO);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
+		// 上线后已上报
 		//cmd.Clear();
 		//cmd.set_agentctrl(UF_SYSINFO_ID);
 		//greeter.Grpc_ReadDispatchHandle(cmd);
-
+		
 		//cmd.Clear();
 		//cmd.set_agentctrl(UF_SYSLOG_ID);
 		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
-		//cmd.set_agentctrl(UF_SYSUSER_ID);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSUSER_ID);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		// Bug
-		//cmd.Clear();
-		//cmd.set_agentctrl(UF_SYSSERVICE_SOFTWARE_ID);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSSERVICE_SOFTWARE_ID);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		// Bug
-		//cmd.Clear();
-		//cmd.set_agentctrl(UF_SYSFILE_ID);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
+		cmd.Clear();
+		cmd.set_agentctrl(UF_SYSFILE_ID);
+		greeter.Grpc_ReadDispatchHandle(cmd);
 
+		// 数据未清理
 		//cmd.Clear();
 		//cmd.set_agentctrl(UF_FILE_INFO);
 		//greeter.Grpc_ReadDispatchHandle(cmd);
 
+		//未实现
 		//cmd.Clear();
 		//cmd.set_agentctrl(UF_ROOTKIT_ID);
 		//greeter.Grpc_ReadDispatchHandle(cmd);

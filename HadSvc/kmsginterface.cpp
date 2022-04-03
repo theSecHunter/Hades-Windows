@@ -253,6 +253,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 j["win_rootkit_process_pid"] = to_string(iter->first).c_str();
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, (wchar_t*)iter->second.data());
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_rootkit_process_info"] = tmpstr.c_str();
                 vec_task_string.push_back(j.dump());
             }
@@ -283,9 +284,11 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 j["win_rootkit_process_EntryPoint"] = to_string(modptr[i].EntryPoint).c_str();
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].BaseDllName);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_rootkit_process_BaseDllName"] = tmpstr.c_str();
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].FullDllName);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_rootkit_process_FullDllName"] = tmpstr.c_str();
                 vec_task_string.push_back(j.dump());
             }
@@ -317,9 +320,11 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 j["win_rootkit_sys_EntryPoint"] = to_string(modptr[i].EntryPoint).c_str();
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].BaseDllName);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_rootkit_sys_BaseDllName"] = tmpstr.c_str();
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, modptr[i].FullDllName);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_rootkit_sys_FullDllName"] = tmpstr.c_str();
                 vec_task_string.push_back(j.dump());
             }

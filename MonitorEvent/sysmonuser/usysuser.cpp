@@ -345,7 +345,7 @@ DWORD EnumSystemUser(USysUserNode* outbuf)
 					//  Print the name of the user account.
 					//
 					NetUserGetInfo((LPCWSTR)pszServerName, pTmpBuf->usri0_name, 20, (LPBYTE*)&userinfo);
-					wprintf(L"ServerUser:%s ", pTmpBuf->usri0_name);
+					//wprintf(L"ServerUser:%s ", pTmpBuf->usri0_name);
 					lstrcpyW(outbuf[i].serveruser, pTmpBuf->usri0_name);
 					lstrcpyW(outbuf[i].servername, userinfo->usri23_name);
 					outbuf[i].serverusid = userinfo->usri23_user_sid;
