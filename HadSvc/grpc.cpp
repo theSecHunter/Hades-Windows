@@ -36,7 +36,7 @@ bool Grpc::Grpc_Transfer(RawData rawData)
     ggrpc_writecs.lock();
     if(Grpc_Getstream())
         nRet = m_stream->Write(rawData);
-    ggrpc_writecs.lock();
+    ggrpc_writecs.unlock();
     if (false == nRet)
     {
         cout << "Write Buffer Error" << endl;
@@ -419,20 +419,20 @@ bool Grpc::ThreadPool_Free()
 {
     // 设置标志
     g_shutdown = true;
-    SetEvent(m_jobAvailableEvent);
-    if (m_jobAvailableEvent != INVALID_HANDLE_VALUE)
-    {
-        ::CloseHandle(m_jobAvailableEvent);
-        m_jobAvailableEvent = INVALID_HANDLE_VALUE;
-    }
-
     // 循环关闭句柄
     for (tThreads::iterator it = m_threads.begin();
         it != m_threads.end();
         it++)
     {
+        SetEvent(m_jobAvailableEvent);
         WaitForSingleObject(*it, INFINITE);
         CloseHandle(*it);
+    }
+
+    if (m_jobAvailableEvent != INVALID_HANDLE_VALUE)
+    {
+        ::CloseHandle(m_jobAvailableEvent);
+        m_jobAvailableEvent = INVALID_HANDLE_VALUE;
     }
 
     m_threads.clear();
