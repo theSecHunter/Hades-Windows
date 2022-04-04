@@ -209,6 +209,7 @@
     <ResourceCompile Include="mcfilter.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\Image\firearms.ico" />
     <Image Include="C:\Users\zy.chen\Desktop\hunter_Win_x64_v1.0\hunter.ico" />
   </ItemGroup>
   <ItemGroup>

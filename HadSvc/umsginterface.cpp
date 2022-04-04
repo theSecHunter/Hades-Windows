@@ -34,6 +34,17 @@ static UServerSoftware      g_grpc_userversoftware;
 static UFile                g_grpc_ufile;
 static UEtw                 g_grpc_etw;
 
+void uMsgInterface::uMsg_ReadtaskPop(int& taskcode, std::string& data)
+{
+    try
+    {
+
+    }
+    catch (const std::exception&)
+    {
+
+    }
+}
 void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& vec_task_string)
 {
     std::string tmpstr; wstring catstr;

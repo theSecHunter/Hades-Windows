@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <queue>
 #include <WinSock2.h>
 #pragma comment(lib, "ws2_32.lib")
 
@@ -38,10 +39,11 @@ const char devSyLinkName[] = "\\??\\KernelDark";
 const int max_size = MAX_PATH * 3;
 
 // 标志控制 - 后续config里面配置
-static bool kerne_mon = false;	// rootkit接口/内核采集
-static bool user_mod = true;	// user接口
+static bool kerne_mon = false;		// kernel采集
+static bool kerne_rootkit = false;	// rootkit接口
+static bool user_mod = true;		// user接口
 static bool etw_mon = false;		// user采集
-static bool grpc_send = false;
+static bool grpc_send = false;		// grpc上报
 
 bool gethostip(RawData* ip_liststr)
 {
@@ -140,7 +142,7 @@ int main(int argc, char* argv[])
 		grpc_send = true;
 
 	// start grpc read thread (Wait server Data)
-	DWORD threadid = 0;
+	//DWORD threadid = 0;
 	// start grpc C2_Msg loop
 	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
 	// start grpc write thread
@@ -205,7 +207,7 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
-		if (true == grpc_send)
+		if (true == kerne_rootkit)
 		{
 			cout << "Rootkit上报接口测试:" << endl;
 
@@ -248,7 +250,7 @@ int main(int argc, char* argv[])
 	}
 	
 	// user mod
-	if (false == grpc_send && true == user_mod)
+	if (true == grpc_send && true == user_mod)
 	{
 		cout << "User下发接口测试" << endl;
 		Command cmd;
@@ -289,16 +291,16 @@ int main(int argc, char* argv[])
 		cmd.set_agentctrl(UF_SYSSERVICE_SOFTWARE_ID);
 		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSFILE_ID);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_SYSFILE_ID);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
 		// 数据未清理
 		//cmd.Clear();
 		//cmd.set_agentctrl(UF_FILE_INFO);
 		//greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//未实现
+		// rootkit原生数据 - 未实现
 		//cmd.Clear();
 		//cmd.set_agentctrl(UF_ROOTKIT_ID);
 		//greeter.Grpc_ReadDispatchHandle(cmd);

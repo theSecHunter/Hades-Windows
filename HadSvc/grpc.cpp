@@ -27,6 +27,8 @@ static std::mutex                   ggrpc_queuecs;
 static queue<int>                   ggrpc_taskid;
 static std::mutex                   ggrpc_taskcs;
 
+static std::mutex                   ggrpc_writecs;
+
 // GrpcË«Ïòsteam½Ó¿Ú
 bool Grpc::Grpc_Transfer(RawData rawData)
 {
@@ -67,24 +69,26 @@ void Grpc::Grpc_write()
         g_user_interface.uMsg_taskPush(taskid, task_array_data);   
     else
         return;
-    //::proto::RawData rawData;
-    //::proto::Record* pkg = rawData.add_pkg();
-    //if (!pkg)
-    //    return;
-    //auto MapMessage = pkg->mutable_message();
-    //if (!MapMessage)
-    //    return;
+    ::proto::RawData rawData;
+    ::proto::Record* pkg = rawData.add_pkg();
+    if (!pkg)
+        return;
+    auto MapMessage = pkg->mutable_message();
+    if (!MapMessage)
+        return;
 
-    //size_t coutwrite = task_array_data.size();
-    //for (size_t idx = 0; idx < coutwrite; ++idx)
-    //{
-    //    (*MapMessage)["data_type"] = to_string(taskid);
-    //    if (task_array_data[idx].size())
-    //        (*MapMessage)["udata"] = task_array_data[idx]; // json
-    //    else
-    //        (*MapMessage)["udata"] = "error";
-    //    Grpc_writeEx(rawData);
-    //}
+    size_t coutwrite = task_array_data.size();
+    for (size_t idx = 0; idx < coutwrite; ++idx)
+    {
+        (*MapMessage)["data_type"] = to_string(taskid);
+        if (task_array_data[idx].size())
+            (*MapMessage)["udata"] = task_array_data[idx]; // json
+        else
+            (*MapMessage)["udata"] = "error";
+        ggrpc_writecs.lock();
+        Grpc_writeEx(rawData);
+        ggrpc_writecs.unlock();
+    }
 }
 inline DWORD WINAPI QueueTaskThread(LPVOID lpThreadParameter)
 {
