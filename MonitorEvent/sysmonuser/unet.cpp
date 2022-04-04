@@ -7,7 +7,7 @@
 #pragma comment(lib, "ws2_32.lib")
 
 #include <stdio.h>
-#include "sysinfo.h"
+#include <sysinfo.h>
 
 UNet::UNet()
 {

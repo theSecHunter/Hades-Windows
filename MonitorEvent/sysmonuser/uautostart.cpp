@@ -7,7 +7,7 @@
 #pragma comment(lib, "comsupp.lib")
 #include <wchar.h>
 
-#include "sysinfo.h"
+#include <sysinfo.h>
 
 UAutoStart::UAutoStart()
 {

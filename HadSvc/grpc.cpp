@@ -33,8 +33,10 @@ static std::mutex                   ggrpc_writecs;
 bool Grpc::Grpc_Transfer(RawData rawData)
 {
     bool nRet = false;
+    ggrpc_writecs.lock();
     if(Grpc_Getstream())
         nRet = m_stream->Write(rawData);
+    ggrpc_writecs.lock();
     if (false == nRet)
     {
         cout << "Write Buffer Error" << endl;
@@ -359,9 +361,11 @@ void Grpc::threadProc()
         default:
             break;
         }
-            
+        
+        ggrpc_writecs.lock();
         if (Grpc_Getstream())
             m_stream->Write(rawData);
+        ggrpc_writecs.unlock();
 
         free(queue_node.packbuf);
         queue_node.packbuf = nullptr;

@@ -107,35 +107,65 @@ int main(int argc, char* argv[])
 	static Grpc greeter(
 		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));	
 	proto::RawData rawData;
+
+	// agent_info
 	DWORD ComUserLen = MAX_PATH;
 	CHAR ComUserName[MAX_PATH] = { 0, };
 	GetComputerNameA(ComUserName, &ComUserLen);
-	// Send Agent
+	char chNameGuid[64] = { 0 };
+	GUID LinkGuid = { 0 };
+	if (S_OK == ::CoCreateGuid(&LinkGuid))
+	{
+		char buf[64] = { 0 };
+		::sprintf_s(buf, sizeof(buf), "%08X%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X",
+			LinkGuid.Data1, LinkGuid.Data2, LinkGuid.Data3,
+			LinkGuid.Data4[0], LinkGuid.Data4[1],
+			LinkGuid.Data4[2], LinkGuid.Data4[3],
+			LinkGuid.Data4[4], LinkGuid.Data4[5],
+			LinkGuid.Data4[6], LinkGuid.Data4[7]);
+		::strcpy_s(chNameGuid, ARRAYSIZE(chNameGuid), buf);
+	}
 	rawData.set_hostname(ComUserName);
-	rawData.set_version("0.1");
-	rawData.set_agentid("123");
+	rawData.set_version("v2.0");
+	rawData.set_agentid(chNameGuid); // guid = agentid
 	rawData.set_timestamp(GetCurrentTime());
 	if (false == greeter.Grpc_Transfer(rawData))
 		grpc_send = false;
 	else
 		grpc_send = true;
 
-	// Send System Onliy Buffer 
+	// current_sysinfo
+	// 后续系统详细封装为公共类
+	SYSTEMTIME time;
+	GetLocalTime(&time);
+	char dateTimeStr[200] = { 0 };
+	sprintf(dateTimeStr, "%d-%02d-%02d %02d:%02d:%02d\t", time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute, time.wSecond);
+	OSVERSIONINFOEX osver;
+	osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+	//获取版本信息
+	if (!GetVersionEx((LPOSVERSIONINFO)&osver))
+	{
+		cout << "Error:" << GetLastError() << endl;
+	}
 	rawData.Clear();
 	rawData.set_hostname(ComUserName);
-	rawData.set_version("0.1");
-	rawData.set_agentid("123");
+	rawData.set_version("v2.0");
+	rawData.set_agentid(chNameGuid);
 	rawData.set_timestamp(GetCurrentTime());
 	::proto::Record* pkg_re = rawData.add_pkg();
 	auto MapMessage = pkg_re->mutable_message();
 	(*MapMessage)["platform"] =  "windows";
-	(*MapMessage)["agent_id"] = "123";
-	(*MapMessage)["timestamp"] = "1111";
+	(*MapMessage)["agent_id"] = chNameGuid;
+	(*MapMessage)["timestamp"] = dateTimeStr;
 	(*MapMessage)["hostname"] = ComUserName;
-	(*MapMessage)["version"] = "0.1";
+	(*MapMessage)["version"] = to_string(osver.dwMajorVersion).c_str();
 	(*MapMessage)["in_ipv4_list"] = "localhost";
 	(*MapMessage)["in_ipv6_list"] = "localhost";
 	(*MapMessage)["data_type"] = "1";
+	(*MapMessage)["cpu"] = "1";
+	(*MapMessage)["io"] = "1";
+	(*MapMessage)["memory"] = "1";
+	(*MapMessage)["slab"] = "1";
 	if (false == greeter.Grpc_Transfer(rawData))
 		grpc_send = false;
 	else
@@ -144,6 +174,8 @@ int main(int argc, char* argv[])
 	// start grpc read thread (Wait server Data)
 	//DWORD threadid = 0;
 	// start grpc C2_Msg loop
+	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
+	// init grpc Heartbeat detection 
 	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
 	// start grpc write thread
 	greeter.ThreadPool_Init();
@@ -278,10 +310,6 @@ int main(int argc, char* argv[])
 		//cmd.Clear();
 		//cmd.set_agentctrl(UF_SYSINFO_ID);
 		//greeter.Grpc_ReadDispatchHandle(cmd);
-		
-		//cmd.Clear();
-		//cmd.set_agentctrl(UF_SYSLOG_ID);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
 
 		cmd.Clear();
 		cmd.set_agentctrl(UF_SYSUSER_ID);
@@ -298,11 +326,6 @@ int main(int argc, char* argv[])
 		// 数据未清理
 		//cmd.Clear();
 		//cmd.set_agentctrl(UF_FILE_INFO);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
-
-		// rootkit原生数据 - 未实现
-		//cmd.Clear();
-		//cmd.set_agentctrl(UF_ROOTKIT_ID);
 		//greeter.Grpc_ReadDispatchHandle(cmd);
 	}
 

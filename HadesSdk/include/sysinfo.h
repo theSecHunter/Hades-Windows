@@ -6,7 +6,7 @@ using namespace std;
 
 
 // kernel id
-enum IoctCode
+enum KIoctCode
 {
     NF_PROCESS_INFO = 150,
     NF_THREAD_INFO,
@@ -15,9 +15,8 @@ enum IoctCode
     NF_FILE_INFO,
     NF_SESSION_INFO
 };
-
 // rootkit id
-enum AnRootkitId
+enum KAnRootkitId
 {
     NF_SSDT_ID = 100,               // 100 + 0
     NF_IDT_ID,                      // 100 + 1
@@ -38,7 +37,6 @@ enum AnRootkitId
     NF_DRIVER_DUMP,                 // 100 + 16
     NF_EXIT = 1000
 };
-
 // user id
 enum USystemCollId
 {
@@ -55,7 +53,13 @@ enum USystemCollId
     UF_FILE_INFO,
     UF_ROOTKIT_ID
 };
+// etw id
+enum UEtwId
+{
 
+};
+
+//======================register kernel caloutback============================
 // NF_PROCESS_INFO
 typedef struct _PROCESSINFO
 {
@@ -65,7 +69,6 @@ typedef struct _PROCESSINFO
 	wchar_t commandLine[260 * 2];
 	wchar_t queryprocesspath[260 * 2];
 }PROCESSINFO, * PPROCESSINFO;
-
 // NF_THREAD_INFO
 typedef struct _THREADINFO
 {
@@ -73,7 +76,6 @@ typedef struct _THREADINFO
 	int threadid;
 	int createid;
 }THREADINFO, * PTHREADINFO;
-
 // NF_IMAGEGMOD_INFO
 typedef struct _IMAGEMODINFO
 {
@@ -83,7 +85,6 @@ typedef struct _IMAGEMODINFO
     int		systemmodeimage;
     wchar_t	imagename[260 * 2];
 }IMAGEMODINFO, * PIMAGEMODINFO;
-
 // NF_REGISTERTAB_INFO
 typedef enum _USER_REG_NOTIFY_CLASS {
     RegNtDeleteKey,
@@ -170,7 +171,6 @@ typedef struct _REGISTERINFO
     int threadid;
 	int opeararg;
 }REGISTERINFO, * PREGISTERINFO;
-
 // NF_FILE_INFO
 typedef struct _FILEINFO
 {
@@ -194,7 +194,6 @@ typedef struct _FILEINFO
     wchar_t FileName[260];
 
 }FILEINFO, * PFILEINFO;
-
 // NF_SESSION_INFO
 #define IO_SESSION_MAX_PAYLOAD_SIZE             256L
 typedef enum _IO_SESSION_STATE {
@@ -221,20 +220,18 @@ typedef struct _SESSIONINFO
     char            iosessioninfo[sizeof(IO_SESSION_STATE_INFORMATION)];
 }SESSIONINFO, * PSESSIONINFO;
 
-// rootkit struct
+//============================rootkit struct============================
 typedef struct _SSDTINFO
 {
     short			ssdt_id;
     ULONGLONG		sstd_memaddr;
     LONG			sstd_memoffset;
 }SSDTINFO, * PSSDTINFO;
-
 typedef struct _IDTINFO
 {
     int			    idt_id;
     ULONGLONG		idt_isrmemaddr;
 }IDTINFO, * PIDTINFO;
-
 typedef struct _DPC_TIMERINFO
 {
     ULONG_PTR	dpc;
@@ -242,13 +239,11 @@ typedef struct _DPC_TIMERINFO
     ULONG_PTR	timeroutine;
     ULONG		period;
 }DPC_TIMERINFO, * PDPC_TIMERINFO;
-
 typedef struct _NSI_STATUS_ENTRY
 {
     ULONG  dwState;
     char bytesfill[8];
 }NSI_STATUS_ENTRY, * PNSI_STATUS_ENTRY;
-
 typedef struct _INTERNAL_TCP_TABLE_SUBENTRY
 {
     char	bytesfill0[2];
@@ -256,13 +251,11 @@ typedef struct _INTERNAL_TCP_TABLE_SUBENTRY
     ULONG	dwIP;
     char	bytesfill[20];
 }INTERNAL_TCP_TABLE_SUBENTRY, * PINTERNAL_TCP_TABLE_SUBENTRY;
-
 typedef struct _INTERNAL_TCP_TABLE_ENTRY
 {
     INTERNAL_TCP_TABLE_SUBENTRY localEntry;
     INTERNAL_TCP_TABLE_SUBENTRY remoteEntry;
 }INTERNAL_TCP_TABLE_ENTRY, * PINTERNAL_TCP_TABLE_ENTRY;
-
 typedef struct _NSI_PROCESSID_INFO
 {
     ULONG dwUdpProId;
@@ -274,7 +267,6 @@ typedef struct _NSI_PROCESSID_INFO
     ULONG UnknownParam7;
     ULONG UnknownParam8;
 }NSI_PROCESSID_INFO, * PNSI_PROCESSID_INFO;
-
 typedef struct _INTERNAL_UDP_TABLE_ENTRY
 {
     char bytesfill0[2];
@@ -282,20 +274,17 @@ typedef struct _INTERNAL_UDP_TABLE_ENTRY
     ULONG dwIP;
     char bytesfill[20];
 }INTERNAL_UDP_TABLE_ENTRY, * PINTERNAL_UDP_TABLE_ENTRY;
-
 typedef struct _SYSTPCINFO
 {
     NSI_STATUS_ENTRY			socketStatus;
     NSI_PROCESSID_INFO			processinfo;
     INTERNAL_TCP_TABLE_ENTRY	TpcTable;
 }SYSTPCINFO;
-
 typedef struct _SYSUDPINFO
 {
     NSI_PROCESSID_INFO			processinfo;
     INTERNAL_UDP_TABLE_ENTRY	UdpTable;
 }SYSUDPINFO;
-
 typedef struct _SYSNETWORKINFONODE
 {
     DWORD			tcpcout;
@@ -303,7 +292,6 @@ typedef struct _SYSNETWORKINFONODE
     SYSTPCINFO		systcpinfo[1000];
     SYSUDPINFO		sysudpinfo[1000];
 }SYSNETWORKINFONODE, * PSYSNETWORKINFONODE;
-
 typedef struct _HANDLE_INFO {
     ULONG_PTR	ObjectTypeIndex;
     ULONG_PTR	HandleValue;
@@ -317,7 +305,6 @@ typedef struct _HANDLE_INFO {
     //WCHAR		TypeName[256 * 2];
     //WCHAR		HandleName[256 * 2];
 } HANDLE_INFO, * PHANDLE_INFO;
-
 typedef struct _PROCESS_MOD
 {
     ULONG	DllBase;
@@ -326,7 +313,6 @@ typedef struct _PROCESS_MOD
     WCHAR	FullDllName[260];
     WCHAR	BaseDllName[260];
 }PROCESS_MOD, * PPROCESS_MOD;
-
 typedef struct _NOTIFY_INFO
 {
     ULONG	Count; // 0号索引存放个数
@@ -335,7 +321,6 @@ typedef struct _NOTIFY_INFO
     ULONG64	Cookie; // just work to cmpcallback
     CHAR	ImgPath[MAX_PATH];
 }NOTIFY_INFO, * PNOTIFY_INFO;
-
 typedef struct _MINIFILTER_INFO
 {
     ULONG	FltNum;	//过滤器的个数
@@ -347,8 +332,8 @@ typedef struct _MINIFILTER_INFO
     CHAR	PreImgPath[MAX_PATH];
     CHAR	PostImgPath[MAX_PATH];
 }MINIFILTER_INFO, * PMINIFILTER_INFO;
-// rootkit struct end
 
+//======================user struct============================
 // u_autorun
 typedef struct _URegRun
 {
@@ -370,7 +355,6 @@ typedef struct _UAutoStartNode
     ULONG   taskrunnumber;
     UTaskSchedulerRun   taskschrun[1000];
 }UAutoStartNode, * PUAutoStartNode;
-
 // u_network
 typedef struct _UNetTcpNode
 {
@@ -391,7 +375,6 @@ typedef struct _UNetNode
     ULONG		udpnumber;
     UNetUdpNode udpnode[0x1024];
 }UNetNode, * PUNetNode;
-
 // u_user
 typedef struct _USysUserNode
 {
@@ -405,7 +388,6 @@ typedef struct _UUserNode
     ULONG usernumber;
     USysUserNode usernode[30];
 }UUserNode, *PUUserNode;
-
 // u_process
 typedef struct _UProcessEnum
 {
@@ -421,7 +403,6 @@ typedef struct _UProcessNode
     int processcount;
     UProcessEnum sysprocess[0x1024];
 }UProcessNode, * PUProcessNode;
-
 // u_software_service
 typedef struct _USOFTINFO
 {
@@ -440,7 +421,7 @@ typedef struct _UServicesNode
     wchar_t lpServiceName[MAX_PATH];
     wchar_t lpBinaryPathName[MAX_PATH];
     wchar_t lpDescription[MAX_PATH];
-    string dwCurrentState;
+    char dwCurrentState[50];
 }UServicesNode, * PUServicesNode;
 typedef struct _UAllServerSoftware {
     ULONG softwarenumber;
@@ -448,7 +429,6 @@ typedef struct _UAllServerSoftware {
     ULONG servicenumber;
     UServicesNode uSericeinfo[0x500];
 }UAllServerSoftware, *PUAllServerSoftware;
-
 // u_file
 typedef struct _UFileInfo
 {
@@ -459,7 +439,7 @@ typedef struct _UFileInfo
     TCHAR dwFileAttributes[20];
     TCHAR m_seFileSizeof[20];
     TCHAR dwFileAttributesHide[20];
-    string md5;
+    TCHAR md5[40];
 }UFileInfo, * PUFileInfo;
 typedef struct _UDriectFile
 {
@@ -474,20 +454,21 @@ typedef struct _UDriectInfo
     UDriectFile fileEntry[0xffff];
 }UDriectInfo, *PUDriectInfo;
 
-////////////////////////////////////
-// Etw
-typedef struct _PROCESS_INFO
+//======================user etw============================
+// u_etw_process
+typedef struct _UEtwProcessInfo
 {
     WCHAR  processPath[MAX_PATH * 2];
     UINT64 processId;
-}PROCESS_INFO, * PPROCESS_INFO;
+}UEtwProcessInfo, * PUEtwProcessInfo;
+// u_etw_network
 typedef USHORT ADDRESS_FAMILY;
 #define FWP_BYTE_ARRAY6_SIZE 6
 typedef struct FWP_BYTE_ARRAY16_
 {
     UINT8 byteArray16[16];
 } 	FWP_BYTE_ARRAY16;
-typedef struct _NF_CALLOUT_FLOWESTABLISHED_INFO
+typedef struct _UEtwNetWork
 {
     ADDRESS_FAMILY addressFamily;
 #pragma warning(push)
@@ -515,9 +496,11 @@ typedef struct _NF_CALLOUT_FLOWESTABLISHED_INFO
     WCHAR  processPath[MAX_PATH * 2];
     int	   processPathSize;
     ULONG  processId;
-}NF_CALLOUT_FLOWESTABLISHED_INFO, * PNF_CALLOUT_FLOWESTABLISHED_INFO;
+}UEtwNetWork, * PUEtwNetWork;
 
+
+//======================public function============================
 // wchar to string
-extern void Wchar_tToString(std::string& szDst, wchar_t* wchar);
+void Wchar_tToString(std::string& szDst, wchar_t* wchar);
 
 #endif // !_SYSINFO_H

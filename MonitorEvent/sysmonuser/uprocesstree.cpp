@@ -6,7 +6,7 @@
 #include <string.h>
 #include <tchar.h>
 #include <Psapi.h>
-#include "sysinfo.h"
+#include <sysinfo.h>
 #include <atlstr.h>
 
 #pragma comment (lib,"Psapi.lib")

@@ -3,7 +3,7 @@
 #include <string>
 #include <atlstr.h>
 
-#include "sysinfo.h"
+#include <sysinfo.h>
 #include "MD5.h"
 
 using namespace std;

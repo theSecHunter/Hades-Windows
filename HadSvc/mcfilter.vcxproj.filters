@@ -95,9 +95,6 @@
     <ClInclude Include="msgassist.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="sysinfo.h">
-      <Filter>common</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="mcfilter.rc">
@@ -106,6 +103,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="C:\Users\zy.chen\Desktop\hunter_Win_x64_v1.0\hunter.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="..\Image\firearms.ico">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>

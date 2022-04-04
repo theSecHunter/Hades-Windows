@@ -79,10 +79,12 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\..\HadesSdk\sysmondrv\lib</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
+    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\..\HadesSdk\sysmondrv\lib</OutDir>
+    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -181,7 +183,6 @@
     <ClInclude Include="nf_api.h" />
     <ClInclude Include="ntbasic.h" />
     <ClInclude Include="sync.h" />
-    <ClInclude Include="sysinfo.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

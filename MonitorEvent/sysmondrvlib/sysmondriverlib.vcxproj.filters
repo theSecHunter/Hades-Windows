@@ -77,9 +77,6 @@
     <ClInclude Include="ArkSysEnumNotify.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="sysinfo.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="nf_api.h">
       <Filter>common</Filter>
     </ClInclude>

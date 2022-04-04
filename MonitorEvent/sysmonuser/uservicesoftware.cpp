@@ -2,7 +2,7 @@
 #include <string>
 #include "uservicesoftware.h"
 
-#include "sysinfo.h"
+#include <sysinfo.h>
 using namespace std;
 
 #define MAX_SERVICE_SIZE 1024 * 64

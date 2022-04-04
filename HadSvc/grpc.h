@@ -75,6 +75,7 @@ public:
 
 	bool Grpc_Transfer(RawData rawData);
 	void Grpc_ReadC2Thread(LPVOID lpThreadParameter);
+	// interface test public
 	void Grpc_ReadDispatchHandle(Command& command);
 	void Grpc_write();
 	void Grpc_writeEx(RawData& raw);

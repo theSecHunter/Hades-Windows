@@ -1,6 +1,6 @@
 #include <Windows.h>
 #include "usysinfo.h"
-#include "sysinfo.h"
+#include <sysinfo.h>
 #include <atlstr.h>
 
 

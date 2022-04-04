@@ -56,9 +56,6 @@
     <ClInclude Include="sync.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="sysinfo.h">
-      <Filter>common</Filter>
-    </ClInclude>
     <ClInclude Include="MD5.h">
       <Filter>common</Filter>
     </ClInclude>

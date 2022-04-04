@@ -79,11 +79,13 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\..\HadesSdk\sysmonuser\lib</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
+    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\..\HadesSdk\sysmonuser\lib</OutDir>
     <TargetName>$(ProjectName)</TargetName>
+    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -173,7 +175,6 @@
     <ClInclude Include="uautostart.h" />
     <ClInclude Include="uetw.h" />
     <ClInclude Include="ufile.h" />
-    <ClInclude Include="sysinfo.h" />
     <ClInclude Include="unet.h" />
     <ClInclude Include="uprocesstree.h" />
     <ClInclude Include="uservicesoftware.h" />

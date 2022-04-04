@@ -9,7 +9,7 @@
 #include <tdh.h>
 #include <in6addr.h>
 
-#include "sysinfo.h"
+#include <sysinfo.h>
 #include "sync.h"
 #include "uetw.h"
 
@@ -28,9 +28,9 @@ using namespace std;
 //  映射ProcessInfo 和 NetWork 关系
 //  如果都在数据库做分析，这里可以不适用这套方案。
 static mutex g_mutx;
-static map<DWORD64, NF_CALLOUT_FLOWESTABLISHED_INFO> flowestablished_map;
+static map<DWORD64, UEtwNetWork> flowestablished_map;
 static mutex g_mutx_pidpath;
-static map<int, PROCESS_INFO> mutxpidpath_map;
+static map<int, UEtwProcessInfo> mutxpidpath_map;
 
 // Session - Guid - tracconfig
 typedef struct _TracGuidNode
@@ -93,8 +93,8 @@ DWORD uf_GetNetWrokEventStr(wstring& propName)
 // Network Event_callback
 void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
 
-    NF_CALLOUT_FLOWESTABLISHED_INFO flowestablished_processinfo;
-    RtlZeroMemory(&flowestablished_processinfo, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
+    UEtwNetWork flowestablished_processinfo;
+    RtlZeroMemory(&flowestablished_processinfo, sizeof(UEtwNetWork));
 
     // TCPIP or UDPIP
     wstring taskName;
@@ -126,8 +126,8 @@ void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
     ULONG len; WCHAR value[512];
     string  tmpstr; wstring propName; DWORD nCode = 0;
     wchar_t cProcessPath[MAX_PATH] = { 0 };
-    map<int, PROCESS_INFO>::iterator iter;
-    PROCESS_INFO process_info = { 0, };
+    map<int, UEtwProcessInfo>::iterator iter;
+    UEtwProcessInfo process_info = { 0, };
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
         propName.clear(); nCode = 0; tmpstr.clear();
@@ -264,7 +264,7 @@ void ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
-    PROCESS_INFO process_info = { 0, };
+    UEtwProcessInfo process_info = { 0, };
     wchar_t* end;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
@@ -361,7 +361,6 @@ void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
-    PROCESS_INFO process_info = { 0, };
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -456,7 +455,6 @@ void FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
-    PROCESS_INFO process_info = { 0, };
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -536,7 +534,6 @@ void RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
-    PROCESS_INFO process_info = { 0, };
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -613,7 +610,6 @@ void ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
-    PROCESS_INFO process_info = { 0, };
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 

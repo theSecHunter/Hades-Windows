@@ -4,7 +4,7 @@
 #include <lm.h>
 #include <stdio.h>
 #include <sddl.h>
-#include "sysinfo.h"
+#include <sysinfo.h>
 
 #pragma comment(lib, "netapi32.lib")
 
