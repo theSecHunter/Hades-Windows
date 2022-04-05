@@ -56,7 +56,12 @@ enum USystemCollId
 // etw id
 enum UEtwId
 {
-
+    UF_ETW_PROCESSINFO = 300,
+    UF_ETW_THREADINFO,
+    UF_ETW_IMAGEMOD,
+    UF_ETW_NETWORK,
+    UF_ETW_REGISTERTAB,
+    UF_ETW_FILEIO
 };
 
 //======================register kernel caloutback============================
@@ -455,6 +460,11 @@ typedef struct _UDriectInfo
 }UDriectInfo, *PUDriectInfo;
 
 //======================user etw============================
+typedef struct _UEtwBuffer
+{
+    int taskid;
+    char data[0];
+}UEtwBuffer, *PUEtwBuffer;
 // u_etw_process
 typedef struct _UEtwProcessInfo
 {

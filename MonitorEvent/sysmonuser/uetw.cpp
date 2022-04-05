@@ -10,14 +10,15 @@
 #include <in6addr.h>
 
 #include <sysinfo.h>
-#include "sync.h"
-#include "uetw.h"
-
 #include <map>
 #include <mutex>
 #include <vector>
+#include <queue>
 #include <string>
 #include <wchar.h>
+
+#include "sync.h"
+#include "uetw.h"
 
 #pragma comment(lib,"psapi.lib")
 #pragma comment(lib, "Ws2_32.lib")
@@ -25,30 +26,26 @@
 
 using namespace std;
 
-//  映射ProcessInfo 和 NetWork 关系
-//  如果都在数据库做分析，这里可以不适用这套方案。
-static mutex g_mutx;
-static map<DWORD64, UEtwNetWork> flowestablished_map;
-static mutex g_mutx_pidpath;
-static map<int, UEtwProcessInfo> mutxpidpath_map;
-
+// Etw Event Manage
 // Session - Guid - tracconfig
 typedef struct _TracGuidNode
 {
     DWORD                         event_tracid;
     EVENT_TRACE_PROPERTIES*       bufconfig;
 }TracGuidNode, *PTracGuidNode;
-static AutoCriticalSection g_ms;
-static map<TRACEHANDLE, TracGuidNode> g_tracMap;
-static AutoCriticalSection g_th;
-static vector<HANDLE> g_thrhandle;
+static AutoCriticalSection              g_ms;
+static map<TRACEHANDLE, TracGuidNode>   g_tracMap;
+static AutoCriticalSection              g_th;
+static vector<HANDLE>                   g_thrhandle;
 
-UEtw::UEtw()
-{
-}
-UEtw::~UEtw()
-{
-}
+// Grpc task Queue_buffer ptr
+static std::queue<UEtwBuffer*>*         g_EtwQueue_Ptr = NULL;
+static std::mutex*                      g_EtwQueueCs_Ptr = NULL;
+static HANDLE                           g_jobQueue_Event = NULL;
+
+// Buf_lens
+static int etw_networklens = 0;
+static int etw_processinfolens = 0;
 
 void Wchar_tToString(std::string& szDst, wchar_t* wchar)
 {
@@ -60,6 +57,19 @@ void Wchar_tToString(std::string& szDst, wchar_t* wchar)
     szDst = psText;
     delete[] psText;
 }
+
+UEtw::UEtw()
+{
+    etw_networklens = sizeof(UEtwBuffer) + sizeof(UEtwNetWork);
+    etw_processinfolens = sizeof(UEtwBuffer) + sizeof(UEtwProcessInfo);
+}
+UEtw::~UEtw()
+{
+}
+
+void UEtw::uf_setqueuetaskptr(std::queue<UEtwBuffer*>& qptr) { g_EtwQueue_Ptr = &qptr; }
+void UEtw::uf_setqueuelockptr(std::mutex& qptrcs) { g_EtwQueueCs_Ptr = &qptrcs; }
+void UEtw::uf_setqueueeventptr(HANDLE& eventptr) { g_jobQueue_Event = eventptr; }
 
 // Pid Get ProcessPath
 DWORD GetPathByProcessId(wchar_t* path, const  DWORD dwPid)
@@ -89,12 +99,10 @@ DWORD uf_GetNetWrokEventStr(wstring& propName)
     return Code;
 }
 
-///////////////////////////////////////////////////
-// Network Event_callback
 void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
 
-    UEtwNetWork flowestablished_processinfo;
-    RtlZeroMemory(&flowestablished_processinfo, sizeof(UEtwNetWork));
+    UEtwNetWork etwNetInfo;
+    RtlZeroMemory(&etwNetInfo, sizeof(UEtwNetWork));
 
     // TCPIP or UDPIP
     wstring taskName;
@@ -109,11 +117,11 @@ void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
     size_t task_udplen = taskName.find(L"UdpIp");
     if (task_tcplen >= 0 && task_tcplen <= 100)
     {
-        flowestablished_processinfo.protocol = IPPROTO_TCP;
+        etwNetInfo.protocol = IPPROTO_TCP;
     }
     else if (task_udplen >= 0 && task_udplen <= 100)
     {
-        flowestablished_processinfo.protocol = IPPROTO_UDP;
+        etwNetInfo.protocol = IPPROTO_UDP;
     }
     else
         return;
@@ -126,8 +134,6 @@ void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
     ULONG len; WCHAR value[512];
     string  tmpstr; wstring propName; DWORD nCode = 0;
     wchar_t cProcessPath[MAX_PATH] = { 0 };
-    map<int, UEtwProcessInfo>::iterator iter;
-    UEtwProcessInfo process_info = { 0, };
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
         propName.clear(); nCode = 0; tmpstr.clear();
@@ -189,34 +195,25 @@ void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
                 case 1: // PID
                 {
                     // wtoi不可以转换16进制宽字符 - 这里valuse内存是十进制 - 否则用wcstol
-                    flowestablished_processinfo.processId = _wtoi(value);
-                    iter = mutxpidpath_map.find(flowestablished_processinfo.processId);
-                    if (iter != mutxpidpath_map.end())
-                    {
-                        process_info = iter->second;
-                        RtlCopyMemory(flowestablished_processinfo.processPath, process_info.processPath, MAX_PATH);
-                    }
-                    else
-                    {
-                        flowestablished_processinfo.processPathSize = GetPathByProcessId(cProcessPath, flowestablished_processinfo.processId);
-                        if (flowestablished_processinfo.processPathSize)
-                            RtlCopyMemory(flowestablished_processinfo.processPath, cProcessPath, MAX_PATH);
-                    }
+                    etwNetInfo.processId = _wtoi(value);
+                    etwNetInfo.processPathSize = GetPathByProcessId(cProcessPath, etwNetInfo.processId);
+                    if (etwNetInfo.processPathSize)
+                        RtlCopyMemory(etwNetInfo.processPath, cProcessPath, MAX_PATH);
                 }
                 break;
                 case 3: // daddr
                     Wchar_tToString(tmpstr, value);
-                    flowestablished_processinfo.ipv4toRemoteAddr = inet_addr(tmpstr.c_str());
+                    etwNetInfo.ipv4toRemoteAddr = inet_addr(tmpstr.c_str());
                     break;
                 case 4: // saddr
                     Wchar_tToString(tmpstr, value);
-                    flowestablished_processinfo.ipv4LocalAddr = inet_addr(tmpstr.c_str());
+                    etwNetInfo.ipv4LocalAddr = inet_addr(tmpstr.c_str());
                     break;
                 case 5: // dport
-                    flowestablished_processinfo.toRemotePort = _wtoi(value);
+                    etwNetInfo.toRemotePort = _wtoi(value);
                     break;
                 case 6: // sport
-                    flowestablished_processinfo.toLocalPort = _wtoi(value);
+                    etwNetInfo.toLocalPort = _wtoi(value);
                     break;
                 }
             }
@@ -224,28 +221,21 @@ void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
         }
     }
 
-    // 映射
-    DWORD64 keyLocalPort = flowestablished_processinfo.toLocalPort;
-    switch (flowestablished_processinfo.protocol)
-    {
-    case IPPROTO_TCP:
-        keyLocalPort += 1000000;
-        break;
-    case IPPROTO_UDP:
-        keyLocalPort += 2000000;
-        break;
-    }
+    //shared_ptr<char> sptr2 = make_shared<char>(etw_networklens);
+    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_networklens];
+    if (!EtwData)
+        return;
+    RtlZeroMemory(EtwData, etw_networklens);
+    EtwData->taskid = UF_ETW_NETWORK;
+    RtlCopyMemory(&EtwData->data[0], &etwNetInfo, sizeof(UEtwNetWork));
 
-    if (lstrlenW(flowestablished_processinfo.processPath))
+    if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
     {
-        g_mutx.lock();
-        flowestablished_map[keyLocalPort] = flowestablished_processinfo;
-        g_mutx.unlock();
+        g_EtwQueueCs_Ptr->lock();
+        g_EtwQueue_Ptr->push(EtwData);
+        g_EtwQueueCs_Ptr->unlock();
+        SetEvent(g_jobQueue_Event);
     }
-
-    //WCHAR outputinfo[MAX_PATH] = { 0, };
-    //swprintf(outputinfo, MAX_PATH, L"[PushKey] PortKey %d", keyLocalPort);
-    //OutputDebugString(outputinfo);
 }
 void ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 {
@@ -338,11 +328,21 @@ void ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
     }
 
-    if (0 >= lstrlenW(process_info.processPath))
+    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_processinfolens];
+    if (!EtwData)
         return;
-    g_mutx_pidpath.lock();
-    mutxpidpath_map[process_info.processId] = process_info;
-    g_mutx_pidpath.unlock();
+    RtlZeroMemory(EtwData, etw_processinfolens);
+    EtwData->taskid = UF_ETW_PROCESSINFO;
+    RtlCopyMemory(&EtwData->data[0], &process_info, sizeof(UEtwProcessInfo));
+
+    if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
+    {
+        g_EtwQueueCs_Ptr->lock();
+        g_EtwQueue_Ptr->push(EtwData);
+        g_EtwQueueCs_Ptr->unlock();
+        SetEvent(g_jobQueue_Event);
+    }
+
 }
 void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 {
@@ -817,7 +817,8 @@ bool UEtw::uf_init()
     OutputDebugString(L"Etw nf_init - uf_RegisterTrace");
 #ifdef _DEBUG
     // EVENT_TRACE_FLAG_NETWORK_TCPIP EVENT_TRACE_FLAG_THREAD
-    uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS | EVENT_TRACE_FLAG_NETWORK_TCPIP);
+    if (!uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS | EVENT_TRACE_FLAG_NETWORK_TCPIP))
+        uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS | EVENT_TRACE_FLAG_NETWORK_TCPIP);
     return 1;
 #else
     // 目前使用用一个Session: 优点不用管理，缺点没办法单独监控某个事件。

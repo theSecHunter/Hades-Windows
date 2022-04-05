@@ -1,7 +1,4 @@
-﻿/*
-	* mcfilter :  该程序负责r3的规则逻辑处理
-*/
-#include <iostream>
+﻿#include <iostream>
 #include <string>
 #include <map>
 #include <vector>
@@ -42,7 +39,7 @@ const int max_size = MAX_PATH * 3;
 static bool kerne_mon = false;		// kernel采集
 static bool kerne_rootkit = false;	// rootkit接口
 static bool user_mod = true;		// user接口
-static bool etw_mon = false;		// user采集
+static bool etw_mon = true;			// user采集
 static bool grpc_send = false;		// grpc上报
 
 bool gethostip(RawData* ip_liststr)
@@ -171,10 +168,10 @@ int main(int argc, char* argv[])
 	else
 		grpc_send = true;
 
-	// start grpc read thread (Wait server Data)
-	//DWORD threadid = 0;
+	// start grpc Read thread (Wait server Data)
 	// start grpc C2_Msg loop
-	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
+	DWORD threadid = 0;
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
 	// init grpc Heartbeat detection 
 	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
 	// start grpc write thread

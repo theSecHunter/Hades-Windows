@@ -2,7 +2,9 @@
 #include <Windows.h>
 #include <map>
 #include <vector>
+#include <queue>
 #include <string>
+#include <mutex>
 
 #include "sysinfo.h"
 #include "msgassist.h"
@@ -16,6 +18,7 @@
 #include "ufile.h"
 #include "uetw.h"
 
+
 //rapidjson
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
@@ -26,23 +29,146 @@
 #include <json.hpp>
 using json_t = nlohmann::json;
 
-static UAutoStart           g_grpc_uautostrobj;
-static UNet                 g_grpc_unetobj;
-static NSysUser             g_grpc_usysuser;
-static UProcess             g_grpc_uprocesstree;
-static UServerSoftware      g_grpc_userversoftware;
-static UFile                g_grpc_ufile;
-static UEtw                 g_grpc_etw;
+static UAutoStart               g_grpc_uautostrobj;
+static UNet                     g_grpc_unetobj;
+static NSysUser                 g_grpc_usysuser;
+static UProcess                 g_grpc_uprocesstree;
+static UServerSoftware          g_grpc_userversoftware;
+static UFile                    g_grpc_ufile;
+static UEtw                     g_grpc_etw;
 
-void uMsgInterface::uMsg_ReadtaskPop(int& taskcode, std::string& data)
+static std::queue<UEtwBuffer*>  g_etwdata_queue;
+static std::mutex               g_etwdata_cs;
+static HANDLE                   g_jobAvailableEvent;
+static bool                     g_exit = false;
+
+
+inline void uMsgInterface::uMsg_SetQueuePtr() { g_grpc_etw.uf_setqueuetaskptr(g_etwdata_queue); }
+inline void uMsgInterface::uMsg_SetQueueLockPtr() { g_grpc_etw.uf_setqueuelockptr(g_etwdata_cs); }
+inline void uMsgInterface::uMsg_SetEventPtr() { g_grpc_etw.uf_setqueueeventptr(g_jobAvailableEvent); }
+
+void uMsgInterface::uMsg_Init() {
+    // 初始化设置数据
+    g_jobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    this->uMsg_SetQueuePtr();
+    this->uMsg_SetQueueLockPtr();
+    this->uMsg_SetEventPtr();
+    // 最后调用
+    this->uMsg_taskPopInit();
+};
+void uMsgInterface::uMsg_Free()
+{
+    g_exit = true;
+    for (size_t idx = 0; idx < m_thread.size(); ++idx)
+    {
+        SetEvent(g_jobAvailableEvent);
+        WaitForSingleObject(m_thread[idx], INFINITE);
+        CloseHandle(m_thread[idx]);
+    }
+
+    if (g_jobAvailableEvent != INVALID_HANDLE_VALUE)
+    {
+        ::CloseHandle(g_jobAvailableEvent);
+        g_jobAvailableEvent = INVALID_HANDLE_VALUE;
+    }
+    m_thread.clear();
+}
+
+// 反序列化数据
+void uMsgInterface::uMsgEtwDataHandlerEx()
+{
+    //for (;;)
+    {
+        g_etwdata_cs.lock();
+        if (!g_etwdata_queue.size())
+            return;
+        UEtwBuffer* etw_taskdata = g_etwdata_queue.front();
+        if (!etw_taskdata)
+            return;
+        g_etwdata_queue.pop();
+        g_etwdata_cs.unlock();
+
+        wchar_t output[MAX_PATH * 2] = { 0, };
+        switch (etw_taskdata->taskid)
+        {
+        case UF_ETW_NETWORK:
+        {
+            UEtwNetWork* etwNet = (UEtwNetWork*)&(etw_taskdata->data[0]);
+            if (!etwNet)
+                break;
+            swprintf(output, L"[etw] protocol:%d pid:%d localport: %x:%d  remoteport: %x:%d", \
+                etwNet->protocol,
+                etwNet->processId,
+                etwNet->ipv4LocalAddr, etwNet->toLocalPort, \
+                etwNet->RemoteAddr, etwNet->toRemotePort);
+            OutputDebugString(output);
+        }
+        break;
+        case UF_ETW_PROCESSINFO:
+        {
+            UEtwProcessInfo* etwProcess = (UEtwProcessInfo*)&(etw_taskdata->data[0]);
+            if (!etwProcess)
+                break;
+            swprintf(output, L"[etw] pid: %d  Path: ", etwProcess->processId);
+            lstrcatW(output, etwProcess->processPath);
+            OutputDebugString(output);
+        }
+        break;
+        default:
+            break;
+        }
+    }
+}
+void uMsgInterface::uMsg_taskPopEtwLoop()
 {
     try
     {
+        if (!g_jobAvailableEvent)
+            return;
+        do
+        {
+            WaitForSingleObject(
+                g_jobAvailableEvent,
+                INFINITE
+            );
 
+            if (g_exit)
+                break;
+
+            uMsgEtwDataHandlerEx();
+
+        } while (true);
     }
     catch (const std::exception&)
     {
 
+    }
+}
+static unsigned WINAPI uMsg_taskPopThread(void* pData)
+{
+    (reinterpret_cast<uMsgInterface*>(pData))->uMsg_taskPopEtwLoop();
+    return 0;
+}
+void uMsgInterface::uMsg_taskPopInit()
+{
+    int i = 0;
+    HANDLE hThread;
+    unsigned threadId;
+
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    DWORD threadCount = sysinfo.dwNumberOfProcessors;
+    if (threadCount == 0)
+    {
+        threadCount = 4;
+    }
+    for (i = 0; i < threadCount; i++)
+    {
+        hThread =(HANDLE)_beginthreadex(0, 0, uMsg_taskPopThread, (LPVOID)this, 0, &threadId);
+        if (hThread != 0 && hThread != (HANDLE)(-1L))
+        {
+            m_thread.push_back(hThread);
+        }
     }
 }
 void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& vec_task_string)

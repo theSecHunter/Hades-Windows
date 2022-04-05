@@ -27,6 +27,7 @@ static std::mutex                   ggrpc_queuecs;
 static queue<int>                   ggrpc_taskid;
 static std::mutex                   ggrpc_taskcs;
 
+//static std::mutex                   ggrpc_task_;
 static std::mutex                   ggrpc_writecs;
 
 // Grpc双向steam接口
@@ -55,22 +56,7 @@ inline void Grpc::Grpc_writeEx(RawData& raw)
 void Grpc::Grpc_write()
 {
     int taskid = 0;
-    if (!ggrpc_taskid.empty())
-        taskid = ggrpc_taskid.front();
-    else
-        return;
-    ggrpc_taskcs.lock();
-    ggrpc_taskid.pop();
-    ggrpc_taskcs.unlock();
-    // task_id
-    std::vector<std::string> task_array_data;
-    task_array_data.clear();
-    if ((taskid >= 100) && (taskid < 200))
-        g_kern_interface.kMsg_taskPush(taskid, task_array_data);
-    else if ((taskid >= 200) && (taskid < 300))
-        g_user_interface.uMsg_taskPush(taskid, task_array_data);   
-    else
-        return;
+    size_t coutwrite = 0, idx = 0;
     ::proto::RawData rawData;
     ::proto::Record* pkg = rawData.add_pkg();
     if (!pkg)
@@ -79,33 +65,64 @@ void Grpc::Grpc_write()
     if (!MapMessage)
         return;
 
-    size_t coutwrite = task_array_data.size();
-    for (size_t idx = 0; idx < coutwrite; ++idx)
+    for (;;)
     {
-        (*MapMessage)["data_type"] = to_string(taskid);
-        if (task_array_data[idx].size())
-            (*MapMessage)["udata"] = task_array_data[idx]; // json
-        else
-            (*MapMessage)["udata"] = "error";
-        ggrpc_writecs.lock();
-        Grpc_writeEx(rawData);
-        ggrpc_writecs.unlock();
+        WaitForSingleObject(
+            this->m_jobAvailableEvnet_WriteTask,
+            INFINITE
+        );
+
+        if (g_shutdown)
+            break;
+
+        if (!pkg || !MapMessage)
+            break;;
+
+        do {
+            ggrpc_taskcs.lock();
+            if (!ggrpc_taskid.size())
+                break;
+            taskid = ggrpc_taskid.front();
+            ggrpc_taskid.pop();
+            ggrpc_taskcs.unlock();
+
+            // task_id
+            //ggrpc_task_.lock();
+            std::vector<std::string> task_array_data;
+            task_array_data.clear();
+            if ((taskid >= 100) && (taskid < 200))
+                g_kern_interface.kMsg_taskPush(taskid, task_array_data);
+            else if ((taskid >= 200) && (taskid < 300))
+                g_user_interface.uMsg_taskPush(taskid, task_array_data);
+            else
+                return;
+
+            coutwrite = task_array_data.size();
+            for (idx = 0; idx < coutwrite; ++idx)
+            {
+                (*MapMessage)["data_type"] = to_string(taskid);
+                if (task_array_data[idx].size())
+                    (*MapMessage)["udata"] = task_array_data[idx]; // json
+                else
+                    (*MapMessage)["udata"] = "error";
+                ggrpc_writecs.lock();
+                Grpc_writeEx(rawData);
+                ggrpc_writecs.unlock();
+            }
+            //ggrpc_task_.unlock();
+
+        } while (true);
     }
-}
-inline DWORD WINAPI QueueTaskThread(LPVOID lpThreadParameter)
-{
-    ((Grpc*)lpThreadParameter)->Grpc_write();
-    return 0;
 }
 void Grpc::Grpc_ReadDispatchHandle(Command& command)
 {
     const int taskid = command.agentctrl();
-    if (100 < taskid && taskid > 300)
+    if (100 < taskid && taskid > 400)
         return;
     ggrpc_taskcs.lock();
     ggrpc_taskid.push(taskid);
     ggrpc_taskcs.unlock();
-    QueueUserWorkItem(QueueTaskThread, this, WT_EXECUTEDEFAULT);
+    SetEvent(m_jobAvailableEvnet_WriteTask);
 }
 void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
 {
@@ -115,6 +132,8 @@ void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
     Command command;
     while (true)
     {
+        if (!m_stream || g_shutdown)
+            break;
         m_stream->Read(&command);
         Grpc_ReadDispatchHandle(command);
     }
@@ -221,7 +240,7 @@ void Grpc::threadProc()
             break;
 
         if (!pkg)
-            continue;
+            break;
 
         ggrpc_queuecs.lock();
         
@@ -375,73 +394,9 @@ void Grpc::threadProc()
     }
 
 }
-static unsigned WINAPI _threadProc(void* pData)
-{
-    (reinterpret_cast<Grpc*>(pData))->threadProc();
-    return 0;
-}
-bool Grpc::ThreadPool_Init()
-{
-    this->m_jobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-    if (!m_jobAvailableEvent)
-        return false;
-
-    int i = 0;
-    HANDLE hThread;
-    unsigned threadId;
-
-    SYSTEM_INFO sysinfo;
-    GetSystemInfo(&sysinfo);
-
-    DWORD threadCount = sysinfo.dwNumberOfProcessors;
-    if (threadCount == 0)
-    {
-        threadCount = 4;
-    }
-
-    for (i = 0; i < threadCount; i++)
-    {
-        hThread = (HANDLE)_beginthreadex(0, 0,
-            _threadProc,
-            (LPVOID)this,
-            0,
-            &threadId);
-
-        if (hThread != 0 && hThread != (HANDLE)(-1L))
-        {
-            m_threads.push_back(hThread);
-        }
-    }
-    return true;
-}
-bool Grpc::ThreadPool_Free()
-{
-    // 设置标志
-    g_shutdown = true;
-    // 循环关闭句柄
-    for (tThreads::iterator it = m_threads.begin();
-        it != m_threads.end();
-        it++)
-    {
-        SetEvent(m_jobAvailableEvent);
-        WaitForSingleObject(*it, INFINITE);
-        CloseHandle(*it);
-    }
-
-    if (m_jobAvailableEvent != INVALID_HANDLE_VALUE)
-    {
-        ::CloseHandle(m_jobAvailableEvent);
-        m_jobAvailableEvent = INVALID_HANDLE_VALUE;
-    }
-
-    m_threads.clear();
-
-    return true;
-}
 bool Grpc::Grpc_pushQueue(const int code, const char* buf, int len)
 {
-    if (code < 150 || code > 200)
+    if (code < 150 || code > 400)
         return false;
 
     char* pack = (char*)malloc(len + 1);
@@ -462,6 +417,111 @@ bool Grpc::Grpc_pushQueue(const int code, const char* buf, int len)
 
     // 处理pack
     SetEvent(this->m_jobAvailableEvent);
+
+    return true;
+}
+
+static unsigned WINAPI _threadProc(void* pData)
+{
+    (reinterpret_cast<Grpc*>(pData))->threadProc();
+    return 0;
+}
+static unsigned WINAPI _QueueTaskthreadProc(void* pData)
+{
+    (reinterpret_cast<Grpc*>(pData))->Grpc_write();
+    return 0;
+}
+bool Grpc::ThreadPool_Init()
+{
+    this->m_jobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    this->m_jobAvailableEvnet_WriteTask = CreateEvent(NULL, FALSE, FALSE, NULL);
+    
+    if (!m_jobAvailableEvent || !m_jobAvailableEvnet_WriteTask)
+        return false;
+
+    int i = 0;
+    HANDLE hThread;
+    unsigned threadId;
+
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+
+    DWORD threadCount = sysinfo.dwNumberOfProcessors;
+    if (threadCount == 0)
+    {
+        threadCount = 4;
+    }
+
+    // 处理上抛(订阅)
+    for (i = 0; i < threadCount; i++)
+    {
+        hThread = (HANDLE)_beginthreadex(0, 0,
+            _threadProc,
+            (LPVOID)this,
+            0,
+            &threadId);
+
+        if (hThread != 0 && hThread != (HANDLE)(-1L))
+        {
+            m_threads.push_back(hThread);
+        }
+    }
+
+    // 处理指令下发任务
+    for (i = 0; i < threadCount; i++)
+    {
+        hThread = (HANDLE)_beginthreadex(0, 0,
+            _QueueTaskthreadProc,
+            (LPVOID)this,
+            0,
+            &threadId);
+
+        if (hThread != 0 && hThread != (HANDLE)(-1L))
+        {
+            m_threads_write.push_back(hThread);
+        }
+    }
+
+    return true;
+}
+bool Grpc::ThreadPool_Free()
+{
+    // 设置标志
+    g_shutdown = true;
+    // 循环关闭句柄
+    for (tThreads::iterator it = m_threads.begin();
+        it != m_threads.end();
+        it++)
+    {
+        SetEvent(m_jobAvailableEvent);
+        WaitForSingleObject(*it, INFINITE);
+        CloseHandle(*it);
+    }
+
+
+    if (m_jobAvailableEvent != INVALID_HANDLE_VALUE)
+    {
+        ::CloseHandle(m_jobAvailableEvent);
+        m_jobAvailableEvent = INVALID_HANDLE_VALUE;
+    }
+
+    for (tThreads::iterator it = m_threads_write.begin();
+        it != m_threads_write.end();
+        it++)
+    {
+        SetEvent(m_jobAvailableEvnet_WriteTask);
+        WaitForSingleObject(*it, INFINITE);
+        CloseHandle(*it);
+    }
+
+    if (m_jobAvailableEvnet_WriteTask != INVALID_HANDLE_VALUE)
+    {
+        ::CloseHandle(m_jobAvailableEvnet_WriteTask);
+        m_jobAvailableEvnet_WriteTask = INVALID_HANDLE_VALUE;
+    }
+    
+
+    m_threads.clear();
 
     return true;
 }

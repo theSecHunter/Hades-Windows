@@ -94,8 +94,10 @@ private:
 
 	typedef std::vector<HANDLE> tThreads;
 	tThreads m_threads;
+	tThreads m_threads_write;
 
 	HANDLE m_jobAvailableEvent;
+	HANDLE m_jobAvailableEvnet_WriteTask;
 	// void Grpc_ReadDispatchHandle(Command& command);
 };
 
