@@ -81,13 +81,14 @@ void Grpc::Grpc_write()
         do {
             ggrpc_taskcs.lock();
             if (!ggrpc_taskid.size())
+            {
+                ggrpc_taskcs.unlock();
                 break;
+            }
             taskid = ggrpc_taskid.front();
             ggrpc_taskid.pop();
             ggrpc_taskcs.unlock();
 
-            // task_id
-            //ggrpc_task_.lock();
             std::vector<std::string> task_array_data;
             task_array_data.clear();
             if ((taskid >= 100) && (taskid < 200))
@@ -109,8 +110,6 @@ void Grpc::Grpc_write()
                 Grpc_writeEx(rawData);
                 ggrpc_writecs.unlock();
             }
-            //ggrpc_task_.unlock();
-
         } while (true);
     }
 }

@@ -77,14 +77,21 @@ void uMsgInterface::uMsg_Free()
 // 反序列化数据
 void uMsgInterface::uMsgEtwDataHandlerEx()
 {
-    //for (;;)
+    for (;;)
     {
         g_etwdata_cs.lock();
-        if (!g_etwdata_queue.size())
+        if (g_etwdata_queue.empty())
+        {
+            g_etwdata_cs.unlock();
             return;
+        }
         UEtwBuffer* etw_taskdata = g_etwdata_queue.front();
         if (!etw_taskdata)
+        {
+            g_etwdata_cs.unlock();
             return;
+        }
+
         g_etwdata_queue.pop();
         g_etwdata_cs.unlock();
 
