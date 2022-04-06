@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props" Condition="Exists('..\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props')" />
+  <Import Project="..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props" Condition="Exists('..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -62,6 +62,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
+    <Import Project="..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets" Condition="Exists('..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets')" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -107,8 +108,7 @@
     <TargetName>$(ProjectName)64</TargetName>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
-    <VcpkgEnabled>
-    </VcpkgEnabled>
+    <VcpkgEnabled>true</VcpkgEnabled>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <VcpkgUseStatic>
@@ -215,14 +215,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets" Condition="Exists('..\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets')" />
-  </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>这台计算机上缺少此项目引用的 NuGet 程序包。使用“NuGet 程序包还原”可下载这些程序包。有关更多信息，请参见 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 {0}。</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props'))" />
-    <Error Condition="!Exists('..\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets'))" />
+    <Error Condition="!Exists('..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props')" Text="$([System.String]::Format('$(ErrorText)', '..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props'))" />
+    <Error Condition="!Exists('..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets'))" />
   </Target>
 </Project>
