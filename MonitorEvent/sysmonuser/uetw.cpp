@@ -46,6 +46,10 @@ static HANDLE                           g_jobQueue_Event = NULL;
 // Buf_lens
 static int etw_networklens = 0;
 static int etw_processinfolens = 0;
+static int etw_threadinfolens = 0;
+static int etw_imageinfolens = 0;
+static int etw_regtabinfolens = 0;
+static int etw_fileioinfolens = 0;
 
 void Wchar_tToString(std::string& szDst, wchar_t* wchar)
 {
@@ -62,11 +66,16 @@ UEtw::UEtw()
 {
     etw_networklens = sizeof(UEtwBuffer) + sizeof(UEtwNetWork);
     etw_processinfolens = sizeof(UEtwBuffer) + sizeof(UEtwProcessInfo);
+    etw_threadinfolens = sizeof(UEtwBuffer) + sizeof(UEtwThreadInfo);
+    etw_imageinfolens = sizeof(UEtwBuffer) + sizeof(UEtwImageInfo);
+    etw_regtabinfolens = sizeof(UEtwBuffer) + sizeof(UEtwRegisterTabInfo);
+    etw_fileioinfolens = sizeof(UEtwBuffer) + sizeof(UEtwFileIoTabInfo);
 }
 UEtw::~UEtw()
 {
 }
 
+// public interface set queue pointer 
 void UEtw::uf_setqueuetaskptr(std::queue<UEtwBuffer*>& qptr) { g_EtwQueue_Ptr = &qptr; }
 void UEtw::uf_setqueuelockptr(std::mutex& qptrcs) { g_EtwQueueCs_Ptr = &qptrcs; }
 void UEtw::uf_setqueueeventptr(HANDLE& eventptr) { g_jobQueue_Event = eventptr; }
@@ -361,6 +370,8 @@ void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
+    UEtwThreadInfo thread_info = { 0, };
+    wchar_t* end;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -408,8 +419,10 @@ void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         data += len;
 
         if (0 == lstrcmpW(propName.c_str(), L"ProcessId")){
+            thread_info.processId = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"TThreadId")){
+            thread_info.threadId = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"StackBase")) {
         }
@@ -422,6 +435,7 @@ void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         else if (0 == lstrcmpW(propName.c_str(), L"Affinity")) {
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Win32StartAddr")) {
+            thread_info.Win32StartAddr = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"TebBase")) {
         }
@@ -434,7 +448,23 @@ void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         else if (0 == lstrcmpW(propName.c_str(), L"IoPriority")) {
         }
         else if (0 == lstrcmpW(propName.c_str(), L"ThreadFlags")) {
+            thread_info.ThreadFlags = wcstol(value, &end, 16);
         }
+    }
+
+    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_threadinfolens];
+    if (!EtwData)
+        return;
+    RtlZeroMemory(EtwData, etw_threadinfolens);
+    EtwData->taskid = UF_ETW_THREADINFO;
+    RtlCopyMemory(&EtwData->data[0], &thread_info, sizeof(UEtwThreadInfo));
+
+    if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
+    {
+        g_EtwQueueCs_Ptr->lock();
+        g_EtwQueue_Ptr->push(EtwData);
+        g_EtwQueueCs_Ptr->unlock();
+        SetEvent(g_jobQueue_Event);
     }
 
 }
@@ -455,6 +485,8 @@ void FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
+    UEtwFileIoTabInfo fileio_info = { 0, };
+    wchar_t* end;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -502,19 +534,39 @@ void FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         data += len;
 
         if (0 == lstrcmpW(propName.c_str(), L"Offset")) {
+            fileio_info.Offset = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"IrpPtr")) {
+            fileio_info.IrpPtr = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"FileObject")) {
+            fileio_info.FileObject = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"FileKey")) {
+            fileio_info.FileKey = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"TTID")) {
+            fileio_info.TTID = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"IoSize")) {
         }
         else if (0 == lstrcmpW(propName.c_str(), L"IoFlags")) {
         }
+    }
+
+    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_fileioinfolens];
+    if (!EtwData)
+        return;
+    RtlZeroMemory(EtwData, etw_fileioinfolens);
+    EtwData->taskid = UF_ETW_FILEIO;
+    RtlCopyMemory(&EtwData->data[0], &fileio_info, sizeof(UEtwFileIoTabInfo));
+
+    if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
+    {
+        g_EtwQueueCs_Ptr->lock();
+        g_EtwQueue_Ptr->push(EtwData);
+        g_EtwQueueCs_Ptr->unlock();
+        SetEvent(g_jobQueue_Event);
     }
 }
 void RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
@@ -534,6 +586,8 @@ void RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
+    UEtwRegisterTabInfo regtab_info = { 0, };
+    wchar_t* end;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -581,15 +635,35 @@ void RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         data += len;
 
         if (0 == lstrcmpW(propName.c_str(), L"InitialTime")) {
+            regtab_info.InitialTime = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Status")) {
+            regtab_info.Status = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Index")) {
+            regtab_info.Index = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"KeyHandle")) {
+            regtab_info.KeyHandle = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"KeyName")) {
+            regtab_info.KeyName = wcstol(value, &end, 16);
         }
+    }
+
+    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_regtabinfolens];
+    if (!EtwData)
+        return;
+    RtlZeroMemory(EtwData, etw_regtabinfolens);
+    EtwData->taskid = UF_ETW_REGISTERTAB;
+    RtlCopyMemory(&EtwData->data[0], &regtab_info, sizeof(UEtwRegisterTabInfo));
+
+    if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
+    {
+        g_EtwQueueCs_Ptr->lock();
+        g_EtwQueue_Ptr->push(EtwData);
+        g_EtwQueueCs_Ptr->unlock();
+        SetEvent(g_jobQueue_Event);
     }
 
 }
@@ -610,6 +684,8 @@ void ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
+    UEtwImageInfo etwimagemod_info = { 0, };
+    wchar_t* end;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -657,22 +733,30 @@ void ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         data += len;
 
         if (0 == lstrcmpW(propName.c_str(), L"ImageBase")) {
+            etwimagemod_info.ImageBase = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"ImageSize")) {
+            etwimagemod_info.ImageSize = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"ProcessId")) {
+            etwimagemod_info.ProcessId = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"ImageChecksum")) {
+            etwimagemod_info.ImageChecksum = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"TimeDateStamp")) {
+            etwimagemod_info.TimeDateStamp = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"SignatureLevel")) {
+            etwimagemod_info.SignatureLevel = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"SignatureType")) {
+            etwimagemod_info.SignatureType = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Reserved0")) {
         }
         else if (0 == lstrcmpW(propName.c_str(), L"DefaultBase")) {
+            etwimagemod_info.DefaultBase = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Reserved1")) {
         }
@@ -683,6 +767,7 @@ void ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         else if (0 == lstrcmpW(propName.c_str(), L"Reserved4")) {
         }
         else if (0 == lstrcmpW(propName.c_str(), L"FileName")) {
+            etwimagemod_info.FileName = wcstol(value, &end, 16);
         }
     }
 }

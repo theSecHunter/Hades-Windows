@@ -460,6 +460,7 @@ typedef struct _UDriectInfo
 }UDriectInfo, *PUDriectInfo;
 
 //======================user etw============================
+// public head
 typedef struct _UEtwBuffer
 {
     int taskid;
@@ -507,7 +508,41 @@ typedef struct _UEtwNetWork
     int	   processPathSize;
     ULONG  processId;
 }UEtwNetWork, * PUEtwNetWork;
-
+// u_etw_image
+typedef struct _UEtwImageInfo {
+    UINT64 ImageBase;
+    UINT64 ImageSize;
+    UINT64 ProcessId;
+    UINT64 SignatureLevel;
+    UINT64 SignatureType;
+    UINT64 ImageChecksum;
+    UINT64 TimeDateStamp;
+    UINT64 DefaultBase;
+    UINT64 FileName;
+}UEtwImageInfo, * PUEtwImageInfo;
+// u_etw_thread
+typedef struct _UEtwThreadInfo {
+    UINT64 processId;
+    UINT64 threadId;
+    UINT64 Win32StartAddr;
+    UINT64 ThreadFlags;
+}UEtwThreadInfo, * PUEtwThreadInfo;
+// u_etw_register
+typedef struct _UEtwRegisterTabInfo {
+    UINT64 InitialTime;
+    UINT64 Status;
+    UINT64 Index;
+    UINT64 KeyHandle;
+    UINT64 KeyName;
+}UEtwRegisterTabInfo, * PUEtwRegisterTabInfo;
+// u_etw_file_io
+typedef struct _UEtwFileIoTabInfo {
+    UINT64 Offset;
+    UINT64 IrpPtr;
+    UINT64 FileObject;
+    UINT64 FileKey;
+    UINT64 TTID;
+}UEtwFileIoTabInfo, * PUEtwFileIoTabInfo;
 
 //======================public function============================
 // wchar to string
