@@ -79,6 +79,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
 {
     for (;;)
     {
+        Sleep(100);
         g_etwdata_cs.lock();
         if (g_etwdata_queue.empty())
         {
@@ -103,7 +104,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             UEtwNetWork* etwNet = (UEtwNetWork*)&(etw_taskdata->data[0]);
             if (!etwNet)
                 break;
-            swprintf(output, L"[etw] protocol:%d pid:%d localport: %x:%d  remoteport: %x:%d", \
+            swprintf(output, L"[etw_network] protocol:%d pid:%d localport: %x:%d  remoteport: %x:%d", \
                 etwNet->protocol,
                 etwNet->processId,
                 etwNet->ipv4LocalAddr, etwNet->toLocalPort, \
@@ -116,11 +117,48 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             UEtwProcessInfo* etwProcess = (UEtwProcessInfo*)&(etw_taskdata->data[0]);
             if (!etwProcess)
                 break;
-            swprintf(output, L"[etw] pid: %d  Path: ", etwProcess->processId);
+            swprintf(output, L"[etw_process] pid: %d  Path: ", etwProcess->processId);
             lstrcatW(output, etwProcess->processPath);
             OutputDebugString(output);
         }
         break;
+        case UF_ETW_THREADINFO:
+        {
+            UEtwThreadInfo* etwThread = (UEtwThreadInfo*)&(etw_taskdata->data[0]);
+            if (!etwThread)
+                break;
+            swprintf(output, L"[etw_thread] pid: %d  tid: %d ThreadEntryAddr: 0x%x status: %d", etwThread->processId, etwThread->threadId, etwThread->Win32StartAddr, etwThread->ThreadFlags);
+            OutputDebugString(output);
+        }
+        break;
+        case UF_ETW_IMAGEMOD:
+        {
+            UEtwImageInfo* etwProcMod = (UEtwImageInfo*)&(etw_taskdata->data[0]);
+            if (!etwProcMod)
+                break;
+            swprintf(output, L"[etw_image] pid: %d  Address: 0x%d DLLName: ", etwProcMod->ProcessId, etwProcMod->ImageBase);
+            lstrcatW(output, etwProcMod->FileName);
+            OutputDebugString(output);
+        }
+        break;
+        case UF_ETW_REGISTERTAB:
+        {
+            UEtwRegisterTabInfo* etwregtab = (UEtwRegisterTabInfo*)&(etw_taskdata->data[0]);
+            if (!etwregtab)
+                break;
+            swprintf(output, L"[etw_register] Key: %d  KeyName: ", etwregtab->KeyHandle);
+            lstrcatW(output, etwregtab->KeyName);
+            OutputDebugString(output);
+        }
+        break;
+        case UF_ETW_FILEIO:
+        {
+            UEtwFileIoTabInfo* etwfileio = (UEtwFileIoTabInfo*)&(etw_taskdata->data[0]);
+            if (!etwfileio)
+                break;
+            swprintf(output, L"[etw_fileio] FileKey: %d  KeyName: ", etwfileio->FileKey);
+            OutputDebugString(output);
+        }
         default:
             break;
         }

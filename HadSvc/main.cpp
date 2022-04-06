@@ -100,9 +100,9 @@ int main(int argc, char* argv[])
 	std::shared_ptr<grpc::ChannelCredentials> channel_creds = grpc::SslCredentials(ssl_opts);
 	
 	// Grpc_SSL模式目前不支持 - 认证还有问题
-	// grpc::InsecureChannelCredentials() localhost 10.128.129.64
+	// grpc::InsecureChannelCredentials() localhost
 	static Grpc greeter(
-		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));	
+		grpc::CreateChannel("10.128.128.16:8888", grpc::InsecureChannelCredentials()));	
 	proto::RawData rawData;
 
 	// agent_info

@@ -552,6 +552,9 @@ void FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
         else if (0 == lstrcmpW(propName.c_str(), L"IoFlags")) {
         }
+        else if (0 == lstrcmpW(propName.c_str(), L"FileName")) {
+            fileio_info.TTID = wcstol(value, &end, 16);
+        }
     }
 
     UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_fileioinfolens];
@@ -647,7 +650,7 @@ void RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
             regtab_info.KeyHandle = wcstol(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"KeyName")) {
-            regtab_info.KeyName = wcstol(value, &end, 16);
+            lstrcpynW(regtab_info.KeyName, value, MAX_PATH);
         }
     }
 
@@ -767,9 +770,25 @@ void ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         else if (0 == lstrcmpW(propName.c_str(), L"Reserved4")) {
         }
         else if (0 == lstrcmpW(propName.c_str(), L"FileName")) {
-            etwimagemod_info.FileName = wcstol(value, &end, 16);
+            lstrcpynW(etwimagemod_info.FileName, value, MAX_PATH);
         }
     }
+
+    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_imageinfolens];
+    if (!EtwData)
+        return;
+    RtlZeroMemory(EtwData, etw_imageinfolens);
+    EtwData->taskid = UF_ETW_IMAGEMOD;
+    RtlCopyMemory(&EtwData->data[0], &etwimagemod_info, sizeof(UEtwImageInfo));
+
+    if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
+    {
+        g_EtwQueueCs_Ptr->lock();
+        g_EtwQueue_Ptr->push(EtwData);
+        g_EtwQueueCs_Ptr->unlock();
+        SetEvent(g_jobQueue_Event);
+    }
+
 }
 void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
 {
@@ -845,7 +864,7 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
     m_traceconfig->Wnode.BufferSize = event_buffer;
     m_traceconfig->Wnode.Flags = WNODE_FLAG_TRACED_GUID;
     // 记录事件的时钟 100ns
-    m_traceconfig->Wnode.ClientContext = 1;
+    m_traceconfig->Wnode.ClientContext = 10;
     // 使用 NT Kernel Logger + SystemTraceControlGuid
     // See Msdn: https://docs.microsoft.com/en-us/windows/win32/etw/nt-kernel-logger-constants
     m_traceconfig->Wnode.Guid = SystemTraceControlGuid;
@@ -902,21 +921,37 @@ bool UEtw::uf_init()
     OutputDebugString(L"Etw nf_init - uf_RegisterTrace");
 #ifdef _DEBUG
     // EVENT_TRACE_FLAG_NETWORK_TCPIP EVENT_TRACE_FLAG_THREAD
-    if (!uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS | EVENT_TRACE_FLAG_NETWORK_TCPIP))
-        uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS | EVENT_TRACE_FLAG_NETWORK_TCPIP);
+    if (!uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
+        EVENT_TRACE_FLAG_PROCESS | \
+        EVENT_TRACE_FLAG_THREAD | \
+        EVENT_TRACE_FLAG_IMAGE_LOAD | \
+        EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
+        EVENT_TRACE_FLAG_REGISTRY))
+        uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
+            EVENT_TRACE_FLAG_PROCESS | \
+            EVENT_TRACE_FLAG_THREAD | \
+            EVENT_TRACE_FLAG_IMAGE_LOAD | \
+            EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
+            EVENT_TRACE_FLAG_REGISTRY);
     return 1;
 #else
     // 目前使用用一个Session: 优点不用管理，缺点没办法单独监控某个事件。
     // 如果单独监控，创建多个Session来管理，注册多个uf_RegisterTrace即可。
     // EVENT_TRACE_FLAG_SYSTEMCALL
-    return uf_RegisterTrace(
-        EVENT_TRACE_FLAG_NETWORK_TCPIP | \
+    // EVENT_TRACE_FLAG_NETWORK_TCPIP EVENT_TRACE_FLAG_THREAD
+    if (!uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
         EVENT_TRACE_FLAG_IMAGE_LOAD | \
         EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
-        EVENT_TRACE_FLAG_REGISTRY
-    );
+        EVENT_TRACE_FLAG_REGISTRY))
+        uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
+            EVENT_TRACE_FLAG_PROCESS | \
+            EVENT_TRACE_FLAG_THREAD | \
+            EVENT_TRACE_FLAG_IMAGE_LOAD | \
+            EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
+            EVENT_TRACE_FLAG_REGISTRY);
+    return 1;
 #endif
 }
 bool UEtw::uf_close()

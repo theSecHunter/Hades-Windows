@@ -518,7 +518,7 @@ typedef struct _UEtwImageInfo {
     UINT64 ImageChecksum;
     UINT64 TimeDateStamp;
     UINT64 DefaultBase;
-    UINT64 FileName;
+    WCHAR  FileName[MAX_PATH];
 }UEtwImageInfo, * PUEtwImageInfo;
 // u_etw_thread
 typedef struct _UEtwThreadInfo {
@@ -533,7 +533,7 @@ typedef struct _UEtwRegisterTabInfo {
     UINT64 Status;
     UINT64 Index;
     UINT64 KeyHandle;
-    UINT64 KeyName;
+    WCHAR  KeyName[MAX_PATH];
 }UEtwRegisterTabInfo, * PUEtwRegisterTabInfo;
 // u_etw_file_io
 typedef struct _UEtwFileIoTabInfo {

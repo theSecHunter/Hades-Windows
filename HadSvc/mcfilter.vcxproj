@@ -109,14 +109,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\bin\</OutDir>
+    <OutDir>..\bin\x86\Debug</OutDir>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
     <TargetName>$(ProjectName)_d32</TargetName>
     <IncludePath>D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;D:\Hades\Hades-Windows\HadesSdk\sysmondrv\include;D:\Hades\Hades-Windows\HadesSdk\rapidjson\include;D:\Hades\Hades-Windows\HadesSdk\nlohmannjson\single_include\nlohmann;$(IncludePath);D:\Hades\Hades-Windows\HadesSdk\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\bin\</OutDir>
+    <OutDir>..\bin\x86\Release</OutDir>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
     <IncludePath>D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmondrv\include;D:\Hades\Hades-Windows\HadesSdk\rapidjson\include;D:\Hades\Hades-Windows\HadesSdk\nlohmannjson\single_include\nlohmann;D:\Hades\Hades-Windows\HadesSdk\include</IncludePath>
@@ -131,7 +131,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\bin\</OutDir>
+    <OutDir>..\bin\x64\Debug</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <TargetName>$(ProjectName)_d64</TargetName>
@@ -141,7 +141,7 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>D:\Hades\Hades-Windows\HadesSdk\include;D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmondrv\include;D:\Hades\Hades-Windows\HadesSdk\rapidjson\include;D:\Hades\Hades-Windows\HadesSdk\nlohmannjson\single_include\nlohmann</IncludePath>
     <ReferencePath>$(VC_ReferencesPath_x64);</ReferencePath>
-    <OutDir>..\bin\</OutDir>
+    <OutDir>..\bin\x64\Release</OutDir>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <TargetName>$(ProjectName)64</TargetName>
   </PropertyGroup>
