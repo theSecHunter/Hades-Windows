@@ -4,7 +4,7 @@
 #include <Psapi.h>
 
 #define INITGUID
-#include <evntrace.h>
+//#include <evntrace.h>
 #include <evntcons.h>
 #include <tdh.h>
 #include <in6addr.h>

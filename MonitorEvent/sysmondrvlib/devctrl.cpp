@@ -8,7 +8,6 @@
 #include "sysinfo.h"
 #include <xstring>
 #include <vector>
-#include <fltuser.h>
 
 #pragma comment(lib,"Crypt32.lib")
 #pragma comment(lib, "Tdh.lib")
