@@ -4,10 +4,13 @@
 #include <Windows.h>
 #include "sync.h"
 #include "nfevents.h"
-#include "drvlib.h"
 #include "sysinfo.h"
 #include <xstring>
 #include <vector>
+#include <queue>
+#include <mutex>
+
+#include "drvlib.h"
 
 #pragma comment(lib,"Crypt32.lib")
 #pragma comment(lib, "Tdh.lib")
@@ -41,6 +44,11 @@ static AutoCriticalSection	g_cs;
 static AutoEventHandle		g_workThreadStartedEvent;
 static AutoEventHandle		g_workThreadStoppedEvent;
 
+// Grpc task Queue_buffer ptr
+static std::queue<UPubNode*>*	g_KernelQueue_Ptr = NULL;
+static std::mutex*				g_KernelQueueCs_Ptr = NULL;
+static HANDLE                   g_KjobQueue_Event = NULL;
+
 PVOID DevctrlIoct::get_eventhandler()
 {
 	return g_pEventHandler;
@@ -49,10 +57,13 @@ PVOID DevctrlIoct::get_eventhandler()
 DevctrlIoct::DevctrlIoct()
 {
 }
-
 DevctrlIoct::~DevctrlIoct()
 {
 }
+
+void DevctrlIoct::kf_setqueuetaskptr(std::queue<UPubNode*>& qptr) { g_KernelQueue_Ptr = &qptr; }
+void DevctrlIoct::kf_setqueuelockptr(std::mutex& qptrcs) { g_KernelQueueCs_Ptr = &qptrcs; }
+void DevctrlIoct::kf_setqueueeventptr(HANDLE& eventptr) { g_KjobQueue_Event = eventptr; }
 
 int DevctrlIoct::devctrl_init()
 {
@@ -62,7 +73,6 @@ int DevctrlIoct::devctrl_init()
 	m_dwthreadid = 0;
 	return 1;
 }
-
 void DevctrlIoct::devctrl_free()
 {
 	g_exitthread = true;
@@ -95,7 +105,6 @@ int DevctrlIoct::devctrl_workthread(LPVOID grpcobj)
 		return 0;
 	return 1;
 }
-
 int DevctrlIoct::devctrl_opendeviceSylink(const char* devSylinkName)
 {
 	if (!devSylinkName && (0 >= strlen(devSylinkName)))
@@ -117,7 +126,6 @@ int DevctrlIoct::devctrl_opendeviceSylink(const char* devSylinkName)
 	m_devhandler = hDevice;
 	return 1;
 }
-
 int DevctrlIoct::devctrl_InitshareMem()
 {
 	AutoLock lock(g_cs);
@@ -169,14 +177,12 @@ int DevctrlIoct::devctrl_InitshareMem()
 
 	return 1;
 }
-
 int DevctrlIoct::devctrl_waitSingeObject()
 {
 	if(m_alpcthreadobjhandler)
 		WaitForSingleObject(m_alpcthreadobjhandler, INFINITE);
 	return 1;
 }
-
 int DevctrlIoct::devctrl_OnMonitor()
 {
 	DWORD InSize = 0;
@@ -201,8 +207,6 @@ bool DevctrlIoct::devctrl_sendioct(
 	DWORD& dSize
 	)
 {
-	
-
 	if (!g_hDevice.m_h)
 		return false;
 
@@ -229,7 +233,6 @@ int DevctrlIoct::devctrl_writeio()
 {
 	return 0;
 }
-
 bool GetFileSign(LPCWSTR lpFilePath, vector<wstring>& signs)
 {
 	bool bRet = false;
@@ -346,7 +349,6 @@ bool GetFileSign(LPCWSTR lpFilePath, vector<wstring>& signs)
 	}
 	return bRet;
 }
-
 static void handleEventDispath(PNF_DATA pData)
 {
 	switch (pData->code)
@@ -385,6 +387,22 @@ static void handleEventDispath(PNF_DATA pData)
 	break;
 	}
 }
+void handleEventDispath_(PNF_DATA pData)
+{
+	const int buflens = sizeof(UPubNode) + pData->bufferSize;
+	UPubNode* pubdata = (UPubNode*)new char[buflens];
+	if (pubdata)
+	{
+		RtlZeroMemory(pubdata, buflens);
+		pubdata->taskid = pData->code;
+		RtlCopyMemory(&pubdata->data[0], pData->buffer, pData->bufferSize);
+		// push - setevent
+		g_KernelQueueCs_Ptr->lock();
+		g_KernelQueue_Ptr->push(pubdata);
+		g_KernelQueueCs_Ptr->unlock();
+		SetEvent(g_KjobQueue_Event);
+	}
+}
 
 // ReadFile Driver Buffer
 static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
@@ -401,6 +419,7 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 
 	OutputDebugString(L"Entry WorkThread");
 	SetEvent(g_workThreadStartedEvent);
+
 	for (;;)
 	{
 		waitTimeout = 10;
@@ -470,10 +489,8 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 
 			while (readBytes >= (sizeof(NF_DATA) - 1))
 			{
-				// push grpc
-				//if (greeter_sysmonitor)
-				//	greeter_sysmonitor->Grpc_pushQueue(pData->code, pData->buffer, pData->bufferSize);
-				handleEventDispath(pData);
+				// handleEventDispath(pData);
+				handleEventDispath_(pData);
 
 				if ((pData->code == NF_PROCESS_INFO ||
 					pData->code == NF_THREAD_INFO ||
@@ -499,7 +516,6 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 			if (abortBatch)
 				break;
 		}
-
 	}
 
 finish:
@@ -510,7 +526,6 @@ finish:
 	OutputDebugString(L"ReadFile Thread Exit");
 	return 0;
 }
-
 void DevctrlIoct::nf_setEventHandler(PVOID64 pHandler)
 {
 	g_pEventHandler = (NF_EventHandler*)pHandler;

@@ -39,7 +39,7 @@ static AutoCriticalSection              g_th;
 static vector<HANDLE>                   g_thrhandle;
 
 // Grpc task Queue_buffer ptr
-static std::queue<UEtwBuffer*>*         g_EtwQueue_Ptr = NULL;
+static std::queue<UPubNode*>*         g_EtwQueue_Ptr = NULL;
 static std::mutex*                      g_EtwQueueCs_Ptr = NULL;
 static HANDLE                           g_jobQueue_Event = NULL;
 
@@ -64,19 +64,20 @@ void Wchar_tToString(std::string& szDst, wchar_t* wchar)
 
 UEtw::UEtw()
 {
-    etw_networklens = sizeof(UEtwBuffer) + sizeof(UEtwNetWork);
-    etw_processinfolens = sizeof(UEtwBuffer) + sizeof(UEtwProcessInfo);
-    etw_threadinfolens = sizeof(UEtwBuffer) + sizeof(UEtwThreadInfo);
-    etw_imageinfolens = sizeof(UEtwBuffer) + sizeof(UEtwImageInfo);
-    etw_regtabinfolens = sizeof(UEtwBuffer) + sizeof(UEtwRegisterTabInfo);
-    etw_fileioinfolens = sizeof(UEtwBuffer) + sizeof(UEtwFileIoTabInfo);
+    etw_networklens = sizeof(UPubNode) + sizeof(UEtwNetWork);
+    etw_processinfolens = sizeof(UPubNode) + sizeof(UEtwProcessInfo);
+    etw_threadinfolens = sizeof(UPubNode) + sizeof(UEtwThreadInfo);
+    etw_imageinfolens = sizeof(UPubNode) + sizeof(UEtwImageInfo);
+    etw_regtabinfolens = sizeof(UPubNode) + sizeof(UEtwRegisterTabInfo);
+    etw_fileioinfolens = sizeof(UPubNode) + sizeof(UEtwFileIoTabInfo);
 }
 UEtw::~UEtw()
 {
 }
 
 // public interface set queue pointer 
-void UEtw::uf_setqueuetaskptr(std::queue<UEtwBuffer*>& qptr) { g_EtwQueue_Ptr = &qptr; }
+// 消费者：订阅队列队指针初始化
+void UEtw::uf_setqueuetaskptr(std::queue<UPubNode*>& qptr) { g_EtwQueue_Ptr = &qptr; }
 void UEtw::uf_setqueuelockptr(std::mutex& qptrcs) { g_EtwQueueCs_Ptr = &qptrcs; }
 void UEtw::uf_setqueueeventptr(HANDLE& eventptr) { g_jobQueue_Event = eventptr; }
 
@@ -108,6 +109,7 @@ DWORD uf_GetNetWrokEventStr(wstring& propName)
     return Code;
 }
 
+// 生产者：Etw事件回调 - 数据推送至订阅消息队列(消费者)
 void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
 
     UEtwNetWork etwNetInfo;
@@ -231,7 +233,7 @@ void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
     }
 
     //shared_ptr<char> sptr2 = make_shared<char>(etw_networklens);
-    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_networklens];
+    UPubNode* EtwData = (UPubNode*)new char[etw_networklens];
     if (!EtwData)
         return;
     RtlZeroMemory(EtwData, etw_networklens);
@@ -264,7 +266,7 @@ void ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
     UEtwProcessInfo process_info = { 0, };
-    wchar_t* end;
+    wchar_t* end = nullptr;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -337,7 +339,7 @@ void ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
     }
 
-    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_processinfolens];
+    UPubNode* EtwData = (UPubNode*)new char[etw_processinfolens];
     if (!EtwData)
         return;
     RtlZeroMemory(EtwData, etw_processinfolens);
@@ -371,7 +373,7 @@ void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
     UEtwThreadInfo thread_info = { 0, };
-    wchar_t* end;
+    wchar_t* end = nullptr;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -435,7 +437,7 @@ void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         else if (0 == lstrcmpW(propName.c_str(), L"Affinity")) {
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Win32StartAddr")) {
-            thread_info.Win32StartAddr = wcstol(value, &end, 16);
+            thread_info.Win32StartAddr = wcstol(value, &end, 10);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"TebBase")) {
         }
@@ -452,21 +454,23 @@ void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
     }
 
-    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_threadinfolens];
-    if (!EtwData)
-        return;
-    RtlZeroMemory(EtwData, etw_threadinfolens);
-    EtwData->taskid = UF_ETW_THREADINFO;
-    RtlCopyMemory(&EtwData->data[0], &thread_info, sizeof(UEtwThreadInfo));
-
-    if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
+    // 先做判断 - 生产数据清洗有BUG
+    if (thread_info.ThreadFlags && thread_info.processId && thread_info.threadId)
     {
-        g_EtwQueueCs_Ptr->lock();
-        g_EtwQueue_Ptr->push(EtwData);
-        g_EtwQueueCs_Ptr->unlock();
-        SetEvent(g_jobQueue_Event);
+        UPubNode* EtwData = (UPubNode*)new char[etw_threadinfolens];
+        if (!EtwData)
+            return;
+        RtlZeroMemory(EtwData, etw_threadinfolens);
+        EtwData->taskid = UF_ETW_THREADINFO;
+        RtlCopyMemory(&EtwData->data[0], &thread_info, sizeof(UEtwThreadInfo));
+        if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
+        {
+            g_EtwQueueCs_Ptr->lock();
+            g_EtwQueue_Ptr->push(EtwData);
+            g_EtwQueueCs_Ptr->unlock();
+            SetEvent(g_jobQueue_Event);
+        }
     }
-
 }
 void FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 {
@@ -486,7 +490,7 @@ void FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
     UEtwFileIoTabInfo fileio_info = { 0, };
-    wchar_t* end;
+    wchar_t* end = nullptr;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -557,7 +561,7 @@ void FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
     }
 
-    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_fileioinfolens];
+    UPubNode* EtwData = (UPubNode*)new char[etw_fileioinfolens];
     if (!EtwData)
         return;
     RtlZeroMemory(EtwData, etw_fileioinfolens);
@@ -590,7 +594,7 @@ void RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
     UEtwRegisterTabInfo regtab_info = { 0, };
-    wchar_t* end;
+    wchar_t* end = nullptr;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -654,7 +658,7 @@ void RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
     }
 
-    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_regtabinfolens];
+    UPubNode* EtwData = (UPubNode*)new char[etw_regtabinfolens];
     if (!EtwData)
         return;
     RtlZeroMemory(EtwData, etw_regtabinfolens);
@@ -688,7 +692,7 @@ void ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     ULONG len; WCHAR value[512];
     wstring  tmpstr; wstring propName;
     UEtwImageInfo etwimagemod_info = { 0, };
-    wchar_t* end;
+    wchar_t* end = nullptr;
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
 
@@ -774,7 +778,7 @@ void ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
     }
 
-    UEtwBuffer* EtwData = (UEtwBuffer*)new char[etw_imageinfolens];
+    UPubNode* EtwData = (UPubNode*)new char[etw_imageinfolens];
     if (!EtwData)
         return;
     RtlZeroMemory(EtwData, etw_imageinfolens);
@@ -827,7 +831,6 @@ void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
         ImageModEventInfo(pEvent, info);
 }
 
-///////////////////////////////////
 // Session注册启动/跟踪/回调
 static DWORD WINAPI tracDispaththread(LPVOID param)
 {
@@ -925,31 +928,26 @@ bool UEtw::uf_init()
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
         EVENT_TRACE_FLAG_IMAGE_LOAD | \
-        EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
         EVENT_TRACE_FLAG_REGISTRY))
         uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
             EVENT_TRACE_FLAG_PROCESS | \
             EVENT_TRACE_FLAG_THREAD | \
             EVENT_TRACE_FLAG_IMAGE_LOAD | \
-            EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
             EVENT_TRACE_FLAG_REGISTRY);
     return 1;
 #else
     // 目前使用用一个Session: 优点不用管理，缺点没办法单独监控某个事件。
     // 如果单独监控，创建多个Session来管理，注册多个uf_RegisterTrace即可。
-    // EVENT_TRACE_FLAG_SYSTEMCALL
-    // EVENT_TRACE_FLAG_NETWORK_TCPIP EVENT_TRACE_FLAG_THREAD
+    // EVENT_TRACE_FLAG_SYSTEMCALL | EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
     if (!uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
         EVENT_TRACE_FLAG_IMAGE_LOAD | \
-        EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
         EVENT_TRACE_FLAG_REGISTRY))
         uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
             EVENT_TRACE_FLAG_PROCESS | \
             EVENT_TRACE_FLAG_THREAD | \
             EVENT_TRACE_FLAG_IMAGE_LOAD | \
-            EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
             EVENT_TRACE_FLAG_REGISTRY);
     return 1;
 #endif

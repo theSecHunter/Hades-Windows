@@ -57,6 +57,10 @@ public:
 		DWORD& dSize
 	);
 
+	void kf_setqueuetaskptr(std::queue<UPubNode*>& qptr);
+	void kf_setqueuelockptr(std::mutex& qptrcs);
+	void kf_setqueueeventptr(HANDLE& eventptr);
+
 private:
 	HANDLE m_devhandler;
 	HANDLE m_threadobjhandler;

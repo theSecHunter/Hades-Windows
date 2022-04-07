@@ -2,8 +2,8 @@
 #define _SYSINFO_H
 
 #include <string>
+#include <memory>
 using namespace std;
-
 
 // kernel id
 enum KIoctCode
@@ -461,19 +461,19 @@ typedef struct _UDriectInfo
 
 // ===================Topic============================
 // pub head : 消息发布者 to Topic结构
-typedef struct _UEtwBuffer
+typedef struct _UPubNode
 {
     int taskid;
     // 柔性数组c99
     char data[0];     
-}UEtwBuffer, * PUEtwBuffer;
+}UPubNode, * PUPubNode;
 // Sub head : Topic to 订阅者
-typedef struct _UEtwSub
+typedef struct _USubNode
 {
     int taskid;
     // 反序列化数据指针
     std::shared_ptr<std::string> data; 
-}UEtwSub, * PUEtwSub;
+}USubNode, * PUSubNode;
 
 //======================User etw============================
 // u_etw_process

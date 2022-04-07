@@ -16,7 +16,7 @@
 */
 #include <iostream>
 #include <Windows.h>
-#include <map>
+#include <memory>
 #include <vector>
 #include <queue>
 #include <string>
@@ -46,58 +46,60 @@
 using json_t = nlohmann::json;
 
 // 生产者全局对象
-static UAutoStart               g_grpc_uautostrobj;
-static UNet                     g_grpc_unetobj;
-static NSysUser                 g_grpc_usysuser;
-static UProcess                 g_grpc_uprocesstree;
-static UServerSoftware          g_grpc_userversoftware;
-static UFile                    g_grpc_ufile;
-static UEtw                     g_grpc_etw;
+static UAutoStart               g_user_uautostrobj;
+static UNet                     g_user_unetobj;
+static NSysUser                 g_user_usysuser;
+static UProcess                 g_user_uprocesstree;
+static UServerSoftware          g_user_userversoftware;
+static UFile                    g_user_ufile;
+static UEtw                     g_user_etw;
 // Topic主题队列指针1
-static std::queue<UEtwBuffer*>  g_etwdata_queue;
+static std::queue<UPubNode*>    g_etwdata_queue;
 static std::mutex               g_etwdata_cs;
 static HANDLE                   g_jobAvailableEvent;
 static bool                     g_exit = false;
 // Topic主题队列指针1设置,对于Etw属于消费者，对于Grpc属于生产者或接口数据中转
-inline void uMsgInterface::uMsg_SetTopicQueuePtr() { g_grpc_etw.uf_setqueuetaskptr(g_etwdata_queue); }
-inline void uMsgInterface::uMsg_SetTopicQueueLockPtr() { g_grpc_etw.uf_setqueuelockptr(g_etwdata_cs); }
-inline void uMsgInterface::uMsg_SetTopicEventPtr() { g_grpc_etw.uf_setqueueeventptr(g_jobAvailableEvent); }
+inline void uMsgInterface::uMsg_SetTopicQueuePtr() { g_user_etw.uf_setqueuetaskptr(g_etwdata_queue); }
+inline void uMsgInterface::uMsg_SetTopicQueueLockPtr() { g_user_etw.uf_setqueuelockptr(g_etwdata_cs); }
+inline void uMsgInterface::uMsg_SetTopicEventPtr() { g_user_etw.uf_setqueueeventptr(g_jobAvailableEvent); }
 
 // 设置Grpc消费者指针(被消费者调用)
-static std::queue<std::shared_ptr<UEtwSub>>*    g_GrpcQueue_Ptr = NULL;
+static std::queue<std::shared_ptr<USubNode>>*    g_GrpcQueue_Ptr = NULL;
 static std::mutex*                              g_GrpcQueueCs_Ptr = NULL;
 static HANDLE                                   g_GrpcQueue_Event = NULL;
-inline void uMsgInterface::uMsg_SetSubQueuePtr(std::queue<std::shared_ptr<UEtwSub>>& qptr) { g_GrpcQueue_Ptr = &qptr; }
-inline void uMsgInterface::uMsg_SetSubQueueLockPtr(std::mutex& qptrcs) { g_GrpcQueueCs_Ptr = &qptrcs; }
-inline void uMsgInterface::uMsg_SetSubEventPtr(HANDLE& eventptr) { g_GrpcQueue_Event = eventptr; }
-const int EtwSubLens = sizeof(UEtwSub);
+void uMsgInterface::uMsg_SetSubQueuePtr(std::queue<std::shared_ptr<USubNode>>& qptr) { g_GrpcQueue_Ptr = &qptr; }
+void uMsgInterface::uMsg_SetSubQueueLockPtr(std::mutex& qptrcs) { g_GrpcQueueCs_Ptr = &qptrcs; }
+void uMsgInterface::uMsg_SetSubEventPtr(HANDLE& eventptr) { g_GrpcQueue_Event = eventptr; }
+const int EtwSubLens = sizeof(USubNode);
 
 // Topic数据处理和推送反馈Sub
 void uMsgInterface::uMsgEtwDataHandlerEx()
 {
-    json_t j;
+    static json_t j;
+    //wchar_t output[MAX_PATH * 2] = { 0, };
+    static std::string tmpstr;
+
     for (;;)
     {
-        j.clear();
         g_etwdata_cs.lock();
         if (g_etwdata_queue.empty())
         {
             g_etwdata_cs.unlock();
             return;
         }
-        UEtwBuffer* etw_taskdata = g_etwdata_queue.front();
+        UPubNode* etw_taskdata = g_etwdata_queue.front();
         if (!etw_taskdata)
         {
             g_etwdata_cs.unlock();
             return;
         }
-
         g_etwdata_queue.pop();
         g_etwdata_cs.unlock();
 
-        wchar_t output[MAX_PATH * 2] = { 0, };
-        
+        j.clear();
+        tmpstr.clear();
         const int taskid = etw_taskdata->taskid;
+
         switch (taskid)
         {
         case UF_ETW_NETWORK:
@@ -105,18 +107,19 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             UEtwNetWork* etwNet = (UEtwNetWork*)&(etw_taskdata->data[0]);
             if (!etwNet)
                 break;
-            swprintf(output, L"[etw_network] protocol:%d pid:%d localport: %x:%d  remoteport: %x:%d", \
-                etwNet->protocol,
-                etwNet->processId,
-                etwNet->ipv4LocalAddr, etwNet->toLocalPort, \
-                etwNet->RemoteAddr, etwNet->toRemotePort);
-            OutputDebugString(output);
-            j["protocol"] = "";
-            j["processId"] = "";
-            j["ipv4LocalAddr"] = "";
-            j["ipv4LocalAddr"] = "";
-            j["toLocalPort"] = "";
-            j["toRemotePort"] = "";
+            //swprintf(output, L"[etw_network] protocol:%d pid:%d localport: %x:%d  remoteport: %x:%d", \
+            //    etwNet->protocol,
+            //    etwNet->processId,
+            //    etwNet->ipv4LocalAddr, etwNet->toLocalPort, \
+            //    etwNet->RemoteAddr, etwNet->toRemotePort);
+            //OutputDebugString(output);
+            j["win_network_addressfamily"] = to_string(etwNet->addressFamily);
+            j["win_network_protocol"] = to_string(etwNet->protocol);
+            j["win_network_processid"] = to_string(etwNet->processId);
+            j["win_network_localaddr"] = to_string(etwNet->ipv4LocalAddr);
+            j["win_network_toLocalport"] = to_string(etwNet->protocol);
+            j["win_network_remoteaddr"] = to_string(etwNet->ipv4toRemoteAddr);
+            j["win_network_toremoteport"] = to_string(etwNet->toRemotePort);
         }
         break;
         case UF_ETW_PROCESSINFO:
@@ -124,9 +127,15 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             UEtwProcessInfo* etwProcess = (UEtwProcessInfo*)&(etw_taskdata->data[0]);
             if (!etwProcess)
                 break;
-            swprintf(output, L"[etw_process] pid: %d  Path: ", etwProcess->processId);
-            lstrcatW(output, etwProcess->processPath);
-            OutputDebugString(output);
+            //swprintf(output, L"[etw_process] pid: %d  Path: ", etwProcess->processId);
+            //lstrcatW(output, etwProcess->processPath);
+            //OutputDebugString(output);
+            j["win_etw_processinfo_pid"] = to_string(etwProcess->processId);
+            Wchar_tToString(tmpstr, etwProcess->processPath);
+            if (tmpstr.empty())
+                break;
+            tmpstr = String_ToUtf8(tmpstr);
+            j["win_etw_processinfo_path"] = tmpstr.c_str();
         }
         break;
         case UF_ETW_THREADINFO:
@@ -134,8 +143,12 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             UEtwThreadInfo* etwThread = (UEtwThreadInfo*)&(etw_taskdata->data[0]);
             if (!etwThread)
                 break;
-            swprintf(output, L"[etw_thread] pid: %d  tid: %d ThreadEntryAddr: 0x%x status: %d", etwThread->processId, etwThread->threadId, etwThread->Win32StartAddr, etwThread->ThreadFlags);
-            OutputDebugString(output);
+            //swprintf(output, L"[etw_thread] pid: %d  tid: %d ThreadEntryAddr: 0x%x status: %d", etwThread->processId, etwThread->threadId, etwThread->Win32StartAddr, etwThread->ThreadFlags);
+            //OutputDebugString(output);
+            j["win_etw_threadinfo_pid"] = to_string(etwThread->processId);
+            j["win_etw_threadinfo_tid"] = to_string(etwThread->threadId);
+            j["win_etw_threadinfo_win32startaddr"] = to_string(10);//to_string(etwThread->Win32StartAddr);
+            j["win_etw_threadinfo_flags"] = to_string(etwThread->ThreadFlags);
         }
         break;
         case UF_ETW_IMAGEMOD:
@@ -143,9 +156,22 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             UEtwImageInfo* etwProcMod = (UEtwImageInfo*)&(etw_taskdata->data[0]);
             if (!etwProcMod)
                 break;
-            swprintf(output, L"[etw_image] pid: %d  Address: 0x%d DLLName: ", etwProcMod->ProcessId, etwProcMod->ImageBase);
-            lstrcatW(output, etwProcMod->FileName);
-            OutputDebugString(output);
+            //swprintf(output, L"[etw_image] pid: %d  Address: 0x%d DLLName: ", etwProcMod->ProcessId, etwProcMod->ImageBase);
+            //lstrcatW(output, etwProcMod->FileName);
+            //OutputDebugString(output);
+            j["win_etw_imageinfo_processId"] = to_string(etwProcMod->ProcessId);
+            j["win_etw_imageinfo_imageBase"] = to_string(etwProcMod->ImageBase);
+            //j["win_etw_imageinfo_imageSize"] = to_string(etwProcMod->ImageSize);
+            //j["win_etw_imageinfo_signatureLevel"] = to_string(etwProcMod->SignatureLevel);
+            //j["win_etw_imageinfo_signatureType"] = to_string(etwProcMod->SignatureType);
+            //j["win_etw_imageinfo_imageChecksum"] = to_string(etwProcMod->ImageChecksum);
+            //j["win_etw_imageinfo_timeDateStamp"] = to_string(123);
+            //j["win_etw_imageinfo_defaultBase"] = to_string(etwProcMod->DefaultBase);
+            Wchar_tToString(tmpstr, etwProcMod->FileName);
+            if (tmpstr.empty())
+                break;
+            tmpstr = String_ToUtf8(tmpstr);
+            j["win_etw_imageinfo_fileName"] = tmpstr.c_str();
         }
         break;
         case UF_ETW_REGISTERTAB:
@@ -153,9 +179,16 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             UEtwRegisterTabInfo* etwregtab = (UEtwRegisterTabInfo*)&(etw_taskdata->data[0]);
             if (!etwregtab)
                 break;
-            swprintf(output, L"[etw_register] Key: %d  KeyName: ", etwregtab->KeyHandle);
-            lstrcatW(output, etwregtab->KeyName);
-            OutputDebugString(output);
+            //swprintf(output, L"[etw_register] Key: %d  KeyName: ", etwregtab->KeyHandle);
+            //lstrcatW(output, etwregtab->KeyName);
+            //OutputDebugString(output);
+            //j["win_etw_regtab_initialTime"] = to_string(etwregtab->InitialTime);
+            //j["win_etw_regtab_status"] = to_string(etwregtab->Status);
+            //j["win_etw_regtab_index"] = to_string(etwregtab->Index);
+            j["win_etw_regtab_keyHandle"] = to_string(etwregtab->KeyHandle);
+            Wchar_tToString(tmpstr, etwregtab->KeyName);
+            tmpstr = String_ToUtf8(tmpstr);
+            j["win_etw_regtab_keyName"] = tmpstr.c_str();
         }
         break;
         case UF_ETW_FILEIO:
@@ -163,25 +196,29 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             UEtwFileIoTabInfo* etwfileio = (UEtwFileIoTabInfo*)&(etw_taskdata->data[0]);
             if (!etwfileio)
                 break;
-            swprintf(output, L"[etw_fileio] FileKey: %d  KeyName: ", etwfileio->FileKey);
-            OutputDebugString(output);
+            //swprintf(output, L"[etw_fileio] FileKey: %d  KeyName: ", etwfileio->FileKey);
+            //OutputDebugString(output);
         }
         default:
             break;
         }
 
-        // 注: Topic 释放 Pub的数据指针
-        if (etw_taskdata)
-        {
-            delete[] etw_taskdata;
-            etw_taskdata = nullptr;
-        }
-
         try
         {
             // 序列化
-            std::shared_ptr<std::string> data = std::make_shared<std::string>(j.dump());
-            std::shared_ptr<UEtwSub> sub = std::make_shared<UEtwSub>();
+            std::shared_ptr<std::string> data;
+            if (j.size())
+                data = std::make_shared<std::string>(j.dump());
+            else
+                continue;
+
+            if (!g_GrpcQueue_Ptr && !g_GrpcQueueCs_Ptr && !g_GrpcQueue_Event)
+            {
+                OutputDebugString(L"Grpc没设置订阅指针");
+                break;
+            }
+
+            std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
             if (!sub || !data)
                 return;
             sub->data = data;
@@ -194,6 +231,13 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
         catch (const std::exception&)
         {
 
+        }
+
+        // 注: Topic 释放 Pub的数据指针
+        if (etw_taskdata)
+        {
+            delete[] etw_taskdata;
+            etw_taskdata = nullptr;
         }
     }
 }
@@ -271,7 +315,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             {
             case UF_PROCESS_ENUM:
             {
-                if (false == g_grpc_uprocesstree.uf_EnumProcess(ptr_Getbuffer))
+                if (false == g_user_uprocesstree.uf_EnumProcess(ptr_Getbuffer))
                     break;
                 PUProcessNode procesNode = (PUProcessNode)ptr_Getbuffer;
                 if (!procesNode)
@@ -302,13 +346,13 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             case UF_PROCESS_PID_TREE:
             {
                 // Command - pid
-                if (false == g_grpc_uprocesstree.uf_GetProcessInfo(4, ptr_Getbuffer))
+                if (false == g_user_uprocesstree.uf_GetProcessInfo(4, ptr_Getbuffer))
                     break;
             }
             break;
             case UF_SYSAUTO_START:
             {
-                if (false == g_grpc_uautostrobj.uf_EnumAutoStartask(ptr_Getbuffer, dwAllocateMemSize))
+                if (false == g_user_uautostrobj.uf_EnumAutoStartask(ptr_Getbuffer, dwAllocateMemSize))
                     break;
 
                 PUAutoStartNode autorunnode = (PUAutoStartNode)ptr_Getbuffer;
@@ -351,7 +395,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             break;
             case UF_SYSNET_INFO:
             {
-                if (false == g_grpc_unetobj.uf_EnumNetwork(ptr_Getbuffer))
+                if (false == g_user_unetobj.uf_EnumNetwork(ptr_Getbuffer))
                     break;
 
                 PUNetNode netnode = (PUNetNode)ptr_Getbuffer;
@@ -393,7 +437,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             break;
             case UF_SYSUSER_ID:
             {
-                if (false == g_grpc_usysuser.uf_EnumSysUser(ptr_Getbuffer))
+                if (false == g_user_usysuser.uf_EnumSysUser(ptr_Getbuffer))
                     break;
 
                 PUUserNode pusernode = (PUUserNode)ptr_Getbuffer;
@@ -419,7 +463,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             break;
             case UF_SYSSERVICE_SOFTWARE_ID:
             {
-                if (false == g_grpc_userversoftware.EnumAll(ptr_Getbuffer))
+                if (false == g_user_userversoftware.EnumAll(ptr_Getbuffer))
                     break;
 
                 PUAllServerSoftware pNode = (PUAllServerSoftware)ptr_Getbuffer;
@@ -490,7 +534,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             case UF_SYSFILE_ID:
             {
                 // Command 获取 目录路径
-                if (false == g_grpc_ufile.uf_GetDirectoryFile((char*)"D:\\bin", ptr_Getbuffer))
+                if (false == g_user_ufile.uf_GetDirectoryFile((char*)"D:\\bin", ptr_Getbuffer))
                     break;
 
                 PUDriectInfo directinfo = (PUDriectInfo)ptr_Getbuffer;
@@ -526,7 +570,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             case UF_FILE_INFO:
             {
                 // Command 获取 文件绝对路径
-                if (false == g_grpc_ufile.uf_GetFileInfo((char*)"d:\\bin\\1.txt", ptr_Getbuffer))
+                if (false == g_user_ufile.uf_GetFileInfo((char*)"d:\\bin\\1.txt", ptr_Getbuffer))
                     break;
 
                 PUFileInfo fileinfo = (PUFileInfo)ptr_Getbuffer;

@@ -12,7 +12,7 @@ public:
 
 	void uMsg_SetSubEventPtr(HANDLE& eventptr);
 	void uMsg_SetSubQueueLockPtr(std::mutex& qptrcs);
-	void uMsg_SetSubQueuePtr(std::queue<std::shared_ptr<UEtwSub>>& qptr);
+	void uMsg_SetSubQueuePtr(std::queue<std::shared_ptr<USubNode>>& qptr);
 
 private:
 	void uMsg_Init();
