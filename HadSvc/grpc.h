@@ -74,30 +74,33 @@ public:
 	}
 
 	bool Grpc_Transfer(RawData rawData);
-	void Grpc_ReadC2Thread(LPVOID lpThreadParameter);
-	// interface test public
-	void Grpc_ReadDispatchHandle(Command& command);
-	void Grpc_write();
 	void Grpc_writeEx(RawData& raw);
-	void Grpc_WriteDispatchHandle(const int code, string& data);
 
-	bool Grpc_pushQueue(const int code, const char* buf, int len);
+	// interface test public
+	void Grpc_taskwrite();
+	void Grpc_ReadDispatchHandle(Command& command);
+	void Grpc_ReadC2Thread(LPVOID lpThreadParameter);
 
 	bool ThreadPool_Init();
 	bool ThreadPool_Free();
-	void threadProc();
+	
+	// Sub Data Handle
+	void KerSublthreadProc();
+	void EtwSublthreadProc();
 
 private:
+
 	unique_ptr<Transfer::Stub> stub_;
 	ClientContext m_context;
 	unique_ptr<::grpc::ClientReaderWriter<::proto::RawData, ::proto::Command>> m_stream;
 
 	typedef std::vector<HANDLE> tThreads;
-	tThreads m_threads;
+	tThreads m_ker_subthreads;
+	tThreads m_etw_subthreads;
 	tThreads m_threads_write;
 
-	HANDLE m_jobAvailableEvent;
+	HANDLE m_jobAvailableEventKernel;
+	HANDLE m_jobAvailableEventEtw;
 	HANDLE m_jobAvailableEvnet_WriteTask;
-	// void Grpc_ReadDispatchHandle(Command& command);
 };
 

@@ -8,27 +8,28 @@
 #include "umsginterface.h"
 #include "kmsginterface.h"
 
-using namespace std;
+static bool                         g_shutdown = false;
+static bool                         g_taskdis = false;
+static bool                         g_etwdis = false;
+static bool                         g_kerneldis = false;
 
-static bool                 g_shutdown = false;
-static uMsgInterface        g_user_interface;
-static kMsgInterface        g_kern_interface;
-
-typedef struct _NodeQueue
-{
-    int code;
-    int packlen;
-    char* packbuf;
-}NodeQueue, *PNodeQueue;
-
-static queue<NodeQueue>             ggrpc_queue;
-static std::mutex                   ggrpc_queuecs;
+static uMsgInterface                g_user_interface;
+static kMsgInterface                g_kern_interface;
 
 static queue<int>                   ggrpc_taskid;
 static std::mutex                   ggrpc_taskcs;
 
-//static std::mutex                   ggrpc_task_;
 static std::mutex                   ggrpc_writecs;
+
+// gloable UserSubQueue
+static std::queue<std::shared_ptr<UEtwSub>>  g_Etw_GrpcSubQueue_Ptr;
+static std::mutex                            g_Etw_GrpcQueueCs_Ptr;
+static HANDLE                                g_Etw_GrpcQueue_Event;
+
+// gloable KernSubQueue
+static std::queue<std::shared_ptr<UEtwSub>>  g_Ker_GrpcSubQueue_Ptr;
+static std::mutex                            g_Ker_GrpcQueueCs_Ptr;
+static HANDLE                                g_Ker_GrpcQueue_Event;
 
 // Grpc双向steam接口
 bool Grpc::Grpc_Transfer(RawData rawData)
@@ -46,14 +47,14 @@ bool Grpc::Grpc_Transfer(RawData rawData)
 
     return true;
 }
-
-// Saas平台下发指令：rootkit/User采集
 inline void Grpc::Grpc_writeEx(RawData& raw)
 {
     if (Grpc_Getstream())
         m_stream->Write(raw);
 }
-void Grpc::Grpc_write()
+
+// TaskId任务完成，数据序列化完成反馈
+void Grpc::Grpc_taskwrite()
 {
     int taskid = 0;
     size_t coutwrite = 0, idx = 0;
@@ -72,7 +73,7 @@ void Grpc::Grpc_write()
             INFINITE
         );
 
-        if (g_shutdown)
+        if (g_shutdown || g_taskdis)
             break;
 
         if (!pkg || !MapMessage)
@@ -113,6 +114,13 @@ void Grpc::Grpc_write()
         } while (true);
     }
 }
+// TaskId任务处理线程
+static unsigned WINAPI _QueueTaskthreadProc(void* pData)
+{
+    (reinterpret_cast<Grpc*>(pData))->Grpc_taskwrite();
+    return 0;
+}
+// TaskId入消息队列处理
 void Grpc::Grpc_ReadDispatchHandle(Command& command)
 {
     const int taskid = command.agentctrl();
@@ -123,6 +131,7 @@ void Grpc::Grpc_ReadDispatchHandle(Command& command)
     ggrpc_taskcs.unlock();
     SetEvent(m_jobAvailableEvnet_WriteTask);
 }
+// Saas_Server下发TaskId任务
 void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
 {
     // Read Server Msg
@@ -138,7 +147,7 @@ void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
     }
 }
 
-// 被动:Kernel/Etw上抛
+
 void Choose_session(string& events, const int code)
 {
     switch (code)
@@ -209,233 +218,257 @@ void Choose_register(string & opearestring, const int code)
     break;
     }
 }
-void Grpc::threadProc()
+
+// Kernel_Sub订阅消息处理
+void Grpc::KerSublthreadProc()
+{
+    //::proto::RawData rawData;
+    //char* ptr_Getbuffer;
+    //::proto::Record* pkg = rawData.add_pkg();
+    //if (!pkg)
+    //    return;
+
+    //// kernel
+    //static  int             g_indexlock = 0;
+    //static  string          tmpstr;
+    //static  PROCESSINFO     processinfo;
+    //static  THREADINFO      threadinfo;
+    //static  IMAGEMODINFO    imageinfo;
+    //static  REGISTERINFO    registerinfo;
+    //static  FILEINFO        fileinfo;
+    //static  SESSIONINFO     sessioninfo;
+    //static  IO_SESSION_STATE_INFORMATION iosession;
+
+    //for (;;)
+    //{
+    //    WaitForSingleObject(
+    //        this->m_jobAvailableEvent,
+    //        INFINITE
+    //    );
+
+    //    if (g_shutdown || g_kerneldis)
+    //        break;
+
+    //    if (!pkg)
+    //        break;
+
+    //    ggrpc_queuecs.lock();
+    //    
+    //    pkg->Clear();
+    //    auto MapMessage = pkg->mutable_message();
+    //    if (!MapMessage)
+    //    {
+    //        ggrpc_queuecs.unlock();
+    //        // 防止因msg一直失败 - 导致一直continue
+    //        if (g_indexlock++ > 1000)
+    //            break;
+    //        continue;
+    //    }
+
+    //    auto queue_node = ggrpc_queue.front();
+    //    (*MapMessage)["data_type"] = to_string(queue_node.code);
+    //    switch (queue_node.code)
+    //    {
+    //    case NF_PROCESS_INFO:
+    //    {
+    //        RtlSecureZeroMemory(&processinfo, sizeof(PROCESSINFO));
+    //        RtlCopyMemory(&processinfo, queue_node.packbuf, queue_node.packlen);
+
+    //        (*MapMessage)["win_sysmonitor_process_pid"] = to_string(processinfo.processid);
+    //        (*MapMessage)["win_sysmonitor_process_endprocess"] = to_string(processinfo.endprocess);
+    //        if (processinfo.endprocess)
+    //        {
+    //            tmpstr.clear();
+    //            Wchar_tToString(tmpstr, processinfo.queryprocesspath);
+    //            (*MapMessage)["win_sysmonitor_process_queryprocesspath"] = tmpstr;
+    //            tmpstr.clear();
+    //            Wchar_tToString(tmpstr, processinfo.processpath);
+    //            (*MapMessage)["win_sysmonitor_process_processpath"] = tmpstr;
+    //            tmpstr.clear();
+    //            Wchar_tToString(tmpstr, processinfo.commandLine);
+    //            (*MapMessage)["win_sysmonitor_process_commandLine"] = tmpstr;
+    //        }
+    //        else
+    //        {
+    //            tmpstr.clear();
+    //            Wchar_tToString(tmpstr, processinfo.queryprocesspath);
+    //            (*MapMessage)["win_sysmonitor_process_queryprocesspath"] = tmpstr;
+    //        }
+    //    }
+    //    break;
+    //    case NF_THREAD_INFO:
+    //    {
+    //        RtlSecureZeroMemory(&threadinfo, sizeof(THREADINFO));
+    //        RtlCopyMemory(&threadinfo, queue_node.packbuf, queue_node.packlen);
+
+    //        (*MapMessage)["win_sysmonitor_thread_pid"] = to_string(threadinfo.processid);
+    //        (*MapMessage)["win_sysmonitor_thread_id"] = to_string(threadinfo.threadid);
+    //        (*MapMessage)["win_sysmonitor_thread_status"] = to_string(threadinfo.createid);
+    //    }
+    //    break;
+    //    case NF_IMAGEGMOD_INFO:
+    //    {
+    //        RtlSecureZeroMemory(&imageinfo, sizeof(IMAGEMODINFO));
+    //        RtlCopyMemory(&imageinfo, queue_node.packbuf, queue_node.packlen);
+
+    //        (*MapMessage)["win_sysmonitor_mod_pid"] = to_string(imageinfo.processid);
+    //        (*MapMessage)["win_sysmonitor_mod_base"] = to_string(imageinfo.imagebase);
+    //        (*MapMessage)["win_sysmonitor_mod_size"] = to_string(imageinfo.imagesize);
+    //        tmpstr.clear();
+    //        Wchar_tToString(tmpstr, imageinfo.imagename);
+    //        (*MapMessage)["win_sysmonitor_mod_path"] = tmpstr;
+    //        (*MapMessage)["win_sysmonitor_mod_sysimage"] = to_string(imageinfo.systemmodeimage);
+    //    }
+    //    break;
+    //    case NF_REGISTERTAB_INFO:
+    //    {
+    //        RtlSecureZeroMemory(&registerinfo, sizeof(REGISTERINFO));
+    //        RtlCopyMemory(&registerinfo, queue_node.packbuf, queue_node.packlen);
+    //        tmpstr.clear();
+    //        Choose_register(tmpstr, registerinfo.opeararg);
+    //        if (tmpstr.size())
+    //        {
+    //            (*MapMessage)["win_sysmonitor_regtab_pid"] = to_string(registerinfo.processid);
+    //            (*MapMessage)["win_sysmonitor_regtab_tpid"] = to_string(registerinfo.threadid);
+    //            (*MapMessage)["win_sysmonitor_regtab_opeares"] = tmpstr;
+    //        }
+    //        else
+    //        {
+    //            // server 会丢弃该包 - 不关心的操作
+    //            (*MapMessage)["win_sysmonitor_regtab_pid"] = to_string(2);
+    //            (*MapMessage)["win_sysmonitor_regtab_pid"] = to_string(2);
+    //        }
+    //    }
+    //    break;
+    //    case NF_FILE_INFO:
+    //    {
+    //        RtlSecureZeroMemory(&fileinfo, sizeof(FILEINFO));
+    //        RtlCopyMemory(&fileinfo, queue_node.packbuf, queue_node.packlen);
+    //        (*MapMessage)["win_sysmonitor_file_pid"] = to_string(fileinfo.processid);
+    //        (*MapMessage)["win_sysmonitor_file_tpid"] = to_string(fileinfo.threadid);
+    //        tmpstr.clear();
+    //        Wchar_tToString(tmpstr, fileinfo.DosName);
+    //        (*MapMessage)["win_sysmonitor_file_dosname"] = tmpstr;
+    //        tmpstr.clear();
+    //        Wchar_tToString(tmpstr, fileinfo.FileName);
+    //        (*MapMessage)["win_sysmonitor_file_name"] = tmpstr;
+
+    //        //file attir
+    //        (*MapMessage)["win_sysmonitor_file_LockOperation"] = to_string(fileinfo.LockOperation);
+    //        (*MapMessage)["win_sysmonitor_file_DeletePending"] = to_string(fileinfo.DeletePending);
+    //        (*MapMessage)["win_sysmonitor_file_ReadAccess"] = to_string(fileinfo.ReadAccess);
+    //        (*MapMessage)["win_sysmonitor_file_WriteAccess"] = to_string(fileinfo.WriteAccess);
+    //        (*MapMessage)["win_sysmonitor_file_DeleteAccess"] = to_string(fileinfo.DeleteAccess);
+    //        (*MapMessage)["win_sysmonitor_file_SharedRead"] = to_string(fileinfo.SharedRead);
+    //        (*MapMessage)["win_sysmonitor_file_SharedWrite"] = to_string(fileinfo.SharedWrite);
+    //        (*MapMessage)["win_sysmonitor_file_SharedDelete"] = to_string(fileinfo.SharedDelete);
+    //        (*MapMessage)["win_sysmonitor_file_flag"] = to_string(fileinfo.flag);
+    //    }
+    //    break;
+    //    case NF_SESSION_INFO:
+    //    {
+    //        RtlSecureZeroMemory(&sessioninfo, sizeof(SESSIONINFO));
+    //        RtlCopyMemory(&sessioninfo, queue_node.packbuf, queue_node.packlen);
+    //        RtlSecureZeroMemory(&iosession, sizeof(IO_SESSION_STATE_INFORMATION));
+    //        RtlCopyMemory(&iosession, sessioninfo.iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
+
+    //        tmpstr.clear();
+    //        Choose_session(tmpstr, sessioninfo.evens);
+
+    //        if (iosession.LocalSession)
+    //            tmpstr += " - User Local Login";
+    //        else
+    //            tmpstr += " - User Remote Login";
+
+    //        (*MapMessage)["win_sysmonitor_session_pid"] = to_string(sessioninfo.processid);
+    //        (*MapMessage)["win_sysmonitor_session_tpid"] = to_string(sessioninfo.threadid);
+    //        (*MapMessage)["win_sysmonitor_session_event"] = tmpstr;
+    //        (*MapMessage)["win_sysmonitor_session_sessionid"] = to_string(iosession.SessionId);
+    //        
+    //    }
+    //    break;
+    //    default:
+    //        break;
+    //    }
+    //    
+    //    ggrpc_writecs.lock();
+    //    if (Grpc_Getstream())
+    //        m_stream->Write(rawData);
+    //    ggrpc_writecs.unlock();
+
+    //    free(queue_node.packbuf);
+    //    queue_node.packbuf = nullptr;
+    //    ggrpc_queue.pop();
+
+    //    ggrpc_queuecs.unlock();
+    //}
+
+}
+static unsigned WINAPI _KerSubthreadProc(void* pData)
+{
+    (reinterpret_cast<Grpc*>(pData))->KerSublthreadProc();
+    return 0;
+}
+
+// Etw_Sub订阅消息处理
+void Grpc::EtwSublthreadProc()
 {
     ::proto::RawData rawData;
     char* ptr_Getbuffer;
     ::proto::Record* pkg = rawData.add_pkg();
     if (!pkg)
         return;
-
-    static  int             g_indexlock = 0;
-    static  string          tmpstr;
-    static  PROCESSINFO     processinfo;
-    static  THREADINFO      threadinfo;
-    static  IMAGEMODINFO    imageinfo;
-    static  REGISTERINFO    registerinfo;
-    static  FILEINFO        fileinfo;
-    static  SESSIONINFO     sessioninfo;
-    static  IO_SESSION_STATE_INFORMATION iosession;
-
+    auto MapMessage = pkg->mutable_message();
+    if (!MapMessage)
+        return;
 
     for (;;)
     {
-        WaitForSingleObject(
-            this->m_jobAvailableEvent,
-            INFINITE
-        );
 
-        if (g_shutdown)
+        WaitForSingleObject(this->m_jobAvailableEventEtw, INFINITE);
+
+        if (g_shutdown || g_etwdis)
             break;
 
-        if (!pkg)
+        if (!pkg || !MapMessage)
             break;
 
-        ggrpc_queuecs.lock();
-        
-        pkg->Clear();
-        auto MapMessage = pkg->mutable_message();
-        if (!MapMessage)
-        {
-            ggrpc_queuecs.unlock();
-            // 防止因msg一直失败 - 导致一直continue
-            if (g_indexlock++ > 1000)
+        do {
+            g_Etw_GrpcQueueCs_Ptr.lock();
+            if (g_Etw_GrpcSubQueue_Ptr.empty())
+            {
+                g_Etw_GrpcQueueCs_Ptr.unlock();
                 break;
-            continue;
-        }
-
-        auto queue_node = ggrpc_queue.front();
-        (*MapMessage)["data_type"] = to_string(queue_node.code);
-        switch (queue_node.code)
-        {
-        case NF_PROCESS_INFO:
-        {
-            RtlSecureZeroMemory(&processinfo, sizeof(PROCESSINFO));
-            RtlCopyMemory(&processinfo, queue_node.packbuf, queue_node.packlen);
-
-            (*MapMessage)["win_sysmonitor_process_pid"] = to_string(processinfo.processid);
-            (*MapMessage)["win_sysmonitor_process_endprocess"] = to_string(processinfo.endprocess);
-            if (processinfo.endprocess)
-            {
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo.queryprocesspath);
-                (*MapMessage)["win_sysmonitor_process_queryprocesspath"] = tmpstr;
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo.processpath);
-                (*MapMessage)["win_sysmonitor_process_processpath"] = tmpstr;
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo.commandLine);
-                (*MapMessage)["win_sysmonitor_process_commandLine"] = tmpstr;
             }
-            else
-            {
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo.queryprocesspath);
-                (*MapMessage)["win_sysmonitor_process_queryprocesspath"] = tmpstr;
-            }
-        }
-        break;
-        case NF_THREAD_INFO:
-        {
-            RtlSecureZeroMemory(&threadinfo, sizeof(THREADINFO));
-            RtlCopyMemory(&threadinfo, queue_node.packbuf, queue_node.packlen);
+            g_Etw_GrpcSubQueue_Ptr.front();
+            g_Etw_GrpcSubQueue_Ptr.pop();
+            g_Etw_GrpcQueueCs_Ptr.unlock();
 
-            (*MapMessage)["win_sysmonitor_thread_pid"] = to_string(threadinfo.processid);
-            (*MapMessage)["win_sysmonitor_thread_id"] = to_string(threadinfo.threadid);
-            (*MapMessage)["win_sysmonitor_thread_status"] = to_string(threadinfo.createid);
-        }
-        break;
-        case NF_IMAGEGMOD_INFO:
-        {
-            RtlSecureZeroMemory(&imageinfo, sizeof(IMAGEMODINFO));
-            RtlCopyMemory(&imageinfo, queue_node.packbuf, queue_node.packlen);
+            (*MapMessage)["data_type"] = "";
+            (*MapMessage)["udata"] = ""; // json
+            ggrpc_writecs.lock();
+            Grpc_writeEx(rawData);
+            ggrpc_writecs.unlock();
 
-            (*MapMessage)["win_sysmonitor_mod_pid"] = to_string(imageinfo.processid);
-            (*MapMessage)["win_sysmonitor_mod_base"] = to_string(imageinfo.imagebase);
-            (*MapMessage)["win_sysmonitor_mod_size"] = to_string(imageinfo.imagesize);
-            tmpstr.clear();
-            Wchar_tToString(tmpstr, imageinfo.imagename);
-            (*MapMessage)["win_sysmonitor_mod_path"] = tmpstr;
-            (*MapMessage)["win_sysmonitor_mod_sysimage"] = to_string(imageinfo.systemmodeimage);
-        }
-        break;
-        case NF_REGISTERTAB_INFO:
-        {
-            RtlSecureZeroMemory(&registerinfo, sizeof(REGISTERINFO));
-            RtlCopyMemory(&registerinfo, queue_node.packbuf, queue_node.packlen);
-            tmpstr.clear();
-            Choose_register(tmpstr, registerinfo.opeararg);
-            if (tmpstr.size())
-            {
-                (*MapMessage)["win_sysmonitor_regtab_pid"] = to_string(registerinfo.processid);
-                (*MapMessage)["win_sysmonitor_regtab_tpid"] = to_string(registerinfo.threadid);
-                (*MapMessage)["win_sysmonitor_regtab_opeares"] = tmpstr;
-            }
-            else
-            {
-                // server 会丢弃该包 - 不关心的操作
-                (*MapMessage)["win_sysmonitor_regtab_pid"] = to_string(2);
-                (*MapMessage)["win_sysmonitor_regtab_pid"] = to_string(2);
-            }
-        }
-        break;
-        case NF_FILE_INFO:
-        {
-            RtlSecureZeroMemory(&fileinfo, sizeof(FILEINFO));
-            RtlCopyMemory(&fileinfo, queue_node.packbuf, queue_node.packlen);
-            (*MapMessage)["win_sysmonitor_file_pid"] = to_string(fileinfo.processid);
-            (*MapMessage)["win_sysmonitor_file_tpid"] = to_string(fileinfo.threadid);
-            tmpstr.clear();
-            Wchar_tToString(tmpstr, fileinfo.DosName);
-            (*MapMessage)["win_sysmonitor_file_dosname"] = tmpstr;
-            tmpstr.clear();
-            Wchar_tToString(tmpstr, fileinfo.FileName);
-            (*MapMessage)["win_sysmonitor_file_name"] = tmpstr;
-
-            //file attir
-            (*MapMessage)["win_sysmonitor_file_LockOperation"] = to_string(fileinfo.LockOperation);
-            (*MapMessage)["win_sysmonitor_file_DeletePending"] = to_string(fileinfo.DeletePending);
-            (*MapMessage)["win_sysmonitor_file_ReadAccess"] = to_string(fileinfo.ReadAccess);
-            (*MapMessage)["win_sysmonitor_file_WriteAccess"] = to_string(fileinfo.WriteAccess);
-            (*MapMessage)["win_sysmonitor_file_DeleteAccess"] = to_string(fileinfo.DeleteAccess);
-            (*MapMessage)["win_sysmonitor_file_SharedRead"] = to_string(fileinfo.SharedRead);
-            (*MapMessage)["win_sysmonitor_file_SharedWrite"] = to_string(fileinfo.SharedWrite);
-            (*MapMessage)["win_sysmonitor_file_SharedDelete"] = to_string(fileinfo.SharedDelete);
-            (*MapMessage)["win_sysmonitor_file_flag"] = to_string(fileinfo.flag);
-        }
-        break;
-        case NF_SESSION_INFO:
-        {
-            RtlSecureZeroMemory(&sessioninfo, sizeof(SESSIONINFO));
-            RtlCopyMemory(&sessioninfo, queue_node.packbuf, queue_node.packlen);
-            RtlSecureZeroMemory(&iosession, sizeof(IO_SESSION_STATE_INFORMATION));
-            RtlCopyMemory(&iosession, sessioninfo.iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
-
-            tmpstr.clear();
-            Choose_session(tmpstr, sessioninfo.evens);
-
-            if (iosession.LocalSession)
-                tmpstr += " - User Local Login";
-            else
-                tmpstr += " - User Remote Login";
-
-            (*MapMessage)["win_sysmonitor_session_pid"] = to_string(sessioninfo.processid);
-            (*MapMessage)["win_sysmonitor_session_tpid"] = to_string(sessioninfo.threadid);
-            (*MapMessage)["win_sysmonitor_session_event"] = tmpstr;
-            (*MapMessage)["win_sysmonitor_session_sessionid"] = to_string(iosession.SessionId);
-            
-        }
-        break;
-        default:
-            break;
-        }
-        
-        ggrpc_writecs.lock();
-        if (Grpc_Getstream())
-            m_stream->Write(rawData);
-        ggrpc_writecs.unlock();
-
-        free(queue_node.packbuf);
-        queue_node.packbuf = nullptr;
-        ggrpc_queue.pop();
-
-        ggrpc_queuecs.unlock();
+        } while (true);
+      
     }
-
 }
-bool Grpc::Grpc_pushQueue(const int code, const char* buf, int len)
+static unsigned WINAPI _EtwSubthreadProc(void* pData)
 {
-    if (code < 150 || code > 400)
-        return false;
-
-    char* pack = (char*)malloc(len + 1);
-    if (!pack && !len)
-        return false;
-
-    RtlSecureZeroMemory(pack, len + 1);
-    RtlCopyMemory(pack, buf, len);
-    NodeQueue tmpqueue;
-    RtlSecureZeroMemory(&tmpqueue, sizeof(NodeQueue));
-    tmpqueue.code = code;
-    tmpqueue.packbuf = pack; // 保存指针
-    tmpqueue.packlen = len;
-
-    ggrpc_queuecs.lock();
-    ggrpc_queue.push(tmpqueue);
-    ggrpc_queuecs.unlock();
-
-    // 处理pack
-    SetEvent(this->m_jobAvailableEvent);
-
-    return true;
-}
-
-static unsigned WINAPI _threadProc(void* pData)
-{
-    (reinterpret_cast<Grpc*>(pData))->threadProc();
+    (reinterpret_cast<Grpc*>(pData))->EtwSublthreadProc();
     return 0;
 }
-static unsigned WINAPI _QueueTaskthreadProc(void* pData)
-{
-    (reinterpret_cast<Grpc*>(pData))->Grpc_write();
-    return 0;
-}
+
+//设置Grpc订阅
+//初始化队列线程
 bool Grpc::ThreadPool_Init()
 {
-    this->m_jobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    this->m_jobAvailableEventKernel = CreateEvent(NULL, FALSE, FALSE, NULL);
+    this->m_jobAvailableEventEtw = CreateEvent(NULL, FALSE, FALSE, NULL);
     this->m_jobAvailableEvnet_WriteTask = CreateEvent(NULL, FALSE, FALSE, NULL);
     
-    if (!m_jobAvailableEvent || !m_jobAvailableEvnet_WriteTask)
+    if (!m_jobAvailableEventKernel || !m_jobAvailableEventEtw || !m_jobAvailableEvnet_WriteTask)
         return false;
 
     int i = 0;
@@ -451,23 +484,37 @@ bool Grpc::ThreadPool_Init()
         threadCount = 4;
     }
 
-    // 处理上抛(订阅)
+    // 处理Kernel上抛
     for (i = 0; i < threadCount; i++)
     {
         hThread = (HANDLE)_beginthreadex(0, 0,
-            _threadProc,
+            _KerSubthreadProc,
             (LPVOID)this,
             0,
             &threadId);
 
         if (hThread != 0 && hThread != (HANDLE)(-1L))
         {
-            m_threads.push_back(hThread);
+            m_ker_subthreads.push_back(hThread);
         }
     }
 
-    // 处理指令下发任务
     for (i = 0; i < threadCount; i++)
+    {
+        hThread = (HANDLE)_beginthreadex(0, 0,
+            _EtwSubthreadProc,
+            (LPVOID)this,
+            0,
+            &threadId);
+
+        if (hThread != 0 && hThread != (HANDLE)(-1L))
+        {
+            m_etw_subthreads.push_back(hThread);
+        }
+    }
+
+    // 处理指令下发任务 Max 4
+    for (i = 0; i < 4; i++)
     {
         hThread = (HANDLE)_beginthreadex(0, 0,
             _QueueTaskthreadProc,
@@ -487,21 +534,37 @@ bool Grpc::ThreadPool_Free()
 {
     // 设置标志
     g_shutdown = true;
+
     // 循环关闭句柄
-    for (tThreads::iterator it = m_threads.begin();
-        it != m_threads.end();
+    for (tThreads::iterator it = m_ker_subthreads.begin();
+        it != m_ker_subthreads.end();
         it++)
     {
-        SetEvent(m_jobAvailableEvent);
+        SetEvent(m_jobAvailableEventKernel);
         WaitForSingleObject(*it, INFINITE);
         CloseHandle(*it);
     }
 
 
-    if (m_jobAvailableEvent != INVALID_HANDLE_VALUE)
+    if (m_jobAvailableEventKernel != INVALID_HANDLE_VALUE)
     {
-        ::CloseHandle(m_jobAvailableEvent);
-        m_jobAvailableEvent = INVALID_HANDLE_VALUE;
+        ::CloseHandle(m_jobAvailableEventKernel);
+        m_jobAvailableEventKernel = INVALID_HANDLE_VALUE;
+    }
+
+    for (tThreads::iterator it = m_etw_subthreads.begin();
+        it != m_etw_subthreads.end();
+        it++)
+    {
+        SetEvent(m_jobAvailableEventEtw);
+        WaitForSingleObject(*it, INFINITE);
+        CloseHandle(*it);
+    }
+
+    if (m_jobAvailableEventEtw != INVALID_HANDLE_VALUE)
+    {
+        ::CloseHandle(m_jobAvailableEventEtw);
+        m_jobAvailableEventEtw = INVALID_HANDLE_VALUE;
     }
 
     for (tThreads::iterator it = m_threads_write.begin();
@@ -520,7 +583,8 @@ bool Grpc::ThreadPool_Free()
     }
     
 
-    m_threads.clear();
+    m_ker_subthreads.clear();
+    m_threads_write.clear();
 
     return true;
 }

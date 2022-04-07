@@ -459,13 +459,23 @@ typedef struct _UDriectInfo
     UDriectFile fileEntry[0xffff];
 }UDriectInfo, *PUDriectInfo;
 
-//======================user etw============================
-// public head
+// ===================Topic============================
+// pub head : 消息发布者 to Topic结构
 typedef struct _UEtwBuffer
 {
     int taskid;
-    char data[0];
-}UEtwBuffer, *PUEtwBuffer;
+    // 柔性数组c99
+    char data[0];     
+}UEtwBuffer, * PUEtwBuffer;
+// Sub head : Topic to 订阅者
+typedef struct _UEtwSub
+{
+    int taskid;
+    // 反序列化数据指针
+    std::shared_ptr<std::string> data; 
+}UEtwSub, * PUEtwSub;
+
+//======================User etw============================
 // u_etw_process
 typedef struct _UEtwProcessInfo
 {

@@ -1,3 +1,19 @@
+/*
+* Topic Class
+* Mod: Sub <--> Topic <--> Pub
+    uMsginterface.cpp对于SysMonUserLib来说是消费者,对于Grpc或者Iocp等上报接口来说是生产者。
+    消费者下发：Grpc --> 任务taskId --> uMsginterface下发 --> SysMonUserLib(生产数据)
+    生产链回馈：Grpc <-- 完成反馈  <--  uMsginterface提取/打包 <-- SysMonUserLib(生产数据)
+注: 为什么ACK过程不打算使用智能指针？
+    Pub消息发布确保订阅接收消息无误,生产者(Pub)释放,否则重发消息。
+    智能指针也可以被引用不释放,但是防止不智能的情况发生,最好自己管理。
+设计原则：
+    Pub to Topic 自己管理指针
+    Topic to Sub 智能指针
+待优化
+    1.如果有多个订阅,配置自动生成Topic主题和消费者指针.
+    2.Topic尽量提高吞吐量和效能,没有ACK过程,Pub负责推送Sub,不关心Topic或者Sub是否无误拿到数据数据,Sub不反馈给Topic.
+*/
 #include <iostream>
 #include <Windows.h>
 #include <map>
@@ -29,6 +45,7 @@
 #include <json.hpp>
 using json_t = nlohmann::json;
 
+// 生产者全局对象
 static UAutoStart               g_grpc_uautostrobj;
 static UNet                     g_grpc_unetobj;
 static NSysUser                 g_grpc_usysuser;
@@ -36,50 +53,32 @@ static UProcess                 g_grpc_uprocesstree;
 static UServerSoftware          g_grpc_userversoftware;
 static UFile                    g_grpc_ufile;
 static UEtw                     g_grpc_etw;
-
+// Topic主题队列指针1
 static std::queue<UEtwBuffer*>  g_etwdata_queue;
 static std::mutex               g_etwdata_cs;
 static HANDLE                   g_jobAvailableEvent;
 static bool                     g_exit = false;
+// Topic主题队列指针1设置,对于Etw属于消费者，对于Grpc属于生产者或接口数据中转
+inline void uMsgInterface::uMsg_SetTopicQueuePtr() { g_grpc_etw.uf_setqueuetaskptr(g_etwdata_queue); }
+inline void uMsgInterface::uMsg_SetTopicQueueLockPtr() { g_grpc_etw.uf_setqueuelockptr(g_etwdata_cs); }
+inline void uMsgInterface::uMsg_SetTopicEventPtr() { g_grpc_etw.uf_setqueueeventptr(g_jobAvailableEvent); }
 
+// 设置Grpc消费者指针(被消费者调用)
+static std::queue<std::shared_ptr<UEtwSub>>*    g_GrpcQueue_Ptr = NULL;
+static std::mutex*                              g_GrpcQueueCs_Ptr = NULL;
+static HANDLE                                   g_GrpcQueue_Event = NULL;
+inline void uMsgInterface::uMsg_SetSubQueuePtr(std::queue<std::shared_ptr<UEtwSub>>& qptr) { g_GrpcQueue_Ptr = &qptr; }
+inline void uMsgInterface::uMsg_SetSubQueueLockPtr(std::mutex& qptrcs) { g_GrpcQueueCs_Ptr = &qptrcs; }
+inline void uMsgInterface::uMsg_SetSubEventPtr(HANDLE& eventptr) { g_GrpcQueue_Event = eventptr; }
+const int EtwSubLens = sizeof(UEtwSub);
 
-inline void uMsgInterface::uMsg_SetQueuePtr() { g_grpc_etw.uf_setqueuetaskptr(g_etwdata_queue); }
-inline void uMsgInterface::uMsg_SetQueueLockPtr() { g_grpc_etw.uf_setqueuelockptr(g_etwdata_cs); }
-inline void uMsgInterface::uMsg_SetEventPtr() { g_grpc_etw.uf_setqueueeventptr(g_jobAvailableEvent); }
-
-void uMsgInterface::uMsg_Init() {
-    // 初始化设置数据
-    g_jobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    this->uMsg_SetQueuePtr();
-    this->uMsg_SetQueueLockPtr();
-    this->uMsg_SetEventPtr();
-    // 最后调用
-    this->uMsg_taskPopInit();
-};
-void uMsgInterface::uMsg_Free()
-{
-    g_exit = true;
-    for (size_t idx = 0; idx < m_thread.size(); ++idx)
-    {
-        SetEvent(g_jobAvailableEvent);
-        WaitForSingleObject(m_thread[idx], INFINITE);
-        CloseHandle(m_thread[idx]);
-    }
-
-    if (g_jobAvailableEvent != INVALID_HANDLE_VALUE)
-    {
-        ::CloseHandle(g_jobAvailableEvent);
-        g_jobAvailableEvent = INVALID_HANDLE_VALUE;
-    }
-    m_thread.clear();
-}
-
-// 反序列化数据
+// Topic数据处理和推送反馈Sub
 void uMsgInterface::uMsgEtwDataHandlerEx()
 {
+    json_t j;
     for (;;)
     {
-        Sleep(100);
+        j.clear();
         g_etwdata_cs.lock();
         if (g_etwdata_queue.empty())
         {
@@ -97,7 +96,9 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
         g_etwdata_cs.unlock();
 
         wchar_t output[MAX_PATH * 2] = { 0, };
-        switch (etw_taskdata->taskid)
+        
+        const int taskid = etw_taskdata->taskid;
+        switch (taskid)
         {
         case UF_ETW_NETWORK:
         {
@@ -110,6 +111,12 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 etwNet->ipv4LocalAddr, etwNet->toLocalPort, \
                 etwNet->RemoteAddr, etwNet->toRemotePort);
             OutputDebugString(output);
+            j["protocol"] = "";
+            j["processId"] = "";
+            j["ipv4LocalAddr"] = "";
+            j["ipv4LocalAddr"] = "";
+            j["toLocalPort"] = "";
+            j["toRemotePort"] = "";
         }
         break;
         case UF_ETW_PROCESSINFO:
@@ -162,8 +169,35 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
         default:
             break;
         }
+
+        // 注: Topic 释放 Pub的数据指针
+        if (etw_taskdata)
+        {
+            delete[] etw_taskdata;
+            etw_taskdata = nullptr;
+        }
+
+        try
+        {
+            // 序列化
+            std::shared_ptr<std::string> data = std::make_shared<std::string>(j.dump());
+            std::shared_ptr<UEtwSub> sub = std::make_shared<UEtwSub>();
+            if (!sub || !data)
+                return;
+            sub->data = data;
+            sub->taskid = taskid;
+            g_GrpcQueueCs_Ptr->lock();
+            g_GrpcQueue_Ptr->push(sub);
+            g_GrpcQueueCs_Ptr->unlock();
+            SetEvent(g_GrpcQueue_Event);
+        }
+        catch (const std::exception&)
+        {
+
+        }
     }
 }
+// Topic监控,异步事件等待
 void uMsgInterface::uMsg_taskPopEtwLoop()
 {
     try
@@ -212,10 +246,12 @@ void uMsgInterface::uMsg_taskPopInit()
         hThread =(HANDLE)_beginthreadex(0, 0, uMsg_taskPopThread, (LPVOID)this, 0, &threadId);
         if (hThread != 0 && hThread != (HANDLE)(-1L))
         {
-            m_thread.push_back(hThread);
+            m_topicthread.push_back(hThread);
         }
     }
 }
+
+// 接口：用户态TaskId下发获取数据,同步阻塞
 void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& vec_task_string)
 {
     std::string tmpstr; wstring catstr;
@@ -547,4 +583,31 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
         ptr_Getbuffer = nullptr;
     }
 
+}
+
+void uMsgInterface::uMsg_Init() {
+    // 初始化Topic
+    g_jobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    this->uMsg_SetTopicQueuePtr();
+    this->uMsg_SetTopicQueueLockPtr();
+    this->uMsg_SetTopicEventPtr();
+    // 最后调用
+    this->uMsg_taskPopInit();
+};
+void uMsgInterface::uMsg_Free()
+{
+    g_exit = true;
+    for (size_t idx = 0; idx < m_topicthread.size(); ++idx)
+    {
+        SetEvent(g_jobAvailableEvent);
+        WaitForSingleObject(m_topicthread[idx], INFINITE);
+        CloseHandle(m_topicthread[idx]);
+    }
+
+    if (g_jobAvailableEvent != INVALID_HANDLE_VALUE)
+    {
+        ::CloseHandle(g_jobAvailableEvent);
+        g_jobAvailableEvent = INVALID_HANDLE_VALUE;
+    }
+    m_topicthread.clear();
 }
