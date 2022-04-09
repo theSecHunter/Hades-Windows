@@ -135,6 +135,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
     g_kerdata_cs.lock();
     for (;;)
     {
+        Sleep(20);
         pubnode = g_kerdata_queue.front();
         if (!pubnode)
         {

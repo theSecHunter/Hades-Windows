@@ -82,6 +82,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
     g_etwdata_cs.lock();
     for (;;)
     {
+        Sleep(20);
         if (g_etwdata_queue.empty())
         {
             g_etwdata_cs.unlock();
