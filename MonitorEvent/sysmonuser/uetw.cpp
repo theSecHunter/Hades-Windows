@@ -53,11 +53,22 @@ static int etw_fileioinfolens = 0;
 
 void Wchar_tToString(std::string& szDst, wchar_t* wchar)
 {
+    if (lstrlenW(wchar) <= 0)
+    {
+        szDst = " ";
+        return;
+    }
     wchar_t* wText = wchar;
-    DWORD dwNum = WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, NULL, 0, NULL, FALSE);
+    DWORD dwNum = WideCharToMultiByte(CP_ACP, 0, wText, -1, NULL, 0, NULL, FALSE);
+    if (dwNum <= 0)
+    {
+        szDst = " ";
+        return;
+    }
     char* psText;
-    psText = new char[dwNum];
-    WideCharToMultiByte(CP_OEMCP, NULL, wText, -1, psText, dwNum, NULL, FALSE);
+    psText = new char[dwNum + 1];
+    WideCharToMultiByte(CP_ACP, 0, wText, -1, psText, dwNum, NULL, FALSE);
+    psText[dwNum - 1] = 0;
     szDst = psText;
     delete[] psText;
 }
@@ -332,6 +343,8 @@ void ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
                 return;
             tmpstr = value;
             auto nums = tmpstr.find(L".exe");
+            if (nums <= 0)
+                return;
             tmpstr = tmpstr.substr(0, nums + 4);
             if (0 >= tmpstr.size())
                 return;
@@ -867,7 +880,7 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
     m_traceconfig->Wnode.BufferSize = event_buffer;
     m_traceconfig->Wnode.Flags = WNODE_FLAG_TRACED_GUID;
     // 记录事件的时钟 100ns
-    m_traceconfig->Wnode.ClientContext = 10;
+    m_traceconfig->Wnode.ClientContext = 1;
     // 使用 NT Kernel Logger + SystemTraceControlGuid
     // See Msdn: https://docs.microsoft.com/en-us/windows/win32/etw/nt-kernel-logger-constants
     m_traceconfig->Wnode.Guid = SystemTraceControlGuid;
@@ -924,6 +937,8 @@ bool UEtw::uf_init()
     OutputDebugString(L"Etw nf_init - uf_RegisterTrace");
 #ifdef _DEBUG
     // EVENT_TRACE_FLAG_NETWORK_TCPIP EVENT_TRACE_FLAG_THREAD
+    //if (!uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS))
+    //    uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS);
     if (!uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
@@ -938,7 +953,7 @@ bool UEtw::uf_init()
 #else
     // 目前使用用一个Session: 优点不用管理，缺点没办法单独监控某个事件。
     // 如果单独监控，创建多个Session来管理，注册多个uf_RegisterTrace即可。
-    // EVENT_TRACE_FLAG_SYSTEMCALL | EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
+    // EVENT_TRACE_FLAG_SYSTEMCALL | EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT
     if (!uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
