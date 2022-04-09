@@ -4,6 +4,7 @@
 
 #include "public.h"
 #include "sysenumnotify.h"
+#include <fltkernel.h>
 
 ULONG FltFilterOperationsOffset = 0;
 

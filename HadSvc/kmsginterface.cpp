@@ -1,13 +1,5 @@
-#include <iostream>
-#include <Windows.h>
-#include <mutex>
-#include <string>
-#include <queue>
-#include <vector>
-
-#include "kmsginterface.h"
-#include "sysinfo.h"
 #include "msgassist.h"
+#include "kmsginterface.h"
 
 #include "ArkSsdt.h"
 #include "ArkIdt.h"
@@ -39,9 +31,9 @@ static ArkNetwork			g_kernel_networkobj;
 static ArkProcessInfo		g_kernel_processinfo;
 static AkrSysDriverDevInfo	g_kernel_sysmodinfo;
 static DevctrlIoct          g_kernel_Ioct;
-
 static bool                 g_exit = false;
-static HANDLE               g_kjobAvailableEvent = nullptr;
+const char devSyLinkName[] = "\\??\\Sysmondrv_hades";
+
 // 设置Grpc消费者指针(被消费者调用)
 static std::queue<std::shared_ptr<USubNode>>*       g_GrpcQueue_Ptr = NULL;
 static std::mutex*                                  g_GrpcQueueCs_Ptr = NULL;
@@ -50,13 +42,19 @@ void kMsgInterface::kMsg_SetSubQueuePtr(std::queue<std::shared_ptr<USubNode>>& q
 void kMsgInterface::kMsg_SetSubQueueLockPtr(std::mutex& qptrcs) { g_GrpcQueueCs_Ptr = &qptrcs; }
 void kMsgInterface::kMsg_SetSubEventPtr(HANDLE& eventptr) { g_GrpcQueue_Event = eventptr; }
 
-static std::queue<UPubNode*>    g_kerdata_queue; 
+static std::queue<UPubNode*>    g_kerdata_queue;
 static std::mutex               g_kerdata_cs;
-static HANDLE                   g_kjobAvailableEvent;
+static HANDLE                   g_kjobAvailableEvent = nullptr;
 inline void kMsgInterface::kMsg_SetTopicQueuePtr() { g_kernel_Ioct.kf_setqueuetaskptr(g_kerdata_queue); }
 inline void kMsgInterface::kMsg_SetTopicQueueLockPtr() { g_kernel_Ioct.kf_setqueuelockptr(g_kerdata_cs); }
 inline void kMsgInterface::kMsg_SetTopicEventPtr() { g_kernel_Ioct.kf_setqueueeventptr(g_kjobAvailableEvent); }
 
+kMsgInterface::kMsgInterface()
+{
+}
+kMsgInterface::~kMsgInterface()
+{
+}
 
 void Choose_session(string& events, const int code)
 {
@@ -132,143 +130,138 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
 {
     static json_t j;
     UPubNode* pubnode = nullptr;
+    std::string tmpstr;
 
+    g_kerdata_cs.lock();
     for (;;)
     {
-        g_kerdata_cs.lock();
-
         pubnode = g_kerdata_queue.front();
         if (!pubnode)
         {
             g_kerdata_cs.unlock();
             break;
         }
-        g_kerdata_queue.pop();
-        g_kerdata_cs.unlock();
-        
+        g_kerdata_queue.pop();        
         const int taskid = pubnode->taskid;
         switch (taskid)
         {
         case NF_PROCESS_INFO:
         {
-            RtlSecureZeroMemory(&processinfo, sizeof(PROCESSINFO));
-            RtlCopyMemory(&processinfo, queue_node.packbuf, queue_node.packlen);
-
-            (*MapMessage)["win_sysmonitor_process_pid"] = to_string(processinfo.processid);
-            (*MapMessage)["win_sysmonitor_process_endprocess"] = to_string(processinfo.endprocess);
-            if (processinfo.endprocess)
+            PROCESSINFO* processinfo = (PROCESSINFO*)pubnode->data;
+            j["win_sysmonitor_process_pid"] = to_string(processinfo->processid);
+            j["win_sysmonitor_process_endprocess"] = to_string(processinfo->endprocess);
+            if (processinfo->endprocess)
             {
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo.queryprocesspath);
-                (*MapMessage)["win_sysmonitor_process_queryprocesspath"] = tmpstr;
+                Wchar_tToString(tmpstr, processinfo->queryprocesspath);
+                j["win_sysmonitor_process_queryprocesspath"] = tmpstr.c_str();
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo.processpath);
-                (*MapMessage)["win_sysmonitor_process_processpath"] = tmpstr;
+                Wchar_tToString(tmpstr, processinfo->processpath);
+                j["win_sysmonitor_process_processpath"] = tmpstr.c_str();
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo.commandLine);
-                (*MapMessage)["win_sysmonitor_process_commandLine"] = tmpstr;
+                Wchar_tToString(tmpstr, processinfo->commandLine);
+                j["win_sysmonitor_process_commandLine"] = tmpstr.c_str();
             }
             else
             {
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo.queryprocesspath);
-                (*MapMessage)["win_sysmonitor_process_queryprocesspath"] = tmpstr;
+                Wchar_tToString(tmpstr, processinfo->queryprocesspath);
+                j["win_sysmonitor_process_queryprocesspath"] = tmpstr.c_str();
             }
         }
         break;
         case NF_THREAD_INFO:
         {
-            RtlSecureZeroMemory(&threadinfo, sizeof(THREADINFO));
-            RtlCopyMemory(&threadinfo, queue_node.packbuf, queue_node.packlen);
-
-            (*MapMessage)["win_sysmonitor_thread_pid"] = to_string(threadinfo.processid);
-            (*MapMessage)["win_sysmonitor_thread_id"] = to_string(threadinfo.threadid);
-            (*MapMessage)["win_sysmonitor_thread_status"] = to_string(threadinfo.createid);
+            THREADINFO* threadinfo = (THREADINFO*)pubnode->data;
+            j["win_sysmonitor_thread_pid"] = to_string(threadinfo->processid);
+            j["win_sysmonitor_thread_id"] = to_string(threadinfo->threadid);
+            j["win_sysmonitor_thread_status"] = to_string(threadinfo->createid);
         }
         break;
         case NF_IMAGEGMOD_INFO:
         {
-            RtlSecureZeroMemory(&imageinfo, sizeof(IMAGEMODINFO));
-            RtlCopyMemory(&imageinfo, queue_node.packbuf, queue_node.packlen);
-
-            (*MapMessage)["win_sysmonitor_mod_pid"] = to_string(imageinfo.processid);
-            (*MapMessage)["win_sysmonitor_mod_base"] = to_string(imageinfo.imagebase);
-            (*MapMessage)["win_sysmonitor_mod_size"] = to_string(imageinfo.imagesize);
+            IMAGEMODINFO* imageinfo = (IMAGEMODINFO*)pubnode->data;
+            j["win_sysmonitor_mod_pid"] = to_string(imageinfo->processid);
+            j["win_sysmonitor_mod_base"] = to_string(imageinfo->imagebase);
+            j["win_sysmonitor_mod_size"] = to_string(imageinfo->imagesize);
             tmpstr.clear();
-            Wchar_tToString(tmpstr, imageinfo.imagename);
-            (*MapMessage)["win_sysmonitor_mod_path"] = tmpstr;
-            (*MapMessage)["win_sysmonitor_mod_sysimage"] = to_string(imageinfo.systemmodeimage);
+            Wchar_tToString(tmpstr, imageinfo->imagename);
+            j["win_sysmonitor_mod_path"] = tmpstr.c_str();
+            j["win_sysmonitor_mod_sysimage"] = to_string(imageinfo->systemmodeimage);
         }
         break;
         case NF_REGISTERTAB_INFO:
         {
-            RtlSecureZeroMemory(&registerinfo, sizeof(REGISTERINFO));
-            RtlCopyMemory(&registerinfo, queue_node.packbuf, queue_node.packlen);
+            REGISTERINFO* registerinfo = (REGISTERINFO*)pubnode->data;
             tmpstr.clear();
-            Choose_register(tmpstr, registerinfo.opeararg);
+            Choose_register(tmpstr, registerinfo->opeararg);
             if (tmpstr.size())
             {
-                (*MapMessage)["win_sysmonitor_regtab_pid"] = to_string(registerinfo.processid);
-                (*MapMessage)["win_sysmonitor_regtab_tpid"] = to_string(registerinfo.threadid);
-                (*MapMessage)["win_sysmonitor_regtab_opeares"] = tmpstr;
+                j["win_sysmonitor_regtab_pid"] = to_string(registerinfo->processid);
+                j["win_sysmonitor_regtab_tpid"] = to_string(registerinfo->threadid);
+                j["win_sysmonitor_regtab_opeares"] = tmpstr.c_str();
             }
             else
             {
                 // server 会丢弃该包 - 不关心的操作
-                (*MapMessage)["win_sysmonitor_regtab_pid"] = to_string(2);
-                (*MapMessage)["win_sysmonitor_regtab_pid"] = to_string(2);
+                j["win_sysmonitor_regtab_pid"] = to_string(2);
+                j["win_sysmonitor_regtab_pid"] = to_string(2);
             }
         }
         break;
         case NF_FILE_INFO:
         {
-            RtlSecureZeroMemory(&fileinfo, sizeof(FILEINFO));
-            RtlCopyMemory(&fileinfo, queue_node.packbuf, queue_node.packlen);
-            (*MapMessage)["win_sysmonitor_file_pid"] = to_string(fileinfo.processid);
-            (*MapMessage)["win_sysmonitor_file_tpid"] = to_string(fileinfo.threadid);
+            FILEINFO* fileinfo = (FILEINFO*)pubnode->data;
+            j["win_sysmonitor_file_pid"] = to_string(fileinfo->processid);
+            j["win_sysmonitor_file_tpid"] = to_string(fileinfo->threadid);
             tmpstr.clear();
-            Wchar_tToString(tmpstr, fileinfo.DosName);
-            (*MapMessage)["win_sysmonitor_file_dosname"] = tmpstr;
+            Wchar_tToString(tmpstr, fileinfo->DosName);
+            j["win_sysmonitor_file_dosname"] = tmpstr.c_str();
             tmpstr.clear();
-            Wchar_tToString(tmpstr, fileinfo.FileName);
-            (*MapMessage)["win_sysmonitor_file_name"] = tmpstr;
+            Wchar_tToString(tmpstr, fileinfo->FileName);
+            j["win_sysmonitor_file_name"] = tmpstr.c_str();
 
             //file attir
-            (*MapMessage)["win_sysmonitor_file_LockOperation"] = to_string(fileinfo.LockOperation);
-            (*MapMessage)["win_sysmonitor_file_DeletePending"] = to_string(fileinfo.DeletePending);
-            (*MapMessage)["win_sysmonitor_file_ReadAccess"] = to_string(fileinfo.ReadAccess);
-            (*MapMessage)["win_sysmonitor_file_WriteAccess"] = to_string(fileinfo.WriteAccess);
-            (*MapMessage)["win_sysmonitor_file_DeleteAccess"] = to_string(fileinfo.DeleteAccess);
-            (*MapMessage)["win_sysmonitor_file_SharedRead"] = to_string(fileinfo.SharedRead);
-            (*MapMessage)["win_sysmonitor_file_SharedWrite"] = to_string(fileinfo.SharedWrite);
-            (*MapMessage)["win_sysmonitor_file_SharedDelete"] = to_string(fileinfo.SharedDelete);
-            (*MapMessage)["win_sysmonitor_file_flag"] = to_string(fileinfo.flag);
+            j["win_sysmonitor_file_LockOperation"] = to_string(fileinfo->LockOperation);
+            j["win_sysmonitor_file_DeletePending"] = to_string(fileinfo->DeletePending);
+            j["win_sysmonitor_file_ReadAccess"] = to_string(fileinfo->ReadAccess);
+            j["win_sysmonitor_file_WriteAccess"] = to_string(fileinfo->WriteAccess);
+            j["win_sysmonitor_file_DeleteAccess"] = to_string(fileinfo->DeleteAccess);
+            j["win_sysmonitor_file_SharedRead"] = to_string(fileinfo->SharedRead);
+            j["win_sysmonitor_file_SharedWrite"] = to_string(fileinfo->SharedWrite);
+            j["win_sysmonitor_file_SharedDelete"] = to_string(fileinfo->SharedDelete);
+            j["win_sysmonitor_file_flag"] = to_string(fileinfo->flag);
         }
         break;
         case NF_SESSION_INFO:
         {
-            RtlSecureZeroMemory(&sessioninfo, sizeof(SESSIONINFO));
-            RtlCopyMemory(&sessioninfo, queue_node.packbuf, queue_node.packlen);
+            SESSIONINFO* sessioninfo = (SESSIONINFO*)pubnode->data;;
+            std::shared_ptr<IO_SESSION_STATE_INFORMATION> iosession;
             RtlSecureZeroMemory(&iosession, sizeof(IO_SESSION_STATE_INFORMATION));
-            RtlCopyMemory(&iosession, sessioninfo.iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
+            RtlCopyMemory(&iosession, sessioninfo->iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
 
             tmpstr.clear();
-            Choose_session(tmpstr, sessioninfo.evens);
+            Choose_session(tmpstr, sessioninfo->evens);
 
-            if (iosession.LocalSession)
+            if (iosession->LocalSession)
                 tmpstr += " - User Local Login";
             else
                 tmpstr += " - User Remote Login";
 
-            (*MapMessage)["win_sysmonitor_session_pid"] = to_string(sessioninfo.processid);
-            (*MapMessage)["win_sysmonitor_session_tpid"] = to_string(sessioninfo.threadid);
-            (*MapMessage)["win_sysmonitor_session_event"] = tmpstr;
-            (*MapMessage)["win_sysmonitor_session_sessionid"] = to_string(iosession.SessionId);
+            j["win_sysmonitor_session_pid"] = to_string(sessioninfo->processid);
+            j["win_sysmonitor_session_tpid"] = to_string(sessioninfo->threadid);
+            j["win_sysmonitor_session_event"] = tmpstr.c_str();
+            j["win_sysmonitor_session_sessionid"] = to_string(iosession->SessionId);
         
         }
         break;
-        default:
-            break;
+        }
+
+        // 注: Topic 释放 Pub的数据指针
+        if (pubnode)
+        {
+            delete[] pubnode;
+            pubnode = nullptr;
         }
 
         // 序列化
@@ -280,13 +273,17 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
 
         if (!g_GrpcQueue_Ptr && !g_GrpcQueueCs_Ptr && !g_GrpcQueue_Event)
         {
+            g_kerdata_cs.unlock();
             OutputDebugString(L"Grpc没设置订阅指针");
             break;
         }
 
         std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
         if (!sub || !data)
+        {
+            g_kerdata_cs.unlock();
             return;
+        }
         sub->data = data;
         sub->taskid = taskid;
         g_GrpcQueueCs_Ptr->lock();
@@ -294,6 +291,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
         g_GrpcQueueCs_Ptr->unlock();
         SetEvent(g_GrpcQueue_Event);
     }
+    g_kerdata_cs.unlock();
 }
 
 void kMsgInterface::kMsg_taskPopNotifyRoutineLoop()
@@ -651,6 +649,70 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     }
 }
 
+
+void kMsgInterface::DriverInit()
+{
+    int status = 0;
+
+    // Init devctrl
+    status = g_kernel_Ioct.devctrl_init();
+    if (0 > status)
+    {
+        cout << "devctrl_init error: main.c --> lines: 342" << endl;
+        return;
+    }
+
+    do
+    {
+        // Open driver
+        status = g_kernel_Ioct.devctrl_opendeviceSylink(devSyLinkName);
+        if (0 > status)
+        {
+            cout << "devctrl_opendeviceSylink error: main.c --> lines: 352" << endl;
+            break;
+        }
+
+        // Init share Mem
+        status = g_kernel_Ioct.devctrl_InitshareMem();
+        if (0 > status)
+        {
+            cout << "devctrl_InitshareMem error: main.c --> lines: 360" << endl;
+            break;
+        }
+
+        // ReadFile I/O Thread
+        status = g_kernel_Ioct.devctrl_workthread(NULL);
+        if (0 > status)
+        {
+            cout << "devctrl_workthread error: main.c --> lines: 367" << endl;
+            break;
+        }
+
+        // Off/Enable try Network packte Monitor
+        //status = g_kernel_Ioct.devctrl_OnMonitor();
+        //if (0 > status)
+        //{
+        //    cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+        //    break;
+        //}
+
+        // Enable Event --> 内核提取出来数据以后处理类
+        //g_kernel_Ioct.nf_setEventHandler((PVOID)&eventobj);
+
+        status = 1;
+
+    } while (false);
+
+    if (!status)
+    {
+        OutputDebugString(L"Init Driver Failuer");
+        return;
+    }
+}
+void kMsgInterface::DriverFree()
+{
+    g_kernel_Ioct.devctrl_free();
+}
 void kMsgInterface::kMsg_Init() {
     // 初始化Topic
     g_kjobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);

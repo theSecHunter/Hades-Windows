@@ -1,6 +1,3 @@
-#include <Windows.h>
-#include <string>
-#include "sysinfo.h"
 #include "msgassist.h"
 
 bool Choose_mem(char*& ptr, DWORD& dwAllocateMemSize, const int code)

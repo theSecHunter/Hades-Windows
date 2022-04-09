@@ -74,7 +74,7 @@ HKR,"Instances\"%Instance1.Name%,"Flags",0x00010001,%Instance1.Flags%
 %driverName%.sys
 
 [SourceDisksFiles]
-driver.sys = 1,,
+sysmondriver.sys = 1,,
 
 [SourceDisksNames]
 1 = %DiskId1%,,,
@@ -86,10 +86,10 @@ driver.sys = 1,,
 [Strings]
 ; TODO - Add your manufacturer
 ManufacturerName        = "Template"
-ServiceDescription      = "driver Mini-Filter driver"
-ServiceName             = "driver"
-driverName              = "driver"
-DiskId1                 = "driver Device Installation Disk"
+ServiceDescription      = "sysmondriver Mini-Filter"
+ServiceName             = "sysmondriver"
+driverName              = "sysmondriver"
+DiskId1                 = "sysmondriver Device Installation Disk"
 
 ;Instances specific information.
 DefaultInstance         = "driver Instance"

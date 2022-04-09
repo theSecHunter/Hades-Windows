@@ -1,10 +1,10 @@
 #ifndef _SYSINFO_H
 #define _SYSINFO_H
-
+#include <Windows.h>
 #include <string>
 #include <memory>
-using namespace std;
 
+using namespace std;
 // kernel id
 enum KIoctCode
 {
@@ -41,17 +41,17 @@ enum KAnRootkitId
 enum USystemCollId
 {
     UF_PROCESS_ENUM = 200,
-    UF_PROCESS_PID_TREE,
-    UF_SYSAUTO_START,
-    UF_SYSNET_INFO,
-    UF_SYSSESSION_INFO,
-    UF_SYSINFO_ID,
-    UF_SYSLOG_ID,
-    UF_SYSUSER_ID,
-    UF_SYSSERVICE_SOFTWARE_ID,
-    UF_SYSFILE_ID,
-    UF_FILE_INFO,
-    UF_ROOTKIT_ID
+    UF_PROCESS_PID_TREE,		    //201
+    UF_SYSAUTO_START,			    //201
+    UF_SYSNET_INFO,				    //203
+    UF_SYSSESSION_INFO,			    //204
+    UF_SYSINFO_ID,				    //205
+    UF_SYSLOG_ID,				    //206
+    UF_SYSUSER_ID,				    //207
+    UF_SYSSERVICE_SOFTWARE_ID,	    //208
+    UF_SYSFILE_ID,				    //209
+    UF_FILE_INFO,				    //210
+    UF_ROOTKIT_ID				    //211
 };
 // etw id
 enum UEtwId

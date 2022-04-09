@@ -14,15 +14,6 @@
     1.如果有多个订阅,配置自动生成Topic主题和消费者指针.
     2.Topic尽量提高吞吐量和效能,没有ACK过程,Pub负责推送Sub,不关心Topic或者Sub是否无误拿到数据数据,Sub不反馈给Topic.
 */
-#include <iostream>
-#include <Windows.h>
-#include <memory>
-#include <vector>
-#include <queue>
-#include <string>
-#include <mutex>
-
-#include "sysinfo.h"
 #include "msgassist.h"
 #include "umsginterface.h"
 
@@ -33,7 +24,6 @@
 #include "uservicesoftware.h"
 #include "ufile.h"
 #include "uetw.h"
-
 
 //rapidjson
 #include <rapidjson/rapidjson.h>
@@ -64,42 +54,49 @@ inline void uMsgInterface::uMsg_SetTopicQueueLockPtr() { g_user_etw.uf_setqueuel
 inline void uMsgInterface::uMsg_SetTopicEventPtr() { g_user_etw.uf_setqueueeventptr(g_jobAvailableEvent); }
 
 // 设置Grpc消费者指针(被消费者调用)
-static std::queue<std::shared_ptr<USubNode>>*    g_GrpcQueue_Ptr = NULL;
-static std::mutex*                              g_GrpcQueueCs_Ptr = NULL;
-static HANDLE                                   g_GrpcQueue_Event = NULL;
+static std::queue<std::shared_ptr<USubNode>>*       g_GrpcQueue_Ptr = NULL;
+static std::mutex*                                  g_GrpcQueueCs_Ptr = NULL;
+static HANDLE                                       g_GrpcQueue_Event = NULL;
 void uMsgInterface::uMsg_SetSubQueuePtr(std::queue<std::shared_ptr<USubNode>>& qptr) { g_GrpcQueue_Ptr = &qptr; }
 void uMsgInterface::uMsg_SetSubQueueLockPtr(std::mutex& qptrcs) { g_GrpcQueueCs_Ptr = &qptrcs; }
 void uMsgInterface::uMsg_SetSubEventPtr(HANDLE& eventptr) { g_GrpcQueue_Event = eventptr; }
 const int EtwSubLens = sizeof(USubNode);
 
+
+uMsgInterface::uMsgInterface()
+{
+}
+
+uMsgInterface::~uMsgInterface()
+{
+}
+
+
 // Topic数据处理和推送反馈Sub
 void uMsgInterface::uMsgEtwDataHandlerEx()
 {
     static json_t j;
-    //wchar_t output[MAX_PATH * 2] = { 0, };
     static std::string tmpstr;
+    UPubNode* etw_taskdata = nullptr;
 
+    g_etwdata_cs.lock();
     for (;;)
     {
-        g_etwdata_cs.lock();
         if (g_etwdata_queue.empty())
         {
             g_etwdata_cs.unlock();
             return;
         }
-        UPubNode* etw_taskdata = g_etwdata_queue.front();
+        etw_taskdata = g_etwdata_queue.front();
         if (!etw_taskdata)
         {
             g_etwdata_cs.unlock();
             return;
         }
         g_etwdata_queue.pop();
-        g_etwdata_cs.unlock();
-
         j.clear();
         tmpstr.clear();
         const int taskid = etw_taskdata->taskid;
-
         switch (taskid)
         {
         case UF_ETW_NETWORK:
@@ -199,28 +196,40 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             //swprintf(output, L"[etw_fileio] FileKey: %d  KeyName: ", etwfileio->FileKey);
             //OutputDebugString(output);
         }
-        default:
-            break;
+        }
+
+        // 注: Topic 释放 Pub的数据指针
+        if (etw_taskdata)
+        {
+            delete[] etw_taskdata;
+            etw_taskdata = nullptr;
         }
 
         try
         {
             // 序列化
-            std::shared_ptr<std::string> data;
+            std::shared_ptr<std::string> data = nullptr;
             if (j.size())
+            {
                 data = std::make_shared<std::string>(j.dump());
+            }
             else
                 continue;
 
             if (!g_GrpcQueue_Ptr && !g_GrpcQueueCs_Ptr && !g_GrpcQueue_Event)
             {
                 OutputDebugString(L"Grpc没设置订阅指针");
+                g_etwdata_cs.unlock();
                 break;
             }
 
             std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
             if (!sub || !data)
+            {
+                g_etwdata_cs.unlock();
                 return;
+            }
+                
             sub->data = data;
             sub->taskid = taskid;
             g_GrpcQueueCs_Ptr->lock();
@@ -230,16 +239,10 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
         }
         catch (const std::exception&)
         {
-
-        }
-
-        // 注: Topic 释放 Pub的数据指针
-        if (etw_taskdata)
-        {
-            delete[] etw_taskdata;
-            etw_taskdata = nullptr;
+            g_etwdata_cs.unlock();
         }
     }
+    g_etwdata_cs.unlock();
 }
 // Topic监控,异步事件等待
 void uMsgInterface::uMsg_taskPopEtwLoop()
@@ -627,6 +630,15 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
         ptr_Getbuffer = nullptr;
     }
 
+}
+
+void uMsgInterface::uMsg_EtwInit()
+{
+    g_user_etw.uf_init();
+}
+void uMsgInterface::uMsg_EtwClose()
+{
+    g_user_etw.uf_close();
 }
 
 void uMsgInterface::uMsg_Init() {

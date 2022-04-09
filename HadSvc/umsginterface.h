@@ -1,11 +1,18 @@
 #pragma once
+#include <sysinfo.h>
+#include <queue>
+#include <memory>
+#include <vector>
+#include <iostream>
+#include <string>
+#include <mutex>
+
 class uMsgInterface
 {
 public:
 	 
-	inline uMsgInterface() { this->uMsg_Init(); }
-	inline ~uMsgInterface() { this->uMsg_Free(); }
-
+	uMsgInterface(); 
+	~uMsgInterface();
 	void uMsg_taskPopEtwLoop();
 	void uMsg_taskPopInit();
 	void uMsg_taskPush(const int taskcode, std::vector<std::string>& vec_task_string);
@@ -14,9 +21,12 @@ public:
 	void uMsg_SetSubQueueLockPtr(std::mutex& qptrcs);
 	void uMsg_SetSubQueuePtr(std::queue<std::shared_ptr<USubNode>>& qptr);
 
-private:
 	void uMsg_Init();
 	void uMsg_Free();
+	void uMsg_EtwInit();
+	void uMsg_EtwClose();
+
+private:
 	void uMsg_SetTopicQueuePtr();
 	void uMsg_SetTopicQueueLockPtr();
 	void uMsg_SetTopicEventPtr();
@@ -24,4 +34,3 @@ private:
 
 	std::vector<HANDLE> m_topicthread;
 };
-

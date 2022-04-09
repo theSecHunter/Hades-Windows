@@ -35,14 +35,14 @@ typedef struct _NOTIFY_INFO
 	CHAR	ImgPath[MAX_PATH];
 }NOTIFY_INFO, * PNOTIFY_INFO;
 
-typedef struct _FLT_OPERATION_REGISTRATION
-{
-	UCHAR	MajorFunction;
-	ULONG	Flags;
-	PVOID	PreOperation;
-	PVOID	PostOperation;
-	PVOID	Reserved1;
-} FLT_OPERATION_REGISTRATION, * PFLT_OPERATION_REGISTRATION;
+//typedef struct _FLT_OPERATION_REGISTRATION
+//{
+//	UCHAR	MajorFunction;
+//	ULONG	Flags;
+//	PVOID	PreOperation;
+//	PVOID	PostOperation;
+//	PVOID	Reserved1;
+//} FLT_OPERATION_REGISTRATION, * PFLT_OPERATION_REGISTRATION;
 
 typedef struct _FLT_FILTER
 {
@@ -61,21 +61,21 @@ typedef struct _MINIFILTER_INFO
 	CHAR	PostImgPath[MAX_PATH];
 }MINIFILTER_INFO, * PMINIFILTER_INFO;
 
-extern	NTSTATUS
-__fastcall
-FltEnumerateFilters
-(
-	PFLT_FILTER* FilterList,
-	ULONG FilterListSize,
-	PULONG NumberFiltersReturned
-);
+//extern	NTSTATUS
+//__fastcall
+//FltEnumerateFilters
+//(
+//	PFLT_FILTER* FilterList,
+//	ULONG FilterListSize,
+//	PULONG NumberFiltersReturned
+//);
 
-extern	NTSTATUS
-__fastcall
-FltObjectDereference
-(
-	PVOID FltObject
-);
+//extern	NTSTATUS
+//__fastcall
+//FltObjectDereference
+//(
+//	PVOID FltObject
+//);
 
 VOID Enum_ProcessNotify(PNOTIFY_INFO pNotify);
 VOID Enum_ThreadNotify(PNOTIFY_INFO pNotify);

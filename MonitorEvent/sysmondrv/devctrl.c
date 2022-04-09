@@ -1058,8 +1058,8 @@ NTSTATUS devctrl_ioInit(PDRIVER_OBJECT DriverObject) {
 	NTSTATUS status = STATUS_SUCCESS;
 
 	// Create Device
-	RtlInitUnicodeString(&g_devicename, L"\\Device\\KernelDark");
-	RtlInitUnicodeString(&g_devicesyslink, L"\\DosDevices\\KernelDark");
+	RtlInitUnicodeString(&g_devicename, L"\\Device\\Sysmondrv_hades");
+	RtlInitUnicodeString(&g_devicesyslink, L"\\DosDevices\\Sysmondrv_hades");
 	status = IoCreateDevice(
 		DriverObject,
 		0,

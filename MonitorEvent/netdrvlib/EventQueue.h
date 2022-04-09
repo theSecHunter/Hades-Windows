@@ -76,7 +76,6 @@ public:
 	ENDPOINT_ID		m_id;
 	unsigned long	m_flags;
 };
-
 class NFEventOut : public ThreadJob
 {
 public:
@@ -146,7 +145,6 @@ public:
 	bool push(PNF_DATA pData)
 	{
 		AutoLock lock(m_cs);
-
 		eEndpointType et = getEndpointType(pData->code);
 
 		if (et == ET_TCP)
@@ -155,28 +153,28 @@ public:
 			if (it != m_tcpEventFlags.end())
 			{
 				it->second |= getEventFlag(pData->code);
-			} else
+			} 
+			else
 			{
 				m_tcpEventFlags[pData->id] = getEventFlag(pData->code);
 				EventListItem eli = { pData->id, ET_TCP };
 				m_eventList.push_back(eli);
 			}
-		} else
-			if (et == ET_UDP)
+		} 
+		else if (et == ET_UDP)
+		{
+			tEventFlags::iterator it = m_udpEventFlags.find(pData->id);
+			if (it != m_udpEventFlags.end())
 			{
-				tEventFlags::iterator it = m_udpEventFlags.find(pData->id);
-				if (it != m_udpEventFlags.end())
-				{
-					it->second |= getEventFlag(pData->code);
-				} else
-				{
-					m_udpEventFlags[pData->id] = getEventFlag(pData->code);
-					EventListItem eli = { pData->id, ET_UDP };
-					m_eventList.push_back(eli);
-				}
+				it->second |= getEventFlag(pData->code);
+			} else
+			{
+				m_udpEventFlags[pData->id] = getEventFlag(pData->code);
+				EventListItem eli = { pData->id, ET_UDP };
+				m_eventList.push_back(eli);
 			}
-
-			return true;
+		}
+		return true;
 	}
 
 	void processEvents()
@@ -221,20 +219,19 @@ public:
 		if (pEvent->m_et == ET_TCP)
 		{
 			m_busyTCPEndpoints.erase(pEvent->m_id);
-		} else
-			if (pEvent->m_et == ET_UDP)
-			{
-				m_busyUDPEndpoints.erase(pEvent->m_id);
-			}
+		} 
+		else if (pEvent->m_et == ET_UDP)
+		{
+			m_busyUDPEndpoints.erase(pEvent->m_id);
+		}
 
-			mp_free(pEvent);
+		mp_free(pEvent);
+		SetEvent(m_jobCompletedEvent);
 
-			SetEvent(m_jobCompletedEvent);
-
-			if (!m_pending && !m_eventList.empty())
-			{
-				m_pool.jobAvailable();
-			}
+		if (!m_pending && !m_eventList.empty())
+		{
+			m_pool.jobAvailable();
+		}
 	}
 
 	virtual void threadStarted()

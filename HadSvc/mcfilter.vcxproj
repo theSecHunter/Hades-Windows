@@ -276,6 +276,7 @@
     <ClCompile Include="kmsginterface.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="msgassist.cpp" />
+    <ClCompile Include="msgloop.cpp" />
     <ClCompile Include="pipe.cpp" />
     <ClCompile Include="time_stamp.cpp" />
     <ClCompile Include="umsginterface.cpp" />
@@ -287,6 +288,7 @@
     <ClInclude Include="HlprMiniCom.h" />
     <ClInclude Include="kmsginterface.h" />
     <ClInclude Include="msgassist.h" />
+    <ClInclude Include="msgloop.h" />
     <ClInclude Include="pipe.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="time_stamp.h" />

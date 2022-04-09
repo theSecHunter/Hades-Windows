@@ -1,4 +1,5 @@
-﻿#include <iostream>
+﻿#pragma once
+#include <iostream>
 #include <string>
 #include <map>
 #include <vector>
@@ -6,11 +7,11 @@
 #include <WinSock2.h>
 #pragma comment(lib, "ws2_32.lib")
 
-#include "sysinfo.h"
+//#include "sysinfo.h"
 #include "grpc.h"
+#include "umsginterface.h"
+#include "kmsginterface.h"
 
-#include "drvlib.h"
-#include "uetw.h"
 #ifdef _WIN64
 	#ifdef _DEBUG
 	#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmondrv\\lib\\SysMonDrvlib_d64.lib")
@@ -28,12 +29,6 @@
 	#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib.lib")
 	#endif
 #endif
-
-static UEtw			g_testetw;
-static DevctrlIoct	g_kermonlib;
-
-const char devSyLinkName[] = "\\??\\KernelDark";
-const int max_size = MAX_PATH * 3;
 
 // 标志控制 - 后续config里面配置
 static bool kerne_mon = false;		// kernel采集
@@ -84,7 +79,6 @@ DWORD pthread_grpread(LPVOID lpThreadParameter)
 	greeter->Grpc_ReadC2Thread(NULL);
 	return 1;
 }
-
 int main(int argc, char* argv[])
 {
 	// 
@@ -102,7 +96,7 @@ int main(int argc, char* argv[])
 	// Grpc_SSL模式目前不支持 - 认证还有问题
 	// grpc::InsecureChannelCredentials() localhost
 	static Grpc greeter(
-		grpc::CreateChannel("10.128.128.16:8888", grpc::InsecureChannelCredentials()));	
+		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));	
 	proto::RawData rawData;
 
 	// agent_info
@@ -168,175 +162,138 @@ int main(int argc, char* argv[])
 	else
 		grpc_send = true;
 
-	// start grpc Read thread (Wait server Data)
-	// start grpc C2_Msg loop
+	// start grpc Read thread (Wait server Data) handler C2_Msg loop
 	DWORD threadid = 0;
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
+	HANDLE grocRead = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
+	
 	// init grpc Heartbeat detection 
-	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
+	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)心跳检测, &greeter, 0, &threadid);
+	
 	// start grpc write thread
 	greeter.ThreadPool_Init();
 
-	int status = 0;
-	// kernel mod
-	if (true == kerne_mon)
+	kMsgInterface g_mainMsgKlib;
+	uMsgInterface g_mainMsgUlib;
+	if (false == greeter.SetUMontiorLibPtr(&g_mainMsgUlib) || false == greeter.SetKMontiorLibPtr(&g_mainMsgKlib))
 	{
-		// Init devctrl
-		status = g_kermonlib.devctrl_init();
-		if (0 > status)
-		{
-			cout << "devctrl_init error: main.c --> lines: 342" << endl;
-			return -1;
-		}
-
-		do
-		{
-			// Open driver
-			status = g_kermonlib.devctrl_opendeviceSylink(devSyLinkName);
-			if (0 > status)
-			{
-				cout << "devctrl_opendeviceSylink error: main.c --> lines: 352" << endl;
-				break;
-			}
-
-			// Init share Mem
-			status = g_kermonlib.devctrl_InitshareMem();
-			if (0 > status)
-			{
-				cout << "devctrl_InitshareMem error: main.c --> lines: 360" << endl;
-				break;
-			}
-
-			// ReadFile I/O Thread
-			status = g_kermonlib.devctrl_workthread((LPVOID)&greeter);
-			if (0 > status)
-			{
-				cout << "devctrl_workthread error: main.c --> lines: 367" << endl;
-				break;
-			}
-
-			// Off/Enable try Network packte Monitor
-			status = g_kermonlib.devctrl_OnMonitor();
-			if (0 > status)
-			{
-				cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
-				break;
-			}
-
-			// Enable Event --> 内核提取出来数据以后处理类
-			//g_kermonlib.nf_setEventHandler((PVOID)&eventobj);
-
-			status = 1;
-
-		} while (false);
-
-		if (!status)
-		{
-			OutputDebugString(L"Init Driver Failuer");
-			return -1;
-		}
-
-		if (true == kerne_rootkit)
-		{
-			cout << "Rootkit上报接口测试:" << endl;
-
-			Command cmd;
-			cmd.set_agentctrl(100);
-			greeter.Grpc_ReadDispatchHandle(cmd);
-
-			cmd.Clear();
-			cmd.set_agentctrl(101);
-			greeter.Grpc_ReadDispatchHandle(cmd);
-
-			cmd.Clear();
-			cmd.set_agentctrl(103);
-			greeter.Grpc_ReadDispatchHandle(cmd);
-
-			cmd.Clear();
-			cmd.set_agentctrl(108);
-			greeter.Grpc_ReadDispatchHandle(cmd);
-
-			cmd.Clear();
-			cmd.set_agentctrl(109);
-			greeter.Grpc_ReadDispatchHandle(cmd);
-
-			cmd.Clear();
-			cmd.set_agentctrl(110);
-			greeter.Grpc_ReadDispatchHandle(cmd);
-
-			cmd.Clear();
-			cmd.set_agentctrl(111);
-			greeter.Grpc_ReadDispatchHandle(cmd);
-
-			cmd.Clear();
-			cmd.set_agentctrl(113);
-			greeter.Grpc_ReadDispatchHandle(cmd);
-
-			cmd.Clear();
-			cmd.set_agentctrl(115);
-			greeter.Grpc_ReadDispatchHandle(cmd);
-		}
+		OutputDebugString(L"设置GrpcLib指针失败");
+		return 0;
 	}
 	
-	// user mod
+	g_mainMsgUlib.uMsg_Init();
+	g_mainMsgKlib.kMsg_Init();
+
+	if (true == grpc_send && (true == kerne_rootkit || true == kerne_mon))
+	{
+		g_mainMsgKlib.DriverInit();
+
+		cout << "Rootkit上报接口测试:" << endl;
+
+		Command cmd;
+		cmd.set_agentctrl(100);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(101);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(103);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(108);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(109);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(110);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(111);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(113);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(115);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+	}
 	if (true == grpc_send && true == user_mod)
 	{
 		cout << "User下发接口测试" << endl;
 		Command cmd;
-		cmd.set_agentctrl(UF_PROCESS_ENUM);
-		greeter.Grpc_ReadDispatchHandle(cmd);
-
-		// 数据未清理
-		//cmd.Clear();
-		//cmd.set_agentctrl(UF_PROCESS_PID_TREE);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
-
-		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSAUTO_START);
+		cmd.set_agentctrl(200);
 		greeter.Grpc_ReadDispatchHandle(cmd);
 
 		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSNET_INFO);
+		cmd.set_agentctrl(202);
 		greeter.Grpc_ReadDispatchHandle(cmd);
 
 		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSSESSION_INFO);
-		greeter.Grpc_ReadDispatchHandle(cmd);
-
-		// 上线后已上报
-		//cmd.Clear();
-		//cmd.set_agentctrl(UF_SYSINFO_ID);
-		//greeter.Grpc_ReadDispatchHandle(cmd);
-
-		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSUSER_ID);
+		cmd.set_agentctrl(203);
 		greeter.Grpc_ReadDispatchHandle(cmd);
 
 		cmd.Clear();
-		cmd.set_agentctrl(UF_SYSSERVICE_SOFTWARE_ID);
+		cmd.set_agentctrl(204);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(207);
+		greeter.Grpc_ReadDispatchHandle(cmd);
+
+		cmd.Clear();
+		cmd.set_agentctrl(208);
 		greeter.Grpc_ReadDispatchHandle(cmd);
 
 		//cmd.Clear();
 		//cmd.set_agentctrl(UF_SYSFILE_ID);
 		//greeter.Grpc_ReadDispatchHandle(cmd);
-
 		// 数据未清理
 		//cmd.Clear();
 		//cmd.set_agentctrl(UF_FILE_INFO);
 		//greeter.Grpc_ReadDispatchHandle(cmd);
+		// 上线后已上报
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_SYSINFO_ID);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
+		// 数据未清理
+		//cmd.Clear();
+		//cmd.set_agentctrl(UF_PROCESS_PID_TREE);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
+
+	}
+	if (true == grpc_send && true == etw_mon) {
+		g_mainMsgUlib.uMsg_EtwInit();
 	}
 
-	// etw mod
-	if (true == etw_mon)
-	{
-		g_testetw.uf_init();
-	}
-
-	cout << "输入回车结束进程" << endl;
+	//MSG msg;
+	//while (GetMessage(&msg, NULL, NULL, NULL))
+	//{
+	//	TranslateMessage(&msg);
+	//	DispatchMessageW(&msg);
+	//}
 	getchar();
-	if (kerne_mon)
-		g_kermonlib.devctrl_free();
-	if(etw_mon)
-		g_testetw.uf_close();
+	if (grocRead)
+	{
+		TerminateThread(grocRead, 0);
+		CloseHandle(grocRead);
+	}	
+	if (etw_mon)
+		g_mainMsgUlib.uMsg_EtwClose();
+	if (user_mod)
+		g_mainMsgUlib.uMsg_Free();
+	else if (kerne_mon)
+	{
+		g_mainMsgKlib.DriverFree();
+		g_mainMsgKlib.kMsg_Free();
+	}
+
 	return 0;
 }

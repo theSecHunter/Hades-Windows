@@ -75,7 +75,7 @@
     <ClCompile Include="uefi.c" />
     <ResourceCompile Include="driver.rc" />
     <ClCompile Include="driver.c" />
-    <Inf Include="driver.inf">
+    <Inf Include="sysmondriver.inf">
       <CatalogFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </CatalogFileName>
       <CatalogFileName Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
@@ -205,13 +205,13 @@
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <OutDir>..\..\bin\</OutDir>
-    <TargetName>sysmondriver_d</TargetName>
+    <OutDir>..\bin\x86\Debug</OutDir>
+    <TargetName>sysmondriver</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <EnableInf2cat>false</EnableInf2cat>
-    <OutDir>..\..\bin\</OutDir>
+    <OutDir>..\bin\x86\Release</OutDir>
     <TargetName>sysmondriver</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
@@ -225,14 +225,14 @@
     <IncludePath>$(IncludePath);$(KMDF_INC_PATH)$(KMDF_VER_PATH);$(CRT_IncludePath);$(KM_IncludePath);$(KIT_SHARED_IncludePath)</IncludePath>
     <Inf2CatUseLocalTime>
     </Inf2CatUseLocalTime>
-    <OutDir>..\..\bin\</OutDir>
-    <TargetName>sysmondriver_d64</TargetName>
+    <OutDir>..\bin\x64\Debug</OutDir>
+    <TargetName>sysmondriver</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <Inf2CatUseLocalTime>false</Inf2CatUseLocalTime>
-    <OutDir>..\..\bin\</OutDir>
-    <TargetName>sysmondriver64</TargetName>
+    <OutDir>..\bin\x64\Release</OutDir>
+    <TargetName>sysmondriver</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
@@ -260,17 +260,18 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
-      <AdditionalDependencies>fltmgr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NtosKrnl.lib;FltMgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
-      <AdditionalDependencies>ucrtd.lib;fltmgr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NtosKrnl.lib;FltMgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>

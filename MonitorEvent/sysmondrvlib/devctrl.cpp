@@ -4,12 +4,8 @@
 #include <Windows.h>
 #include "sync.h"
 #include "nfevents.h"
-#include "sysinfo.h"
 #include <xstring>
 #include <vector>
-#include <queue>
-#include <mutex>
-
 #include "drvlib.h"
 
 #pragma comment(lib,"Crypt32.lib")
@@ -391,7 +387,7 @@ void handleEventDispath_(PNF_DATA pData)
 {
 	const int buflens = sizeof(UPubNode) + pData->bufferSize;
 	UPubNode* pubdata = (UPubNode*)new char[buflens];
-	if (pubdata)
+	if (pubdata && g_KernelQueueCs_Ptr && g_KernelQueue_Ptr && g_KjobQueue_Event)
 	{
 		RtlZeroMemory(pubdata, buflens);
 		pubdata->taskid = pData->code;

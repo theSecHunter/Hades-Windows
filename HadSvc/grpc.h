@@ -1,19 +1,12 @@
 #pragma once
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-
 #include <grpcpp/grpcpp.h>
 #include <grpc++/security/credentials.h>
-#include <fstream>
-
 #include "hades_win.grpc.pb.h"
+#include <fstream>
 
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-
 using proto::Transfer;
 using proto::RawData;
 using proto::Command;
@@ -46,8 +39,8 @@ public:
 	
 	~Grpc()
 	{
-		Grpc_steamDon();
 		ThreadPool_Free();
+		Grpc_steamDon();
 	}
 
 	unique_ptr<::grpc::ClientReaderWriter<::proto::RawData, ::proto::Command>>  Grpc_streamInit()
@@ -68,7 +61,8 @@ public:
 		if (m_stream)
 		{
 			m_stream->WritesDone();
-			m_stream->Finish();
+			m_context.TryCancel();
+			//m_stream->Finish();  ×èÈû
 			m_stream = nullptr;
 		}
 	}
@@ -88,6 +82,10 @@ public:
 	void KerSublthreadProc();
 	void EtwSublthreadProc();
 
+	// Set Lib Ptr
+	bool SetUMontiorLibPtr(LPVOID ulibptr);
+	bool SetKMontiorLibPtr(LPVOID klibptr);
+
 private:
 
 	unique_ptr<Transfer::Stub> stub_;
@@ -99,8 +97,6 @@ private:
 	tThreads m_etw_subthreads;
 	tThreads m_threads_write;
 
-	HANDLE m_jobAvailableEventKernel;
-	HANDLE m_jobAvailableEventEtw;
 	HANDLE m_jobAvailableEvnet_WriteTask;
 };
 

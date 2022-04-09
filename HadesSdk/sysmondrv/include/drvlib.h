@@ -1,6 +1,10 @@
 #ifndef _DEVCTRL_H
 #define _DEVCTRL_H
 
+#include <queue>
+#include <mutex>
+#include "sysinfo.h"
+
 typedef enum _NF_DRIVER_TYPE
 {
 	DT_UNKNOWN = 0,
