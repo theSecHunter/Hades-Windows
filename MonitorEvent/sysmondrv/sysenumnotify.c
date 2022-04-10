@@ -140,10 +140,10 @@ VOID Enum_ImageModNotify(PNOTIFY_INFO pNotify)
 	pNotify = ExAllocatePool(NonPagedPool, sizeof(NOTIFY_INFO) * 100);
 
 	if (pNotify == NULL)
-		return NULL;
+		return;
 
 	if (!PspLoadImageNotifyRoutine)
-		return NULL;
+		return;
 
 	for (i = 0; i < 8; i++)
 	{
@@ -189,7 +189,7 @@ VOID Enum_MinifilterNotify(PMINIFILTER_INFO pFltInfo)
 
 	pFltInfo = ExAllocatePool(NonPagedPool, sizeof(MINIFILTER_INFO) * 1000);
 	if (pFltInfo == NULL)
-		return NULL;
+		return;
 
 	RtlZeroMemory(pFltInfo, sizeof(MINIFILTER_INFO) * 1000);
 
@@ -215,7 +215,7 @@ VOID Enum_MinifilterNotify(PMINIFILTER_INFO pFltInfo)
 	{
 		if (pBuffer != NULL)
 			ExFreePool(pBuffer);
-		return 0;
+		return;
 	}
 	DbgPrint("MiniFilter Count: %ld\n", uNumber);
 	pFltInfo[0].FltNum = uNumber;
@@ -279,7 +279,7 @@ VOID Enum_MinifilterNotify(PMINIFILTER_INFO pFltInfo)
 				ntStatus = GetExceptionCode();
 				ExFreePool(pBuffer);
 				ExFreePool(pFltInfo);
-				return NULL;
+				return;
 			}
 			DrvCount++;
 			FltObjectDereference(pFilter);
@@ -293,7 +293,7 @@ VOID Enum_MinifilterNotify(PMINIFILTER_INFO pFltInfo)
 		ntStatus = GetExceptionCode();
 		ExFreePool(pBuffer);
 		ExFreePool(pFltInfo);
-		return NULL;
+		return;
 	}
 	if (pBuffer != NULL)
 	{

@@ -336,8 +336,6 @@ void ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
         else if (0 == lstrcmpW(L"CommandLine", propName.c_str()))
         {
-            if (0 >= lstrlenW(value))
-                return;
             // 以' '截取[0].Str();
             if (0 >= lstrlenW(value))
                 return;
@@ -954,6 +952,7 @@ bool UEtw::uf_init()
     // 目前使用用一个Session: 优点不用管理，缺点没办法单独监控某个事件。
     // 如果单独监控，创建多个Session来管理，注册多个uf_RegisterTrace即可。
     // EVENT_TRACE_FLAG_SYSTEMCALL | EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT
+
     if (!uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \

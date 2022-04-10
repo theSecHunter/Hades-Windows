@@ -130,19 +130,24 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
 {
     static json_t j;
     UPubNode* pubnode = nullptr;
-    std::string tmpstr;
+    static std::string tmpstr;
 
     g_kerdata_cs.lock();
     for (;;)
     {
-        Sleep(20);
+        Sleep(10);
+        if (g_kerdata_queue.empty())
+        {
+            g_kerdata_cs.unlock();
+            return;
+        }
         pubnode = g_kerdata_queue.front();
         if (!pubnode)
         {
             g_kerdata_cs.unlock();
             break;
         }
-        g_kerdata_queue.pop();        
+        g_kerdata_queue.pop();  
         const int taskid = pubnode->taskid;
         switch (taskid)
         {
@@ -155,18 +160,22 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             {
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, processinfo->queryprocesspath);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_sysmonitor_process_queryprocesspath"] = tmpstr.c_str();
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, processinfo->processpath);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_sysmonitor_process_processpath"] = tmpstr.c_str();
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, processinfo->commandLine);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_sysmonitor_process_commandLine"] = tmpstr.c_str();
             }
             else
             {
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, processinfo->queryprocesspath);
+                tmpstr = String_ToUtf8(tmpstr);
                 j["win_sysmonitor_process_queryprocesspath"] = tmpstr.c_str();
             }
         }
@@ -187,6 +196,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             j["win_sysmonitor_mod_size"] = to_string(imageinfo->imagesize);
             tmpstr.clear();
             Wchar_tToString(tmpstr, imageinfo->imagename);
+            tmpstr = String_ToUtf8(tmpstr);
             j["win_sysmonitor_mod_path"] = tmpstr.c_str();
             j["win_sysmonitor_mod_sysimage"] = to_string(imageinfo->systemmodeimage);
         }
@@ -217,9 +227,11 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             j["win_sysmonitor_file_tpid"] = to_string(fileinfo->threadid);
             tmpstr.clear();
             Wchar_tToString(tmpstr, fileinfo->DosName);
+            tmpstr = String_ToUtf8(tmpstr);
             j["win_sysmonitor_file_dosname"] = tmpstr.c_str();
             tmpstr.clear();
             Wchar_tToString(tmpstr, fileinfo->FileName);
+            tmpstr = String_ToUtf8(tmpstr);
             j["win_sysmonitor_file_name"] = tmpstr.c_str();
 
             //file attir
@@ -291,6 +303,9 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
         g_GrpcQueue_Ptr->push(sub);
         g_GrpcQueueCs_Ptr->unlock();
         SetEvent(g_GrpcQueue_Event);
+
+        j.clear();
+        tmpstr.clear();
     }
     g_kerdata_cs.unlock();
 }
@@ -483,6 +498,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         }
         std::cout << "Mouse MjFuction End" << std::endl;
 
+        j.clear();
         j["win_rootkit_is_mousekeymod"] = "2";
         for (i = 0; i < 0x1b; ++i)
         {
@@ -493,6 +509,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         }
         std::cout << "i8042 MjFuction End" << std::endl;
 
+        j.clear();
         j["win_rootkit_is_mousekeymod"] = "3";
         for (i = 0; i < 0x1b; ++i)
         {
@@ -550,7 +567,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
 
             for (i = 0; i < phandleinfo[0].CountNum; ++i)
             {
-                wcout << "Pid: " << phandleinfo[i].ProcessId << " - Process: " << phandleinfo[i].ProcessPath << endl;// " - ProcessName: " << phandleinfo[i].ProcessName << endl;
+                //wcout << "Pid: " << phandleinfo[i].ProcessId << " - Process: " << phandleinfo[i].ProcessPath << endl;// " - ProcessName: " << phandleinfo[i].ProcessName << endl;
                 // 去重
                 catstr = phandleinfo[i].ProcessPath;
                 catstr += L" - ";
@@ -577,8 +594,8 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     case NF_PROCESS_MOD:
     {
         int Process_Pid = 4;
-         cout << "Please Input Pid: ";
-         scanf("%d", &Process_Pid);
+        cout << "Please Input Pid: 4";
+        //scanf("%d", &Process_Pid);
         // 默认测试
         if (false == g_kernel_processinfo.nf_GetProcessMod(Process_Pid, ptr_Getbuffer, dwAllocateMemSize))
             break;
@@ -650,7 +667,6 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     }
 }
 
-
 void kMsgInterface::DriverInit()
 {
     int status = 0;
@@ -690,12 +706,12 @@ void kMsgInterface::DriverInit()
         }
 
         // Off/Enable try Network packte Monitor
-        //status = g_kernel_Ioct.devctrl_OnMonitor();
-        //if (0 > status)
-        //{
-        //    cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
-        //    break;
-        //}
+        status = g_kernel_Ioct.devctrl_OnMonitor();
+        if (0 > status)
+        {
+            cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+            break;
+        }
 
         // Enable Event --> 内核提取出来数据以后处理类
         //g_kernel_Ioct.nf_setEventHandler((PVOID)&eventobj);

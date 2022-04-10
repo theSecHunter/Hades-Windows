@@ -33,15 +33,15 @@ int nf_EnumSysDriver(PDEVICE_OBJECT pDevObj, PPROCESS_MOD ModBffer)
 
 int nf_StopDriver()
 {
-
+	return 0;
 }
 
 int nf_UnDriver()
 {
-
+	return 0;
 }
 
 int nf_DumpDriverMemory()
 {
-
+	return 0;
 }

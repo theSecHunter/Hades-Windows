@@ -82,7 +82,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
     g_etwdata_cs.lock();
     for (;;)
     {
-        Sleep(20);
+        Sleep(10);
         if (g_etwdata_queue.empty())
         {
             g_etwdata_cs.unlock();
@@ -95,8 +95,6 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             return;
         }
         g_etwdata_queue.pop();
-        j.clear();
-        tmpstr.clear();
         const int taskid = etw_taskdata->taskid;
         switch (taskid)
         {
@@ -145,7 +143,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             //OutputDebugString(output);
             j["win_etw_threadinfo_pid"] = to_string(etwThread->processId);
             j["win_etw_threadinfo_tid"] = to_string(etwThread->threadId);
-            j["win_etw_threadinfo_win32startaddr"] = to_string(10);//to_string(etwThread->Win32StartAddr);
+            j["win_etw_threadinfo_win32startaddr"] = to_string(etwThread->Win32StartAddr);
             j["win_etw_threadinfo_flags"] = to_string(etwThread->ThreadFlags);
         }
         break;
@@ -159,12 +157,12 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             //OutputDebugString(output);
             j["win_etw_imageinfo_processId"] = to_string(etwProcMod->ProcessId);
             j["win_etw_imageinfo_imageBase"] = to_string(etwProcMod->ImageBase);
-            //j["win_etw_imageinfo_imageSize"] = to_string(etwProcMod->ImageSize);
-            //j["win_etw_imageinfo_signatureLevel"] = to_string(etwProcMod->SignatureLevel);
-            //j["win_etw_imageinfo_signatureType"] = to_string(etwProcMod->SignatureType);
-            //j["win_etw_imageinfo_imageChecksum"] = to_string(etwProcMod->ImageChecksum);
-            //j["win_etw_imageinfo_timeDateStamp"] = to_string(123);
-            //j["win_etw_imageinfo_defaultBase"] = to_string(etwProcMod->DefaultBase);
+            j["win_etw_imageinfo_imageSize"] = to_string(etwProcMod->ImageSize);
+            j["win_etw_imageinfo_signatureLevel"] = to_string(etwProcMod->SignatureLevel);
+            j["win_etw_imageinfo_signatureType"] = to_string(etwProcMod->SignatureType);
+            j["win_etw_imageinfo_imageChecksum"] = to_string(etwProcMod->ImageChecksum);
+            j["win_etw_imageinfo_timeDateStamp"] = to_string(123);
+            j["win_etw_imageinfo_defaultBase"] = to_string(etwProcMod->DefaultBase);
             Wchar_tToString(tmpstr, etwProcMod->FileName);
             if (tmpstr.empty())
                 break;
@@ -181,8 +179,8 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             //lstrcatW(output, etwregtab->KeyName);
             //OutputDebugString(output);
             //j["win_etw_regtab_initialTime"] = to_string(etwregtab->InitialTime);
-            //j["win_etw_regtab_status"] = to_string(etwregtab->Status);
-            //j["win_etw_regtab_index"] = to_string(etwregtab->Index);
+            j["win_etw_regtab_status"] = to_string(etwregtab->Status);
+            j["win_etw_regtab_index"] = to_string(etwregtab->Index);
             j["win_etw_regtab_keyHandle"] = to_string(etwregtab->KeyHandle);
             Wchar_tToString(tmpstr, etwregtab->KeyName);
             tmpstr = String_ToUtf8(tmpstr);
@@ -237,6 +235,8 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             g_GrpcQueue_Ptr->push(sub);
             g_GrpcQueueCs_Ptr->unlock();
             SetEvent(g_GrpcQueue_Event);
+            j.clear();
+            tmpstr.clear();
         }
         catch (const std::exception&)
         {

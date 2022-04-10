@@ -1219,7 +1219,7 @@ NTSTATUS devctrl_popprocessinfo(UINT64* pOffset)
 			sl_unlock(&lh);
 		}
 	}
-
+	return status;
 }
 NTSTATUS devctrl_popthreadinfo(UINT64* pOffset)
 {
@@ -1281,6 +1281,7 @@ NTSTATUS devctrl_popthreadinfo(UINT64* pOffset)
 			sl_unlock(&lh);
 		}
 	}
+	return status;
 }
 NTSTATUS devctrl_popimagemodinfo(UINT64* pOffset)
 {

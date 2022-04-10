@@ -132,7 +132,7 @@ NTSTATUS
     do {
         g_processname = (char*)ExAllocatePoolWithTag(NonPagedPool, 260 * (260 * sizeof(WCHAR)), 'CM');
         if (!g_processname)
-            return;
+            return status;
 
         status = Process_Init();
         if (!NT_SUCCESS(status))

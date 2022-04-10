@@ -63,7 +63,7 @@ driverUnload(
 
 	KdPrint((DPREFIX"driverUnload\n"));
 
-	DbgBreakPoint();
+	//DbgBreakPoint();
 
 	if (g_bfeStateSubscribeHandle)
 	{

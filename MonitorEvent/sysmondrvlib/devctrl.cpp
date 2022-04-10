@@ -385,6 +385,8 @@ static void handleEventDispath(PNF_DATA pData)
 }
 void handleEventDispath_(PNF_DATA pData)
 {
+	if (pData->code < 150 || pData->code > 160)
+		return;
 	const int buflens = sizeof(UPubNode) + pData->bufferSize;
 	UPubNode* pubdata = (UPubNode*)new char[buflens];
 	if (pubdata && g_KernelQueueCs_Ptr && g_KernelQueue_Ptr && g_KjobQueue_Event)

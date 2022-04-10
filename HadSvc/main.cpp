@@ -32,9 +32,9 @@
 
 // 标志控制 - 后续config里面配置
 static bool kerne_mon = false;		// kernel采集
-static bool kerne_rootkit = false;	// rootkit接口
+static bool kerne_rootkit = true;	// rootkit接口
 static bool user_mod = true;		// user接口
-static bool etw_mon = true;			// user采集
+static bool etw_mon = false;		// user采集
 static bool grpc_send = false;		// grpc上报
 
 bool gethostip(RawData* ip_liststr)
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
 	std::shared_ptr<grpc::ChannelCredentials> channel_creds = grpc::SslCredentials(ssl_opts);
 	
 	// Grpc_SSL模式目前不支持 - 认证还有问题
-	// grpc::InsecureChannelCredentials() localhost
+	// grpc::InsecureChannelCredentials() localhost 192.168.0.105
 	static Grpc greeter(
 		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));	
 	proto::RawData rawData;
@@ -197,9 +197,9 @@ int main(int argc, char* argv[])
 		cmd.set_agentctrl(101);
 		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		cmd.Clear();
-		cmd.set_agentctrl(103);
-		greeter.Grpc_ReadDispatchHandle(cmd);
+		//cmd.Clear();
+		//cmd.set_agentctrl(103);
+		//greeter.Grpc_ReadDispatchHandle(cmd);
 
 		cmd.Clear();
 		cmd.set_agentctrl(108);

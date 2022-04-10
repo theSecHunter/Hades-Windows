@@ -353,7 +353,6 @@ ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer)
 			// Max_Process
 			if (Count > 2000)
 				break;
-
 		}
 	}
 	pOutBuffer[0].CountNum = Count;
@@ -464,6 +463,7 @@ int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request)
 		MmCopyVirtualMemory(targetProcess, request->bufferAddress, PsGetCurrentProcess(), request->targetAddress, request->bufferSize, UserMode, &readBytes);
 		ObDereferenceObject(targetProcess);
 	}
+	return 1;
 }
 int nf_KillProcess(ULONG hProcessId)
 {

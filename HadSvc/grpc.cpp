@@ -86,7 +86,6 @@ void Grpc::Grpc_taskwrite()
             break;;
 
         do {
-            MapMessage->clear();
 
             ggrpc_taskcs.lock();
             if (!ggrpc_taskid.size())
@@ -98,7 +97,6 @@ void Grpc::Grpc_taskwrite()
             ggrpc_taskid.pop();
             ggrpc_taskcs.unlock();
 
-            task_array_data.clear();
             if ((taskid >= 100) && (taskid < 200))
                 ((kMsgInterface*)g_kern_interface)->kMsg_taskPush(taskid, task_array_data);
             else if ((taskid >= 200) && (taskid < 300))
@@ -118,6 +116,8 @@ void Grpc::Grpc_taskwrite()
                 Grpc_writeEx(rawData);
                 ggrpc_writecs.unlock();
             }
+            MapMessage->clear();
+            task_array_data.clear();
         } while (true);
     }
 }
@@ -179,8 +179,6 @@ void Grpc::KerSublthreadProc()
             break;
 
         do {
-            MapMessage->clear();
-
             g_Ker_GrpcQueueCs_Ptr.lock();
             if (g_Ker_GrpcSubQueue_Ptr.empty())
             {
@@ -196,7 +194,7 @@ void Grpc::KerSublthreadProc()
             ggrpc_writecs.lock();
             Grpc_writeEx(rawData);
             ggrpc_writecs.unlock();
-
+            MapMessage->clear();
         } while (true);
     }
 }
@@ -231,8 +229,6 @@ void Grpc::EtwSublthreadProc()
             break;
 
         do {
-            MapMessage->clear();
-
             g_Etw_GrpcQueueCs_Ptr.lock();
             if (g_Etw_GrpcSubQueue_Ptr.empty())
             {
@@ -248,6 +244,7 @@ void Grpc::EtwSublthreadProc()
             ggrpc_writecs.lock();
             Grpc_writeEx(rawData);
             ggrpc_writecs.unlock();
+            MapMessage->clear();
 
         } while (true);
     }
