@@ -26,6 +26,8 @@ public:
 	void uMsg_EtwInit();
 	void uMsg_EtwClose();
 
+	bool GetEtwMonStatus();
+
 private:
 	void uMsg_SetTopicQueuePtr();
 	void uMsg_SetTopicQueueLockPtr();
@@ -33,4 +35,6 @@ private:
 	void uMsgEtwDataHandlerEx();
 
 	std::vector<HANDLE> m_topicthread;
+
+	bool etwStatus = false;
 };

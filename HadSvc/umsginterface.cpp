@@ -636,10 +636,16 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
 void uMsgInterface::uMsg_EtwInit()
 {
     g_user_etw.uf_init();
+    etwStatus = true;
 }
 void uMsgInterface::uMsg_EtwClose()
 {
     g_user_etw.uf_close();
+    etwStatus = false;
+}
+bool uMsgInterface::GetEtwMonStatus()
+{
+    return etwStatus;
 }
 
 void uMsgInterface::uMsg_Init() {

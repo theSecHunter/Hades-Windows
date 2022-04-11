@@ -705,19 +705,10 @@ void kMsgInterface::DriverInit()
             break;
         }
 
-        // Off/Enable try Network packte Monitor
-        status = g_kernel_Ioct.devctrl_OnMonitor();
-        if (0 > status)
-        {
-            cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
-            break;
-        }
-
         // Enable Event --> 内核提取出来数据以后处理类
         //g_kernel_Ioct.nf_setEventHandler((PVOID)&eventobj);
 
         status = 1;
-
     } while (false);
 
     if (!status)
@@ -725,11 +716,48 @@ void kMsgInterface::DriverInit()
         OutputDebugString(L"Init Driver Failuer");
         return;
     }
+
+    kInitStatus = true;
 }
 void kMsgInterface::DriverFree()
 {
     g_kernel_Ioct.devctrl_free();
+    kInitStatus = false;
 }
+void kMsgInterface::OnMonitor()
+{
+    int status = 0;
+    // Off/Enable try Network packte Monitor
+    status = g_kernel_Ioct.devctrl_OnMonitor();
+    if (0 > status)
+    {
+        cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+    }
+    kerStatus = true;
+    return;
+}
+void kMsgInterface::OffMonitor()
+{
+    int status = 0;
+    // Off/Enable try Network packte Monitor
+    status = g_kernel_Ioct.devctrl_OffMonitor();
+    if (0 > status)
+    {
+        cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+    }
+    kerStatus = false;
+    return;
+    
+}
+bool kMsgInterface::GetKerMonStatus()
+{
+    return kerStatus;
+}
+bool kMsgInterface::GetKerInitStatus()
+{
+    return kInitStatus;
+}
+
 void kMsgInterface::kMsg_Init() {
     // 初始化Topic
     g_kjobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);

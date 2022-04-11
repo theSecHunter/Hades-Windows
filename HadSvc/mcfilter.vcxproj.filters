@@ -63,6 +63,9 @@
     <ClCompile Include="msgassist.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="msgloop.cpp">
+      <Filter>pipserver</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="grpc.h">
@@ -94,6 +97,9 @@
     </ClInclude>
     <ClInclude Include="msgassist.h">
       <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="msgloop.h">
+      <Filter>pipserver</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

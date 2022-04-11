@@ -15,9 +15,12 @@ CDuiString MainWindow::GetSkinFolder()
 LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	LRESULT lRes = __super::OnCreate(uMsg, wParam, lParam, bHandled);
+	
+	// Create Meue
 	m_pMenu = new Menu();
 	m_pMenu->Create(m_hWnd, _T(""), WS_POPUP, WS_EX_TOOLWINDOW);
 	m_pMenu->ShowWindow(false);
+
 	return lRes;
 }
 LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -82,11 +85,22 @@ void MainWindow::Notify(TNotifyUI& msg)
 			}
 			else if (strControlName == _T("MainMonUserBtn"))
 			{//下发用户态监控指令
-
+				HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
+				COPYDATASTRUCT c2_;
+				c2_.dwData = 1;
+				c2_.cbData = 0;
+				c2_.lpData = NULL;
+				//发送消息
+				::SendMessage(m_SvcHwnd, WM_COPYDATA, NULL, (LPARAM)&c2_);
 			}
 			else if (strControlName == _T("MainMonKerBtn"))
 			{//下发内核态监控指令
-
+				HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
+				COPYDATASTRUCT c2_;
+				c2_.dwData = 2;
+				c2_.cbData = 0;
+				c2_.lpData = NULL;
+				::SendMessage(m_SvcHwnd, WM_COPYDATA, NULL, (LPARAM)&c2_);
 			}
 		}
 	}
@@ -95,5 +109,8 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT lRes = 0;
 	BOOL bHandled = TRUE;
+
+	
+
 	return __super::HandleMessage(uMsg, wParam, lParam);
 }

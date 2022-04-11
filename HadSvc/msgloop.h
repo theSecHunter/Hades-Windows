@@ -5,8 +5,6 @@ public:
 	WinMsgLoop();
 	~WinMsgLoop();
 
-	// Wait DlgView Recv C2
-	void MsgThreadC2HandlerLoop();
-private:
-
+	bool setKmsgLib(LPVOID ptrlib);
+	bool setUmsgLib(LPVOID ptrlib);
 };

@@ -24,6 +24,10 @@ public:
 	void kMsg_Free();
 	void DriverInit();
 	void DriverFree();
+	void OnMonitor();
+	void OffMonitor();
+	bool GetKerMonStatus();
+	bool GetKerInitStatus();
 
 private:
 	void kMsg_SetTopicQueuePtr();
@@ -33,4 +37,6 @@ private:
 	
 
 	std::vector<HANDLE> m_topicthread;
+	bool kerStatus = false;
+	bool kInitStatus = false;
 };

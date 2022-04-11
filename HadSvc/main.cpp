@@ -11,6 +11,7 @@
 #include "grpc.h"
 #include "umsginterface.h"
 #include "kmsginterface.h"
+#include "msgloop.h"
 
 #ifdef _WIN64
 	#ifdef _DEBUG
@@ -30,10 +31,14 @@
 	#endif
 #endif
 
-// 标志控制 - 后续config里面配置
+static kMsgInterface g_mainMsgKlib;
+static uMsgInterface g_mainMsgUlib;
+static WinMsgLoop	g_MsgControl;
+
+// Debug调试 标志控制
 static bool kerne_mon = false;		// kernel采集
-static bool kerne_rootkit = true;	// rootkit接口
-static bool user_mod = true;		// user接口
+static bool kerne_rootkit = false;	// rootkit接口
+static bool user_mod = false;		// user接口
 static bool etw_mon = false;		// user采集
 static bool grpc_send = false;		// grpc上报
 
@@ -172,8 +177,12 @@ int main(int argc, char* argv[])
 	// start grpc write thread
 	greeter.ThreadPool_Init();
 
-	kMsgInterface g_mainMsgKlib;
-	uMsgInterface g_mainMsgUlib;
+	// 设置Lib对象指针
+	if (false == g_MsgControl.setUmsgLib(&g_mainMsgUlib) || false == g_MsgControl.setKmsgLib(&g_mainMsgKlib))
+	{
+		OutputDebugString(L"设置MsgViewController指针失败");
+		return 0;
+	}
 	if (false == greeter.SetUMontiorLibPtr(&g_mainMsgUlib) || false == greeter.SetKMontiorLibPtr(&g_mainMsgKlib))
 	{
 		OutputDebugString(L"设置GrpcLib指针失败");
@@ -183,6 +192,7 @@ int main(int argc, char* argv[])
 	g_mainMsgUlib.uMsg_Init();
 	g_mainMsgKlib.kMsg_Init();
 
+	// Debug接口测试
 	if (true == grpc_send && (true == kerne_rootkit || true == kerne_mon))
 	{
 		g_mainMsgKlib.DriverInit();
@@ -197,7 +207,7 @@ int main(int argc, char* argv[])
 		cmd.set_agentctrl(101);
 		greeter.Grpc_ReadDispatchHandle(cmd);
 
-		//cmd.Clear();
+		//cmd.Clear(); -- 有硬编码不同系统会有问题Dpc
 		//cmd.set_agentctrl(103);
 		//greeter.Grpc_ReadDispatchHandle(cmd);
 
@@ -280,20 +290,21 @@ int main(int argc, char* argv[])
 	//	DispatchMessageW(&msg);
 	//}
 	getchar();
+
 	if (grocRead)
 	{
 		TerminateThread(grocRead, 0);
 		CloseHandle(grocRead);
 	}	
-	if (etw_mon)
+	if (g_mainMsgUlib.GetEtwMonStatus())
 		g_mainMsgUlib.uMsg_EtwClose();
-	if (user_mod)
-		g_mainMsgUlib.uMsg_Free();
-	else if (kerne_mon)
+	if (g_mainMsgKlib.GetKerMonStatus())
 	{
+		g_mainMsgKlib.OffMonitor();
 		g_mainMsgKlib.DriverFree();
-		g_mainMsgKlib.kMsg_Free();
 	}
 
+	g_mainMsgUlib.uMsg_Free();
+	g_mainMsgKlib.kMsg_Free();
 	return 0;
 }

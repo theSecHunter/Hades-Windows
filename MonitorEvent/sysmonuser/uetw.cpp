@@ -30,18 +30,20 @@ using namespace std;
 // Session - Guid - tracconfig
 typedef struct _TracGuidNode
 {
-    DWORD                         event_tracid;
-    EVENT_TRACE_PROPERTIES*       bufconfig;
+    DWORD                        event_tracid;
+    EVENT_TRACE_PROPERTIES*      bufconfig;
 }TracGuidNode, *PTracGuidNode;
 static AutoCriticalSection              g_ms;
 static map<TRACEHANDLE, TracGuidNode>   g_tracMap;
 static AutoCriticalSection              g_th;
 static vector<HANDLE>                   g_thrhandle;
 
+static vector<TRACEHANDLE>              g_procetrace;
+
 // Grpc task Queue_buffer ptr
 static std::queue<UPubNode*>*         g_EtwQueue_Ptr = NULL;
-static std::mutex*                      g_EtwQueueCs_Ptr = NULL;
-static HANDLE                           g_jobQueue_Event = NULL;
+static std::mutex*                    g_EtwQueueCs_Ptr = NULL;
+static HANDLE                         g_jobQueue_Event = NULL;
 
 // Buf_lens
 static int etw_networklens = 0;
@@ -853,12 +855,13 @@ static DWORD WINAPI tracDispaththread(LPVOID param)
     trace.Context = NULL;
     trace.EventRecordCallback = DispatchEventHandle;
 
-    TRACEHANDLE handle = OpenTrace(&trace);
-    if (handle == (TRACEHANDLE)INVALID_HANDLE_VALUE)
+    TRACEHANDLE ProcessTracehandle = OpenTrace(&trace);
+    if (ProcessTracehandle == (TRACEHANDLE)INVALID_HANDLE_VALUE)
         return 0;
     OutputDebugString(L"ProcessTrace Start");
-    ProcessTrace(&handle, 1, 0, 0);
-    CloseTrace(handle);
+    g_procetrace.push_back(ProcessTracehandle);
+    ProcessTrace(&ProcessTracehandle, 1, 0, 0);
+    CloseTrace(ProcessTracehandle);
     return 0;
 }
 bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
@@ -886,46 +889,73 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
     m_traceconfig->LogFileMode = EVENT_TRACE_REAL_TIME_MODE;
     m_traceconfig->LoggerNameOffset = sizeof(EVENT_TRACE_PROPERTIES);
 
+    EVENT_TRACE_PROPERTIES* temp_config = reinterpret_cast<EVENT_TRACE_PROPERTIES*>(new char[event_buffer]);
+    memcpy(temp_config, m_traceconfig, event_buffer);
+
+    bool memflag = false;
+    TracGuidNode tracinfo = { 0, };
+    tracinfo.bufconfig = temp_config;
+    tracinfo.event_tracid = dwEnableFlags;
+    
     /// NT Kernel Logger
-    status = StartTrace(&hSession, KERNEL_LOGGER_NAME, m_traceconfig);
+    status = StartTrace((PTRACEHANDLE)&hSession, KERNEL_LOGGER_NAME, temp_config);
     if (ERROR_SUCCESS != status)
     {
         /// 已经存在 Stop
         if (ERROR_ALREADY_EXISTS == status)
         {
-            status = ControlTrace(NULL, KERNEL_LOGGER_NAME, m_traceconfig, EVENT_TRACE_CONTROL_STOP);
+            status = ControlTrace(NULL, KERNEL_LOGGER_NAME, temp_config, EVENT_TRACE_CONTROL_STOP);
             if (SUCCEEDED(status))
             {
                 status = StartTrace(&hSession, KERNEL_LOGGER_NAME, m_traceconfig);
                 if (ERROR_SUCCESS != status)
                 {
-                    if (m_traceconfig)
-                        delete[] m_traceconfig;
-                    return false;
+                    printf("err %d\n", GetLastError());
                 }
+                tracinfo.bufconfig = m_traceconfig;
+                tracinfo.event_tracid = dwEnableFlags;
+                memflag = true;
             }
-        }
-        else
-        {
-            if (m_traceconfig)
-                delete[] m_traceconfig;
-            return false;
+            // 使用以后temp_config无效,使用m_traceconfig,释放
+            if (temp_config)
+            {
+                delete[] temp_config;
+                temp_config = nullptr;
+            }
         }
     }
 
-    DWORD ThreadID;
+    status = EnableTraceEx(
+        &provider.ProviderGuid,
+        NULL,
+        TraceSessionHandle,
+        EVENT_CONTROL_CODE_ENABLE_PROVIDER,
+        provider.Level,
+        provider.Keywords,
+        0,
+        0,
+        NULL);
+
+    // 没有使用m_traceconfig申请内存,释放
+    if (false == memflag)
+    {
+        if (m_traceconfig)
+        {
+            delete[] m_traceconfig;
+            m_traceconfig = nullptr;
+        }
+    }
+
+    g_ms.Lock();
+    g_tracMap[hSession] = tracinfo;
+    g_ms.Unlock();
+
+    DWORD ThreadID = 0;
     //初始化临界区
     g_th.Lock();
     HANDLE hThread = CreateThread(NULL, 0, tracDispaththread, (PVOID)dwEnableFlags, 0, &ThreadID);
     g_thrhandle.push_back(hThread);
     g_th.Unlock();
-
-    TracGuidNode tracinfo = { 0, };
-    tracinfo.bufconfig = m_traceconfig;
-    tracinfo.event_tracid = dwEnableFlags;
-    g_ms.Lock();
-    g_tracMap[hSession] = tracinfo;
-    g_ms.Unlock();
 
     OutputDebugString(L"Register TracGuid Success");
     return true;
@@ -942,39 +972,33 @@ bool UEtw::uf_init()
         EVENT_TRACE_FLAG_THREAD | \
         EVENT_TRACE_FLAG_IMAGE_LOAD | \
         EVENT_TRACE_FLAG_REGISTRY))
-        uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
-            EVENT_TRACE_FLAG_PROCESS | \
-            EVENT_TRACE_FLAG_THREAD | \
-            EVENT_TRACE_FLAG_IMAGE_LOAD | \
-            EVENT_TRACE_FLAG_REGISTRY);
+        return 0;
     return 1;
 #else
     // 目前使用用一个Session: 优点不用管理，缺点没办法单独监控某个事件。
     // 如果单独监控，创建多个Session来管理，注册多个uf_RegisterTrace即可。
     // EVENT_TRACE_FLAG_SYSTEMCALL | EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT
-
     if (!uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
         EVENT_TRACE_FLAG_IMAGE_LOAD | \
         EVENT_TRACE_FLAG_REGISTRY))
-        uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
-            EVENT_TRACE_FLAG_PROCESS | \
-            EVENT_TRACE_FLAG_THREAD | \
-            EVENT_TRACE_FLAG_IMAGE_LOAD | \
-            EVENT_TRACE_FLAG_REGISTRY);
+        return 0;
     return 1;
 #endif
 }
 bool UEtw::uf_close()
 {
     map<TRACEHANDLE, TracGuidNode>::iterator  iter;
-
     for (iter = g_tracMap.begin(); iter != g_tracMap.end();)
     {
-
         if (iter->first && iter->second.bufconfig)
-            ControlTrace(iter->first, KERNEL_LOGGER_NAME, iter->second.bufconfig, EVENT_TRACE_CONTROL_STOP);
+        {
+            StopTrace(iter->first, KERNEL_LOGGER_NAME, iter->second.bufconfig);
+            CloseTrace(iter->first);
+            //ControlTrace(iter->first, KERNEL_LOGGER_NAME, iter->second.bufconfig, EVENT_TRACE_CONTROL_STOP);
+        }
+
 
         if (iter->second.bufconfig)
         {
@@ -992,12 +1016,12 @@ bool UEtw::uf_close()
     g_th.Lock();
     for (i = 0; i < g_thrhandle.size(); ++i)
     {
-        WaitForSingleObject(g_thrhandle[i], 2000);
+        TerminateProcess(g_thrhandle[i], 0);
+        WaitForSingleObject(g_thrhandle[i], 1000);
         CloseHandle(g_thrhandle[i]);
     }
     g_thrhandle.clear();
     g_th.Unlock();
-
     return true;
 }
 

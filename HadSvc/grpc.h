@@ -61,7 +61,7 @@ public:
 		if (m_stream)
 		{
 			m_stream->WritesDone();
-			m_context.TryCancel();
+			//m_context.TryCancel();
 			//m_stream->Finish();  ×èÈû
 			m_stream = nullptr;
 		}

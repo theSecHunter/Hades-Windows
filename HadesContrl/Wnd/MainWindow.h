@@ -18,6 +18,6 @@ public:
 	LRESULT OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
 private:
-	Menu* m_pMenu;
+	Menu*	m_pMenu = nullptr;
 };
 
