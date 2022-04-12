@@ -5,8 +5,8 @@
 
 - v1.0单独引擎版本，存在许多问题，Rootkit接口Win10 1909进行测试。
 
-- v2.0开发中，对v1.0的引擎重构，采集器构建用户态和内核态lib，Svc业务剥离灵活，后期即使支持非grpc如epoll/asio接口也可以灵活多接口推送采集数据。修正v1.0存在的诸多问题，添加Duilib界面和完善Win7/Win8/WIn10系统兼容性。
-- v2.0 Hades_Win兼容Linux数据上报，添加Go_Server完整数据格式解析处理，采集数据通过Grpc上报至go_server进行解析即可，添加了近30多个结构体，支持Server主动下发采集任务，支持Server管理Client监控/开启，还未引入主分支，详细见: https://github.com/theSecHunter/Hades-Linux
+- v2.0开发中，对v1.0的引擎重构，采集器构建用户态和内核态lib，Svc业务剥离灵活，如Server使用epoll/asio，少量代码就可以同将采集数据推送至不同的Server。修正v1.0存在的诸多问题，添加Duilib界面和完善Win7/Win8/WIn10系统兼容性。
+- v2.0 Hades_Win兼容Linux数据上报，添加Go_Server完整数据格式解析处理，采集数据目前通过Grpc上报至Go_server进行解析即可，数据还有很多未清洗，添加了近30多个结构体，支持Server主动下发采集任务命令30多条，Rootkit数据采集平台有待完善。支持Server管理Client监控/开启，Go_Server还未引入主分支详细见: https://github.com/theSecHunter/Hades-Linux
 
 ##### Kernel
 
