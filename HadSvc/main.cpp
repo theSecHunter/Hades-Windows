@@ -31,9 +31,9 @@
 	#endif
 #endif
 
-static kMsgInterface g_mainMsgKlib;
-static uMsgInterface g_mainMsgUlib;
-static WinMsgLoop	g_MsgControl;
+static kMsgInterface	g_mainMsgKlib;
+static uMsgInterface	g_mainMsgUlib;
+static WinMsgLoop		g_MsgControl;
 
 // Debug调试 标志控制
 static bool kerne_mon = false;		// kernel采集
@@ -299,10 +299,9 @@ int main(int argc, char* argv[])
 	if (g_mainMsgUlib.GetEtwMonStatus())
 		g_mainMsgUlib.uMsg_EtwClose();
 	if (g_mainMsgKlib.GetKerMonStatus())
-	{
 		g_mainMsgKlib.OffMonitor();
-		g_mainMsgKlib.DriverFree();
-	}
+	if (false == g_mainMsgKlib.GetKerInitStatus())
+		g_mainMsgKlib.DriverInit();
 
 	g_mainMsgUlib.uMsg_Free();
 	g_mainMsgKlib.kMsg_Free();

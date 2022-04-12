@@ -288,7 +288,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
         {
             g_kerdata_cs.unlock();
             OutputDebugString(L"Grpc√ª…Ë÷√∂©‘ƒ÷∏’Î");
-            break;
+            return;
         }
 
         std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();

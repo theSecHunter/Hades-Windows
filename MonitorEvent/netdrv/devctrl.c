@@ -571,6 +571,39 @@ VOID devctrl_clean()
 		sl_lock(&g_sIolock, &lh);
 	}
 	sl_unlock(&lh);
+
+	// clearn pennding read
+	PIRP                irp = NULL;
+	PLIST_ENTRY         pIrpEntry;
+	sl_lock(&g_sIolock, &lh);
+	if (IsListEmpty(&g_pendedIoRequests))
+	{
+		sl_unlock(&lh);
+		return;
+	}
+	pIrpEntry = g_pendedIoRequests.Flink;
+	while (pIrpEntry != &g_pendedIoRequests)
+	{
+		irp = CONTAINING_RECORD(pIrpEntry, IRP, Tail.Overlay.ListEntry);
+
+		if (IoSetCancelRoutine(irp, NULL))
+		{
+			// ÒÆ³ý
+			RemoveEntryList(pIrpEntry);
+			irp->IoStatus.Information = 0;
+			irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
+			IoCompleteRequest(irp, IO_NO_INCREMENT);
+			return;
+			break;
+		}
+		else
+		{
+			KdPrint((DPREFIX"devctrl_serviceReads: skipping cancelled IRP\n"));
+			pIrpEntry = pIrpEntry->Flink;
+		}
+	}
+
+	sl_unlock(&lh);
 }
 VOID devctrl_free()
 {

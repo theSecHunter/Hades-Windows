@@ -41,7 +41,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				if (false == kStatus)
 					g_klib->OnMonitor();
 				else if (true == kStatus)
+				{
 					g_klib->OffMonitor();
+					if (true == g_klib->GetKerInitStatus())
+						g_klib->DriverFree();
+				}
 			}
 			break;
 			case 3:

@@ -101,6 +101,70 @@ void Grpc::Grpc_taskwrite()
                 ((kMsgInterface*)g_kern_interface)->kMsg_taskPush(taskid, task_array_data);
             else if ((taskid >= 200) && (taskid < 300))
                 ((uMsgInterface*)g_user_interface)->uMsg_taskPush(taskid, task_array_data);
+            else if (401 == taskid)
+            {//用户态开关
+                auto g_ulib = ((uMsgInterface*)g_user_interface);
+                if (!g_ulib)
+                    return;
+                task_array_data.clear();
+                auto uStatus = g_ulib->GetEtwMonStatus();
+                if (false == uStatus)
+                {
+                    g_ulib->uMsg_EtwInit();
+                    task_array_data[0] = "User_Etw MonitorControl Enable";
+                }
+                else
+                    task_array_data[0] = "User_Etw MonitorControl Runing";
+            }
+            else if (402 == taskid) {
+                auto g_ulib = ((uMsgInterface*)g_user_interface);
+                if (!g_ulib)
+                    return;
+                task_array_data.clear();
+                auto uStatus = g_ulib->GetEtwMonStatus();
+                if (true == uStatus)
+                {
+                    task_array_data[0] = "User_Etw MonitorControl Disable";
+                    g_ulib->uMsg_EtwClose();
+                }
+                else
+                    task_array_data[0] = "User_Etw MonitorControl NotActivated";
+            }
+            else if (403 == taskid) {
+                auto g_klib = ((kMsgInterface*)g_kern_interface);
+                if (!g_klib)
+                    return;
+                task_array_data.clear();
+                if (false == g_klib->GetKerInitStatus())
+                    g_klib->DriverInit();
+                auto kStatus = g_klib->GetKerMonStatus();
+                if (false == kStatus)
+                {
+                    g_klib->OnMonitor();
+                    task_array_data[0] = "Kernel MonitorControl Enable";
+                }
+                else
+                    task_array_data[0] = "Kernel MonitorControl Runing";
+            }
+            else if (404 == taskid)
+            {//内核态开关
+                auto g_klib = ((kMsgInterface*)g_kern_interface);
+                if (!g_klib)
+                    return;
+                task_array_data.clear();
+                if (false == g_klib->GetKerInitStatus())
+                    g_klib->DriverInit();
+                auto kStatus = g_klib->GetKerMonStatus();
+                if (true == kStatus)
+                {
+                    g_klib->OffMonitor();
+                    task_array_data[0] = "Kernel MonitorControl Disable";
+                }
+                else
+                    task_array_data[0] = "Kernel MonitorControl NotActivated";
+                if (true == g_klib->GetKerInitStatus())
+                    g_klib->DriverFree();
+            }
             else
                 return;
 

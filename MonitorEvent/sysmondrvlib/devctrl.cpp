@@ -67,12 +67,12 @@ int DevctrlIoct::devctrl_init()
 	m_threadobjhandler = NULL;
 	m_alpcthreadobjhandler = NULL;
 	m_dwthreadid = 0;
+	g_exitthread = false;
 	return 1;
 }
 void DevctrlIoct::devctrl_free()
 {
 	g_exitthread = true;
-	Sleep(1000);
 	if (m_threadobjhandler)
 	{
 		TerminateThread(m_threadobjhandler, 0);
@@ -206,6 +206,12 @@ bool DevctrlIoct::devctrl_sendioct(
 	if (!g_hDevice.m_h)
 		return false;
 
+	OVERLAPPED ol;
+	AutoEventHandle hEvent;
+
+	memset(&ol, 0, sizeof(ol));
+	ol.hEvent = hEvent;
+
 	OutputDebugString(L"devctrl_sendioct entablMonitor");
 	BOOL status = DeviceIoControl(
 		g_hDevice,
@@ -214,14 +220,21 @@ bool DevctrlIoct::devctrl_sendioct(
 		InBufSize,
 		lpOutBuffer,
 		OutBufSize,
-		&dSize,
-		NULL
+		NULL,
+		&ol
 	);
-	if (!status)
+	DWORD dwBytesReturned = 0;
+	if (!GetOverlappedResult(g_hDevice, &ol, &dwBytesReturned, TRUE))
 	{
-		OutputDebugString(L"devctrl_sendioct Error End");
-		return false;
-	}	
+		g_hDevice.Close();
+		return NF_STATUS_FAIL;
+	}
+
+	if (dwBytesReturned != OutBufSize)
+	{
+		g_hDevice.Close();
+		return NF_STATUS_FAIL;
+	}
 	return true;
 }
 
@@ -385,7 +398,7 @@ static void handleEventDispath(PNF_DATA pData)
 }
 void handleEventDispath_(PNF_DATA pData)
 {
-	if (pData->code < 150 || pData->code > 160)
+	if (pData && (pData->code < 150 || pData->code > 160))
 		return;
 	const int buflens = sizeof(UPubNode) + pData->bufferSize;
 	UPubNode* pubdata = (UPubNode*)new char[buflens];

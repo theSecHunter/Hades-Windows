@@ -925,17 +925,6 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
         }
     }
 
-    status = EnableTraceEx(
-        &provider.ProviderGuid,
-        NULL,
-        TraceSessionHandle,
-        EVENT_CONTROL_CODE_ENABLE_PROVIDER,
-        provider.Level,
-        provider.Keywords,
-        0,
-        0,
-        NULL);
-
     // 没有使用m_traceconfig申请内存,释放
     if (false == memflag)
     {

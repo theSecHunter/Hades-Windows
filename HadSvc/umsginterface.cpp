@@ -219,7 +219,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             {
                 OutputDebugString(L"Grpc√ª…Ë÷√∂©‘ƒ÷∏’Î");
                 g_etwdata_cs.unlock();
-                break;
+                return;
             }
 
             std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
