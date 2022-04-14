@@ -89,12 +89,12 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             return;
         }
         etw_taskdata = g_etwdata_queue.front();
+        g_etwdata_queue.pop();
         if (!etw_taskdata)
         {
             g_etwdata_cs.unlock();
             return;
         }
-        g_etwdata_queue.pop();
         const int taskid = etw_taskdata->taskid;
         switch (taskid)
         {

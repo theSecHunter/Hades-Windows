@@ -38,12 +38,12 @@ static map<TRACEHANDLE, TracGuidNode>   g_tracMap;
 static AutoCriticalSection              g_th;
 static vector<HANDLE>                   g_thrhandle;
 
-static vector<TRACEHANDLE>              g_procetrace;
-
 // Grpc task Queue_buffer ptr
 static std::queue<UPubNode*>*         g_EtwQueue_Ptr = NULL;
 static std::mutex*                    g_EtwQueueCs_Ptr = NULL;
 static HANDLE                         g_jobQueue_Event = NULL;
+static bool                           g_etwevent_exit = false;
+static TRACEHANDLE                    g_processTracehandle;
 
 // Buf_lens
 static int etw_networklens = 0;
@@ -83,6 +83,7 @@ UEtw::UEtw()
     etw_imageinfolens = sizeof(UPubNode) + sizeof(UEtwImageInfo);
     etw_regtabinfolens = sizeof(UPubNode) + sizeof(UEtwRegisterTabInfo);
     etw_fileioinfolens = sizeof(UPubNode) + sizeof(UEtwFileIoTabInfo);
+    g_etwevent_exit = false;
 }
 UEtw::~UEtw()
 {
@@ -124,7 +125,6 @@ DWORD uf_GetNetWrokEventStr(wstring& propName)
 
 // 生产者：Etw事件回调 - 数据推送至订阅消息队列(消费者)
 void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
-
     UEtwNetWork etwNetInfo;
     RtlZeroMemory(&etwNetInfo, sizeof(UEtwNetWork));
 
@@ -790,6 +790,10 @@ void ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
             lstrcpynW(etwimagemod_info.FileName, value, MAX_PATH);
         }
     }
+    //if (NULL == wcsstr(L"\\Windows\\System32\\", etwimagemod_info.FileName))
+    //    return;
+    //else if (NULL == wcsstr(L"\\Windows\\SysWOW64\\", etwimagemod_info.FileName))
+    //    return;
 
     UPubNode* EtwData = (UPubNode*)new char[etw_imageinfolens];
     if (!EtwData)
@@ -809,6 +813,12 @@ void ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 }
 void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
 {
+    if (true == g_etwevent_exit)
+    {
+        if (g_processTracehandle)
+            CloseTrace(g_processTracehandle);
+        return;
+    }
     WCHAR sguid[64];
     auto& header = pEvent->EventHeader;
     ::StringFromGUID2(header.ProviderId, sguid, _countof(sguid));
@@ -847,6 +857,7 @@ void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
 // Session注册启动/跟踪/回调
 static DWORD WINAPI tracDispaththread(LPVOID param)
 {
+    g_etwevent_exit = false;
     EVENT_TRACE_LOGFILE trace;
     memset(&trace, 0, sizeof(trace));
     trace.LoggerName = const_cast<wchar_t*>(KERNEL_LOGGER_NAME);
@@ -855,13 +866,12 @@ static DWORD WINAPI tracDispaththread(LPVOID param)
     trace.Context = NULL;
     trace.EventRecordCallback = DispatchEventHandle;
 
-    TRACEHANDLE ProcessTracehandle = OpenTrace(&trace);
-    if (ProcessTracehandle == (TRACEHANDLE)INVALID_HANDLE_VALUE)
+    g_processTracehandle = OpenTrace(&trace);
+    if (g_processTracehandle == (TRACEHANDLE)INVALID_HANDLE_VALUE)
         return 0;
     OutputDebugString(L"ProcessTrace Start");
-    g_procetrace.push_back(ProcessTracehandle);
-    ProcessTrace(&ProcessTracehandle, 1, 0, 0);
-    CloseTrace(ProcessTracehandle);
+    ProcessTrace(&g_processTracehandle, 1, 0, 0);
+    CloseTrace(g_processTracehandle);
     return 0;
 }
 bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
@@ -910,7 +920,9 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
                 status = StartTrace(&hSession, KERNEL_LOGGER_NAME, m_traceconfig);
                 if (ERROR_SUCCESS != status)
                 {
+                    OutputDebugString(L"启动EtwStartTrace失败");
                     printf("err %d\n", GetLastError());
+                    return;
                 }
                 tracinfo.bufconfig = m_traceconfig;
                 tracinfo.event_tracid = dwEnableFlags;
@@ -978,16 +990,20 @@ bool UEtw::uf_init()
 }
 bool UEtw::uf_close()
 {
+    //虽然做了停止，但是ProcessTrace仍会阻塞，但是logman -ets query "NT Kernel Logger"查询已经关闭了
+    //所以这里要在ProcessTrace回调函数做退出标志位，从Event里面关闭ProcessTrace即可.
+    g_etwevent_exit = true;
+    // 停止Etw_Session
     map<TRACEHANDLE, TracGuidNode>::iterator  iter;
     for (iter = g_tracMap.begin(); iter != g_tracMap.end();)
     {
         if (iter->first && iter->second.bufconfig)
         {
-            StopTrace(iter->first, KERNEL_LOGGER_NAME, iter->second.bufconfig);
+            ControlTrace(iter->first, KERNEL_LOGGER_NAME, iter->second.bufconfig, EVENT_TRACE_CONTROL_STOP);
             CloseTrace(iter->first);
-            //ControlTrace(iter->first, KERNEL_LOGGER_NAME, iter->second.bufconfig, EVENT_TRACE_CONTROL_STOP);
         }
-
+        else
+            ControlTrace(NULL, KERNEL_LOGGER_NAME, iter->second.bufconfig, EVENT_TRACE_CONTROL_STOP);
 
         if (iter->second.bufconfig)
         {
@@ -1000,12 +1016,9 @@ bool UEtw::uf_close()
         g_ms.Unlock();
     }
 
-    size_t  i = 0;
-
     g_th.Lock();
-    for (i = 0; i < g_thrhandle.size(); ++i)
+    for (size_t i = 0; i < g_thrhandle.size(); ++i)
     {
-        TerminateProcess(g_thrhandle[i], 0);
         WaitForSingleObject(g_thrhandle[i], 1000);
         CloseHandle(g_thrhandle[i]);
     }

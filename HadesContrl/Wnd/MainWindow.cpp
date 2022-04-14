@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "../SystemPublic.h"
 
 LPCTSTR MainWindow::GetWindowClassName() const
 {
@@ -20,6 +21,8 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 	m_pMenu = new Menu();
 	m_pMenu->Create(m_hWnd, _T(""), WS_POPUP, WS_EX_TOOLWINDOW);
 	m_pMenu->ShowWindow(false);
+
+	//SystemPublic sysPu;
 
 	return lRes;
 }
@@ -51,6 +54,11 @@ void MainWindow::Notify(TNotifyUI& msg)
 			else if (strControlName == _T("MainMonCveBtn"))
 			{//规则配置
 
+			}
+			//最小化
+			else if (strControlName == _T("MainMinsizeBtn"))
+			{
+				::ShowWindow(m_hWnd, SW_MINIMIZE);
 			}
 		}
 		else if (strClassName == DUI_CTR_OPTION)

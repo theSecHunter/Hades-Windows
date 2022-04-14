@@ -142,12 +142,12 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             return;
         }
         pubnode = g_kerdata_queue.front();
+        g_kerdata_queue.pop();  
         if (!pubnode)
         {
             g_kerdata_cs.unlock();
-            break;
+            return;
         }
-        g_kerdata_queue.pop();  
         const int taskid = pubnode->taskid;
         switch (taskid)
         {
