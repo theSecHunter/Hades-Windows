@@ -922,7 +922,7 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
                 {
                     OutputDebugString(L"∆Ù∂ØEtwStartTrace ß∞‹");
                     printf("err %d\n", GetLastError());
-                    return;
+                    return 0;
                 }
                 tracinfo.bufconfig = m_traceconfig;
                 tracinfo.event_tracid = dwEnableFlags;

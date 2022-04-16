@@ -1,5 +1,5 @@
 #include "MainWindow.h"
-#include "../SystemPublic.h"
+#include "../Systeminfolib.h"
 
 LPCTSTR MainWindow::GetWindowClassName() const
 {
@@ -22,7 +22,7 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 	m_pMenu->Create(m_hWnd, _T(""), WS_POPUP, WS_EX_TOOLWINDOW);
 	m_pMenu->ShowWindow(false);
 
-	//SystemPublic sysPu;
+	Systeminfolib libobj;
 
 	return lRes;
 }
@@ -117,8 +117,5 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT lRes = 0;
 	BOOL bHandled = TRUE;
-
-	
-
 	return __super::HandleMessage(uMsg, wParam, lParam);
 }
