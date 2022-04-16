@@ -7,6 +7,7 @@
 #include <strmif.h>
 #include <uuids.h>
 #include <iostream>
+#include <Vfw.h>
 
 #pragma comment(lib,"Strmiids.lib")
 #pragma comment(lib,"Bthprops.lib") 
@@ -456,8 +457,6 @@ void USysBaseInfo::GetDisplayCardInfo(std::vector<std::string>& Cardinfo)
             {
                 size = sizeof(sz);
                 lResult = RegQueryValueExA(key2, "DeviceDesc", 0, &type, (LPBYTE)sz, &size);
-                //chCardName[j] = sz;
-                //保存显卡名称 
                 Cardinfo.push_back(sz);
             };
             RegCloseKey(key2);
@@ -470,7 +469,6 @@ void USysBaseInfo::GetDisplayCardInfo(std::vector<std::string>& Cardinfo)
 }
 // View: 系统CPU
 #ifdef _WIN64
-
 #else
 long GetCPUFreq()
 {//获取CPU频率,单位: MHZ  
@@ -489,7 +487,7 @@ long GetCPUFreq()
     return (over - start) / 50000;
 }
 #endif // _WIN64
-void USysBaseInfo::GetManID(std::string& cpuinfo)
+void USysBaseInfo::GetSysCpuInfo(std::string& cpuinfo)
 {//制造商信息
     DWORD deax = 10;
     DWORD debx = 20;
@@ -508,15 +506,12 @@ void USysBaseInfo::GetManID(std::string& cpuinfo)
     cpuinfo += " ";
     cpuinfo += cProStr;
 }
-
-
-
-// View: 系统电池 - (笔记本)内置和外置 - 台式 用于区分笔记本或者台式电脑
-int USysBaseInfo::Getbattery(std::vector<std::string>& batteryinfo) {
+// View: 系统电池 - (笔记本)内置和外置 - 台式 也可以用于区分笔记本或台式类型
+void USysBaseInfo::Getbattery(std::vector<std::string>& batteryinfo) {
     // 获取具体电池使用时间-电量
     SYSTEM_POWER_STATUS powerStatus;
     if (GetSystemPowerStatus(&powerStatus) == 0)
-        return 0;
+        return;
     CStringA tmpstr, tmpstr1;
     tmpstr.Format("%d_", (int)powerStatus.BatteryLifePercent);  // 电量
     tmpstr1 += tmpstr;
@@ -527,12 +522,20 @@ int USysBaseInfo::Getbattery(std::vector<std::string>& batteryinfo) {
     tmpstr.Format("%d_", (int)powerStatus.BatteryFullLifeTime);
     tmpstr1 += tmpstr;
     batteryinfo.push_back(tmpstr1.GetBuffer());
-    return 1;
 }
 // View: 系统网卡
+void USysBaseInfo::GetNetworkCard(std::vector<std::string>& networkcar)
+{
 
-// Monitor: 系统蓝牙
-int USysBaseInfo::GetBluetooth(void)
+}
+
+// 时间转换
+double FILETIMEDouble(const _FILETIME& filetime)
+{
+    return double(filetime.dwHighDateTime * 4.294967296e9) + double(filetime.dwLowDateTime);
+}
+// Monitor/View: 系统蓝牙
+void USysBaseInfo::GetBluetooth(std::vector<std::string>& blueinfo)
 {
     HBLUETOOTH_RADIO_FIND hbf = NULL;
     HANDLE hbr = NULL;
@@ -581,9 +584,9 @@ int USysBaseInfo::GetBluetooth(void)
         brfind = BluetoothFindNextRadio(hbf, &hbr);//通过BluetoothFindFirstRadio得到的HBLUETOOTH_RADIO_FIND句柄hbf来枚举搜索下一个本地蓝牙收发器，得到可用于BluetoothFindFirstDevice的句柄hbr。    
     }
     BluetoothFindRadioClose(hbf);//使用完后记得关闭HBLUETOOTH_RADIO_FIND句柄hbf。  
-    return 0;
+    return;
 }
-// Monitor: 系统摄像头 - 支持的分辨率
+// Monitor/View: 系统摄像头 - 支持的分辨率
 std::vector<std::pair<int, int>> GetCameraSupportResolutions(IBaseFilter* pBaseFilter)
 {
     HRESULT hr = 0;
@@ -671,7 +674,7 @@ std::vector<std::pair<int, int>> GetCameraSupportResolutions(IBaseFilter* pBaseF
     }
     return result;
 }
-std::vector<CameraInfo> USysBaseInfo::GetCameraInfoList()
+void USysBaseInfo::GetCameraInfoList(std::vector<std::string>& cameraInfo)
 {
     std::vector<CameraInfo> nameList;
     HRESULT hr;
@@ -683,7 +686,7 @@ std::vector<CameraInfo> USysBaseInfo::GetCameraInfoList()
     if (FAILED(hr))
     {
         pSysDevEnum->Release();
-        return nameList;
+        return;
     }
 
     IEnumMoniker* pEnumCat = NULL;
@@ -692,7 +695,7 @@ std::vector<CameraInfo> USysBaseInfo::GetCameraInfoList()
     if (FAILED(hr))
     {
         pSysDevEnum->Release();
-        return nameList;
+        return;
     }
 
     IMoniker* pMoniker = NULL;
@@ -723,6 +726,7 @@ std::vector<CameraInfo> USysBaseInfo::GetCameraInfoList()
                 tmpstr.Format("%ws", varName.bstrVal);
                 info.cameraName = tmpstr.GetBuffer();
                 nameList.push_back(info);
+                cameraInfo.push_back(tmpstr.GetBuffer());
             }
             VariantClear(&varName);
             pFilter->Release();
@@ -732,142 +736,145 @@ std::vector<CameraInfo> USysBaseInfo::GetCameraInfoList()
     }
     pEnumCat->Release();
 
-    return nameList;
+    //return nameList;
 }
-// Monitor: 系统麦克风 - 型号 - 状态
-// Monitor: 
-void USysBaseInfo::GetSysDynCpuTempera()
+void USysBaseInfo::GetCamerStatus()
+{
+    auto nStatus = SendMessage(NULL, WM_CAP_DRIVER_CONNECT, 0, 0);
+    if (false == nStatus)
+    {
+
+    }
+    else
+    {
+
+    }
+}
+// Monitor/View: 系统麦克风 - 型号 - 状态
+void USysBaseInfo::GetMicroPhone(std::vector<std::string>& micrphone)
+{
+}
+
+// Monitor: 主板温度
+void USysBaseInfo::GetSysDynManBoardTempera()
 {
 
 }
-void USysBaseInfo::GetSysDynMonTempera()
-{
-}
-void USysBaseInfo::GetSysDynManBoardTempera()
-{
-}
+// Monitor: 磁盘温度
 void USysBaseInfo::GetSysDynDiskTempera()
 {
+
 }
-void USysBaseInfo::GetSysDynCpuUtilizaTempera()
+// Monitor: Cpu温度
+void USysBaseInfo::GetSysDynCpuTempera()
 {
 }
-void USysBaseInfo::GetSysDynSysMemTempera()
-{
-}
-void USysBaseInfo::GetSysDynDiskIoTempera()
-{
-}
+// Monitor: Gpu温度
 void USysBaseInfo::GetSysDynGpuTempera()
 {
+
+}
+
+// Monitor: Cpu占用率
+double USysBaseInfo::GetSysDynCpuUtiliza()
+{
+    // 获取空闲时间 内核 用户
+    _FILETIME idleTime, kernelTime, userTime;
+    GetSystemTimes(&idleTime, &kernelTime, &userTime);
+    // Creates or opens a named or unnamed event object.
+    // 创建或打开一个命名的或无名的事件对象。
+    // failure 0  | sucess handle
+    HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    // 等待1000毫秒，内核对象会更精确
+    WaitForSingleObject(hEvent, 1000);
+    // 获取新的时间
+    _FILETIME newidleTime, newkernelTime, newuserTime;
+    GetSystemTimes(&newidleTime, &newkernelTime, &newuserTime);
+    // 转换时间
+    double	doldidleTime = FILETIMEDouble(idleTime);
+    double	doldkernelTime = FILETIMEDouble(kernelTime);
+    double	dolduserTime = FILETIMEDouble(userTime);
+    double	dnewidleTime = FILETIMEDouble(newidleTime);
+    double	dnewkernelTime = FILETIMEDouble(newkernelTime);
+    double	dnewuserTime = FILETIMEDouble(newuserTime);
+    double	Times = dnewidleTime - doldidleTime;
+    double	Kerneltime = dnewkernelTime - doldkernelTime;
+    double	usertime = dnewuserTime - dolduserTime;
+    // 计算使用率
+    double Cpurate = (100.0 - Times / (Kerneltime + usertime) * 100.0);
+    return Cpurate;
+    //CString m_Cpusyl;
+    //m_Cpusyl.Format(L"%0.2lf", Cpurate);
+    //m_Cpusyl += "%";
+}
+// Monitor: 内存占用率
+void USysBaseInfo::GetSysDynSysMem()
+{
+    // 创建结构体对象 获取内存信息函数
+    MEMORYSTATUS memStatus;
+    GlobalMemoryStatus(&memStatus);
+    CString m_MemoryBFB, m_Pymemory, m_Pagesize, m_Memorysize, m_Kymemorysize;
+    // 当前占用率 Occupancy rate
+    m_MemoryBFB.Format(L"%u", memStatus.dwMemoryLoad);
+    m_MemoryBFB += "%";
+    // 已使用物理内存大小 Physical memory size
+    size_t memPhysize = memStatus.dwTotalPhys - memStatus.dwAvailPhys;
+    m_Pymemory.Format(L"%u", (memPhysize / 1024 / 1024 / 8));
+    m_Pymemory += " MB";
+    // 文件交换大小 Size of the file exchange
+    m_Pagesize.Format(L"%u", (memStatus.dwAvailPageFile / 1024 / 1024 / 8));
+    m_Pagesize += " MB";
+    // 虚拟内存大小 Virtual memory size
+    m_Memorysize.Format(L"%u", (memStatus.dwTotalVirtual / 1024 / 1024 / 8));
+    m_Memorysize += " MB";
+    // 可用虚拟内存大小 Available virtual memory size
+    m_Kymemorysize.Format(L"%d", (memStatus.dwAvailVirtual / 1024 / 1024 / 8));
+    m_Kymemorysize += " MB";
+}
+// Monitor: 磁盘占用率
+void USysBaseInfo::GetSysDynDiskIo()
+{
+
+}
+// Monitor: Gpu占用率
+void USysBaseInfo::GetSysDynGpu()
+{
+
+}
+// Mem优化
+void USysBaseInfo::MemSwap()
+{
+    CString str, str1;
+    str = "一键加速成功！ 节省了空间：  ";
+    // 1. 获取当前已用物理内存状态
+    MEMORYSTATUSEX stcMemStatusEx = { 0 };
+    stcMemStatusEx.dwLength = sizeof(stcMemStatusEx);
+    GlobalMemoryStatusEx(&stcMemStatusEx);
+    DWORDLONG preUsedMem = stcMemStatusEx.ullTotalPhys - stcMemStatusEx.ullAvailPhys;
+    // 2. 清理内存
+    DWORD dwPIDList[1000] = { 0 };
+    DWORD bufSize = sizeof(dwPIDList);
+    DWORD dwNeedSize = 0;
+    // EnumProcesses(dwPIDList, bufSize, &dwNeedSize);
+    for (DWORD i = 0; i < dwNeedSize / sizeof(DWORD); ++i)
+    {
+        HANDLE hProccess = OpenProcess(PROCESS_SET_QUOTA, false, dwPIDList[i]);
+        SetProcessWorkingSetSize(hProccess, -1, -1);
+    }
+    // 3. 获取清理后的内存状态
+    GlobalMemoryStatusEx(&stcMemStatusEx);
+    DWORDLONG afterCleanUserdMem = stcMemStatusEx.ullTotalPhys - stcMemStatusEx.ullAvailPhys;
+    // 4. 计算并弹出清理成功
+    DWORDLONG CleanofSuccess = preUsedMem - afterCleanUserdMem;
+    str1.Format(L"%d", (CleanofSuccess / 1024 / 1024 / 8));
+    str = str + str1 + " MB";
 }
 
 USysBaseInfo::USysBaseInfo()
 {
 }
-
 USysBaseInfo::~USysBaseInfo()
 {
 }
 
-// Mem优化
-void MemSwap()
-{
-	CString str, str1;
-	str = "一键加速成功！ 节省了空间：  ";
-	// 1. 获取当前已用物理内存状态
-	MEMORYSTATUSEX stcMemStatusEx = { 0 };
-	stcMemStatusEx.dwLength = sizeof(stcMemStatusEx);
-	GlobalMemoryStatusEx(&stcMemStatusEx);
-	DWORDLONG preUsedMem = stcMemStatusEx.ullTotalPhys - stcMemStatusEx.ullAvailPhys;
-	// 2. 清理内存
-	DWORD dwPIDList[1000] = { 0 };
-	DWORD bufSize = sizeof(dwPIDList);
-	DWORD dwNeedSize = 0;
-	// EnumProcesses(dwPIDList, bufSize, &dwNeedSize);
-	for (DWORD i = 0; i < dwNeedSize / sizeof(DWORD); ++i)
-	{
-		HANDLE hProccess = OpenProcess(PROCESS_SET_QUOTA, false, dwPIDList[i]);
-		SetProcessWorkingSetSize(hProccess, -1, -1);
-	}
-	// 3. 获取清理后的内存状态
-	GlobalMemoryStatusEx(&stcMemStatusEx);
-	DWORDLONG afterCleanUserdMem = stcMemStatusEx.ullTotalPhys - stcMemStatusEx.ullAvailPhys;
-	// 4. 计算并弹出清理成功
-	DWORDLONG CleanofSuccess = preUsedMem - afterCleanUserdMem;
-	str1.Format(L"%d", (CleanofSuccess / 1024 / 1024 / 8));
-	str = str + str1 + " MB";
-}
-// 时间转换
-double FILETIMEDouble(const _FILETIME& filetime)
-{
-	return double(filetime.dwHighDateTime * 4.294967296e9) + double(filetime.dwLowDateTime);
-}
-// CPU
-void GetCpuUsage(LPVOID outbuf)
-{
-	// 获取空闲时间 内核 用户
-	_FILETIME idleTime, kernelTime, userTime;
-	GetSystemTimes(&idleTime, &kernelTime, &userTime);
-	// Creates or opens a named or unnamed event object.
-	// 创建或打开一个命名的或无名的事件对象。
-	// failure 0  | sucess handle
-	HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	// 等待1000毫秒，内核对象会更精确
-	WaitForSingleObject(hEvent, 1000);
-	// 获取新的时间
-	_FILETIME newidleTime, newkernelTime, newuserTime;
-	GetSystemTimes(&newidleTime, &newkernelTime, &newuserTime);
-	// 转换时间
-	double	doldidleTime = FILETIMEDouble(idleTime);
-	double	doldkernelTime = FILETIMEDouble(kernelTime);
-	double	dolduserTime = FILETIMEDouble(userTime);
-	double	dnewidleTime = FILETIMEDouble(newidleTime);
-	double	dnewkernelTime = FILETIMEDouble(newkernelTime);
-	double	dnewuserTime = FILETIMEDouble(newuserTime);
-	double	Times = dnewidleTime - doldidleTime;
-	double	Kerneltime = dnewkernelTime - doldkernelTime;
-	double	usertime = dnewuserTime - dolduserTime;
-	// 计算使用率
-	double Cpurate = (100.0 - Times / (Kerneltime + usertime) * 100.0);
-	//m_Cpusyl.Format(L"%0.2lf", Cpurate);
-	//m_Cpusyl += "%";
-}
-// Virtual Memory
-void GetMemoryInfo(LPVOID outbuf)
-{
-	// 创建结构体对象 获取内存信息函数
-	MEMORYSTATUS memStatus;
-	GlobalMemoryStatus(&memStatus);
-	//// 当前占用率 Occupancy rate
-	//m_MemoryBFB.Format(L"%u", memStatus.dwMemoryLoad);
-	//m_MemoryBFB += "%";
-	//// 已使用物理内存大小 Physical memory size
-	//size_t memPhysize = memStatus.dwTotalPhys - memStatus.dwAvailPhys;
-	//m_Pymemory.Format(L"%u", (memPhysize / 1024 / 1024 / 8));
-	//m_Pymemory += " MB";
-	//// 文件交换大小 Size of the file exchange
-	//m_Pagesize.Format(L"%u", (memStatus.dwAvailPageFile / 1024 / 1024 / 8));
-	//m_Pagesize += " MB";
-	//// 虚拟内存大小 Virtual memory size
-	//m_Memorysize.Format(L"%u", (memStatus.dwTotalVirtual / 1024 / 1024 / 8));
-	//m_Memorysize += " MB";
-	//// 可用虚拟内存大小 Available virtual memory size
-	//m_Kymemorysize.Format(L"%d", (memStatus.dwAvailVirtual / 1024 / 1024 / 8));
-	//m_Kymemorysize += " MB";
-}
 
-bool USysBaseInfo::uf_GetSystemBaseInfo(LPVOID outbuf)
-{
-	// 硬件信息
-
-
-	// 软件信息
-
-
-	// 系统运行信息
-	//GetCpuUsage();
-	//GetMemoryInfo();
-
-	return true;
-}

@@ -24,26 +24,29 @@ public:
 	USysBaseInfo();
 	~USysBaseInfo();
 
-	// Monitor: 系统数据动态回调
-	void GetSysDynCpuTempera();
-	void GetSysDynMonTempera();
+	// Monitor
 	void GetSysDynManBoardTempera();
 	void GetSysDynDiskTempera();
-	void GetSysDynCpuUtilizaTempera();
-	void GetSysDynSysMemTempera();
-	void GetSysDynDiskIoTempera();
+	void GetSysDynCpuTempera();
 	void GetSysDynGpuTempera();
-	int GetBluetooth(void);
+
+	double GetSysDynCpuUtiliza();
+	void GetSysDynSysMem();
+	void GetSysDynDiskIo();
+	void GetSysDynGpu();
+	void MemSwap();
+	void GetBluetooth(std::vector<std::string>& blueinfo);
+	void GetMicroPhone(std::vector<std::string>& micrphone);
 
 	// View
-	std::vector<CameraInfo> GetCameraInfoList();
-	void GetManID(std::string& cpuinfo);
+	void GetNetworkCard(std::vector<std::string>& networkcar);
+	void GetCamerStatus();
+	void GetCameraInfoList(std::vector<std::string>& cameraInfo);
 	void GetOSVersion(std::string& strOSVersion);
 	void GetDiskInfo(std::vector<std::string>& diskinfo);
 	void GetDisplayCardInfo(std::vector<std::string>& Cardinfo);
-	int Getbattery(std::vector<std::string>& batteryinfo);
-
-	bool uf_GetSystemBaseInfo(LPVOID outbuf);
+	void Getbattery(std::vector<std::string>& batteryinfo);	
+	void GetSysCpuInfo(std::string& cpuinfo);
 private:
 
 };

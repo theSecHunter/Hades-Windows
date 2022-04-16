@@ -43,5 +43,7 @@ class Systeminfolib
 public:
 	Systeminfolib();
 	~Systeminfolib();
+
+private:
 };
 

@@ -20,6 +20,7 @@ SystemAttributesNode SYSTEMPUBLIC::sysattriinfo;
 SystemDynamicNode SYSTEMPUBLIC::sysdynamicinfo;
 
 static USysBaseInfo g_systmelib;
+HWND MainWin_hwnd;
 
 Systeminfolib::Systeminfolib()
 {
@@ -33,7 +34,10 @@ Systeminfolib::Systeminfolib()
         g_systmelib.GetDisplayCardInfo(SYSTEMPUBLIC::sysattriinfo.mainboard);
         g_systmelib.GetDiskInfo(SYSTEMPUBLIC::sysattriinfo.sysdisk);
         g_systmelib.Getbattery(SYSTEMPUBLIC::sysattriinfo.battery);
-        g_systmelib.GetManID(SYSTEMPUBLIC::sysattriinfo.cpuinfo);
+        g_systmelib.GetSysCpuInfo(SYSTEMPUBLIC::sysattriinfo.cpuinfo);
+        g_systmelib.GetBluetooth(SYSTEMPUBLIC::sysattriinfo.bluetooth);
+        g_systmelib.GetCameraInfoList(SYSTEMPUBLIC::sysattriinfo.camera);
+        g_systmelib.GetCamerStatus();
     }
     catch (const std::exception&)
     {
@@ -43,5 +47,6 @@ Systeminfolib::Systeminfolib()
 
 Systeminfolib::~Systeminfolib()
 {
-
+    KillTimer(NULL, 1);
+    KillTimer(NULL, 2);
 }
