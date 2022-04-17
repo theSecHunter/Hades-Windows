@@ -40,7 +40,7 @@
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <SpectreMitigation>false</SpectreMitigation>
-    <UseOfMfc>Static</UseOfMfc>
+    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -49,7 +49,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <SpectreMitigation>false</SpectreMitigation>
-    <UseOfMfc>Static</UseOfMfc>
+    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -86,8 +86,7 @@
     <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -112,13 +111,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x86\Debug</OutDir>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\x86\Release</OutDir>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
@@ -153,7 +152,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
@@ -248,6 +247,7 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="HadesContrl.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="Systeminfolib.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Wnd\AboutUsWindow.h" />
     <ClInclude Include="Wnd\MainWindow.h" />
@@ -255,6 +255,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HadesContrl.cpp" />
+    <ClCompile Include="Systeminfolib.cpp" />
     <ClCompile Include="Wnd\AboutUsWindow.cpp" />
     <ClCompile Include="Wnd\MainWindow.cpp" />
     <ClCompile Include="Wnd\Menu.cpp" />

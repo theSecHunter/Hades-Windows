@@ -1,6 +1,20 @@
 #include "MainWindow.h"
 #include "../Systeminfolib.h"
+#include <usysinfo.h>
 
+// 动态定时器需要
+USysBaseInfo g_DynSysBaseinfo;
+
+std::wstring GetWStringByChar(const char* szString)
+{
+	std::wstring wstrString;
+	if (szString != NULL)
+	{
+		std::string str(szString);
+		wstrString.assign(str.begin(), str.end());
+	}
+	return wstrString;
+}
 LPCTSTR MainWindow::GetWindowClassName() const
 {
 	return _T("HadesMainWindow");
@@ -13,6 +27,7 @@ CDuiString MainWindow::GetSkinFolder()
 {
 	return _T("");
 }
+
 LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	LRESULT lRes = __super::OnCreate(uMsg, wParam, lParam, bHandled);
@@ -22,14 +37,68 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 	m_pMenu->Create(m_hWnd, _T(""), WS_POPUP, WS_EX_TOOLWINDOW);
 	m_pMenu->ShowWindow(false);
 
+	//初始化数据
 	Systeminfolib libobj;
+	CLabelUI* pCurrentUser_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_currentuser_lab")));
+	pCurrentUser_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.currentUser.c_str()).c_str());
+	CLabelUI* pCpu_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_cpu_lab")));
+	pCpu_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.cpuinfo.c_str()).c_str());
+	CLabelUI* pSysver_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_sysver_lab")));
+	pSysver_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.verkerlinfo.c_str()).c_str());
+	CLabelUI* pMainbocard_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_mainbocard_lab")));
+	pMainbocard_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.mainboard[0].c_str()).c_str());
+	CLabelUI* pBattery_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_battery_lab")));
+	pBattery_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.battery[0].c_str()).c_str());
 
+
+	pMainOptemp = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOptemperature_VLayout")));
+	pMainOpcpu = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOpCpu_VLayout")));
+	pMainOpbox = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOpBox_VLayout")));
+	pMainOptemp->SetVisible(false);
+	pMainOpbox->SetVisible(false);
+	pMainOpcpu->SetVisible(true);
+
+	//设置定时器
+	SetTimer(m_hWnd, 1, 1000, NULL);
 	return lRes;
 }
 LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
+	KillTimer(m_hWnd, 1);
 	return __super::OnClose(uMsg, wParam, lParam, bHandled);
 }
+
+void MainWindow::FlushData()
+{
+	//cpu
+	const double cpuutilize = g_DynSysBaseinfo.GetSysDynCpuUtiliza();
+	CString m_Cpusyl;
+	m_Cpusyl.Format(L"CPU: %0.2lf", cpuutilize);
+	m_Cpusyl += "%";
+	CLabelUI* pCpuut = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("winmain_layout_cpuinfo")));
+	pCpuut->SetText(m_Cpusyl.GetBuffer());
+
+	//memory
+	const DWORD dwMem = g_DynSysBaseinfo.GetSysDynSysMem();
+	// 当前占用率 Occupancy rate
+	CString m_MemoryBFB;
+	m_MemoryBFB.Format(L"内存: %u", dwMem);
+	m_MemoryBFB += "%";
+	CLabelUI* pMem = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("winmain_layout_memory")));
+	pMem->SetText(m_MemoryBFB.GetBuffer());
+}
+static DWORD WINAPI ThreadFlush(LPVOID lpThreadParameter)
+{
+	(reinterpret_cast<MainWindow*>(lpThreadParameter))->FlushData();
+	return 0;
+}
+LRESULT MainWindow::OnTimer(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	QueueUserWorkItem(ThreadFlush, this, WT_EXECUTEDEFAULT);
+	bHandled = false;
+	return 0;
+}
+
 void MainWindow::Notify(TNotifyUI& msg)
 {
 	CDuiString strClassName = msg.pSender->GetClass();
@@ -65,9 +134,6 @@ void MainWindow::Notify(TNotifyUI& msg)
 		{
 			if (_tcscmp(static_cast<COptionUI*>(msg.pSender)->GetGroup(), _T("MainOpView")) == 0)
 			{
-				CHorizontalLayoutUI* pMainOptemp = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOptemperature_VLayout")));
-				CHorizontalLayoutUI* pMainOpcpu = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOpCpu_VLayout")));
-				CHorizontalLayoutUI* pMainOpbox = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOpBox_VLayout")));
 
 				if (strControlName == _T("MainMontemperatureOpt"))
 				{
@@ -118,4 +184,18 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	LRESULT lRes = 0;
 	BOOL bHandled = TRUE;
 	return __super::HandleMessage(uMsg, wParam, lParam);
+}
+LRESULT MainWindow::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	LRESULT lRes = 0;
+	bHandled = TRUE;
+
+	switch (uMsg) {
+	case WM_TIMER: lRes = OnTimer(uMsg, wParam, lParam, bHandled); break;
+	default:
+		bHandled = FALSE;
+		break;
+	}
+	if (bHandled) return lRes;
+	return __super::HandleCustomMessage(uMsg, wParam, lParam, bHandled);
 }

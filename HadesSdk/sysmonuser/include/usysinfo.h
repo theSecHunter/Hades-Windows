@@ -30,8 +30,8 @@ public:
 	void GetSysDynCpuTempera();
 	void GetSysDynGpuTempera();
 
-	double GetSysDynCpuUtiliza();
-	void GetSysDynSysMem();
+	const double GetSysDynCpuUtiliza();
+	const DWORD GetSysDynSysMem();
 	void GetSysDynDiskIo();
 	void GetSysDynGpu();
 	void MemSwap();

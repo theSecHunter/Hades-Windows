@@ -776,7 +776,7 @@ void USysBaseInfo::GetSysDynGpuTempera()
 }
 
 // Monitor: Cpu占用率
-double USysBaseInfo::GetSysDynCpuUtiliza()
+const double USysBaseInfo::GetSysDynCpuUtiliza()
 {
     // 获取空闲时间 内核 用户
     _FILETIME idleTime, kernelTime, userTime;
@@ -803,20 +803,16 @@ double USysBaseInfo::GetSysDynCpuUtiliza()
     // 计算使用率
     double Cpurate = (100.0 - Times / (Kerneltime + usertime) * 100.0);
     return Cpurate;
-    //CString m_Cpusyl;
-    //m_Cpusyl.Format(L"%0.2lf", Cpurate);
-    //m_Cpusyl += "%";
 }
 // Monitor: 内存占用率
-void USysBaseInfo::GetSysDynSysMem()
+const DWORD USysBaseInfo::GetSysDynSysMem()
 {
     // 创建结构体对象 获取内存信息函数
     MEMORYSTATUS memStatus;
     GlobalMemoryStatus(&memStatus);
+    return memStatus.dwMemoryLoad;
+
     CString m_MemoryBFB, m_Pymemory, m_Pagesize, m_Memorysize, m_Kymemorysize;
-    // 当前占用率 Occupancy rate
-    m_MemoryBFB.Format(L"%u", memStatus.dwMemoryLoad);
-    m_MemoryBFB += "%";
     // 已使用物理内存大小 Physical memory size
     size_t memPhysize = memStatus.dwTotalPhys - memStatus.dwAvailPhys;
     m_Pymemory.Format(L"%u", (memPhysize / 1024 / 1024 / 8));

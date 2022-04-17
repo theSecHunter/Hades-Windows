@@ -14,10 +14,17 @@ public:
 
 	void Notify(TNotifyUI& msg);
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnTimer(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+
+	void FlushData();
 
 private:
+	CHorizontalLayoutUI* pMainOptemp;
+	CHorizontalLayoutUI* pMainOpcpu;
+	CHorizontalLayoutUI* pMainOpbox;
 	Menu*	m_pMenu = nullptr;
 };
 
