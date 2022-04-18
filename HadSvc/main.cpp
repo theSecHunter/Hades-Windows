@@ -86,6 +86,13 @@ DWORD pthread_grpread(LPVOID lpThreadParameter)
 }
 int main(int argc, char* argv[])
 {
+	// Create HadesSvc Event
+	HANDLE HadesSvcEvemt = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVENT");
+	HANDLE SvcExit = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
+	// Open HadesContrl Event
+	HANDLE SvcEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvcConnect_Event");
+	if (!SvcEvent || !SvcExit || !HadesSvcEvemt)
+		return 0;
 	// 
 	// @ Grpc Active Online Send to  Server Msg
 	// SSL
@@ -129,6 +136,12 @@ int main(int argc, char* argv[])
 		grpc_send = false;
 	else
 		grpc_send = true;
+	if (true == grpc_send)
+		SetEvent(SvcEvent);
+	if (SvcEvent)
+		CloseHandle(SvcEvent);
+	if (false == grpc_send)
+		return 0;
 
 	// current_sysinfo
 	// 后续系统详细封装为公共类
@@ -162,10 +175,7 @@ int main(int argc, char* argv[])
 	(*MapMessage)["io"] = "1";
 	(*MapMessage)["memory"] = "1";
 	(*MapMessage)["slab"] = "1";
-	if (false == greeter.Grpc_Transfer(rawData))
-		grpc_send = false;
-	else
-		grpc_send = true;
+	greeter.Grpc_Transfer(rawData);
 
 	// start grpc Read thread (Wait server Data) handler C2_Msg loop
 	DWORD threadid = 0;
@@ -283,13 +293,9 @@ int main(int argc, char* argv[])
 		g_mainMsgUlib.uMsg_EtwInit();
 	}
 
-	//MSG msg;
-	//while (GetMessage(&msg, NULL, NULL, NULL))
-	//{
-	//	TranslateMessage(&msg);
-	//	DispatchMessageW(&msg);
-	//}
-	getchar();
+	// 等待退出事件
+	WaitForSingleObject(SvcExit, INFINITE);
+	CloseHandle(SvcExit);
 
 	if (grocRead)
 	{
@@ -305,5 +311,6 @@ int main(int argc, char* argv[])
 
 	g_mainMsgUlib.uMsg_Free();
 	g_mainMsgKlib.kMsg_Free();
+	CloseHandle(HadesSvcEvemt);
 	return 0;
 }

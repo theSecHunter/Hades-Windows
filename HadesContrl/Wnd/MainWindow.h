@@ -18,13 +18,23 @@ public:
 	LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnTimer(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-
+	
 	void FlushData();
+	void AddTrayIcon();
+	void HadesSvcDaemon();
+	void GetHadesSvctStatus();
+	void GetHadesSvcConnectStatus();
+	LRESULT OnTrayIcon(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
 private:
-	CHorizontalLayoutUI* pMainOptemp;
-	CHorizontalLayoutUI* pMainOpcpu;
-	CHorizontalLayoutUI* pMainOpbox;
-	Menu*	m_pMenu = nullptr;
+	bool m_hadesSvcStatus = false;
+	Menu* m_pMenu = nullptr;
+	CLabelUI* m_pImage_lab = nullptr;
+	CLabelUI* m_pConnectSvc_lab = nullptr;
+	HANDLE m_HadesConnectStatus = nullptr;
+	CHorizontalLayoutUI* pMainOptemp = nullptr;
+	CHorizontalLayoutUI* pMainOpcpu = nullptr;
+	CHorizontalLayoutUI* pMainOpbox = nullptr;
+	NOTIFYICONDATA m_trayIcon;
 };
 
