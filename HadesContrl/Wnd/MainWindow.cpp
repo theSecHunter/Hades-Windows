@@ -4,6 +4,9 @@
 #include <TlHelp32.h>
 #include <mutex>
 #include <WinUser.h>
+#include <UserEnv.h>
+
+#pragma comment(lib,"Userenv.lib")
 
 std::mutex g_hadesStatuscs;
 // 动态定时器需要
@@ -70,7 +73,7 @@ void MainWindow::GetHadesSvcConnectStatus()
 	m_pConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerConnectStatus")));
 	for (;;)
 	{
-		WaitForSingleObject(m_HadesConnectStatus, INFINITE);
+		WaitForSingleObject(m_HadesControlEvent, INFINITE);
 		// 更新界面状态
 		m_pImage_lab->SetBkImage(L"img/normal/winmain_connectsuccess.png");
 		m_pConnectSvc_lab->SetText(L"已连接平台");
@@ -106,6 +109,81 @@ void WindlgShow(HWND& hWnd)
 	HMODULE    hUser32 = GetModuleHandle(L"user32");
 	SwitchToThisWindow = (PROCSWITCHTOTHISWINDOW)GetProcAddress(hUser32, "SwitchToThisWindow");
 	SwitchToThisWindow(hWnd, TRUE);
+}
+std::wstring ReadConfigtoIpPort(std::wstring config_root)
+{
+	std::wstring ip_port;
+	HANDLE hFile = CreateFile(config_root.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (!hFile)
+		return ip_port;
+	bool boolinit = false;
+	BYTE* guardData = NULL;
+	do {
+
+		const int guardDataSize = GetFileSize(hFile, NULL);
+		if (guardDataSize <= 0)
+			break;
+
+		guardData = (BYTE*)new char[guardDataSize];
+		if (!guardData)
+			break;
+
+		DWORD redSize = 0;
+		ReadFile(hFile, guardData, guardDataSize, &redSize, NULL);
+		if (redSize != guardDataSize)
+			break;
+
+		boolinit = true;
+
+	} while (false);
+
+	if (hFile) {
+		CloseHandle(hFile);
+		hFile = NULL;
+	}
+	if (false == boolinit)
+	{
+		if (guardData)
+			delete[] guardData;
+		return ip_port;
+	}
+
+	// \r\n切割
+	std::vector<std::wstring> vector_;
+	char* vector_routeip = strtok((char*)guardData, "\r\n");
+	if(NULL == vector_routeip)
+		vector_routeip = strtok((char*)guardData, "\n");
+	if (NULL == vector_routeip)
+		vector_routeip = strtok((char*)guardData, "\r");
+	while (vector_routeip != NULL)
+	{
+		vector_.push_back(GetWStringByChar(vector_routeip));
+		vector_routeip = strtok(NULL, "\r");
+	}
+	
+	// find "xx"包含的数据
+	ip_port.clear();
+	for (size_t idx = 0; idx < vector_.size(); ++idx)
+	{
+		const int start = vector_[idx].find_first_of('"');
+		const int end = vector_[idx].find_last_of('"');
+		if (idx == 0)
+		{
+			ip_port += L"-ip ";
+		}
+		else if (idx == 1)
+		{
+			ip_port += L" -p ";
+		}
+		else
+			break;
+		ip_port += vector_[idx].substr(start + 1, end - start - 1);
+
+	}
+
+	if (guardData)
+		delete[] guardData;
+	return ip_port;
 }
 void killProcess(const wchar_t* const processname)
 {
@@ -185,7 +263,9 @@ void killProcess(const wchar_t* const processname)
 LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	LRESULT lRes = __super::OnCreate(uMsg, wParam, lParam, bHandled);
-	
+
+	m_HadesControlEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesContrl_Event");
+
 	// Create Meue
 	m_pMenu = new Menu();
 	m_pMenu->Create(m_hWnd, _T(""), WS_POPUP, WS_EX_TOOLWINDOW);
@@ -236,16 +316,79 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 		}
 	} while (false);
 	
-
-	// 创建互斥体执行HadesSvc
-	m_HadesConnectStatus = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvcConnect_Event");
 	// 启动一个线程等待HadesSvc上线 
 	CreateThread(NULL, NULL, HadesConnectEventNotify, this, 0, 0);
 	// 检测HadesSvc是否一直活跃
 	CreateThread(NULL, NULL, HadesSvcActiveEventNotify, this, 0, 0);
 
+	wchar_t szModule[1024] = { 0, };
+	GetModuleFileName(NULL, szModule, sizeof(szModule) / sizeof(char));
+	std::wstring dirpath = szModule;
+	std::wstring cmdline = L"\"";
+	if (0 >= dirpath.size())
+		return 0;
+	int offset = dirpath.rfind(L"\\");
+	if (0 >= offset)
+		return 0;
+	dirpath = dirpath.substr(0, offset + 1);
+	cmdline += dirpath;
+
+	HANDLE hToken = NULL;
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	void* Environ;
+	if (!CreateEnvironmentBlock(&Environ, hToken, FALSE))
+		Environ = NULL;
+
+	RtlZeroMemory(&si, sizeof(STARTUPINFO));
+	RtlZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
+	si.cb = sizeof(STARTUPINFO);
+	si.lpReserved = NULL;
+	si.lpDesktop = NULL;
+	si.lpTitle = NULL;
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_HIDE;
+	si.cbReserved2 = NULL;
+	si.lpReserved2 = NULL;
+	// Read Local Config
+	std::wstring ip_port_cmdline = ReadConfigtoIpPort(cmdline + L"config\\client_config\"");
+	if (ip_port_cmdline.empty())
+		ip_port_cmdline = L"-ip localhost -p 8888";
+
 	// Start HadesSvc.exe
-	//CreateProcessAsUser();
+#ifdef _WIN64
+#ifdef _DEBUG
+	cmdline += L"HadesSvc_d64.exe\" ";
+#else
+	cmdline += L"HadesSvc64.exe\" ";
+#endif
+#else
+#ifdef _DEBUG
+	cmdline += L"HadesSvc_d.exe\" ";
+#else
+	cmdline += L"HadesSvc.exe\" ";
+#endif
+#endif
+
+	// "HadesSvc_d.exe" -ip localhost -p 8888
+	cmdline += ip_port_cmdline;
+	wchar_t ipport_arg[MAX_PATH] = { 0, };
+	if (cmdline.size() <= MAX_PATH)
+		lstrcpyW(ipport_arg, cmdline.c_str());
+	//BOOL ok = CreateProcessAsUser(
+	//	hToken, cmdline.c_str(), NULL, NULL, NULL, FALSE,
+	//	(Environ ? CREATE_UNICODE_ENVIRONMENT : 0),
+	//	Environ, NULL, &si, &pi);
+	BOOL ok = CreateProcess(NULL, (LPWSTR)cmdline.c_str(), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
+
+	if (Environ)
+		DestroyEnvironmentBlock(Environ);
+
+	if (ok) {
+
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+	}
 	
 	//设置定时器
 	SetTimer(m_hWnd, 1, 1000, NULL);
@@ -260,6 +403,8 @@ LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHand
 		SetEvent(exithandSvc);
 		CloseHandle(exithandSvc);
 	}
+	if (m_HadesControlEvent)
+		CloseHandle(m_HadesControlEvent);
 	return __super::OnClose(uMsg, wParam, lParam, bHandled);
 }
 

@@ -42,6 +42,8 @@ static bool user_mod = false;		// user接口
 static bool etw_mon = false;		// user采集
 static bool grpc_send = false;		// grpc上报
 
+static HANDLE g_SvcExitEvent = nullptr;
+
 bool gethostip(RawData* ip_liststr)
 {
 	WSAData data;
@@ -78,21 +80,81 @@ bool SysNodeOnlineData(RawData* sysinfobuffer)
 	sysinfobuffer->mutable_pkg();
 	return true;
 }
-DWORD pthread_grpread(LPVOID lpThreadParameter)
+static DWORD pthread_grpread(LPVOID lpThreadParameter)
 {
 	Grpc* greeter = (Grpc*)lpThreadParameter;
 	greeter->Grpc_ReadC2Thread(NULL);
 	return 1;
 }
+static DWORD WINAPI HadesContrlActiveCheckNotify(LPVOID lpThreadParameter)
+{
+	//检测HadesControl是否退出
+	for (;;)
+	{
+		auto active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVENT");
+		if (0 >= (int)active_event)
+		{
+			if (g_SvcExitEvent)
+			{
+				SetEvent(g_SvcExitEvent);
+				CloseHandle(g_SvcExitEvent);
+				CloseHandle(active_event);
+				g_SvcExitEvent = nullptr;
+				break;
+			}
+		}
+		Sleep(1000);
+	}
+	return 0;
+}
 int main(int argc, char* argv[])
 {
 	// Create HadesSvc Event
-	HANDLE HadesSvcEvemt = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVENT");
-	HANDLE SvcExit = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
+	HANDLE HadesSvcEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVENT");
+	g_SvcExitEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
 	// Open HadesContrl Event
-	HANDLE SvcEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvcConnect_Event");
-	if (!SvcEvent || !SvcExit || !HadesSvcEvemt)
+	HANDLE HadesContrl_Event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesContrl_Event");
+	if (!HadesContrl_Event || !g_SvcExitEvent || !HadesSvcEvent)
 		return 0;
+
+	std::string ip_port = "localhost:8888";
+	for (int i = 1; i < argc; i++)
+	{
+		if (strcmp(argv[i], "-ip") == 0)
+		{
+			if ((i + 1) >= argc)
+			{
+				exit(1);
+			}
+			std::string RstmpStrIp = argv[i + 1];
+			if (RstmpStrIp.size())
+				ip_port = RstmpStrIp;
+			else
+				ip_port = "localhost";
+			i++;
+		}
+		else if (strcmp(argv[i], "-p") == 0)
+		{
+			if ((i + 1) >= argc)
+			{
+				exit(1);
+			}
+			std::string RstmpStrPort = argv[i + 1];
+			if (RstmpStrPort.size())
+			{
+				ip_port += ":";
+				ip_port += RstmpStrPort;
+			}
+			else
+				ip_port += ":8888";
+			i++;
+		}
+		else
+		{
+			exit(0);
+		}
+	}
+
 	// 
 	// @ Grpc Active Online Send to  Server Msg
 	// SSL
@@ -108,7 +170,7 @@ int main(int argc, char* argv[])
 	// Grpc_SSL模式目前不支持 - 认证还有问题
 	// grpc::InsecureChannelCredentials() localhost 192.168.0.105
 	static Grpc greeter(
-		grpc::CreateChannel("localhost:8888", grpc::InsecureChannelCredentials()));	
+		grpc::CreateChannel(ip_port.c_str(), grpc::InsecureChannelCredentials()));
 	proto::RawData rawData;
 
 	// agent_info
@@ -136,15 +198,23 @@ int main(int argc, char* argv[])
 		grpc_send = false;
 	else
 		grpc_send = true;
-	if (true == grpc_send)
-		SetEvent(SvcEvent);
-	if (SvcEvent)
-		CloseHandle(SvcEvent);
+
+	// 通知界面Contrl已经连接Grpc
+	if (true == grpc_send && HadesContrl_Event)
+	{
+		SetEvent(HadesContrl_Event);
+		CloseHandle(HadesContrl_Event);
+	}
+	else
+	{
+		CloseHandle(HadesSvcEvent);
+		CloseHandle(HadesContrl_Event);
+		CloseHandle(g_SvcExitEvent);
+	}
+		
 	if (false == grpc_send)
 		return 0;
 
-	// current_sysinfo
-	// 后续系统详细封装为公共类
 	SYSTEMTIME time;
 	GetLocalTime(&time);
 	char dateTimeStr[200] = { 0 };
@@ -293,9 +363,12 @@ int main(int argc, char* argv[])
 		g_mainMsgUlib.uMsg_EtwInit();
 	}
 
-	// 等待退出事件
-	WaitForSingleObject(SvcExit, INFINITE);
-	CloseHandle(SvcExit);
+	// 判断主界面是否已经退出
+	CreateThread(NULL, 0, HadesContrlActiveCheckNotify, NULL, 0, &threadid);
+
+	// 等待主界面退出激活事件,否则一直不退出
+	WaitForSingleObject(g_SvcExitEvent, INFINITE);
+	CloseHandle(g_SvcExitEvent);
 
 	if (grocRead)
 	{
@@ -311,6 +384,6 @@ int main(int argc, char* argv[])
 
 	g_mainMsgUlib.uMsg_Free();
 	g_mainMsgKlib.kMsg_Free();
-	CloseHandle(HadesSvcEvemt);
+	CloseHandle(HadesSvcEvent);
 	return 0;
 }

@@ -95,6 +95,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	LoadResourceZip();
 
+	HWND wxHand = FindWindowEx(NULL, NULL, L"HadesMainWindow", NULL);
+	if (wxHand)
+	{
+		::ShowWindow(wxHand, 1);
+		return 0;
+	}
+
 	// 初始化窗口
 	MainWindow mainwin;
 	mainwin.Create(NULL, L"HadesMainWindow", UI_WNDSTYLE_DIALOG, WS_EX_WINDOWEDGE);
