@@ -1,6 +1,7 @@
 #pragma once
 #include <UIlib.h>
 #include "Menu.h"
+#include <xstring>
 
 using namespace DuiLib;
 
@@ -27,6 +28,7 @@ public:
 	//LRESULT OnTrayIcon(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
 private:
+	std::wstring m_cmdline;
 	bool m_hadesSvcStatus = false;
 	Menu* m_pMenu = nullptr;
 	CLabelUI* m_pImage_lab = nullptr;

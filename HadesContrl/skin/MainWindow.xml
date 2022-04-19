@@ -21,10 +21,10 @@
 		<HorizontalLayout height="300" >
 			<VerticalLayout padding="30,35,0,0" height="200" >
 				<Label width="180" height="130" bkimage="file='img/normal/Computerlog.png'" />
-				<HorizontalLayout height="32" padding="30,30,0,0" >
-					<Label name="ServerConnectImg" width="16" height="16" bkimage="img/normal/winmain_connectfailuer.png" />
+				<HorizontalLayout height="32" padding="45,30,0,0" >
+					<Label name="ServerConnectImg" width="16" height="16" bkimage="img/normal/winmain_connectfailuer1.png" />
 					<Label name="ServerConnectStatus" padding="10,0,0,0" width="70" height="16" font="2" text="未连接平台" />
-					<Label name="ServerConnectflushed" padding="10,0,0,0" width="16" height="16" bkimage="img/normal/winmain_connectflushed.png" />
+					<!--Label name="ServerConnectflushed" padding="10,0,0,0" width="16" height="16" bkimage="img/normal/winmain_connectflushed.png" /-->
 				</HorizontalLayout>
 			</VerticalLayout>
 			<Option float="true" pos="60,250,0,0" name="MainMonUserBtn" width="120" height="33" text="用户态监控" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />

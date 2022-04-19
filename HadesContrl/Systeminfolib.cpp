@@ -37,7 +37,7 @@ Systeminfolib::Systeminfolib()
         g_systmelib.GetSysCpuInfo(SYSTEMPUBLIC::sysattriinfo.cpuinfo);
         g_systmelib.GetBluetooth(SYSTEMPUBLIC::sysattriinfo.bluetooth);
         g_systmelib.GetCameraInfoList(SYSTEMPUBLIC::sysattriinfo.camera);
-        g_systmelib.GetCamerStatus();
+        g_systmelib.GetGPU(SYSTEMPUBLIC::sysattriinfo.monitor);
     }
     catch (const std::exception&)
     {

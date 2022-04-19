@@ -8,9 +8,11 @@
 #include <uuids.h>
 #include <iostream>
 #include <Vfw.h>
+#include <DXGI.h> 
 
 #pragma comment(lib,"Strmiids.lib")
 #pragma comment(lib,"Bthprops.lib") 
+#pragma comment(lib, "DXGI.lib")
 
 extern "C" void __stdcall GetCpuid(DWORD * deax, DWORD * debx, DWORD * decx, DWORD * dedx, char* cProStr);
 
@@ -526,6 +528,89 @@ void USysBaseInfo::Getbattery(std::vector<std::string>& batteryinfo) {
 // View: 系统网卡
 void USysBaseInfo::GetNetworkCard(std::vector<std::string>& networkcar)
 {
+
+}
+// View: 系统显卡(GPU)
+void USysBaseInfo::GetGPU(std::vector<std::string>& monitor) {
+    // 参数定义  
+    IDXGIFactory* pFactory;
+    IDXGIAdapter* pAdapter;
+    std::vector <IDXGIAdapter*> vAdapters;            // 显卡  
+    // 显卡的数量  
+    int iAdapterNum = 0;
+    // 创建一个DXGI工厂  
+    HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&pFactory));
+    if (FAILED(hr))
+        return;
+    // 枚举适配器  
+    while (pFactory->EnumAdapters(iAdapterNum, &pAdapter) != DXGI_ERROR_NOT_FOUND)
+    {
+        vAdapters.push_back(pAdapter);
+        ++iAdapterNum;
+    }
+    for (size_t i = 0; i < vAdapters.size(); i++)
+    {
+        //std::cout << "Video card" << i + 1 << ":" << std::endl;
+        // 获取信息  
+        DXGI_ADAPTER_DESC adapterDesc;
+        vAdapters[i]->GetDesc(&adapterDesc);
+        std::string bb;
+        Wchar_tToString(bb, adapterDesc.Description);
+        monitor.push_back(bb.c_str());
+        //std::string bb = WStringToString(aa);
+        //std::cout << "Video card " << i + 1 << " DedicatedVideoMemory:" << adapterDesc.DedicatedVideoMemory / 1024 / 1024 << "M" << std::endl;
+        //std::cout << "Video card " << i + 1 << " SharedSystemMemory:" << adapterDesc.SharedSystemMemory / 1024 / 1024 << "M" << std::endl;
+        //std::cout << "系统视频内存:" << adapterDesc.DedicatedSystemMemory / 1024 / 1024 << "M" << std::endl;
+        //std::cout << "专用视频内存:" << adapterDesc.DedicatedVideoMemory / 1024 / 1024 << "M" << std::endl;
+        //std::cout << "共享系统内存:" << adapterDesc.SharedSystemMemory / 1024 / 1024 << "M" << std::endl;
+        //std::cout << "设备描述:" << bb.c_str() << std::endl;
+        //std::cout << "设备ID:" << adapterDesc.DeviceId << std::endl;
+        //std::cout << "PCI ID修正版本:" << adapterDesc.Revision << std::endl;
+        //std::cout << "子系统PIC ID:" << adapterDesc.SubSysId << std::endl;
+        //std::cout << "厂商编号:" << adapterDesc.VendorId << std::endl
+        
+        // 输出设备  
+        IDXGIOutput* pOutput;
+        std::vector<IDXGIOutput*> vOutputs;
+        // 输出设备数量  
+        int iOutputNum = 0;
+        while (vAdapters[i]->EnumOutputs(iOutputNum, &pOutput) != DXGI_ERROR_NOT_FOUND)
+        {
+            vOutputs.push_back(pOutput);
+            iOutputNum++;
+        }
+
+        //std::cout << std::endl;
+        //std::cout << "该显卡获取到" << iOutputNum << "个显示设备:" << std::endl;
+
+        for (size_t n = 0; n < vOutputs.size(); n++)
+        {
+            // 获取显示设备信息  
+            DXGI_OUTPUT_DESC outputDesc;
+            vOutputs[n]->GetDesc(&outputDesc);
+
+            // 获取设备支持  
+            UINT uModeNum = 0;
+            DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            UINT flags = DXGI_ENUM_MODES_INTERLACED;
+
+            vOutputs[n]->GetDisplayModeList(format, flags, &uModeNum, 0);
+            DXGI_MODE_DESC* pModeDescs = new DXGI_MODE_DESC[uModeNum];
+            vOutputs[n]->GetDisplayModeList(format, flags, &uModeNum, pModeDescs);
+
+            //std::cout << "DisplayDevice:" << n + 1 << " Name:" << outputDesc.DeviceName << std::endl;
+            //std::cout << "DisplayDevice " << n + 1 << " Resolution ratio:" << outputDesc.DesktopCoordinates.right - outputDesc.DesktopCoordinates.left << "*" << outputDesc.DesktopCoordinates.bottom - outputDesc.DesktopCoordinates.top << std::endl;
+
+            // 所支持的分辨率信息  
+            //std::cout << "分辨率信息:" << std::endl;
+            /*for (UINT m = 0; m < uModeNum; m++)
+            {
+                std::cout << "== 分辨率:" << pModeDescs[m].Width << "*" << pModeDescs[m].Height << "     刷新率" << (pModeDescs[m].RefreshRate.Numerator) / (pModeDescs[m].RefreshRate.Denominator) << std::endl;
+            }*/
+        }
+        vOutputs.clear();
+    }
+    vAdapters.clear();
 
 }
 
