@@ -58,12 +58,13 @@ public:
 
 	void Grpc_steamDon()
 	{
+		//Grpc阻塞关闭时候总阻塞有问题，这里不做释放了随着进程直接销毁
 		if (m_stream)
 		{
-			m_stream->WritesDone();
+			//m_stream->WritesDone();
 			//m_context.TryCancel();
-			//m_stream->Finish();  阻塞
-			m_stream = nullptr;
+			//m_stream->Finish();  
+			//m_stream = nullptr;
 		}
 	}
 

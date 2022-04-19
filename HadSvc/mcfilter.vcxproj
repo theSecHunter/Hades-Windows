@@ -111,7 +111,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x86\Debug</OutDir>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
-    <TargetName>$(ProjectName)_d32</TargetName>
+    <TargetName>$(ProjectName)_d</TargetName>
     <IncludePath>D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;D:\Hades\Hades-Windows\HadesSdk\sysmondrv\include;D:\Hades\Hades-Windows\HadesSdk\rapidjson\include;D:\Hades\Hades-Windows\HadesSdk\nlohmannjson\single_include\nlohmann;$(IncludePath);D:\Hades\Hades-Windows\HadesSdk\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

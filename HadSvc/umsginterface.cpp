@@ -663,7 +663,7 @@ void uMsgInterface::uMsg_Free()
     for (size_t idx = 0; idx < m_topicthread.size(); ++idx)
     {
         SetEvent(g_jobAvailableEvent);
-        WaitForSingleObject(m_topicthread[idx], INFINITE);
+        WaitForSingleObject(m_topicthread[idx], 1000);
         CloseHandle(m_topicthread[idx]);
     }
 

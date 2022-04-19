@@ -44,51 +44,15 @@ static bool grpc_send = false;		// grpc上报
 
 static HANDLE g_SvcExitEvent = nullptr;
 
-bool gethostip(RawData* ip_liststr)
-{
-	WSAData data;
-	if (WSAStartup(MAKEWORD(2, 2), &data) != 0)
-		return false;
-
-	char host[255] = { 0, };
-	do {
-
-		if (gethostname(host, sizeof(host)) == SOCKET_ERROR)
-			break;
-
-		auto p = gethostbyname(host);
-		if (p == 0)
-			break;
-		else
-		{
-			for (int i = 0; p->h_addr_list[i] != 0; i++)
-			{
-				struct in_addr in;
-				memcpy(&in, p->h_addr_list[i], sizeof(struct in_addr));
-				ip_liststr->set_intranetipv4(i, inet_ntoa(in));
-			}
-		}
-	
-	} while (false);
-
-	WSACleanup();
-
-	return true;
-}
-bool SysNodeOnlineData(RawData* sysinfobuffer)
-{
-	sysinfobuffer->mutable_pkg();
-	return true;
-}
 static DWORD pthread_grpread(LPVOID lpThreadParameter)
 {
 	Grpc* greeter = (Grpc*)lpThreadParameter;
 	greeter->Grpc_ReadC2Thread(NULL);
 	return 1;
 }
+// 检测HadesContrl是否活跃
 static DWORD WINAPI HadesContrlActiveCheckNotify(LPVOID lpThreadParameter)
 {
-	//检测HadesControl是否退出
 	for (;;)
 	{
 		auto active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVENT");
@@ -97,13 +61,44 @@ static DWORD WINAPI HadesContrlActiveCheckNotify(LPVOID lpThreadParameter)
 			if (g_SvcExitEvent)
 			{
 				SetEvent(g_SvcExitEvent);
-				CloseHandle(g_SvcExitEvent);
+				Sleep(100);
 				CloseHandle(active_event);
-				g_SvcExitEvent = nullptr;
 				break;
 			}
 		}
 		Sleep(1000);
+	}
+	return 0;
+}
+// 检测HadesServe是否活跃
+static DWORD WINAPI HadesServerActiveCheckNotify(LPVOID lpThreadParameter)
+{
+	Grpc* grpcobj = (Grpc*)lpThreadParameter;
+	if (!grpcobj)
+	{
+		if (g_SvcExitEvent)
+		{
+			SetEvent(g_SvcExitEvent);
+		}
+		return 0;
+	}
+
+	proto::RawData rawData;
+	::proto::Record* pkg_re = rawData.add_pkg();
+	auto MapMessage = pkg_re->mutable_message();
+	(*MapMessage)["data_type"] = "1";
+	for (;;)
+	{
+		if (false == grpcobj->Grpc_Transfer(rawData))
+		{
+			if (g_SvcExitEvent)
+			{
+				SetEvent(g_SvcExitEvent);
+				Sleep(100);
+				break;
+			}
+		}
+		Sleep(2000); // 2s发送一次心跳检测
 	}
 	return 0;
 }
@@ -210,10 +205,8 @@ int main(int argc, char* argv[])
 		CloseHandle(HadesSvcEvent);
 		CloseHandle(HadesContrl_Event);
 		CloseHandle(g_SvcExitEvent);
-	}
-		
-	if (false == grpc_send)
 		return 0;
+	}
 
 	SYSTEMTIME time;
 	GetLocalTime(&time);
@@ -252,7 +245,7 @@ int main(int argc, char* argv[])
 	HANDLE grocRead = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
 	
 	// init grpc Heartbeat detection 
-	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)心跳检测, &greeter, 0, &threadid);
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)HadesServerActiveCheckNotify, &greeter, 0, &threadid);
 	
 	// start grpc write thread
 	greeter.ThreadPool_Init();
@@ -369,6 +362,7 @@ int main(int argc, char* argv[])
 	// 等待主界面退出激活事件,否则一直不退出
 	WaitForSingleObject(g_SvcExitEvent, INFINITE);
 	CloseHandle(g_SvcExitEvent);
+	g_SvcExitEvent = nullptr;
 
 	if (grocRead)
 	{
