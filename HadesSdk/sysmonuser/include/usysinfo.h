@@ -39,6 +39,7 @@ public:
 	void GetMicroPhone(std::vector<std::string>& micrphone);
 
 	// View
+	void GetGPU(std::vector<std::string>& monitor);
 	void GetNetworkCard(std::vector<std::string>& networkcar);
 	void GetCamerStatus();
 	void GetCameraInfoList(std::vector<std::string>& cameraInfo);
