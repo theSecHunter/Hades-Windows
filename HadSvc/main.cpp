@@ -54,19 +54,27 @@ static DWORD pthread_grpread(LPVOID lpThreadParameter)
 static DWORD WINAPI HadesContrlActiveCheckNotify(LPVOID lpThreadParameter)
 {
 	for (;;)
-	{
-		auto active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVENT");
-		if (0 >= (int)active_event)
+	{//检测Event或者窗口
+		HWND wxHand = FindWindowEx(NULL, NULL, L"HadesMainWindow", NULL);
+		if (wxHand)
+		{
+			Sleep(1000);
+		}
+		else
 		{
 			if (g_SvcExitEvent)
 			{
 				SetEvent(g_SvcExitEvent);
 				Sleep(100);
-				CloseHandle(active_event);
+				CloseHandle(wxHand);
 				break;
 			}
 		}
-		Sleep(1000);
+		// 如果窗口非正常情况下退出，进程虽然没有了，但是OpenEvnet-HadesContrl_Event仍然成功，可能资源并未彻底销毁
+		//auto active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesContrl_Event");
+		//if (0 >= (int)active_event)
+		//{
+		//}
 	}
 	return 0;
 }
@@ -104,12 +112,13 @@ static DWORD WINAPI HadesServerActiveCheckNotify(LPVOID lpThreadParameter)
 }
 int main(int argc, char* argv[])
 {
-	// Create HadesSvc Event
+	// Create HadesSvc Event - HadesContrl检测该Event判断HadesSvc是否活跃
 	HANDLE HadesSvcEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVENT");
+	// HadesSvc Exit Event - HadesContrl退出设置该Event，HadesSvc也退出
 	g_SvcExitEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
-	// Open HadesContrl Event
-	HANDLE HadesContrl_Event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesContrl_Event");
-	if (!HadesContrl_Event || !g_SvcExitEvent || !HadesSvcEvent)
+	// Open HadesContrl Event - 如果连接GRPC成功，设置该事件，HadesContrl更新连接状态
+	HANDLE HadesSvcConnectStatus_Event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesContrl_Event");
+	if (!HadesSvcConnectStatus_Event || !g_SvcExitEvent || !HadesSvcEvent)
 		return 0;
 
 	std::string ip_port = "localhost:8888";
@@ -195,15 +204,15 @@ int main(int argc, char* argv[])
 		grpc_send = true;
 
 	// 通知界面Contrl已经连接Grpc
-	if (true == grpc_send && HadesContrl_Event)
+	if (true == grpc_send && HadesSvcConnectStatus_Event)
 	{
-		SetEvent(HadesContrl_Event);
-		CloseHandle(HadesContrl_Event);
+		SetEvent(HadesSvcConnectStatus_Event);
+		CloseHandle(HadesSvcConnectStatus_Event);
 	}
 	else
 	{
 		CloseHandle(HadesSvcEvent);
-		CloseHandle(HadesContrl_Event);
+		CloseHandle(HadesSvcConnectStatus_Event);
 		CloseHandle(g_SvcExitEvent);
 		return 0;
 	}

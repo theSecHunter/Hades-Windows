@@ -30,7 +30,7 @@ Systeminfolib::Systeminfolib()
         CHAR ComUserName[MAX_PATH] = { 0, };
         GetComputerNameA(ComUserName, &ComUserLen);
         SYSTEMPUBLIC::sysattriinfo.currentUser = ComUserName;
-        g_systmelib.GetOSVersion(SYSTEMPUBLIC::sysattriinfo.verkerlinfo);
+        g_systmelib.GetOSVersion(SYSTEMPUBLIC::sysattriinfo.verkerlinfo, SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion, SYSTEMPUBLIC::sysattriinfo.Is64);
         g_systmelib.GetDisplayCardInfo(SYSTEMPUBLIC::sysattriinfo.mainboard);
         g_systmelib.GetDiskInfo(SYSTEMPUBLIC::sysattriinfo.sysdisk);
         g_systmelib.Getbattery(SYSTEMPUBLIC::sysattriinfo.battery);

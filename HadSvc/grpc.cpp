@@ -412,6 +412,7 @@ bool Grpc::ThreadPool_Free()
 {
     // 设置标志
     g_shutdown = true;
+    Sleep(100);
 
     // 循环关闭句柄
     for (tThreads::iterator it = m_ker_subthreads.begin();

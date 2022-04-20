@@ -11,6 +11,9 @@ typedef struct _SystemAttributesNode
 	std::string currentUser;	//当前用户	
 	std::string cpuinfo;		//cpu信息
 	std::string verkerlinfo;	//版本
+	int verMajorVersion;
+	int verMinorVersion;
+	bool Is64;
 	std::vector<std::string> mainboard;		//主板
 	std::vector<std::string> sysdisk;		//磁盘
 	std::vector<std::string> monitor;		//显卡

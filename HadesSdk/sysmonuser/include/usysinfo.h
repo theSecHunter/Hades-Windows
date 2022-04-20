@@ -43,11 +43,11 @@ public:
 	void GetNetworkCard(std::vector<std::string>& networkcar);
 	void GetCamerStatus();
 	void GetCameraInfoList(std::vector<std::string>& cameraInfo);
-	void GetOSVersion(std::string& strOSVersion);
 	void GetDiskInfo(std::vector<std::string>& diskinfo);
 	void GetDisplayCardInfo(std::vector<std::string>& Cardinfo);
 	void Getbattery(std::vector<std::string>& batteryinfo);	
 	void GetSysCpuInfo(std::string& cpuinfo);
+	void GetOSVersion(std::string& strOSVersion, int& verMajorVersion, int& verMinorVersion, bool& Is64);
 private:
 
 };

@@ -17,7 +17,7 @@
 extern "C" void __stdcall GetCpuid(DWORD * deax, DWORD * debx, DWORD * decx, DWORD * dedx, char* cProStr);
 
 // View: ϵͳ�汾
-void USysBaseInfo::GetOSVersion(std::string& strOSVersion)
+void USysBaseInfo::GetOSVersion(std::string& strOSVersion, int& verMajorVersion, int& verMinorVersion, bool& Is64)
 {
     CStringA tmpbuffer;
     std::string str;
@@ -37,6 +37,8 @@ void USysBaseInfo::GetOSVersion(std::string& strOSVersion)
 
     GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetNativeSystemInfo");
     GetSystemInfo(&si);
+    verMajorVersion = osvi.dwMajorVersion;
+    verMinorVersion = osvi.dwMinorVersion;
     switch (osvi.dwPlatformId)
     {
     case VER_PLATFORM_WIN32_NT:
@@ -255,10 +257,12 @@ void USysBaseInfo::GetOSVersion(std::string& strOSVersion)
     if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 ||
         si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64)
     {
+        Is64 = true;
         str += " x64";
     }
     else
     {
+        Is64 = false;
         str += " x32";
     }
 

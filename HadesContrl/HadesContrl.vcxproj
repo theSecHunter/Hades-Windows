@@ -245,6 +245,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="DriverManager.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="HadesContrl.h" />
     <ClInclude Include="Resource.h" />
@@ -255,6 +256,7 @@
     <ClInclude Include="Wnd\Menu.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DriverManager.cpp" />
     <ClCompile Include="HadesContrl.cpp" />
     <ClCompile Include="Systeminfolib.cpp" />
     <ClCompile Include="Wnd\AboutUsWindow.cpp" />

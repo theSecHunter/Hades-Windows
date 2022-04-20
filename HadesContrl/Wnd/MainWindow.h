@@ -2,6 +2,7 @@
 #include <UIlib.h>
 #include "Menu.h"
 #include <xstring>
+#include <shellapi.h>
 
 using namespace DuiLib;
 
@@ -21,11 +22,11 @@ public:
 	LRESULT OnTimer(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	
 	void FlushData();
-	//void AddTrayIcon();
+	void AddTrayIcon();
 	void HadesSvcDaemon();
 	void GetHadesSvctStatus();
 	void GetHadesSvcConnectStatus();
-	//LRESULT OnTrayIcon(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnTrayIcon(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
 private:
 	std::wstring m_cmdline;
@@ -37,6 +38,6 @@ private:
 	CHorizontalLayoutUI* pMainOptemp = nullptr;
 	CHorizontalLayoutUI* pMainOpcpu = nullptr;
 	CHorizontalLayoutUI* pMainOpbox = nullptr;
-	//NOTIFYICONDATA m_trayIcon;
+	NOTIFYICONDATA m_trayInfo;
 };
 
