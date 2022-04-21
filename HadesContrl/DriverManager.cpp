@@ -323,21 +323,6 @@ int GetServicesStatus(const wchar_t* driverName)
 
 int DeleteDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
-	bool nSeriverstatus = GetServicesStatus(cszDriverName);
-	switch (nSeriverstatus)
-	{
-	// 正在运行
-	case SERVICE_CONTINUE_PENDING:
-	case SERVICE_RUNNING:
-	case SERVICE_START_PENDING:
-	{
-		StopDriver(cszDriverName, cszDriverFullPath);
-		Sleep(200);
-		break;
-	}
-	break;
-	}
-
 	// 卸载
 	SC_HANDLE    schManager;
 	SC_HANDLE    schService;
@@ -416,7 +401,7 @@ int RemoveDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 	memset(szBuf, 0, LG_PAGE_SIZE);
 	memset(szDriverName, 0, MAX_PATH);
 	lstrcpyW(szDriverName, cszDriverName);
-	strcpy(szBuf, "SYSTEM//CurrentControlSet//Services//");
+	strcpy_s(szBuf, "SYSTEM//CurrentControlSet//Services//");
 	if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, szBuf, 0, KEY_ALL_ACCESS, &hKey) != ERROR_SUCCESS)
 	{
 		return -1;
@@ -434,24 +419,23 @@ int DriverManager::nf_GetServicesStatus(const wchar_t* driverName)
 	return GetServicesStatus(driverName);
 }
 
-int DriverManager::nf_StartDrv(const wchar_t* cszDriverName = L"hadesmondrv", const wchar_t* cszDriverFullPath = L"C:\\Windows\\System32\\drivers\\sysmondriver.sys")
+int DriverManager::nf_StartDrv(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	return StartDriver(cszDriverName, cszDriverFullPath);
 }
 
-int DriverManager::nf_StopDrv(const wchar_t* cszDriverName = L"hadesmondrv", const wchar_t* cszDriverFullPath = L"C:\\Windows\\System32\\drivers\\sysmondriver.sys")
+int DriverManager::nf_StopDrv(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	return StopDriver(cszDriverName, cszDriverFullPath);
 }
 
-int DriverManager::nf_DeleteDrv(const wchar_t* cszDriverName = L"hadesmondrv", const wchar_t* cszDriverFullPath = L"C:\\Windows\\System32\\drivers\\sysmondriver.sys")
+int DriverManager::nf_DeleteDrv(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	return DeleteDriver(cszDriverName, cszDriverFullPath);
 }
 
-bool DriverManager::nf_DriverInstall(const int mav, const int miv, const bool Is64)
+bool DriverManager::nf_DriverInstall_Start(const int mav, const int miv, const bool Is64)
 {
-	// win7以下不支持
 	if (mav < 6)
 		return false;
 	std::wstring DriverPath;
@@ -466,48 +450,34 @@ bool DriverManager::nf_DriverInstall(const int mav, const int miv, const bool Is
 	int num = DriverPath.find_last_of(L"\\");
 	PathAll = DriverPath.substr(0, num);
 
-	// 如果存在会返回ERROR_ALREADY_EXISTS
-	std::wstring direct;
-	direct = L"C:\\Windows\\sysnative";
-	CreateDirectory(direct.c_str(), NULL);
-	direct = L"C:\\Windows\\sysnative\\drivers";
-	CreateDirectory(direct.c_str(), NULL);
-
+	// 不够精准,先用着win7 or win10满足
 	switch (miv)
 	{
-	case 0://win7
+	case 0://Vista_Server08
+	case 1://Win7 or win8
 	{
 		if(Is64)
-			PathAll += L"driver\\win7\\64\\sysmondriver.sys";
+			PathAll += L"\\driver\\win7\\64\\sysmondriver.sys";
 		else
-			PathAll += L"driver\\sysmondriver.sys";
+			PathAll += L"\\driver\\win7\\sysmondriver.sys";
 	}
 	break;
-	case 1://win8
 	case 2://win10
 	case 3://win11
 	{
 		if (Is64)
-			PathAll += L"driver\\win10\\64\\sysmondriver.sys";
+			PathAll += L"\\driver\\win10\\64\\sysmondriver.sys";
 		else
-			PathAll += L"driver\\win10\\sysmondriver.sys";
+			PathAll += L"\\driver\\win10\\sysmondriver.sys";
 	}
 	break;
 	default:
 		return false;
 	}
 	
-	// 先拷贝到C盘 - 无论32/64统一驱动名sysmondriver
-	CopyFile(PathAll.data(), L"C:\\Windows\\sysnative\\drivers\\sysmondriver.sys", FALSE);
+	OutputDebugStringW(PathAll.c_str());
 
-	//if (InstallDriver(L"hadesmondrv", L"C:\\Windows\\System32\\drivers\\wfpdriver.sys") == TRUE) {
-	//	OutputDebugString(L"installDvr success.");
-	//}
-	//else
-	//{
-	//	return -1;
-	//}
-	if (StartDriver(L"hadesmondrv", L"C:\\Windows\\sysnative\\drivers\\sysmondriver.sys") == TRUE)
+	if (StartDriver(L"hadesmondrv", PathAll.c_str()) == TRUE)
 	{
 		OutputDebugString(L"Start Driver success.");
 		return true;

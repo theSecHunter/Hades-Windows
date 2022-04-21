@@ -43,6 +43,7 @@ std::wstring GetWStringByChar(const char* szString)
 	}
 	return wstrString;
 }
+// 配置文件读取grpc配置
 std::wstring ReadConfigtoIpPort(std::wstring& config_root)
 {
 	std::wstring ip_port;
@@ -118,6 +119,71 @@ std::wstring ReadConfigtoIpPort(std::wstring& config_root)
 		delete[] guardData;
 	return ip_port;
 }
+// 检测驱动是否安装
+bool DrvCheckStart()
+{
+	std::wstring pszCmd = L"sc start hadesmondrv";
+	STARTUPINFO si = { sizeof(STARTUPINFO) };
+	int nSeriverstatus = g_DrvManager.nf_GetServicesStatus(drverName.c_str());
+	switch (nSeriverstatus)
+	{
+		// 正在运行
+	case SERVICE_CONTINUE_PENDING:
+	case SERVICE_RUNNING:
+	case SERVICE_START_PENDING:
+	{
+		OutputDebugString(L"Driver Running");
+		break;
+	}
+	break;
+	// 已安装 - 未运行
+	case SERVICE_STOPPED:
+	case SERVICE_STOP_PENDING:
+	{
+		GetStartupInfo(&si);
+		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+		si.wShowWindow = SW_HIDE;
+		// 启动命令行
+		PROCESS_INFORMATION pi;
+		CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi);
+		Sleep(3000);
+		nSeriverstatus = g_DrvManager.nf_GetServicesStatus(drverName.c_str());
+		if (SERVICE_RUNNING == nSeriverstatus)
+		{
+			OutputDebugString(L"sc Driver Running");
+			break;
+		}
+		else
+		{
+			OutputDebugString(L"sc Driver Install Failuer");
+			return false;
+		}
+	}
+	break;
+	default:
+	{	//仅未安装驱动的时候提醒
+		const int nret = MessageBox(NULL, L"开启内核采集需要安装驱动，系统并未安装\n示例驱动没有签名,请自行打签名或者关闭系统驱动签名认证安装.\n是否进行驱动安装开启内核态采集\n", L"提示", MB_OKCANCEL | MB_ICONWARNING);
+		if (nret == 1)
+		{
+			wchar_t output[MAX_PATH] = { 0, };
+			wsprintf(output, L"[Hades] SysMaver: %d SysMiver: %d", SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion);
+			OutputDebugStringW(output);
+			
+			if (!g_DrvManager.nf_DriverInstall_Start(SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion, SYSTEMPUBLIC::sysattriinfo.Is64))
+			{
+				MessageBox(NULL, L"驱动安装失败，请您手动安装再次开启内核态采集", L"提示", MB_OKCANCEL);
+				return false;
+			}
+		}
+		else
+			return false;
+	}
+	break;
+	}
+
+	return true;
+}
+// 结束进程
 void killProcess(const wchar_t* const processname)
 {
 
@@ -145,6 +211,7 @@ void killProcess(const wchar_t* const processname)
 
 	CloseHandle(hSnapshort);
 }
+// 启动进程
 void StartProcess(std::wstring& cmdline)
 {
 	// 启动
@@ -218,66 +285,6 @@ void StartProcess(std::wstring& cmdline)
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 	}
-}
-bool DrvCheckStart()
-{
-	std::wstring pszCmd = L"sc start hadesmondrv";
-	STARTUPINFO si = { sizeof(STARTUPINFO) };
-	int nSeriverstatus = g_DrvManager.nf_GetServicesStatus(drverName.c_str());
-	switch (nSeriverstatus)
-	{
-		// 正在运行
-	case SERVICE_CONTINUE_PENDING:
-	case SERVICE_RUNNING:
-	case SERVICE_START_PENDING:
-	{
-		OutputDebugString(L"Driver Running");
-		break;
-	}
-	break;
-	// 已安装 - 未运行
-	case SERVICE_STOPPED:
-	case SERVICE_STOP_PENDING:
-	{
-		GetStartupInfo(&si);
-		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-		si.wShowWindow = SW_HIDE;
-		// 启动命令行
-		PROCESS_INFORMATION pi;
-		CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi);
-		Sleep(3000);
-		nSeriverstatus = g_DrvManager.nf_GetServicesStatus(drverName.c_str());
-		if (SERVICE_RUNNING == nSeriverstatus)
-		{
-			OutputDebugString(L"sc Driver Running");
-			break;
-		}
-		else
-		{
-			OutputDebugString(L"sc Driver Install Failuer");
-			return false;
-		}
-	}
-	break;
-	default:
-	{	//仅未安装驱动的时候提醒
-		const int nret = MessageBox(NULL, L"开启内核采集需要安装驱动，系统并未安装\n示例驱动没有签名,请自行打签名或者关闭系统驱动签名认证安装.\n是否进行驱动安装开启内核态采集\n", L"提示", MB_OKCANCEL | MB_ICONWARNING);
-		if (nret == 1)
-		{
-			OutputDebugStringW(L"nf_driverInstall");
-			if (!g_DrvManager.nf_DriverInstall(SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion, SYSTEMPUBLIC::sysattriinfo.Is64))
-			{
-				MessageBox(NULL, L"驱动安装失败，请您手动安装再次开启内核态采集", L"提示", MB_OKCANCEL);
-				return false;
-			}
-		}
-		else
-			return false;
-	}
-	break;
-	}
-
-	return true;
 }
 
 // HadesSvc进程，防止运行中Svc挂掉，界面没有感知
@@ -353,10 +360,6 @@ static DWORD WINAPI HadesSvcDeamonNotify(LPVOID lpThreadParameter)
 	return 0;
 }
 
-LPCTSTR MainWindow::GetWindowClassName() const
-{
-	return _T("HadesMainWindow");
-}
 CDuiString MainWindow::GetSkinFile()
 {
 	return _T("MainWindow.xml");
@@ -364,6 +367,10 @@ CDuiString MainWindow::GetSkinFile()
 CDuiString MainWindow::GetSkinFolder()
 {
 	return _T("");
+}
+LPCTSTR MainWindow::GetWindowClassName() const
+{
+	return _T("HadesMainWindow");
 }
 
 void MainWindow::AddTrayIcon() {
@@ -635,11 +642,10 @@ void MainWindow::Notify(TNotifyUI& msg)
 					MessageBox(m_hWnd, L"请先连接Grpc上报平台，后点击采集", L"提示", MB_OK);
 					return;
 				}
-				// 驱动版本匹配 - 必须大于win7
 				if (SYSTEMPUBLIC::sysattriinfo.verMajorVersion < 6)
 				{
 					pOption->Selected(true);
-					MessageBox(m_hWnd, L"当前系统不兼容驱动模式，请保证操作系统win7~win10之间", L"提示", MB_OK);
+					MessageBox(m_hWnd, L"当前系统驱动模式不兼容，请保证操作系统win7~win10之间", L"提示", MB_OK);
 					return;
 				}
 				const bool nret = DrvCheckStart();
@@ -654,6 +660,7 @@ void MainWindow::Notify(TNotifyUI& msg)
 				}
 				else {
 					pOption->Selected(true);
+					MessageBox(m_hWnd, L"内核态监控启动失败\n请使用cmd: sc query/delete hadesmondrv查看驱动状态\ndelete删除后请重新开启。", L"提示", MB_OK);
 				}
 			}
 		}

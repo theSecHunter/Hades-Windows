@@ -14,7 +14,14 @@
 #pragma comment(lib,"Bthprops.lib") 
 #pragma comment(lib, "DXGI.lib")
 
-extern "C" void __stdcall GetCpuid(DWORD * deax, DWORD * debx, DWORD * decx, DWORD * dedx, char* cProStr);
+#ifdef _WIN64
+    extern "C" void __stdcall GetCpuid(ULONG64 * deax, ULONG64 * debx, ULONG64 * decx, ULONG64 * dedx);
+    extern "C" void __stdcall GetCpuInfos(char* cProStr);
+#else
+    extern "C" void __stdcall GetCpuid(DWORD * deax, DWORD * debx, DWORD * decx, DWORD * dedx, char* cProStr);
+#endif // _WIN64
+
+
 
 // View: 系统版本
 void USysBaseInfo::GetOSVersion(std::string& strOSVersion, int& verMajorVersion, int& verMinorVersion, bool& Is64)
@@ -48,7 +55,7 @@ void USysBaseInfo::GetOSVersion(std::string& strOSVersion, int& verMajorVersion,
         }
         if (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 1)
         {
-            str = "Windows 8 ";
+            str = "Windows 7 ";
         }
         if (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 0)
         {
@@ -495,16 +502,23 @@ long GetCPUFreq()
 #endif // _WIN64
 void USysBaseInfo::GetSysCpuInfo(std::string& cpuinfo)
 {//制造商信息
-    DWORD deax = 10;
-    DWORD debx = 20;
-    DWORD decx = 30;
-    DWORD dedx = 40;
+    ULONG64 deax = 0;
+    ULONG64 debx = 0;
+    ULONG64 decx = 0;
+    ULONG64 dedx = 0;
     //厂商
     char ID[25] = { 0, };
     //字串
     char cProStr[49] = { 0, };
     memset(ID, 0, sizeof(ID));
-    GetCpuid(&deax, &debx, &decx, &dedx, cProStr);
+#ifdef _WIN64
+    GetCpuid(&deax, &debx, &decx, &dedx);
+    GetCpuInfos(cProStr);
+#else
+    GetCpuid((DWORD*)&deax, (DWORD*)&debx, (DWORD*)&decx, (DWORD*)&dedx, cProStr);
+#endif // _WIN64
+
+    
     memcpy(ID + 0, &debx, 4);
     memcpy(ID + 4, &dedx, 4);
     memcpy(ID + 8, &decx, 4);
@@ -781,7 +795,7 @@ void USysBaseInfo::GetCameraInfoList(std::vector<std::string>& cameraInfo)
     IEnumMoniker* pEnumCat = NULL;
     hr = pSysDevEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory, &pEnumCat, 0);
 
-    if (FAILED(hr))
+    if (FAILED(hr) || !pEnumCat)
     {
         pSysDevEnum->Release();
         return;
