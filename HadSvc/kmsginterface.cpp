@@ -741,6 +741,7 @@ void kMsgInterface::OffMonitor()
     int status = 0;
     // Off/Enable try Network packte Monitor
     status = g_kernel_Ioct.devctrl_OffMonitor();
+    Sleep(100);
     if (0 > status)
     {
         cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;

@@ -19,6 +19,12 @@
     <Filter Include="Xml">
       <UniqueIdentifier>{a9294569-c908-4100-a407-cf2bc4c324c0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="sysinfolib">
+      <UniqueIdentifier>{403010a3-79b3-41f0-870a-066aa3dc2ef9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common">
+      <UniqueIdentifier>{7ccd883e-c1ee-47f4-ac41-80ccfa9240de}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -42,6 +48,12 @@
     <ClInclude Include="Wnd\AboutUsWindow.h">
       <Filter>Wnd</Filter>
     </ClInclude>
+    <ClInclude Include="Systeminfolib.h">
+      <Filter>sysinfolib</Filter>
+    </ClInclude>
+    <ClInclude Include="DriverManager.h">
+      <Filter>common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HadesContrl.cpp">
@@ -55,6 +67,12 @@
     </ClCompile>
     <ClCompile Include="Wnd\AboutUsWindow.cpp">
       <Filter>Wnd</Filter>
+    </ClCompile>
+    <ClCompile Include="Systeminfolib.cpp">
+      <Filter>sysinfolib</Filter>
+    </ClCompile>
+    <ClCompile Include="DriverManager.cpp">
+      <Filter>common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

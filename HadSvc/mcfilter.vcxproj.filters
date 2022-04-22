@@ -22,14 +22,14 @@
     <Filter Include="minifilterport">
       <UniqueIdentifier>{cfdc8086-25ee-47b2-b437-22039a88f034}</UniqueIdentifier>
     </Filter>
-    <Filter Include="kmsgqueueprocessing">
-      <UniqueIdentifier>{c785e7f4-4387-4cd0-aa7b-ecbc3f8f156d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="umsgqueueprocessing">
-      <UniqueIdentifier>{1846fa97-1da4-4e41-ae06-9d7ecf6c0ac6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="common">
       <UniqueIdentifier>{0584de7e-1a26-48f2-8350-a6374486f21d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kmsg">
+      <UniqueIdentifier>{c785e7f4-4387-4cd0-aa7b-ecbc3f8f156d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="umsg">
+      <UniqueIdentifier>{1846fa97-1da4-4e41-ae06-9d7ecf6c0ac6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -55,10 +55,10 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="umsginterface.cpp">
-      <Filter>umsgqueueprocessing</Filter>
+      <Filter>umsg</Filter>
     </ClCompile>
     <ClCompile Include="kmsginterface.cpp">
-      <Filter>kmsgqueueprocessing</Filter>
+      <Filter>kmsg</Filter>
     </ClCompile>
     <ClCompile Include="msgassist.cpp">
       <Filter>common</Filter>
@@ -90,10 +90,10 @@
       <Filter>minifilterport</Filter>
     </ClInclude>
     <ClInclude Include="umsginterface.h">
-      <Filter>umsgqueueprocessing</Filter>
+      <Filter>umsg</Filter>
     </ClInclude>
     <ClInclude Include="kmsginterface.h">
-      <Filter>kmsgqueueprocessing</Filter>
+      <Filter>kmsg</Filter>
     </ClInclude>
     <ClInclude Include="msgassist.h">
       <Filter>common</Filter>

@@ -73,17 +73,19 @@ int DevctrlIoct::devctrl_init()
 void DevctrlIoct::devctrl_free()
 {
 	g_exitthread = true;
+	Sleep(100);
 	if (m_threadobjhandler)
 	{
+		WaitForSingleObject(m_threadobjhandler, 1000);
 		TerminateThread(m_threadobjhandler, 0);
 		CloseHandle(m_threadobjhandler);
 		m_threadobjhandler = NULL;
 	}
-
 	if (g_hDevice.m_h)
 	{
 		g_hDevice.Close();
 	}
+	Sleep(100);
 }
 
 int DevctrlIoct::devctrl_workthread(LPVOID grpcobj)
@@ -435,18 +437,13 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 	{
 		waitTimeout = 10;
 		abortBatch = false;
-
 		if (g_exitthread)
 			break;
-
 		for (i = 0; i < 8; i++)
 		{
 			readBytes = 0;
-
 			memset(&ol, 0, sizeof(ol));
-
 			ol.hEvent = g_ioEvent;
-
 			if (!ReadFile(g_hDevice, &rr, sizeof(rr), NULL, &ol))
 			{
 				if (GetLastError() != ERROR_IO_PENDING)
@@ -455,7 +452,6 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 					goto finish;
 				}
 			}
-
 			for (;;)
 			{
 				dwRes = WaitForMultipleObjects(
@@ -490,19 +486,18 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 			}
 
 			readBytes = (DWORD)rr.length;
-
 			if (readBytes > g_nfBuffers.inBufLen)
-			{
 				readBytes = (DWORD)g_nfBuffers.inBufLen;
-			}
-
 			pData = (PNF_DATA)g_nfBuffers.inBuf;
-
 			while (readBytes >= (sizeof(NF_DATA) - 1))
 			{
 				// handleEventDispath(pData);
 				handleEventDispath_(pData);
-
+				if (g_exitthread)
+				{
+					abortBatch = true;
+					break;
+				}
 				if ((pData->code == NF_PROCESS_INFO ||
 					pData->code == NF_THREAD_INFO ||
 					pData->code == NF_IMAGEGMOD_INFO ||
@@ -514,16 +509,13 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 				{
 					abortBatch = true;
 				}
-
 				if (readBytes < (sizeof(NF_DATA) - 1 + pData->bufferSize))
 				{
 					break;
 				}
-
 				readBytes -= sizeof(NF_DATA) - 1 + pData->bufferSize;
 				pData = (PNF_DATA)(pData->buffer + pData->bufferSize);
 			}
-
 			if (abortBatch)
 				break;
 		}
@@ -533,7 +525,6 @@ finish:
 
 	CancelIo(g_hDevice);
 	SetEvent(g_workThreadStoppedEvent);
-
 	OutputDebugString(L"ReadFile Thread Exit");
 	return 0;
 }
