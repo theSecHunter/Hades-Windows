@@ -87,4 +87,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="x32.asm">
+      <Filter>源文件</Filter>
+    </MASM>
+    <MASM Include="x64.asm">
+      <Filter>源文件</Filter>
+    </MASM>
+  </ItemGroup>
 </Project>

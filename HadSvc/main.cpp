@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
 		grpc_send = true;
 
 	// 通知界面Contrl已经连接Grpc
-	if (true == grpc_send && HadesSvcConnectStatus_Event)
+	if ( (true == grpc_send) && (0 < (int)HadesSvcConnectStatus_Event) )
 	{
 		SetEvent(HadesSvcConnectStatus_Event);
 		CloseHandle(HadesSvcConnectStatus_Event);

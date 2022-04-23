@@ -124,6 +124,7 @@ DWORD uf_GetNetWrokEventStr(wstring& propName)
 }
 
 // 生产者：Etw事件回调 - 数据推送至订阅消息队列(消费者)
+// PEVENT_RECORD回调
 void NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
     UEtwNetWork etwNetInfo;
     RtlZeroMemory(&etwNetInfo, sizeof(UEtwNetWork));
@@ -487,6 +488,37 @@ void ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 }
 void FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 {
+    //if (0 == lstrcmpW(L"{edd08927-9cc4-4e65-b970-c2560fb5c289}", sguid))
+    //EVENT_HEADER& Header = rec->EventHeader;
+    //if (Header.EventDescriptor.Id == 12 || Header.EventDescriptor.Id == 30) {
+
+    //    // on skippe tout ce qui est sur le disque
+    //    if (*(PULONGLONG)((SIZE_T)rec->UserData + 0x20) == 0x007600650044005c &&
+    //        *(PULONGLONG)((SIZE_T)rec->UserData + 0x30) == 0x0064007200610048)
+    //        return;
+
+    //    printf("FILE %d - PID %d - FileName %S - CreateOptions %.8X - CreateAttributes %.8X - ShareAccess %.8X\n",
+    //        Header.EventDescriptor.Id,
+    //        Header.ProcessId,
+    //        (PWSTR)((SIZE_T)rec->UserData + 0x20),
+    //        *(PULONG)((SIZE_T)(rec->UserData) + 0x14),
+    //        *(PULONG)((SIZE_T)(rec->UserData) + 0x18),
+    //        *(PULONG)((SIZE_T)(rec->UserData) + 0x1C));
+    //}
+    //else if (Header.EventDescriptor.Id == 10 || Header.EventDescriptor.Id == 11) {
+
+    //    // on skippe tout ce qui est sur le disque
+    //    if (*(PULONGLONG)((SIZE_T)rec->UserData + 0x8) == 0x007600650044005c &&
+    //        *(PULONGLONG)((SIZE_T)rec->UserData + 0x18) == 0x0064007200610048)
+    //        return;
+
+    //    printf("FILE %d - PID %d - FileName %S\n",
+    //        Header.EventDescriptor.Id,
+    //        Header.ProcessId,
+    //        (PWSTR)((SIZE_T)rec->UserData + 0x8));
+
+    //}
+
     wstring taskName;
     if (info->TaskNameOffset)
     {
@@ -570,7 +602,7 @@ void FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         else if (0 == lstrcmpW(propName.c_str(), L"IoFlags")) {
         }
         else if (0 == lstrcmpW(propName.c_str(), L"FileName")) {
-            fileio_info.TTID = wcstol(value, &end, 16);
+            lstrcpyW(fileio_info.FileName, value);
         }
     }
 
@@ -854,6 +886,15 @@ void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
         ImageModEventInfo(pEvent, info);
 }
 
+// PEVENT_TRACE回调
+void WINAPI FileTraceEventInfo(PEVENT_TRACE pEvent)
+{
+    printf("test");
+    if (0 == pEvent->Header.Class.Type)
+    {
+    }
+}
+
 // Session注册启动/跟踪/回调
 static DWORD WINAPI tracDispaththread(LPVOID param)
 {
@@ -864,6 +905,9 @@ static DWORD WINAPI tracDispaththread(LPVOID param)
     trace.LogFileName = NULL;
     trace.ProcessTraceMode = PROCESS_TRACE_MODE_REAL_TIME | PROCESS_TRACE_MODE_EVENT_RECORD;
     trace.Context = NULL;
+    trace.IsKernelTrace = true;
+    // 缺陷：EventRecordCallback这种方式如果多个Event，处理单回不同的事件调触发很慢
+    // 速度(自测评估): ImageLoad & Process & Thread >= RegisterTab & FileIO >= Network 
     trace.EventRecordCallback = DispatchEventHandle;
 
     g_processTracehandle = OpenTrace(&trace);
@@ -886,8 +930,10 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
     EVENT_TRACE_PROPERTIES* m_traceconfig = reinterpret_cast<EVENT_TRACE_PROPERTIES*>(new char[event_buffer]);
     if (!m_traceconfig)
         return false;
-    RtlZeroMemory(m_traceconfig, event_buffer);
 
+    // 注册
+    //auto nret = SetTraceCallback(&FileIoGuid, FileTraceEventInfo);
+    RtlZeroMemory(m_traceconfig, event_buffer);
     m_traceconfig->Wnode.BufferSize = event_buffer;
     m_traceconfig->Wnode.Flags = WNODE_FLAG_TRACED_GUID;
     // 记录事件的时钟 100ns
@@ -936,7 +982,6 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
             }
         }
     }
-
     // 没有使用m_traceconfig申请内存,释放
     if (false == memflag)
     {
@@ -947,6 +992,12 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
         }
     }
 
+    //EVENT_FILTER_DESCRIPTOR EnableFilterDesc = { 0 };
+    //ULONG64 dwVal = 0x02;
+    //EnableFilterDesc.Ptr = (ULONGLONG)&dwVal;
+    //EnableFilterDesc.Size = 4;
+    //EnableTraceEx(&FileIoGuid, NULL, hSession, EVENT_CONTROL_CODE_ENABLE_PROVIDER, TRACE_LEVEL_INFORMATION, 0, 0, 0, &EnableFilterDesc);
+    
     g_ms.Lock();
     g_tracMap[hSession] = tracinfo;
     g_ms.Unlock();
@@ -965,33 +1016,32 @@ bool UEtw::uf_init()
 {
     OutputDebugString(L"Etw nf_init - uf_RegisterTrace");
 #ifdef _DEBUG
-    // EVENT_TRACE_FLAG_NETWORK_TCPIP EVENT_TRACE_FLAG_THREAD
-    //if (!uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS))
-    //    uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS);
-    if (!uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
+    if (!uf_RegisterTrace(
+        EVENT_TRACE_FLAG_NETWORK_TCPIP | \
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
         EVENT_TRACE_FLAG_IMAGE_LOAD | \
+        EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
         EVENT_TRACE_FLAG_REGISTRY))
         return 0;
     return 1;
 #else
-    // 目前使用用一个Session: 优点不用管理，缺点没办法单独监控某个事件。
-    // 如果单独监控，创建多个Session来管理，注册多个uf_RegisterTrace即可。
-    // EVENT_TRACE_FLAG_SYSTEMCALL | EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT
-    if (!uf_RegisterTrace(EVENT_TRACE_FLAG_NETWORK_TCPIP | \
+    // EVENT_TRACE_FLAG_SYSTEMCALL 关联不到PID
+    // EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT 数据未清洗
+    // EEVENT_TRACE_FLAG_REGISTRY 数据未清洗
+    if (!uf_RegisterTrace(
+        EVENT_TRACE_FLAG_NETWORK_TCPIP | \
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
-        EVENT_TRACE_FLAG_IMAGE_LOAD | \
-        EVENT_TRACE_FLAG_REGISTRY))
+        EVENT_TRACE_FLAG_IMAGE_LOAD))
         return 0;
     return 1;
 #endif
 }
 bool UEtw::uf_close()
 {
-    //虽然做了停止，但是ProcessTrace仍会阻塞，但是logman -ets query "NT Kernel Logger"查询已经关闭了
-    //所以这里要在ProcessTrace回调函数做退出标志位，从Event里面关闭ProcessTrace即可.
+    //问题：虽然做了停止，但是ProcessTrace仍会阻塞，logman -ets query "NT Kernel Logger"查询已经关闭了
+    //解决办法：这里要在ProcessTrace回调函数做退出标志位，从Event里面关闭ProcessTrace即可.
     g_etwevent_exit = true;
     // 停止Etw_Session
     map<TRACEHANDLE, TracGuidNode>::iterator  iter;
@@ -1041,7 +1091,6 @@ unsigned long UEtw::uf_setmonitor(
 )
 {
     ULONG nRet = 0;
-
     if (hSession && m_traceconfig)
         nRet = ControlTrace(hSession, KERNEL_LOGGER_NAME, (PEVENT_TRACE_PROPERTIES)m_traceconfig, ioct);
 
@@ -1050,6 +1099,5 @@ unsigned long UEtw::uf_setmonitor(
         delete[] m_traceconfig;
         m_traceconfig = NULL;
     }
-
     return nRet;
 }

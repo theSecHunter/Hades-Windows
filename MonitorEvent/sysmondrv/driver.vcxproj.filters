@@ -146,7 +146,7 @@
     <ResourceCompile Include="driver.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="driver.inf" />
+    <Inf Include="sysmondriver.inf" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="devctrl">
