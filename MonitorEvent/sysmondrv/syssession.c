@@ -125,19 +125,30 @@ void Session_Clean(void)
 {
 	KLOCK_QUEUE_HANDLE lh;
 	SESSIONBUFFER* pData = NULL;
+	int lock_status = 0;
 
-	sl_lock(&g_sessiondata.session_lock, &lh);
-
-	while (!IsListEmpty(&g_sessiondata.session_pending))
+	try
 	{
-		pData = (SESSIONBUFFER*)RemoveHeadList(&g_sessiondata.session_pending);
-		sl_unlock(&lh);
-		Session_PacketFree(pData);
-		pData = NULL;
 		sl_lock(&g_sessiondata.session_lock, &lh);
+		lock_status = 1;
+		while (!IsListEmpty(&g_sessiondata.session_pending))
+		{
+			pData = (SESSIONBUFFER*)RemoveHeadList(&g_sessiondata.session_pending);
+			sl_unlock(&lh);
+			lock_status = 0;
+			Session_PacketFree(pData);
+			pData = NULL;
+			sl_lock(&g_sessiondata.session_lock, &lh);
+			lock_status = 1;
+		}
+		sl_unlock(&lh);
+		lock_status = 0;
 	}
-
-	sl_unlock(&lh);
+	finally
+	{
+		if (1 == lock_status)
+			sl_unlock(&lh);
+	}
 }
 
 void Session_SetMonitor(BOOLEAN code)

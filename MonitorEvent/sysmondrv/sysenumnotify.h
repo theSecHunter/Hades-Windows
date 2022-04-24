@@ -44,10 +44,10 @@ typedef struct _NOTIFY_INFO
 //	PVOID	Reserved1;
 //} FLT_OPERATION_REGISTRATION, * PFLT_OPERATION_REGISTRATION;
 
-typedef struct _FLT_FILTER
-{
-	UCHAR buffer[1024];
-} FLT_FILTER, * PFLT_FILTER;
+//typedef struct _FLT_FILTER
+//{
+//	UCHAR buffer[1024];
+//} FLT_FILTER, * PFLT_FILTER;
 
 typedef struct _MINIFILTER_INFO
 {

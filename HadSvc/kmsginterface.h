@@ -26,8 +26,11 @@ public:
 	void DriverFree();
 	void OnMonitor();
 	void OffMonitor();
+	void OnBeSnipingMonitor();
+	void OffBeSnipingMonitor();
 	bool GetKerMonStatus();
 	bool GetKerInitStatus();
+	bool GetKerBeSnipingStatus();
 
 private:
 	void kMsg_SetTopicQueuePtr();
@@ -37,6 +40,7 @@ private:
 	
 
 	std::vector<HANDLE> m_topicthread;
-	bool kerStatus = false;
+	bool kerMonStatus = false;
 	bool kInitStatus = false;
+	bool kBesnipingStatus = false;
 };

@@ -124,8 +124,12 @@ NTSTATUS
     }
 
     // Os <= Win8 (可用FileObject)
-    if (osver.dwMajorVersion <= 6)
+    if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion <= 1))
         g_Win10Version = TRUE;
+    else if ((osver.dwMajorVersion < 6) && (osver.dwMajorVersion > 4))
+        g_Win10Version = TRUE;
+    else
+        g_Win10Version = FALSE;
 
     devctrl_pushversion(g_Win10Version);
 

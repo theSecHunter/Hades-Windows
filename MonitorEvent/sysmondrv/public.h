@@ -133,8 +133,6 @@ enum _NF_DATA_CODE
     NF_SESSION_INFO
 }NF_DATA_CODE;
 
-
-
 typedef UNALIGNED struct _NF_DATA
 {
 	int				code;
@@ -155,13 +153,6 @@ typedef UNALIGNED struct _NF_BUFFERS
 	unsigned __int64 outBuf;
 	unsigned __int64 outBufLen;
 } NF_BUFFERS, * PNF_BUFFERS;
-
-typedef struct _ETHERNET_HEADER_
-{
-    unsigned char    pDestinationAddress[6];
-    unsigned char    pSourceAddress[6];
-    unsigned short  type;
-}ETHERNET_HEADER, *PETHERNET_HEADER;
 
 typedef struct _IP_HEADER_V4_
 {
@@ -375,5 +366,11 @@ typedef struct _PROCESS_MOD
     WCHAR	FullDllName[260];
     WCHAR	BaseDllName[260];
 }PROCESS_MOD, * PPROCESS_MOD;
+
+/*
+WSK
+*/
+typedef int       socklen_t;
+typedef intptr_t  ssize_t;
 
 #endif

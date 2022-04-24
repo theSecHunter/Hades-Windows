@@ -149,19 +149,31 @@ void File_Clean(void)
 {
 	KLOCK_QUEUE_HANDLE lh;
 	FILEBUFFER* pData = NULL;
+	int lock_status = 0;
 
-	sl_lock(&g_filedata.file_lock, &lh);
-
-	while (!IsListEmpty(&g_filedata.file_pending))
+	try
 	{
-		pData = (FILEBUFFER*)RemoveHeadList(&g_filedata.file_pending);
-		sl_unlock(&lh);
-		File_PacketFree(pData);
-		pData = NULL;
 		sl_lock(&g_filedata.file_lock, &lh);
+		lock_status = 1;
+		while (!IsListEmpty(&g_filedata.file_pending))
+		{
+			pData = (FILEBUFFER*)RemoveHeadList(&g_filedata.file_pending);
+			sl_unlock(&lh);
+			lock_status = 0;
+			File_PacketFree(pData);
+			pData = NULL;
+			sl_lock(&g_filedata.file_lock, &lh);
+			lock_status = 1;
+		}
+		sl_unlock(&lh);
+		lock_status = 0;
+	}
+	finally
+	{
+		if (1 == lock_status)
+			sl_unlock(&lh);
 	}
 
-	sl_unlock(&lh);
 }
 
 void File_SetMonitor(BOOLEAN code)

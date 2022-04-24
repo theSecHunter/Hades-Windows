@@ -29,7 +29,7 @@
 			</VerticalLayout>
 			<Option float="true" pos="60,250,0,0" name="MainMonUserBtn" width="120" height="33" text="用户态监控" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />
 			<Option float="true" pos="250,250,0,0" name="MainMonKerBtn" width="120" height="33" text="内核态监控" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />
-			<Button float="true" pos="430,250,0,0" name="MainMonCveBtn" width="120" height="33" text="其他" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />
+			<Option float="true" pos="430,250,0,0" name="MainMonBeSnipingBtn" width="120" height="33" text="恶意行为拦截" textpadding="25,0,0,0" font="4" normalimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" hotimage="file='img/normal/slide_btn.png' dest='0,0,32,32'" selectedimage="file='img/normal/slide_btn1.png' dest='0,0,32,32'" />
 			<Label float="true" width="120" height="28" pos="250,20,0,0" text="运行用户: " font="2" />
 			<Label name="mainwin_currentuser_lab" float="true" width="300" height="28" pos="320,20,0,0" font="1" />
 			<Label float="true" width="120" height="28" pos="250,40,0,0" text="处理器  : " font="1" />

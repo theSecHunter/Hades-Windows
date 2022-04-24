@@ -83,20 +83,30 @@ void Imagemod_Clean(void)
 {
 	KLOCK_QUEUE_HANDLE lh;
 	IMAGEMODBUFFER* pData = NULL;
+	int lock_status = 0;
 
-	// Distable ProcessMon
-	sl_lock(&g_imagemodQueryhead.imagemod_lock, &lh);
-
-	while (!IsListEmpty(&g_imagemodQueryhead.imagemod_pending))
-	{
-		pData = RemoveHeadList(&g_imagemodQueryhead.imagemod_pending);
-		sl_unlock(&lh);
-		Imagemod_PacketFree(pData);
-		pData = NULL;
+	try {
+		// Distable ProcessMon
 		sl_lock(&g_imagemodQueryhead.imagemod_lock, &lh);
-	}
+		lock_status = 1;
+		while (!IsListEmpty(&g_imagemodQueryhead.imagemod_pending))
+		{
+			pData = RemoveHeadList(&g_imagemodQueryhead.imagemod_pending);
+			sl_unlock(&lh);
+			lock_status = 0;
+			Imagemod_PacketFree(pData);
+			pData = NULL;
+			sl_lock(&g_imagemodQueryhead.imagemod_lock, &lh);
+			lock_status = 1;
+		}
 
-	sl_unlock(&lh);
+		sl_unlock(&lh);
+		lock_status = 0;
+	}
+	finally {
+		if (1 == lock_status)
+			sl_unlock(&lh);
+	}
 }
 
 void Imagemod_SetMonitor(BOOLEAN code)

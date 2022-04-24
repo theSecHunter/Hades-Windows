@@ -68,6 +68,15 @@
     <ClCompile Include="uefi.c">
       <Filter>sysbootkit</Filter>
     </ClCompile>
+    <ClCompile Include="kflt.c">
+      <Filter>flt</Filter>
+    </ClCompile>
+    <ClCompile Include="ksuse.c">
+      <Filter>ksocket</Filter>
+    </ClCompile>
+    <ClCompile Include="kwsk.c">
+      <Filter>ksocket</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="driver.h" />
@@ -141,6 +150,15 @@
     <ClInclude Include="uefi.h">
       <Filter>sysbootkit</Filter>
     </ClInclude>
+    <ClInclude Include="kflt.h">
+      <Filter>flt</Filter>
+    </ClInclude>
+    <ClInclude Include="ksuse.h">
+      <Filter>ksocket</Filter>
+    </ClInclude>
+    <ClInclude Include="kwsk.h">
+      <Filter>ksocket</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="driver.rc" />
@@ -160,6 +178,12 @@
     </Filter>
     <Filter Include="sysrootkit">
       <UniqueIdentifier>{6c91ef1a-0cdf-4da6-9a06-9031b2fa1495}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="flt">
+      <UniqueIdentifier>{f7228cee-c937-45a2-b4d4-792de18af0d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ksocket">
+      <UniqueIdentifier>{87db5376-2220-4461-8912-dc63d6cee44c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

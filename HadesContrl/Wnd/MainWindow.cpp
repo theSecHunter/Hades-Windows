@@ -577,10 +577,6 @@ void MainWindow::Notify(TNotifyUI& msg)
 				m_pMenu->ShowWindow(true);
 				::SetWindowPos(m_pMenu->GetHWND(), NULL, pt.x, pt.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 			}
-			else if (strControlName == _T("MainMonCveBtn"))
-			{//规则配置
-
-			}
 			//最小化
 			else if (strControlName == _T("MainMinsizeBtn"))
 			{
@@ -656,6 +652,38 @@ void MainWindow::Notify(TNotifyUI& msg)
 					HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
 					COPYDATASTRUCT c2_;
 					c2_.dwData = 2;
+					c2_.cbData = 0;
+					c2_.lpData = NULL;
+					::SendMessage(m_SvcHwnd, WM_COPYDATA, NULL, (LPARAM)&c2_);
+				}
+				else {
+					pOption->Selected(true);
+					MessageBox(m_hWnd, L"内核态监控启动失败\n请使用cmd: sc query/delete hadesmondrv查看驱动状态\ndelete删除后请重新开启。", L"提示", MB_OK);
+				}
+			}
+			else if (strControlName == _T("MainMonBeSnipingBtn"))
+			{//拦截恶意行为
+				COptionUI* pOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonBeSnipingBtn")));
+				if (!pOption)
+					return;
+				if (false == m_hadesSvcStatus)
+				{
+					pOption->Selected(true);
+					MessageBox(m_hWnd, L"请先连接Grpc上报平台，后点击采集", L"提示", MB_OK);
+					return;
+				}
+				if (SYSTEMPUBLIC::sysattriinfo.verMajorVersion < 6)
+				{
+					pOption->Selected(true);
+					MessageBox(m_hWnd, L"当前系统驱动模式不兼容，请保证操作系统win7~win10之间", L"提示", MB_OK);
+					return;
+				}
+				const bool nret = DrvCheckStart();
+				if (true == nret)
+				{
+					HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
+					COPYDATASTRUCT c2_;
+					c2_.dwData = 3;
 					c2_.cbData = 0;
 					c2_.lpData = NULL;
 					::SendMessage(m_SvcHwnd, WM_COPYDATA, NULL, (LPARAM)&c2_);

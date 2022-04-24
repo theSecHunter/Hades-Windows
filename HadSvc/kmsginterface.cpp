@@ -733,7 +733,7 @@ void kMsgInterface::OnMonitor()
     {
         cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
     }
-    kerStatus = true;
+    kerMonStatus = true;
     return;
 }
 void kMsgInterface::OffMonitor()
@@ -746,17 +746,29 @@ void kMsgInterface::OffMonitor()
     {
         cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
     }
-    kerStatus = false;
+    kerMonStatus = false;
     return;
     
 }
+void kMsgInterface::OnBeSnipingMonitor()
+{
+    kBesnipingStatus = true;
+}
+void kMsgInterface::OffBeSnipingMonitor()
+{
+    kBesnipingStatus = false;
+}
 bool kMsgInterface::GetKerMonStatus()
 {
-    return kerStatus;
+    return kerMonStatus;
 }
 bool kMsgInterface::GetKerInitStatus()
 {
     return kInitStatus;
+}
+bool kMsgInterface::GetKerBeSnipingStatus()
+{
+    return kBesnipingStatus;
 }
 
 void kMsgInterface::kMsg_Init() {

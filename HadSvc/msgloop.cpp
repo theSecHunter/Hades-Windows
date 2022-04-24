@@ -43,13 +43,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				else if (true == kStatus)
 				{
 					g_klib->OffMonitor();
-					if (true == g_klib->GetKerInitStatus())
+					if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerBeSnipingStatus()))
 						g_klib->DriverFree();
 				}
 			}
 			break;
 			case 3:
-			{//规则配置更新 Etw选择监控 Kernel选择性数据上报等 还未做
+			{//行为拦截
+				if (false == g_klib->GetKerInitStatus())
+					g_klib->DriverInit();
+				kStatus = g_klib->GetKerBeSnipingStatus();
+				if (false == kStatus)
+					g_klib->OnBeSnipingMonitor();
+				else if (true == kStatus)
+				{
+					g_klib->OffBeSnipingMonitor();
+					if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerMonStatus()))
+						g_klib->DriverFree();
+				}
 			}
 			break;
 			default:

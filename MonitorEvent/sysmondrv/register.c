@@ -152,19 +152,29 @@ void Register_Clean(void)
 {
 	KLOCK_QUEUE_HANDLE lh;
 	REGISTERBUFFER* pData = NULL;
+	int lock_status = 0;
 
-	sl_lock(&g_regdata.register_lock, &lh);
-
-	while (!IsListEmpty(&g_regdata.register_pending))
-	{
-		pData = (REGISTERBUFFER*)RemoveHeadList(&g_regdata.register_pending);
-		sl_unlock(&lh);
-		Register_PacketFree(pData);
-		pData = NULL;
+	try {
 		sl_lock(&g_regdata.register_lock, &lh);
-	}
+		lock_status = 1;
+		while (!IsListEmpty(&g_regdata.register_pending))
+		{
+			pData = (REGISTERBUFFER*)RemoveHeadList(&g_regdata.register_pending);
+			sl_unlock(&lh);
+			lock_status = 0;
+			Register_PacketFree(pData);
+			pData = NULL;
+			sl_lock(&g_regdata.register_lock, &lh);
+			lock_status = 1;
+		}
 
-	sl_unlock(&lh);
+		sl_unlock(&lh);
+		lock_status = 0;
+	}
+	finally {
+		if (1 == lock_status)
+			sl_unlock(&lh);
+	}
 }
 
 void Register_SetMonitor(BOOLEAN code)

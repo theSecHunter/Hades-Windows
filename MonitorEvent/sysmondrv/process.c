@@ -11,6 +11,8 @@ static KSPIN_LOCK               g_processlock = NULL;
 static NPAGED_LOOKASIDE_LIST    g_processList;
 static PROCESSDATA              g_processQueryhead;
 
+//static KEVENT					g_testEvent;
+
 typedef NTSTATUS(*PfnNtQueryInformationProcess) (
     __in HANDLE ProcessHandle,
     __in PROCESSINFOCLASS ProcessInformationClass,
@@ -206,20 +208,32 @@ void Process_Clean(void)
 {
     KLOCK_QUEUE_HANDLE lh;
     PROCESSBUFFER* pData = NULL;
+    int lock_status = 0;
 
-    // Distable ProcessMon
-    sl_lock(&g_processQueryhead.process_lock, &lh);
-
-    while (!IsListEmpty(&g_processQueryhead.process_pending))
+    try
     {
-        pData = (PROCESSBUFFER*)RemoveHeadList(&g_processQueryhead.process_pending);
-        sl_unlock(&lh);
-        Process_PacketFree(pData);
-        pData = NULL;
+        // Distable ProcessMon
         sl_lock(&g_processQueryhead.process_lock, &lh);
+        lock_status = 1;
+        // 4/24莫名的BUG清空了相关内存，process_pending数据，锁数据还在蓝屏
+        while (!IsListEmpty(&g_processQueryhead.process_pending))
+        {
+            pData = (PROCESSBUFFER*)RemoveHeadList(&g_processQueryhead.process_pending);
+            sl_unlock(&lh);
+            lock_status = 0;
+            Process_PacketFree(pData);
+            pData = NULL;
+            sl_lock(&g_processQueryhead.process_lock, &lh);
+            lock_status = 1;
+        }
+        sl_unlock(&lh);
+        lock_status = 0;
+    }
+    finally {
+        if (1 == lock_status)
+            sl_unlock(&lh);
     }
 
-    sl_unlock(&lh);
 }
 
 PROCESSBUFFER* Process_PacketAllocate(int lens)

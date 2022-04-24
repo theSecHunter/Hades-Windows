@@ -78,20 +78,31 @@ void Thread_Clean()
 {
 	KLOCK_QUEUE_HANDLE lh;
 	THREADBUFFER* pData = NULL;
-
-	// Distable ProcessMon
-	sl_lock(&g_threadQueryhead.thread_lock, &lh);
-
-	while (!IsListEmpty(&g_threadQueryhead.thread_pending))
+	int lock_status = 0;
+	try
 	{
-		pData = RemoveHeadList(&g_threadQueryhead.thread_pending);
-		sl_unlock(&lh);
-		Thread_PacketFree(pData);
-		pData = NULL;
+		// Distable ProcessMon
 		sl_lock(&g_threadQueryhead.thread_lock, &lh);
+		lock_status = 1;
+		while (!IsListEmpty(&g_threadQueryhead.thread_pending))
+		{
+			pData = RemoveHeadList(&g_threadQueryhead.thread_pending);
+			sl_unlock(&lh);
+			lock_status = 0;
+			Thread_PacketFree(pData);
+			pData = NULL;
+			sl_lock(&g_threadQueryhead.thread_lock, &lh);
+			lock_status = 1;
+		}
+		sl_unlock(&lh);
+		lock_status = 0;
+	}
+	finally
+	{
+		if (1 == lock_status)
+			sl_unlock(&lh);
 	}
 
-	sl_unlock(&lh);
 }
 
 void Thread_Free()

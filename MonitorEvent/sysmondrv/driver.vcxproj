@@ -54,6 +54,9 @@
     <ClCompile Include="bios.c" />
     <ClCompile Include="devctrl.c" />
     <ClCompile Include="imagemod.c" />
+    <ClCompile Include="kflt.c" />
+    <ClCompile Include="ksuse.c" />
+    <ClCompile Include="kwsk.c" />
     <ClCompile Include="mbr.c" />
     <ClCompile Include="process.c" />
     <ClCompile Include="register.c" />
@@ -358,6 +361,9 @@
     <ClInclude Include="devctrl.h" />
     <ClInclude Include="driver.h" />
     <ClInclude Include="imagemod.h" />
+    <ClInclude Include="kflt.h" />
+    <ClInclude Include="ksuse.h" />
+    <ClInclude Include="kwsk.h" />
     <ClInclude Include="mbr.h" />
     <ClInclude Include="ntdefines.h" />
     <ClInclude Include="object.h" />

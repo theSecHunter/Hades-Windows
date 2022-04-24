@@ -20,6 +20,7 @@
 
 #include <ntddk.h>
 #include <stdlib.h>
+#include <ndis.h>
 
 #define NF_TCP_PACKET_BUF_SIZE 8192
 #define NF_UDP_PACKET_BUF_SIZE 2 * 65536
@@ -898,6 +899,69 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	return status;
 }
 
+void devctrl_sleep(UINT ttw)
+{
+	NDIS_EVENT  _SleepEvent;
+	NdisInitializeEvent(&_SleepEvent);
+	NdisWaitEvent(&_SleepEvent, ttw);
+}
+void devctrl_cancelPendingReads()
+{
+	PIRP                irp;
+	PLIST_ENTRY         pIrpEntry;
+	KLOCK_QUEUE_HANDLE lh;
+
+	sl_lock(&g_IoQueryLock, &lh);
+
+	while (!IsListEmpty(&g_pendedIoRequests))
+	{
+		//
+		//  Get the first pended Read IRP
+		//
+		pIrpEntry = g_pendedIoRequests.Flink;
+		irp = CONTAINING_RECORD(pIrpEntry, IRP, Tail.Overlay.ListEntry);
+
+		//
+		//  Check to see if it is being cancelled.
+		//
+		if (IoSetCancelRoutine(irp, NULL))
+		{
+			//
+			//  It isn't being cancelled, and can't be cancelled henceforth.
+			//
+			RemoveEntryList(pIrpEntry);
+
+			sl_unlock(&lh);
+
+			//
+			//  Complete the IRP.
+			//
+			irp->IoStatus.Status = STATUS_CANCELLED;
+			irp->IoStatus.Information = 0;
+			IoCompleteRequest(irp, IO_NO_INCREMENT);
+
+			sl_lock(&g_IoQueryLock, &lh);
+		}
+		else
+		{
+			//
+			//  It is being cancelled, let the cancel routine handle it.
+			//
+			sl_unlock(&lh);
+
+			//
+			//  Give the cancel routine some breathing space, otherwise
+			//  we might end up examining the same (cancelled) IRP over
+			//  and over again.
+			//
+			devctrl_sleep(1000);
+
+			sl_lock(&g_IoQueryLock, &lh);
+		}
+	}
+
+	sl_unlock(&lh);
+}
 VOID devctrl_clean()
 {
 	PNF_QUEUE_ENTRY pQuery = NULL;
@@ -914,36 +978,8 @@ VOID devctrl_clean()
 	}
 	sl_unlock(&lh);
 
-	// clearn pennding read
-	PIRP                irp = NULL;
-	PLIST_ENTRY         pIrpEntry;
-	sl_lock(&g_IoQueryLock, &lh);
-	if (IsListEmpty(&g_pendedIoRequests))
-	{
-		sl_unlock(&lh);
-		return;
-	}
-	pIrpEntry = g_pendedIoRequests.Flink;
-	while (pIrpEntry != &g_pendedIoRequests)
-	{
-		irp = CONTAINING_RECORD(pIrpEntry, IRP, Tail.Overlay.ListEntry);
-
-		if (IoSetCancelRoutine(irp, NULL))
-		{
-			// ÒÆ³ý
-			RemoveEntryList(pIrpEntry);
-			irp->IoStatus.Information = 0;
-			irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
-			IoCompleteRequest(irp, IO_NO_INCREMENT);
-		}
-		else
-		{
-			KdPrint((DPREFIX"devctrl_serviceReads: skipping cancelled IRP\n"));
-			pIrpEntry = pIrpEntry->Flink;
-		}
-	}
-
-	sl_unlock(&lh);
+	// clearn pennding read i/o
+	devctrl_cancelPendingReads();
 }
 VOID devctrl_free()
 {
@@ -999,6 +1035,10 @@ VOID devctrl_setMonitor(BOOLEAN code)
 	Wmi_SetMonitor(code);
 	File_SetMonitor(code);
 	Session_SetMonitor(code);
+
+	// clearn pennding read i/o
+	if (FALSE == code)
+		devctrl_cancelPendingReads();
 }
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 {
