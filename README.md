@@ -1,4 +1,4 @@
-![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0.jpg)
+![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0.png)
 
 **适用Win7/Win10 x32/x64用户态和内核态数据采集，XP未做兼容测试.**
 
@@ -118,6 +118,16 @@
 | 电池|静态展示 |完成|
 
 **Duilib展示数据不会上报**
+
+##### 恶意行为拦截：
+| 事件     | 描述                            |进度  | 
+| -------- | ------------------------------- |-------- |
+| Powershell|  启动Powershell |开发中|
+| cmd | 启动Powershell |开发中|
+| 自启动| 修改注册表启动项 |开发中|
+| vbs |启动wscript.exe |开发中|
+
+**基于回调先做一些简单的行为拦截**
 
 ##### GRPC v2.0
 
