@@ -8,6 +8,8 @@
 #include "syswmi.h"
 #include "sysfile.h"
 #include "syssession.h"
+#include "minifilter.h"
+#include "kflt.h"
 
 #include <fltKernel.h>
 #include <dontuse.h>
@@ -76,6 +78,7 @@ VOID driverUnload(
         g_processname = NULL;
     }
 
+    FsMini_Free();
     devctrl_free();
     devctrl_ioThreadFree();
     return STATUS_SUCCESS;
@@ -97,6 +100,14 @@ NTSTATUS
 	ExInitializeDriverRuntime(DrvRtPoolNxOptIn);
 	PT_DBG_PRINT(PTDBG_TRACE_ROUTINES,
 		("driver!DriverEntry: Entered\n"));
+
+    // Init FltMiniPort
+    status = FsMini_Init(DriverObject);
+    if (!NT_SUCCESS(status))
+        return status;
+    status = kflt_initPort();
+    if (!NT_SUCCESS(status))
+        return status;
     
     int i = 0;
     for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)

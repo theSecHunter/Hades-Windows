@@ -16,7 +16,7 @@ const int WM_SHOWTASK = WM_USER + 501;
 const int WM_ONCLOSE = WM_USER + 502;
 const int WM_ONOPEN = WM_USER + 503;
 
-const std::wstring drverName = L"hadesmondrv";
+const std::wstring drverName = L"sysmondriver";
 
 // hades×´Ì¬Ëø
 std::mutex g_hadesStatuscs;
@@ -122,7 +122,7 @@ std::wstring ReadConfigtoIpPort(std::wstring& config_root)
 // ¼ì²âÇý¶¯ÊÇ·ñ°²×°
 bool DrvCheckStart()
 {
-	std::wstring pszCmd = L"sc start hadesmondrv";
+	std::wstring pszCmd = L"sc start sysmondriver";
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
 	int nSeriverstatus = g_DrvManager.nf_GetServicesStatus(drverName.c_str());
 	switch (nSeriverstatus)

@@ -1,11 +1,12 @@
 /*
-* 2022/4/22
 * 为了解决Event上下文等待唤醒非同步，可以用FltSendMessage+FilterReplyMessage方案上线文同步
 */
 #include "public.h"
 #include <fltKernel.h>
 
-static PFLT_FILTER g_FltServerPortEvnet = NULL;
+#include "minifilter.h"
+
+extern PFLT_FILTER g_FltServerPortEvnet;
 static PFLT_PORT   g_FltServerPortEvnetPort = NULL;
 
 static PFLT_FILTER g_FltClientPortEvnet = NULL;
@@ -46,7 +47,10 @@ NTSTATUS kflt_initPort()
 	RtlInitUnicodeString(&EventPort, L"Global\\HadesEventFltPort");
 	FltBuildDefaultSecurityDescriptor(&sd, FLT_PORT_ALL_ACCESS);
 	InitializeObjectAttributes(&oa, &EventPort, OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, NULL, sd);
-	NTSTATUS status = FltCreateCommunicationPort(g_FltServerPortEvnet, &g_FltServerPortEvnetPort, &oa, NULL, CommunicateConnect, CommunicateDisconnect, NULL, 1);
+	if (g_FltServerPortEvnet == NULL)
+		return STATUS_INSUFFICIENT_RESOURCES;
+	DbgBreakPoint();
+	status = FltCreateCommunicationPort(g_FltServerPortEvnet, &g_FltServerPortEvnetPort, &oa, NULL, CommunicateConnect, CommunicateDisconnect, NULL, 1);
 	FltFreeSecurityDescriptor(sd);
 	return status;
 }
@@ -55,7 +59,7 @@ NTSTATUS kflt_SendMsg(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID ReplyB
 {
 	return FltSendMessage(g_FltClientPortEvnet, g_FltClientPortEvnetPort, &SenderBuffer, SenderBufferLength, &ReplyBuffer, ReplyLength, NULL);
 }
-NTSTATUS kflt_SendToMsg()
+NTSTATUS kflt_SendToMsg(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID ReplyBuffer, PULONG ReplyLength)
 {
 
 }

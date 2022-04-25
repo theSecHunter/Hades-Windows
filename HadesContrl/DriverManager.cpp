@@ -28,7 +28,6 @@ const BYTE g_szSecurity[SECURITY_STRING_LEN] =
 	0x02,0x00,0x01,0x02,0x00,0x00,0x00,0x00,0x00,0x05,0x20,0x00,0x00,0x00,0x23,0x02,0x00,0x00,0x01,0x01,0x00,
 	0x00,0x00,0x00,0x00,0x05,0x12,0x00,0x00,0x00,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x05,0x12,0x00,0x00,0x00
 };
-
 int	InstallDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	WCHAR	szBuf[LG_PAGE_SIZE];
@@ -91,7 +90,101 @@ int	InstallDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath
 
 	return 0;
 }
+bool InstallDriver1(const wchar_t* cszDriverName, const wchar_t* lpszDriverPath, const wchar_t* lpszAltitude)
+{
+	HKEY		hKey;
+	DWORD		dwData = 0;
+	wchar_t		szTempStr[MAX_PATH] = { 0, };
+	wchar_t		szDriverImagePath[MAX_PATH] = { 0, };
 
+	if (NULL == cszDriverName || NULL == lpszDriverPath)
+	{
+		return FALSE;
+	}
+	GetFullPathName(lpszDriverPath, MAX_PATH, szDriverImagePath, NULL);
+	SC_HANDLE hServiceMgr = NULL;
+	SC_HANDLE hService = NULL;
+
+	hServiceMgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+	if (hServiceMgr == NULL)
+	{
+		CloseServiceHandle(hServiceMgr);
+		return FALSE;
+	}
+	hService = CreateService(hServiceMgr,
+		cszDriverName,					// 驱动程序的在注册表中的名字
+		cszDriverName,					// 注册表驱动程序的DisplayName 值
+		SERVICE_ALL_ACCESS,				// 加载驱动程序的访问权限
+		SERVICE_FILE_SYSTEM_DRIVER,		// 表示加载的服务是文件系统驱动程序
+		SERVICE_DEMAND_START,			// 注册表驱动程序的Start 值
+		SERVICE_ERROR_IGNORE,			// 注册表驱动程序的ErrorControl 值
+		lpszDriverPath,					// 注册表驱动程序的ImagePath 值
+		L"FSFilter Activity Monitor",	// 注册表驱动程序的Group 值
+		NULL,
+		L"FltMgr",						// 注册表驱动程序的DependOnService 值
+		NULL,
+		NULL);
+
+	if (hService == NULL)
+	{
+		CloseServiceHandle(hService);
+		CloseServiceHandle(hServiceMgr);
+		if (GetLastError() == ERROR_SERVICE_EXISTS)
+			return TRUE;
+		else
+			return FALSE;
+	}
+	CloseServiceHandle(hService);
+	CloseServiceHandle(hServiceMgr);
+
+	//-------------------------------------------------------------------------------------------------------
+	// SYSTEM\\CurrentControlSet\\Services\\DriverName\\Instances子健下的键值项 
+	//-------------------------------------------------------------------------------------------------------
+	lstrcpyW(szTempStr, L"SYSTEM\\CurrentControlSet\\Services\\");
+	lstrcatW(szTempStr, cszDriverName);
+	lstrcatW(szTempStr, L"\\Instances");
+	if (RegCreateKeyEx(HKEY_LOCAL_MACHINE, szTempStr, 0, REG_NONE, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, (LPDWORD)&dwData) != ERROR_SUCCESS)
+	{
+		return FALSE;
+	}
+	lstrcpyW(szTempStr, cszDriverName);
+	lstrcatW(szTempStr, L" Instance");
+	if (RegSetValueEx(hKey, L"DefaultInstance", 0, REG_SZ, (CONST BYTE*)szTempStr, (DWORD)lstrlenW(szTempStr) * 2) != ERROR_SUCCESS)
+	{
+		return FALSE;
+	}
+	RegFlushKey(hKey);
+	RegCloseKey(hKey);
+
+
+	//-------------------------------------------------------------------------------------------------------
+	// SYSTEM\\CurrentControlSet\\Services\\DriverName\\Instances\\DriverName Instance子健下的键值项 
+	//-------------------------------------------------------------------------------------------------------
+	lstrcpyW(szTempStr, L"SYSTEM\\CurrentControlSet\\Services\\");
+	lstrcatW(szTempStr, cszDriverName);
+	lstrcatW(szTempStr, L"\\Instances\\");
+	lstrcatW(szTempStr, cszDriverName);
+	lstrcatW(szTempStr, L" Instance");
+	if (RegCreateKeyEx(HKEY_LOCAL_MACHINE, szTempStr, 0, REG_NONE, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, (LPDWORD)&dwData) != ERROR_SUCCESS)
+	{
+		return FALSE;
+	}
+	// Minifilter需要，注册表驱动程序的Altitude 值
+	lstrcpyW(szTempStr, lpszAltitude);
+	if (RegSetValueEx(hKey, L"Altitude", 0, REG_SZ, (CONST BYTE*)szTempStr, (DWORD)lstrlenW(szTempStr) * 2) != ERROR_SUCCESS)
+	{
+		return FALSE;
+	}
+	dwData = 0x0;
+	if (RegSetValueEx(hKey, L"Flags", 0, REG_DWORD, (CONST BYTE*) & dwData, sizeof(DWORD)) != ERROR_SUCCESS)
+	{
+		return FALSE;
+	}
+	RegFlushKey(hKey);
+	RegCloseKey(hKey);
+
+	return TRUE;
+}
 int CreateDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	SC_HANDLE		schManager;
@@ -154,7 +247,6 @@ int CreateDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 
 	return 0;
 }
-
 int StartDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	SC_HANDLE		schManager;
@@ -217,7 +309,6 @@ int StartDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 
 	return bStarted ? 1 : -1;
 }
-
 int StopDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	SC_HANDLE		schManager;
@@ -269,7 +360,77 @@ int StopDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 
 	return 0;
 }
+BOOL StartDriver1(const wchar_t* lpszDriverName)
+{
+	SC_HANDLE        schManager;
+	SC_HANDLE        schService;
 
+	if (NULL == lpszDriverName)
+	{
+		return FALSE;
+	}
+
+	schManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+	if (NULL == schManager)
+	{
+		CloseServiceHandle(schManager);
+		return FALSE;
+	}
+	schService = OpenService(schManager, lpszDriverName, SERVICE_ALL_ACCESS);
+	if (NULL == schService)
+	{
+		CloseServiceHandle(schService);
+		CloseServiceHandle(schManager);
+		return FALSE;
+	}
+
+	if (!StartService(schService, 0, NULL))
+	{
+		CloseServiceHandle(schService);
+		CloseServiceHandle(schManager);
+		if (GetLastError() == ERROR_SERVICE_ALREADY_RUNNING)
+		{
+			// 服务已经开启
+			return TRUE;
+		}
+		return FALSE;
+	}
+
+	CloseServiceHandle(schService);
+	CloseServiceHandle(schManager);
+
+	return TRUE;
+}
+BOOL StopDriver1(const wchar_t* lpszDriverName)
+{
+	SC_HANDLE        schManager;
+	SC_HANDLE        schService;
+	SERVICE_STATUS    svcStatus;
+	bool            bStopped = false;
+
+	schManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+	if (NULL == schManager)
+	{
+		return FALSE;
+	}
+	schService = OpenService(schManager, lpszDriverName, SERVICE_ALL_ACCESS);
+	if (NULL == schService)
+	{
+		CloseServiceHandle(schManager);
+		return FALSE;
+	}
+	if (!ControlService(schService, SERVICE_CONTROL_STOP, &svcStatus) && (svcStatus.dwCurrentState != SERVICE_STOPPED))
+	{
+		CloseServiceHandle(schService);
+		CloseServiceHandle(schManager);
+		return FALSE;
+	}
+
+	CloseServiceHandle(schService);
+	CloseServiceHandle(schManager);
+
+	return TRUE;
+}
 int GetServicesStatus(const wchar_t* driverName)
 {
 	SC_HANDLE schSCManager = NULL;
@@ -320,7 +481,6 @@ int GetServicesStatus(const wchar_t* driverName)
 	}
 	return ssStatus.dwCurrentState;
 }
-
 int DeleteDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	// 卸载
@@ -353,7 +513,6 @@ int DeleteDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 	DeleteFile(cszDriverFullPath);
 	return 0;
 }
-
 LONG RegDeleteKeyNT(HKEY hStartKey, LPTSTR pKeyName)
 {
 	DWORD  dwSubKeyLength;
@@ -390,7 +549,6 @@ LONG RegDeleteKeyNT(HKEY hStartKey, LPTSTR pKeyName)
 
 	return lRet;
 }
-
 int RemoveDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	HKEY hKey;
@@ -477,7 +635,14 @@ bool DriverManager::nf_DriverInstall_Start(const int mav, const int miv, const b
 	
 	OutputDebugStringW(PathAll.c_str());
 
-	if (StartDriver(L"hadesmondrv", PathAll.c_str()) == TRUE)
+	// 安装注册表
+	if (!InstallDriver1(L"sysmondriver", PathAll.c_str(), L"370020"))
+	{
+		OutputDebugString(L"InitRegister Driver failuer.");
+		return true;
+	}
+	//if (StartDriver(L"hadesmondrv", PathAll.c_str()) == TRUE)
+	if (StartDriver1(L"sysmondriver") == TRUE)
 	{
 		OutputDebugString(L"Start Driver success.");
 		return true;
