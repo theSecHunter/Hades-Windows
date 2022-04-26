@@ -22,6 +22,8 @@ using namespace std;
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define CTL_DEVCTRL_DISENTABLE_MONITOR \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define CTL_DEVCTRL_IPS_SETPROCESSNAME \
+	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x805, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 
 static NF_BUFFERS			g_nfBuffers;
@@ -194,6 +196,29 @@ int DevctrlIoct::devctrl_OffMonitor()
 	DWORD OutSize = 0;
 	DWORD dwSize = 0;
 	return devctrl_sendioct(CTL_DEVCTRL_DISENTABLE_MONITOR, NULL, InSize, NULL, OutSize, dwSize);
+}
+int DevctrlIoct::devctrl_SetIpsProcess(wchar_t* buf)
+{
+	DWORD dwBytesReturned;
+	AutoLock lock(g_cs);
+	if (g_hDevice == INVALID_HANDLE_VALUE)
+	{
+		return FALSE;
+	}
+	if (!buf)
+	{
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return FALSE;
+	}
+	if (DeviceIoControl(g_hDevice,
+		CTL_DEVCTRL_IPS_SETPROCESSNAME,
+		(LPVOID)buf, (lstrlenW(buf) + 1) * sizeof(WCHAR),
+		NULL, 0,
+		&dwBytesReturned, NULL))
+	{
+		return TRUE;
+	}
+	return FALSE;
 }
 
 bool DevctrlIoct::devctrl_sendioct(

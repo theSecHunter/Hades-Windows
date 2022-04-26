@@ -18,6 +18,8 @@
 #include "sysprocessinfo.h"
 #include "sysdriverinfo.h"
 
+#include "kflt.h"
+
 #include <ntddk.h>
 #include <stdlib.h>
 #include <ndis.h>
@@ -1077,6 +1079,9 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 		case CTL_DEVCTRL_DISENTABLE_MONITOR:
 			devctrl_setMonitor(FALSE);
 			break;
+
+		case CTL_DEVCTRL_IPS_SETPROCESSNAME:
+			return Process_SetIpsProcessName(irp, irpSp);
 
 		case CTL_DEVCTRL_ARK_INITSSDT:
 			return devctrl_InitSsdtBase(DeviceObject, irp, irpSp);

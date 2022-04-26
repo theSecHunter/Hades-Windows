@@ -58,6 +58,7 @@
     <ClCompile Include="ksuse.c" />
     <ClCompile Include="kwsk.c" />
     <ClCompile Include="mbr.c" />
+    <ClCompile Include="minifilter.c" />
     <ClCompile Include="process.c" />
     <ClCompile Include="register.c" />
     <ClCompile Include="sysdpctimer.c" />
@@ -365,6 +366,7 @@
     <ClInclude Include="ksuse.h" />
     <ClInclude Include="kwsk.h" />
     <ClInclude Include="mbr.h" />
+    <ClInclude Include="minifilter.h" />
     <ClInclude Include="ntdefines.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="process.h" />

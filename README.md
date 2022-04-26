@@ -119,15 +119,13 @@
 
 **Duilib展示数据不会上报**
 
-##### 恶意行为拦截：
+##### 恶意行为拦截 v2.0：
 | 事件     | 描述                            |进度  | 
 | -------- | ------------------------------- |-------- |
-| Powershell|  启动Powershell |开发中|
-| cmd | 启动Powershell |开发中|
-| 自启动| 修改注册表启动项 |开发中|
-| vbs |启动wscript.exe |开发中|
+| 进程拦截|  Powershell/cmd/vbs/自定义进程 |开发中|
+| 注册表拦截|  自启动 |开发中|
 
-**基于回调先做一些简单的行为拦截**
+**基于回调简单行为拦截,拦截进程配置文件： config/client_config.**
 
 ##### GRPC v2.0
 
@@ -141,7 +139,7 @@ vcpkg install grpc
 
 C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 
-**完成Hades_Windows数据上报，Go_Server数据解析联调.**
+**GRPC配置文件: config/client_config**
 
 **See Code: grpc.h grpc.cpp**
 
@@ -151,10 +149,9 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 
 | 任务                                                      | 优先级         | 状态         |
 | --------------------------------------------------------- | -------------- |-------------- |
-| Rootkit优化/完善| 高|进行中 |
-| Etw和内核态回调监控兼容Win7/Win10 x32/x64版本，稳定性测试|高|完成 |
-| 指定进程授权非隔离分析 - 类沙箱做inlinehook来监控运行周期(待定) | 中 |未开发 |
 | Duilib终端界面| 中|完成 |
+| Etw和内核态回调监控兼容Win7/Win10 x32/x64版本，稳定性测试|高|完成 |
+| 优化通信：Win下目前使用Grpc，少量代码灵活支持其它接上报接口订阅数据 | 中     |完成|
 
 **Rootkit接口先不考虑兼容性，等完善了数据对比以后在考虑兼容**
 
@@ -166,7 +163,9 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 | ------------------------------------------------------------ | ------ |------|
 | 流量隔离：基于WFP对进程/IP:PORT重定向和bypass.               | 高     |未开始|
 | 文件备份：基于Minfilter对进程文件rwx隔离，对脚本命令和IE下载文件备份.<br>命令不局限于curl/cmd/powershell/vbs/js等形式. | 高     |未开始|
-| 优化通信：Win下目前使用Grpc，少量代码灵活支持其它接上报接口订阅数据。 | 中     |完成|
+| 指定进程授权非隔离分析 - 类沙箱做inlinehook来监控运行周期(待定) | 中 |未开发 |
+| Rootkit优化/完善| 中|进行中 |
+| 勒索病毒行为检测 |  minifilter监控,设置诱饵文件来判定 |待定|
 
 ##### WFP v3.0
 

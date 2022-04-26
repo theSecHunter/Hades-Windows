@@ -1,14 +1,24 @@
 #pragma once
 #include <Windows.h>
 
-typedef enum _MINI_COMMAND {
-	SET_PROCESSNAME = 0,
-}MIN_COMMAND;
+const ULONG64 MESSAGE_BUFFER_SIZE = 65536 + 1024;
 
-typedef struct _COMAND_MESSAGE
+class HlprMiniPortIpc
 {
-	MIN_COMMAND Command;
-	unsigned int processnamelen;
-} COMMAND_MESSAGE, * PCOMMAND_MESSAGE;
+public:
+	HlprMiniPortIpc();
+	~HlprMiniPortIpc();
 
-bool nf_SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, unsigned int processnamelen);
+	// 等待驱动创建端口 - 连接
+	void GetMsgNotifyWork();
+	void MiniPortActiveCheck();
+	void StartMiniPortWaitConnectWork();
+	bool SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, unsigned int processnamelen);
+
+private:
+
+	HANDLE m_hPort = nullptr;
+	BOOL   m_InitPortStatus = FALSE;
+};
+
+

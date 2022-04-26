@@ -78,6 +78,7 @@ VOID driverUnload(
         g_processname = NULL;
     }
 
+    Fsflt_freePort();
     FsMini_Free();
     devctrl_free();
     devctrl_ioThreadFree();
@@ -105,9 +106,12 @@ NTSTATUS
     status = FsMini_Init(DriverObject);
     if (!NT_SUCCESS(status))
         return status;
-    status = kflt_initPort();
+    status = Fsflt_initPort();
     if (!NT_SUCCESS(status))
+    {
+        FsMini_Clean();
         return status;
+    }
     
     int i = 0;
     for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)
@@ -134,7 +138,7 @@ NTSTATUS
         return 0;
     }
 
-    // Os <= Win8 (可用FileObject)
+    // Os <= Win8 (可用FileObject 8.1也可能PG)
     if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion <= 1))
         g_Win10Version = TRUE;
     else if ((osver.dwMajorVersion < 6) && (osver.dwMajorVersion > 4))

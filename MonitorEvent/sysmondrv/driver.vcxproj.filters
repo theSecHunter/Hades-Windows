@@ -69,13 +69,16 @@
       <Filter>sysbootkit</Filter>
     </ClCompile>
     <ClCompile Include="kflt.c">
-      <Filter>flt</Filter>
+      <Filter>fsfltport</Filter>
     </ClCompile>
     <ClCompile Include="ksuse.c">
       <Filter>ksocket</Filter>
     </ClCompile>
     <ClCompile Include="kwsk.c">
       <Filter>ksocket</Filter>
+    </ClCompile>
+    <ClCompile Include="minifilter.c">
+      <Filter>fsminifilter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -151,13 +154,16 @@
       <Filter>sysbootkit</Filter>
     </ClInclude>
     <ClInclude Include="kflt.h">
-      <Filter>flt</Filter>
+      <Filter>fsfltport</Filter>
     </ClInclude>
     <ClInclude Include="ksuse.h">
       <Filter>ksocket</Filter>
     </ClInclude>
     <ClInclude Include="kwsk.h">
       <Filter>ksocket</Filter>
+    </ClInclude>
+    <ClInclude Include="minifilter.h">
+      <Filter>fsminifilter</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -179,11 +185,14 @@
     <Filter Include="sysrootkit">
       <UniqueIdentifier>{6c91ef1a-0cdf-4da6-9a06-9031b2fa1495}</UniqueIdentifier>
     </Filter>
-    <Filter Include="flt">
-      <UniqueIdentifier>{f7228cee-c937-45a2-b4d4-792de18af0d9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ksocket">
       <UniqueIdentifier>{87db5376-2220-4461-8912-dc63d6cee44c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="fsfltport">
+      <UniqueIdentifier>{f7228cee-c937-45a2-b4d4-792de18af0d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="fsminifilter">
+      <UniqueIdentifier>{0d98a94e-6ced-42e1-ac43-0c4eeceb3907}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

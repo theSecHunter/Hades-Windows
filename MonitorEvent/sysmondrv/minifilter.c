@@ -299,10 +299,15 @@ NTSTATUS FsMini_Init(PDRIVER_OBJECT DriverObject)
     return nStatus;
 }
 
+NTSTATUS FsMini_Clean()
+{
+    if ((TRUE == g_fltregstatus) && g_FltServerPortEvnet)
+        FltUnregisterFilter(g_FltServerPortEvnet);
+}
+
 NTSTATUS FsMini_Free()
 {
-    if (TRUE == g_fltregstatus)
-        FltUnregisterFilter(g_FltServerPortEvnet);
+    FsMini_Clean();
 }
 
 NTSTATUS Mini_StartFilter()
@@ -314,7 +319,6 @@ NTSTATUS Mini_StartFilter()
         return STATUS_UNSUCCESSFUL;
 
     NTSTATUS status = FltStartFiltering(g_FltServerPortEvnet);
-
     if (!NT_SUCCESS(status)) {
 
         FltUnregisterFilter(g_FltServerPortEvnet);

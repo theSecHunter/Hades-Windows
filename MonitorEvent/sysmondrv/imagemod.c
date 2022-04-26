@@ -45,7 +45,6 @@ void Process_NotifyImage(
 	sl_unlock(&lh);
 
 	devctrl_pushinfo(NF_IMAGEMODE_INFO);
-
 }
 
 NTSTATUS Imagemod_Init(void)

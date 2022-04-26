@@ -675,7 +675,7 @@ void kMsgInterface::DriverInit()
     status = g_kernel_Ioct.devctrl_init();
     if (0 > status)
     {
-        cout << "devctrl_init error: main.c --> lines: 342" << endl;
+        OutputDebugString(L"devctrl_init error: main.c --> lines: 678");
         return;
     }
 
@@ -685,7 +685,7 @@ void kMsgInterface::DriverInit()
         status = g_kernel_Ioct.devctrl_opendeviceSylink(devSyLinkName);
         if (0 > status)
         {
-            cout << "devctrl_opendeviceSylink error: main.c --> lines: 352" << endl;
+            OutputDebugString(L"devctrl_opendeviceSylink error: main.c --> lines: 688");
             break;
         }
 
@@ -693,7 +693,7 @@ void kMsgInterface::DriverInit()
         status = g_kernel_Ioct.devctrl_InitshareMem();
         if (0 > status)
         {
-            cout << "devctrl_InitshareMem error: main.c --> lines: 360" << endl;
+            OutputDebugString(L"devctrl_InitshareMem error: main.c --> lines: 690");
             break;
         }
 
@@ -701,7 +701,16 @@ void kMsgInterface::DriverInit()
         status = g_kernel_Ioct.devctrl_workthread(NULL);
         if (0 > status)
         {
-            cout << "devctrl_workthread error: main.c --> lines: 367" << endl;
+            OutputDebugString(L"devctrl_workthread error: main.c --> lines: 704");
+            break;
+        }
+
+        // Set Ips Process
+        WCHAR IpsProcessNameTest[] = L"powershell.exe|cmd.exe||";
+        status = g_kernel_Ioct.devctrl_SetIpsProcess(IpsProcessNameTest);
+        if (0 > status)
+        {
+            OutputDebugString(L"devctrl_workthread error: main.c --> lines: 712");
             break;
         }
 
