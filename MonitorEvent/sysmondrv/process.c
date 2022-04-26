@@ -160,19 +160,28 @@ VOID Process_NotifyProcessEx(
     pinfo->dataLength = sizeof(PROCESSINFO);
     memcpy(pinfo->dataBuffer, &processinfo, sizeof(PROCESSINFO));
 
-    // Ips
-    DWORD* replaybuf = NULL;
     if (QueryPathStatus && g_proc_ipsList && Process_IsIpsProcessNameInList(processinfo.queryprocesspath))
     {
+        // Ips
+        DWORD* replaybuf = NULL;
+        char* sendBuf = NULL;
         DbgBreakPoint();
         do {
             replaybuf = (DWORD*)ExAllocatePoolWithTag(NonPagedPool, sizeof(DWORD), 'IPSP');
             if (!replaybuf)
                 break;
+            const int sendbuflen = sizeof(PROCESSINFO) + sizeof(DWORD) + 1;
+            char* sendBuf = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSP');
+            if (!sendBuf)
+                break;
             RtlZeroMemory(replaybuf, sizeof(DWORD));
+            RtlZeroMemory(sendBuf, sendbuflen);
+
+            *((DWORD*)sendBuf) = 0; // IPS_PROCESSSTART
+            RtlCopyMemory((sendBuf + sizeof(DWORD)), pinfo, sizeof(PROCESSINFO));
 
             // 等待用户操作
-            NTSTATUS nSendRet =  Fsflt_SendMsg(pinfo, sizeof(PROCESSINFO), replaybuf, sizeof(DWORD));
+            NTSTATUS nSendRet =  Fsflt_SendMsg(sendBuf, sizeof(PROCESSINFO), replaybuf, sizeof(DWORD));
             if (!NT_SUCCESS(nSendRet))
                 break;
 
@@ -180,12 +189,19 @@ VOID Process_NotifyProcessEx(
             if (*replaybuf == 0)
                 CreateInfo->CreationStatus = STATUS_UNSUCCESSFUL;
         } while (FALSE);
+
+        if (replaybuf)
+        {
+            ExFreePoolWithTag(replaybuf, 'IPSP');
+            replaybuf = NULL;
+        }
+        if (sendBuf)
+        {
+            ExFreePoolWithTag(sendBuf, 'IPSP');
+            sendBuf = NULL;
+        }
     }
-    if (replaybuf)
-    {
-        ExFreePoolWithTag(replaybuf, 'IPSP');
-        replaybuf = NULL;
-    }
+
 
     sl_lock(&g_processQueryhead.process_lock, &lh);
     InsertHeadList(&g_processQueryhead.process_pending, &pinfo->pEntry);

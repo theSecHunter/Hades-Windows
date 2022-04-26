@@ -12,6 +12,7 @@
 #include "umsginterface.h"
 #include "kmsginterface.h"
 #include "msgloop.h"
+#include "HlprMiniCom.h"
 
 #ifdef _WIN64
 	#ifdef _DEBUG
@@ -34,6 +35,7 @@
 static kMsgInterface	g_mainMsgKlib;
 static uMsgInterface	g_mainMsgUlib;
 static WinMsgLoop		g_MsgControl;
+static HlprMiniPortIpc	g_miniport;
 
 // Debug调试 标志控制
 static bool kerne_mon = false;		// kernel采集
@@ -110,6 +112,7 @@ static DWORD WINAPI HadesServerActiveCheckNotify(LPVOID lpThreadParameter)
 	}
 	return 0;
 }
+
 int main(int argc, char* argv[])
 {
 	// Create HadesSvc Event - HadesContrl检测该Event判断HadesSvc是否活跃

@@ -16,9 +16,6 @@ public:
 	bool SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, unsigned int processnamelen);
 
 private:
-
-	HANDLE m_hPort = nullptr;
-	BOOL   m_InitPortStatus = FALSE;
 };
 
 

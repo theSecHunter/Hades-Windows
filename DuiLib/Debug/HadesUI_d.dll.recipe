@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\Hades\Hades-Windows\bin\HadesUI_d.dll</FullPath>
+      <FullPath>D:\Hades\Hades-Windows\bin\x86\Debug\HadesUI_d.dll</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

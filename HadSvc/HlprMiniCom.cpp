@@ -2,6 +2,9 @@
 #include <fltuser.h>
 #include <sysinfo.h>
 
+static HANDLE g_hPort = nullptr;
+static BOOL   g_InitPortStatus = FALSE;
+
 typedef enum _MINI_COMMAND {
 	SET_PROCESSNAME = 0,
 	IPS_PROCESSSTART,
@@ -19,16 +22,34 @@ typedef struct _COMMAND_REQUEST
 	MIN_COMMAND Command;
 	char data[1];
 } COMMAND_REQUEST, * PCOMMAND_REQUEST;
+typedef struct _REPLY_MESSAGE
+{
+	DWORD Option;
+}REPLY_MESSAGE, * PREPLY_MESSAGE;
+
+static DWORD WINAPI ThreadMiniPortConnectNotify(LPVOID pData)
+{
+	(reinterpret_cast<HlprMiniPortIpc*>(pData))->StartMiniPortWaitConnectWork();
+	return 0;
+}
+static DWORD WINAPI ThreadMiniPortGetMsgNotify(LPVOID pData)
+{
+	(reinterpret_cast<HlprMiniPortIpc*>(pData))->GetMsgNotifyWork();
+	return 0;
+}
 
 HlprMiniPortIpc::HlprMiniPortIpc()
 {
+	DWORD threadid = 0;
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMiniPortConnectNotify, NULL, 0, &threadid);
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMiniPortGetMsgNotify, NULL, 0, &threadid);
 }
 HlprMiniPortIpc::~HlprMiniPortIpc()
 {
 }
 
 bool HlprMiniPortIpc::SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, unsigned int processnamelen) {
-	if (FALSE == m_InitPortStatus)
+	if (FALSE == g_InitPortStatus)
 		return false;
 	
 	DWORD bytesReturned = 0;
@@ -41,9 +62,9 @@ bool HlprMiniPortIpc::SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, un
 	memcpy(InputBuffer, &command_message, sizeof(COMMAND_MESSAGE));
 	memcpy((void*)((DWORD64)InputBuffer + sizeof(COMMAND_MESSAGE)), rulebuffer, buflen);
 
-	if (m_hPort)
+	if (g_hPort)
 	{
-		hResult = FilterSendMessage(m_hPort, InputBuffer, total, NULL, NULL, &bytesReturned);
+		hResult = FilterSendMessage(g_hPort, InputBuffer, total, NULL, NULL, &bytesReturned);
 		if (hResult != S_OK)
 		{
 			return hResult;
@@ -56,31 +77,26 @@ void HlprMiniPortIpc::StartMiniPortWaitConnectWork()
 {
 	DWORD Status = 0;
 	do {
-		m_hPort = INVALID_HANDLE_VALUE;
-		DWORD Status = FilterConnectCommunicationPort(
+		Status = FilterConnectCommunicationPort(
 			L"\\HadesEventFltPort",
 			0,
 			NULL,
 			0,
 			NULL,
-			&m_hPort);
+			&g_hPort);
 		if (Status != S_OK)
 			Sleep(2000);
 		else
 		{
-			m_InitPortStatus = true;
+			g_InitPortStatus = true;
 			OutputDebugString(L"Connect sysmondriver miniPort Success");
 			break;
 		}
 	} while (TRUE);
 }
-void HlprMiniPortIpc::MiniPortActiveCheck()
-{
-
-}
-
 void HlprMiniPortIpc::GetMsgNotifyWork()
 {
+	REPLY_MESSAGE replyMessage;
     PCOMMAND_MESSAGE message;
 	LPOVERLAPPED pOvlp;
 	BOOL result;
@@ -88,16 +104,16 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 	HRESULT hr;
 	ULONG_PTR key;
 
-	// Waiting Connect Driver MiniPort_Server
+	// Waiting Connect Driver MiniPort_Server - Modify EventWaiting
 	do {
-		if (m_InitPortStatus && m_hPort)
+		if (g_InitPortStatus && (nullptr != g_hPort) )
 			break;
 		else
 			Sleep(2000);
 	} while (1);
 
 	// Check Port Status
-	result = GetQueuedCompletionStatus(m_hPort, &outSize, &key, &pOvlp, INFINITE);
+	result = GetQueuedCompletionStatus(g_hPort, &outSize, &key, &pOvlp, INFINITE);
 	if (!result) {
 		hr = HRESULT_FROM_WIN32(GetLastError());
 		return;
@@ -108,7 +124,7 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 	while (TRUE) {
 #pragma warning(pop)
 		hr = FilterGetMessage(
-			m_hPort,
+			g_hPort,
 			(PFILTER_MESSAGE_HEADER)&message->MsgHeader,
 			MESSAGE_BUFFER_SIZE,
 			&message->Overlapped
@@ -135,16 +151,21 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 			PROCESSINFO* processinfo = (PROCESSINFO*)pRequest->data;
 			// 弹窗提示用户拦截进程
 			//::SendMessage();
-			
+			OutputDebugString(processinfo->commandLine);
+			// 允许
+			replyMessage.Option = 1;
 		}
 		break;
 		}
 
 		// 回复FltSendMessage
-		//hr = FilterReplyMessage(
-		//	m_hPort,
-		//	(PFILTER_REPLY_HEADER)&replyMessage,
-		//	sizeof(replyMessage)
-		//);
+		hr = FilterReplyMessage(
+			g_hPort,
+			(PFILTER_REPLY_HEADER)&replyMessage,
+			sizeof(replyMessage)
+		);
     }
+}
+void HlprMiniPortIpc::MiniPortActiveCheck()
+{
 }
