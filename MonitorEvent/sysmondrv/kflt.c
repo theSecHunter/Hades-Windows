@@ -60,8 +60,7 @@ NTSTATUS Fsflt_initPort()
 			OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
 			NULL,
 			sd
-		);		
-		DbgBreakPoint();
+		);
 		status = FltCreateCommunicationPort(
 			g_FltServerPortEvnet,
 			&g_FltServerPortEvnetPort,
@@ -78,12 +77,14 @@ NTSTATUS Fsflt_initPort()
 	return status;
 }
 
+// Synchronize
 NTSTATUS Fsflt_SendMsg(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID ReplyBuffer, PULONG ReplyLength)
 {
 	if (g_FltServerPortEvnet && g_FltClientPortEvnetPort)
-		return FltSendMessage(g_FltServerPortEvnet, g_FltClientPortEvnetPort, &SenderBuffer, SenderBufferLength, &ReplyBuffer, ReplyLength, NULL);
+		return FltSendMessage(g_FltServerPortEvnet, &g_FltClientPortEvnetPort, SenderBuffer, SenderBufferLength, ReplyBuffer, ReplyLength, NULL);
 	return STATUS_UNSUCCESSFUL;
 }
+// Asynchronous
 NTSTATUS Fsflt_SendToMsg(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID ReplyBuffer, PULONG ReplyLength)
 {
 }

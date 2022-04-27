@@ -1,8 +1,6 @@
 #pragma once
 #include <Windows.h>
 
-const ULONG64 MESSAGE_BUFFER_SIZE = 65536 + 1024;
-
 class HlprMiniPortIpc
 {
 public:

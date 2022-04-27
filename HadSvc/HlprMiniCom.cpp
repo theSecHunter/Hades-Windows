@@ -3,6 +3,7 @@
 #include <sysinfo.h>
 
 static HANDLE g_hPort = nullptr;
+static HANDLE g_comPletion = nullptr;
 static BOOL   g_InitPortStatus = FALSE;
 
 typedef enum _MINI_COMMAND {
@@ -11,20 +12,29 @@ typedef enum _MINI_COMMAND {
 	IPS_REGISTERTAB,
 	IPS_IMAGEDLL
 }MIN_COMMAND;
+
+#define HADES_READ_BUFFER_SIZE  4096 
+typedef struct _HADES_NOTIFICATION {
+
+	ULONG CommandId;
+	ULONG Reserved;
+	UCHAR Contents[HADES_READ_BUFFER_SIZE];
+} HADES_NOTIFICATION, * PHADES_NOTIFICATION;
+typedef struct _HADES_REPLY {
+	BOOLEAN SafeToOpen;
+} HADES_REPLY, * PHADES_REPLY;
+// GetMsg
 typedef struct _COMAND_MESSAGE
 {
-	FILTER_MESSAGE_HEADER MsgHeader;
+	FILTER_MESSAGE_HEADER MessageHeader;
+	HADES_NOTIFICATION Notification;
 	OVERLAPPED Overlapped;
-	BYTE MessageBuffer[MESSAGE_BUFFER_SIZE];
 } COMMAND_MESSAGE, * PCOMMAND_MESSAGE;
-typedef struct _COMMAND_REQUEST
-{
-	MIN_COMMAND Command;
-	char data[1];
-} COMMAND_REQUEST, * PCOMMAND_REQUEST;
+// Reply
 typedef struct _REPLY_MESSAGE
 {
-	DWORD Option;
+	FILTER_REPLY_HEADER ReplyHeader;
+	HADES_REPLY			Reply;
 }REPLY_MESSAGE, * PREPLY_MESSAGE;
 
 static DWORD WINAPI ThreadMiniPortConnectNotify(LPVOID pData)
@@ -40,12 +50,20 @@ static DWORD WINAPI ThreadMiniPortGetMsgNotify(LPVOID pData)
 
 HlprMiniPortIpc::HlprMiniPortIpc()
 {
+	// 线程回调都是静态全局/这里不单独写Init函数了
+	// 如果访问成员变量这里封装成函数调用，别要在构造起线程
 	DWORD threadid = 0;
 	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMiniPortConnectNotify, NULL, 0, &threadid);
 	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMiniPortGetMsgNotify, NULL, 0, &threadid);
 }
 HlprMiniPortIpc::~HlprMiniPortIpc()
 {
+	if (g_hPort)
+		CloseHandle(g_hPort);
+	if (g_comPletion)
+		CloseHandle(g_comPletion);
+	g_hPort = nullptr;
+	g_comPletion = nullptr;
 }
 
 bool HlprMiniPortIpc::SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, unsigned int processnamelen) {
@@ -75,7 +93,11 @@ bool HlprMiniPortIpc::SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, un
 }
 void HlprMiniPortIpc::StartMiniPortWaitConnectWork()
 {
-	DWORD Status = 0;
+	HRESULT Status = 0;
+	g_hPort = nullptr;
+	g_comPletion = nullptr;
+	PCOMMAND_MESSAGE msg = nullptr;
+
 	do {
 		Status = FilterConnectCommunicationPort(
 			L"\\HadesEventFltPort",
@@ -84,87 +106,142 @@ void HlprMiniPortIpc::StartMiniPortWaitConnectWork()
 			0,
 			NULL,
 			&g_hPort);
-		if (Status != S_OK)
-			Sleep(2000);
-		else
+		if (Status == HRESULT_FROM_WIN32(S_OK))
 		{
+			// 绑定IoComplet
+			g_comPletion = CreateIoCompletionPort(g_hPort, NULL, 0, 4);
+			if (nullptr == g_comPletion)
+			{
+				CloseHandle(g_hPort);
+				g_hPort = nullptr;
+				continue;
+			}
+
+			// 初始化先GetMsg, Notify线程等待处理  
+			// 不要只GetMsg一次，因为IOCP端口可能error会浪费掉，驱动再次SendMsg没有GetMsg就会一直阻塞
+			
+			for (size_t idx = 0; idx < 4; ++idx)
+			{
+				msg = (PCOMMAND_MESSAGE)malloc(sizeof(COMMAND_MESSAGE));
+				if (nullptr == msg)
+				{
+					Status = ERROR;
+					break;
+				}
+					
+				RtlSecureZeroMemory(&msg->Overlapped, sizeof(OVERLAPPED));
+				Status = FilterGetMessage(
+					g_hPort,
+					&msg->MessageHeader,
+					FIELD_OFFSET(COMMAND_MESSAGE, Overlapped),
+					&msg->Overlapped
+				);
+				// Pending状态成功
+				if (Status != HRESULT_FROM_WIN32(ERROR_IO_PENDING))
+				{
+					Status = ERROR;
+					break;
+				}
+			}
+
+			if (Status == ERROR)
+			{
+				if (msg)
+					free(msg);
+				CloseHandle(g_hPort);
+				CloseHandle(g_comPletion);
+				g_hPort = nullptr;
+				g_comPletion = nullptr;
+				msg = nullptr;
+				g_InitPortStatus = false;
+				return;
+			}
+
 			g_InitPortStatus = true;
 			OutputDebugString(L"Connect sysmondriver miniPort Success");
 			break;
-		}
+		}		
+		else
+			Sleep(2000);
 	} while (TRUE);
 }
 void HlprMiniPortIpc::GetMsgNotifyWork()
 {
+	DWORD outSize = 0;
+	ULONG_PTR key = 0;
+	BOOL nRet = FALSE;
+	LPOVERLAPPED pOvlp = nullptr;
+	HRESULT result = FALSE;
+	PCOMMAND_MESSAGE message = nullptr;
 	REPLY_MESSAGE replyMessage;
-    PCOMMAND_MESSAGE message;
-	LPOVERLAPPED pOvlp;
-	BOOL result;
-	DWORD outSize;
-	HRESULT hr;
-	ULONG_PTR key;
+	PHADES_NOTIFICATION notification = nullptr;
+	RtlSecureZeroMemory(&replyMessage, sizeof(REPLY_MESSAGE));
 
 	// Waiting Connect Driver MiniPort_Server - Modify EventWaiting
 	do {
-		if (g_InitPortStatus && (nullptr != g_hPort) )
+		if (g_InitPortStatus && (nullptr != g_hPort) && (nullptr != g_comPletion))
 			break;
 		else
 			Sleep(2000);
 	} while (1);
 
-	// Check Port Status
-	result = GetQueuedCompletionStatus(g_hPort, &outSize, &key, &pOvlp, INFINITE);
-	if (!result) {
-		hr = HRESULT_FROM_WIN32(GetLastError());
-		return;
-	}
+	// Recv While Driver Send to Client Msg_Handler
+	DWORD error_code = 0;
+	do {
 
-#pragma warning(push)
-#pragma warning(disable:4127)
-	while (TRUE) {
-#pragma warning(pop)
-		hr = FilterGetMessage(
-			g_hPort,
-			(PFILTER_MESSAGE_HEADER)&message->MsgHeader,
-			MESSAGE_BUFFER_SIZE,
-			&message->Overlapped
-		);
-
-		if (result == HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE))
-		{
-			break;
-		}
-		else if (result == HRESULT_FROM_WIN32(ERROR_OPERATION_ABORTED))
-		{
-			break;
-		}
-		else if (result != HRESULT_FROM_WIN32(S_OK))
-		{
+		nRet = GetQueuedCompletionStatus(g_comPletion, &outSize, &key, &pOvlp, INFINITE);
+		error_code = GetLastError();
+		message = CONTAINING_RECORD(pOvlp, COMMAND_MESSAGE, Overlapped);
+		if (FALSE == nRet) {
+			OutputDebugString(L"GetQueuedCompletionStatus sysmondriver miniPort Error");
 			break;
 		}
 
-		PCOMMAND_REQUEST pRequest = (PCOMMAND_REQUEST)&message->MessageBuffer;
-		switch (pRequest->Command)
+		// handler buffer
+		notification = &message->Notification;
+		switch (notification->CommandId)
 		{
 		case MIN_COMMAND::IPS_PROCESSSTART:
 		{
-			PROCESSINFO* processinfo = (PROCESSINFO*)pRequest->data;
-			// 弹窗提示用户拦截进程
-			//::SendMessage();
+			PROCESSINFO* processinfo = (PROCESSINFO*)notification->Contents;
+			// 弹窗提示用户拦截进程 ::SendMessage
 			OutputDebugString(processinfo->commandLine);
 			// 允许
-			replyMessage.Option = 1;
+			replyMessage.Reply.SafeToOpen = TRUE;
 		}
 		break;
 		}
 
-		// 回复FltSendMessage
-		hr = FilterReplyMessage(
+		replyMessage.ReplyHeader.Status = 0;
+		replyMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
+		result = FilterReplyMessage(
 			g_hPort,
 			(PFILTER_REPLY_HEADER)&replyMessage,
 			sizeof(replyMessage)
 		);
-    }
+		if (!SUCCEEDED(result))
+			break;
+
+		memset(&message->Overlapped, 0, sizeof(OVERLAPPED));
+		result = FilterGetMessage(
+			g_hPort,
+			&message->MessageHeader,
+			FIELD_OFFSET(COMMAND_MESSAGE, Overlapped),
+			&message->Overlapped
+		);
+
+		if (result != HRESULT_FROM_WIN32(ERROR_IO_PENDING))
+			break;
+
+		OutputDebugString(L"FilterReplyMessage Message & FilterGetMessage");
+
+#pragma warning(push)
+#pragma warning(disable:4127)
+	} while (TRUE);
+#pragma warning(pop)
+
+	if (message)
+		free(message);
 }
 void HlprMiniPortIpc::MiniPortActiveCheck()
 {

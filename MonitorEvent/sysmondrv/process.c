@@ -163,42 +163,31 @@ VOID Process_NotifyProcessEx(
     if (QueryPathStatus && g_proc_ipsList && Process_IsIpsProcessNameInList(processinfo.queryprocesspath))
     {
         // Ips
-        DWORD* replaybuf = NULL;
-        char* sendBuf = NULL;
-        DbgBreakPoint();
+        PHADES_NOTIFICATION  notification = NULL;
         do {
-            replaybuf = (DWORD*)ExAllocatePoolWithTag(NonPagedPool, sizeof(DWORD), 'IPSP');
-            if (!replaybuf)
+            const int replaybuflen = sizeof(HADES_REPLY);
+            const int sendbuflen = sizeof(HADES_NOTIFICATION);
+            notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSP');
+            if (!notification)
                 break;
-            const int sendbuflen = sizeof(PROCESSINFO) + sizeof(DWORD) + 1;
-            char* sendBuf = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSP');
-            if (!sendBuf)
-                break;
-            RtlZeroMemory(replaybuf, sizeof(DWORD));
-            RtlZeroMemory(sendBuf, sendbuflen);
+            RtlZeroMemory(notification, sendbuflen);
 
-            *((DWORD*)sendBuf) = 0; // IPS_PROCESSSTART
-            RtlCopyMemory((sendBuf + sizeof(DWORD)), pinfo, sizeof(PROCESSINFO));
+            notification->CommandId = 1; // IPS_PROCESSSTART
+            RtlCopyMemory(&notification->Contents, &processinfo, sizeof(PROCESSINFO));
 
             // 等待用户操作
-            NTSTATUS nSendRet =  Fsflt_SendMsg(sendBuf, sizeof(PROCESSINFO), replaybuf, sizeof(DWORD));
+            NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
             if (!NT_SUCCESS(nSendRet))
                 break;
-
+            const BOOLEAN  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
             // 禁止
-            if (*replaybuf == 0)
+            if (FALSE == ReSafeToOpen)
                 CreateInfo->CreationStatus = STATUS_UNSUCCESSFUL;
         } while (FALSE);
-
-        if (replaybuf)
+        if (notification)
         {
-            ExFreePoolWithTag(replaybuf, 'IPSP');
-            replaybuf = NULL;
-        }
-        if (sendBuf)
-        {
-            ExFreePoolWithTag(sendBuf, 'IPSP');
-            sendBuf = NULL;
+            ExFreePoolWithTag(notification, 'IPSP');
+            notification = NULL;
         }
     }
 
@@ -335,7 +324,6 @@ BOOLEAN Process_IsIpsProcessNameInList(PWCHAR path)
 }
 BOOLEAN Process_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
-    DbgBreakPoint();
     PVOID inputBuffer = irp->AssociatedIrp.SystemBuffer;
     ULONG inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
     ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
