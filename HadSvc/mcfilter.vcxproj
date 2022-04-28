@@ -282,6 +282,7 @@
     <ClCompile Include="umsginterface.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\HadesSdk\include\sysinfo.h" />
     <ClInclude Include="grpc.h" />
     <ClInclude Include="hades_win.grpc.pb.h" />
     <ClInclude Include="hades_win.pb.h" />

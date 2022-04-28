@@ -645,4 +645,6 @@ DEFINE_GUID( /* 398191dc-2da7-11d3-8b98-00805f85d7c6 */
     0x8b, 0x98, 0x00, 0x80, 0x5f, 0x85, 0xd7, 0xc6
 );
 
+const int WM_IPS_PROCESS = WM_USER + 600;
+
 #endif // !_SYSINFO_H

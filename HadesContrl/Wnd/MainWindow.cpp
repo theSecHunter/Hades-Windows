@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "../DriverManager.h"
 #include "../Systeminfolib.h"
+#include "../HlprSocketSvc.h"
 
 #include <usysinfo.h>
 #include <TlHelp32.h>
@@ -15,15 +16,17 @@
 const int WM_SHOWTASK = WM_USER + 501;
 const int WM_ONCLOSE = WM_USER + 502;
 const int WM_ONOPEN = WM_USER + 503;
+const int WM_IPS_PROCESS = WM_USER + 600;
 
-const std::wstring drverName = L"sysmondriver";
-
-// hades状态锁
-std::mutex g_hadesStatuscs;
+// Hades状态锁
+static std::mutex			g_hadesStatuscs;
 // 动态定时器需要
-USysBaseInfo g_DynSysBaseinfo;
+static USysBaseInfo			g_DynSysBaseinfo;
 // 驱动管理
-DriverManager g_DrvManager;
+static DriverManager		g_DrvManager;
+const std::wstring			g_drverName = L"sysmondriver";
+// SocketServer
+static HlprSocketSvc		g_socketPip;
 
 void WindlgShow(HWND& hWnd)
 {
@@ -124,7 +127,7 @@ bool DrvCheckStart()
 {
 	std::wstring pszCmd = L"sc start sysmondriver";
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
-	int nSeriverstatus = g_DrvManager.nf_GetServicesStatus(drverName.c_str());
+	int nSeriverstatus = g_DrvManager.nf_GetServicesStatus(g_drverName.c_str());
 	switch (nSeriverstatus)
 	{
 		// 正在运行
@@ -147,7 +150,7 @@ bool DrvCheckStart()
 		PROCESS_INFORMATION pi;
 		CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi);
 		Sleep(3000);
-		nSeriverstatus = g_DrvManager.nf_GetServicesStatus(drverName.c_str());
+		nSeriverstatus = g_DrvManager.nf_GetServicesStatus(g_drverName.c_str());
 		if (SERVICE_RUNNING == nSeriverstatus)
 		{
 			OutputDebugString(L"sc Driver Running");
@@ -287,7 +290,7 @@ void StartProcess(std::wstring& cmdline)
 	}
 }
 
-// HadesSvc进程，防止运行中Svc挂掉，界面没有感知
+// HadesSvc进程，防止运行中HadesSvc挂掉，界面没有感知
 void MainWindow::GetHadesSvctStatus()
 {
 	//检测HadesSvc是否挂了
@@ -318,7 +321,7 @@ static DWORD WINAPI HadesSvcActiveEventNotify(LPVOID lpThreadParameter)
 	return 0;
 }
 
-// HadesSvc是否连接GRPC成功反馈
+// 等待HadesSvc是否连接GRPC成功反馈
 void MainWindow::GetHadesSvcConnectStatus()
 {
 	m_pImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerConnectImg")));
@@ -345,9 +348,9 @@ static DWORD WINAPI HadesConnectEventNotify(LPVOID lpThreadParameter)
 void MainWindow::HadesSvcDaemon()
 {
 	// 因为主线程刚启动，所以m_hadesSvcStatus标志位不会瞬间更新，需要等待5s左右
+	Sleep(5000);
 	while (true)
 	{
-		Sleep(5000);
 		if (false == m_hadesSvcStatus)
 		{
 			StartProcess(m_cmdline);
@@ -450,43 +453,54 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 
 	// 界面启动之前HadesSvc已启动，需要强制退出Svc
 	do {
-		auto active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVENT");
+		HANDLE active_event = nullptr;
+		active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVENT");
 		if (active_event)
 		{
 			CloseHandle(active_event);
+			active_event = nullptr;
 			auto exithandSvc = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
 			if (exithandSvc)
 			{
 				SetEvent(exithandSvc);
 				CloseHandle(exithandSvc);
-				Sleep(100);
+				Sleep(500);
 			}
+#ifdef _WIN64
+			const wchar_t killname[] = L"HadesSvc64.exe";
+#else
 			const wchar_t killname[] = L"HadesSvc.exe";
+#endif // !_WIN64
 			killProcess(killname);
 			active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVENT");
 			if (active_event)
 			{
 				OutputDebugString(L"HadesSvc已经启动，请手动结束后在重新启动");
 				CloseHandle(active_event);
+				active_event = nullptr;
 				return lRes;
 			}
 		}
 	} while (false);
 	
-	// 等待HadesSvc连接Grpc上线 
+	// 等待HadesSvc连接Grpc服务成功状态更新
 	CreateThread(NULL, NULL, HadesConnectEventNotify, this, 0, 0);
 	Sleep(100);
-	// 检测HadesSvc活跃
+	// 检测HadesSvc是否活跃，设置GRPC连接状态
 	CreateThread(NULL, NULL, HadesSvcActiveEventNotify, this, 0, 0);
 	Sleep(100);
-	// 启动HadesSvc
+	// 启动HadesSvc进程
 	if (false == m_hadesSvcStatus)
 		StartProcess(m_cmdline);
 	Sleep(100);
 	// 启用HadesSvc守护进程
 	CreateThread(NULL, NULL, HadesSvcDeamonNotify, this, 0, 0);
-	//设置定时器
+	// 设置定时器
 	SetTimer(m_hWnd, 1, 1000, NULL);
+
+	// 启动SocketServer等待HadesSvc
+	g_socketPip.sock_init();
+
 	return lRes;
 }
 LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -709,7 +723,8 @@ LRESULT MainWindow::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam,
 
 	switch (uMsg) {
 	case WM_TIMER: lRes = OnTimer(uMsg, wParam, lParam, bHandled); break;	// 刷新界面数据
-	case WM_SHOWTASK: OnTrayIcon(uMsg, wParam, lParam, bHandled); break;		// 托盘处理
+	case WM_SHOWTASK: OnTrayIcon(uMsg, wParam, lParam, bHandled); break;	// 托盘处理
+	case WM_IPS_PROCESS: break;
 	default:
 		bHandled = FALSE;
 		break;

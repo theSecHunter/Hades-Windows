@@ -1,10 +1,18 @@
+/*
+* 负责接收SysMonDrv驱动同步数据处理
+* SysMonDrv <--> HadesSvc <--> HadesContrl
+*/
 #include "HlprMiniCom.h"
 #include <fltuser.h>
 #include <sysinfo.h>
 
+#include "socketMsg.h"
+
 static HANDLE g_hPort = nullptr;
 static HANDLE g_comPletion = nullptr;
 static BOOL   g_InitPortStatus = FALSE;
+
+static socketMsg g_socketPip;
 
 typedef enum _MINI_COMMAND {
 	SET_PROCESSNAME = 0,
@@ -199,19 +207,30 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 
 		// handler buffer
 		notification = &message->Notification;
+		// 默认放行
+		replyMessage.Reply.SafeToOpen = TRUE;
 		switch (notification->CommandId)
 		{
 		case MIN_COMMAND::IPS_PROCESSSTART:
 		{
 			PROCESSINFO* processinfo = (PROCESSINFO*)notification->Contents;
-			// 弹窗提示用户拦截进程 ::SendMessage
 			OutputDebugString(processinfo->commandLine);
-			// 允许
-			replyMessage.Reply.SafeToOpen = TRUE;
+			if (false == g_socketPip.connect())
+				break;
+			if (false == g_socketPip.send())
+				break;
+			// 默认等待10s,如果10s没有返回/默认返回
+			if (false == g_socketPip.recv())
+				break;
+			replyMessage.Reply.SafeToOpen = FALSE;			
 		}
 		break;
+		case MIN_COMMAND::IPS_REGISTERTAB: break;
+		case MIN_COMMAND::IPS_IMAGEDLL: break;
 		}
 
+		if (!g_hPort)
+			break;
 		replyMessage.ReplyHeader.Status = 0;
 		replyMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
 		result = FilterReplyMessage(
@@ -229,12 +248,10 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 			FIELD_OFFSET(COMMAND_MESSAGE, Overlapped),
 			&message->Overlapped
 		);
-
 		if (result != HRESULT_FROM_WIN32(ERROR_IO_PENDING))
 			break;
 
 		OutputDebugString(L"FilterReplyMessage Message & FilterGetMessage");
-
 #pragma warning(push)
 #pragma warning(disable:4127)
 	} while (TRUE);

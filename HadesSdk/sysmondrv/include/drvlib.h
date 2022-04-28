@@ -51,7 +51,8 @@ public:
 	void nf_setEventHandler(PVOID64 pHandler);
 	int devctrl_OnMonitor();
 	int devctrl_OffMonitor();
-	
+	int devctrl_SetIpsProcess(wchar_t* buf);
+
 	bool devctrl_sendioct(
 		const int ioctcode,
 		LPVOID lpInBuffer,

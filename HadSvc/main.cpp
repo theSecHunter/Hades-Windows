@@ -36,6 +36,7 @@ static kMsgInterface	g_mainMsgKlib;
 static uMsgInterface	g_mainMsgUlib;
 static WinMsgLoop		g_MsgControl;
 static HlprMiniPortIpc	g_miniport;
+static HANDLE			g_hPipe = nullptr;
 
 // Debug调试 标志控制
 static bool kerne_mon = false;		// kernel采集
@@ -72,11 +73,6 @@ static DWORD WINAPI HadesContrlActiveCheckNotify(LPVOID lpThreadParameter)
 				break;
 			}
 		}
-		// 如果窗口非正常情况下退出，进程虽然没有了，但是OpenEvnet-HadesContrl_Event仍然成功，可能资源并未彻底销毁
-		//auto active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesContrl_Event");
-		//if (0 >= (int)active_event)
-		//{
-		//}
 	}
 	return 0;
 }
@@ -109,6 +105,34 @@ static DWORD WINAPI HadesServerActiveCheckNotify(LPVOID lpThreadParameter)
 			}
 		}
 		Sleep(2000); // 2s发送一次心跳检测
+	}
+	return 0;
+}
+// PipClient
+static DWORD WINAPI PipConnectNotifyMsg(LPVOID lpThreadParameter)
+{
+	WaitNamedPipe(L"\\\\.\\Pipe\\hadesctlport", NMPWAIT_WAIT_FOREVER);
+	g_hPipe = CreateFile(L"\\\\.\\Pipe\\hadesctlport", GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (g_hPipe)
+	{
+		char Databuffer[1024] = { 0 };
+		DWORD dwRead = 0;
+		DWORD dwAvail = 0;
+		do
+		{
+			// PeekNamePipe用来预览一个管道中的数据，用来判断管道中是否为空
+			if (!PeekNamedPipe(g_hPipe, NULL, NULL, &dwRead, &dwAvail, NULL) || dwAvail <= 0)
+			{
+				break;
+			}
+			if (ReadFile(g_hPipe, Databuffer, 1024, &dwRead, NULL))
+			{
+				if (dwRead != 0)
+				{
+
+				}
+			}
+		} while (TRUE);
 	}
 	return 0;
 }
@@ -255,10 +279,8 @@ int main(int argc, char* argv[])
 	// start grpc Read thread (Wait server Data) handler C2_Msg loop
 	DWORD threadid = 0;
 	HANDLE grocRead = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
-	
 	// init grpc Heartbeat detection 
 	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)HadesServerActiveCheckNotify, &greeter, 0, &threadid);
-	
 	// start grpc write thread
 	greeter.ThreadPool_Init();
 
@@ -370,7 +392,9 @@ int main(int argc, char* argv[])
 
 	// 判断主界面是否已经退出
 	CreateThread(NULL, 0, HadesContrlActiveCheckNotify, NULL, 0, &threadid);
-
+	// 更改PipConnect --> Socket_Connect同步
+	//CreateThread(NULL, 0, PipConnectNotifyMsg, NULL, 0, &threadid);
+	
 	// 等待主界面退出激活事件,否则一直不退出
 	WaitForSingleObject(g_SvcExitEvent, INFINITE);
 	CloseHandle(g_SvcExitEvent);
@@ -381,6 +405,8 @@ int main(int argc, char* argv[])
 		TerminateThread(grocRead, 0);
 		CloseHandle(grocRead);
 	}	
+	if (g_hPipe)
+		CloseHandle(g_hPipe);
 	if (g_mainMsgUlib.GetEtwMonStatus())
 		g_mainMsgUlib.uMsg_EtwClose();
 	if (g_mainMsgKlib.GetKerMonStatus())

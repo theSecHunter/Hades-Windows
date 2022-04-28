@@ -1,6 +1,6 @@
 /*
-* 与PipServer管道一样
-* 遵循指令同步,流水数据异步
+* 接收界面HadesContrl任务Msg管理，监控开关和功能使用
+* HadesContrlMsg --> HadesSvc
 */
 #include <Windows.h>
 #include "msgloop.h"

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window size="200,150" caption="0,0,0,36">
+	<VerticalLayout bordersize="1" bordercolor="#FF33374A" bkcolor="#FFFFFFFF">
+		<HorizontalLayout height="36" inset="16,4,4,4">
+			<Label text="关于我们1" font="2" />
+			<Label text="关于我们2" font="2" />
+		</HorizontalLayout>
+		<HorizontalLayout height="36" inset="16,4,4,4">
+			<Label text="关于我们3" font="2" />
+			<Label text="关于我们4" font="2" />
+		</HorizontalLayout>
+	</VerticalLayout>
+</Window>

@@ -191,7 +191,6 @@ VOID Process_NotifyProcessEx(
         }
     }
 
-
     sl_lock(&g_processQueryhead.process_lock, &lh);
     InsertHeadList(&g_processQueryhead.process_pending, &pinfo->pEntry);
     sl_unlock(&lh);

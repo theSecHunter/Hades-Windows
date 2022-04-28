@@ -16,12 +16,6 @@
     <Filter Include="grpc">
       <UniqueIdentifier>{f5786f9a-b4d8-4337-aa63-296c32994e28}</UniqueIdentifier>
     </Filter>
-    <Filter Include="pipserver">
-      <UniqueIdentifier>{5fa7c6ca-ee87-412b-9a54-25f3ab596d5c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="minifilterport">
-      <UniqueIdentifier>{cfdc8086-25ee-47b2-b437-22039a88f034}</UniqueIdentifier>
-    </Filter>
     <Filter Include="common">
       <UniqueIdentifier>{0584de7e-1a26-48f2-8350-a6374486f21d}</UniqueIdentifier>
     </Filter>
@@ -30,6 +24,9 @@
     </Filter>
     <Filter Include="umsg">
       <UniqueIdentifier>{1846fa97-1da4-4e41-ae06-9d7ecf6c0ac6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="msghandler">
+      <UniqueIdentifier>{5fa7c6ca-ee87-412b-9a54-25f3ab596d5c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -43,13 +40,10 @@
       <Filter>grpc</Filter>
     </ClCompile>
     <ClCompile Include="pipe.cpp">
-      <Filter>pipserver</Filter>
+      <Filter>msghandler</Filter>
     </ClCompile>
     <ClCompile Include="time_stamp.cpp">
-      <Filter>pipserver</Filter>
-    </ClCompile>
-    <ClCompile Include="HlprMiniCom.cpp">
-      <Filter>minifilterport</Filter>
+      <Filter>msghandler</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
@@ -64,7 +58,10 @@
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="msgloop.cpp">
-      <Filter>pipserver</Filter>
+      <Filter>msghandler</Filter>
+    </ClCompile>
+    <ClCompile Include="HlprMiniCom.cpp">
+      <Filter>msghandler</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -81,13 +78,10 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="pipe.h">
-      <Filter>pipserver</Filter>
+      <Filter>msghandler</Filter>
     </ClInclude>
     <ClInclude Include="time_stamp.h">
-      <Filter>pipserver</Filter>
-    </ClInclude>
-    <ClInclude Include="HlprMiniCom.h">
-      <Filter>minifilterport</Filter>
+      <Filter>msghandler</Filter>
     </ClInclude>
     <ClInclude Include="umsginterface.h">
       <Filter>umsg</Filter>
@@ -99,7 +93,13 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="msgloop.h">
-      <Filter>pipserver</Filter>
+      <Filter>msghandler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HadesSdk\include\sysinfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HlprMiniCom.h">
+      <Filter>msghandler</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

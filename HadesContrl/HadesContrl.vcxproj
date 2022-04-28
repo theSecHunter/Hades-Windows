@@ -251,6 +251,8 @@
     <ClInclude Include="DriverManager.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="HadesContrl.h" />
+    <ClInclude Include="HlprServerPip.h" />
+    <ClInclude Include="MessageBoxDlg.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Systeminfolib.h" />
     <ClInclude Include="targetver.h" />
@@ -261,6 +263,8 @@
   <ItemGroup>
     <ClCompile Include="DriverManager.cpp" />
     <ClCompile Include="HadesContrl.cpp" />
+    <ClCompile Include="HlprServerPip.cpp" />
+    <ClCompile Include="MessageBoxDlg.cpp" />
     <ClCompile Include="Systeminfolib.cpp" />
     <ClCompile Include="Wnd\AboutUsWindow.cpp" />
     <ClCompile Include="Wnd\MainWindow.cpp" />
@@ -277,6 +281,7 @@
     <Xml Include="skin\AboutUsWindow.xml" />
     <Xml Include="skin\MainWindow.xml" />
     <Xml Include="skin\Menu.xml" />
+    <Xml Include="skin\MessageBoxDlg.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="skin.zip" />

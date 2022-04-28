@@ -54,6 +54,12 @@
     <ClInclude Include="DriverManager.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="MessageBoxDlg.h">
+      <Filter>Wnd</Filter>
+    </ClInclude>
+    <ClInclude Include="HlprServerPip.h">
+      <Filter>common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HadesContrl.cpp">
@@ -72,6 +78,12 @@
       <Filter>sysinfolib</Filter>
     </ClCompile>
     <ClCompile Include="DriverManager.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="MessageBoxDlg.cpp">
+      <Filter>Wnd</Filter>
+    </ClCompile>
+    <ClCompile Include="HlprServerPip.cpp">
       <Filter>common</Filter>
     </ClCompile>
   </ItemGroup>
@@ -96,6 +108,9 @@
       <Filter>Xml</Filter>
     </Xml>
     <Xml Include="skin\AboutUsWindow.xml">
+      <Filter>Xml</Filter>
+    </Xml>
+    <Xml Include="skin\MessageBoxDlg.xml">
       <Filter>Xml</Filter>
     </Xml>
   </ItemGroup>
