@@ -63,6 +63,9 @@
     <ClCompile Include="HlprMiniCom.cpp">
       <Filter>msghandler</Filter>
     </ClCompile>
+    <ClCompile Include="socketMsg.cpp">
+      <Filter>msghandler</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="grpc.h">
@@ -99,6 +102,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="HlprMiniCom.h">
+      <Filter>msghandler</Filter>
+    </ClInclude>
+    <ClInclude Include="socketMsg.h">
       <Filter>msghandler</Filter>
     </ClInclude>
   </ItemGroup>

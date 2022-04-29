@@ -17,3 +17,21 @@
 #include <memory.h>
 #include <tchar.h>
 
+#ifdef _WIN64
+#ifdef _DEBUG
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib_d64.lib")
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\HPSocket_64D.lib")
+#else
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib64.lib")
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\HPSocket64.lib")
+#endif
+#else
+#ifdef _DEBUG
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib_d.lib")
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\HPSocket_D.lib")
+#else
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib.lib")
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\HPSocket.lib")
+#endif
+#endif
+

@@ -278,6 +278,7 @@
     <ClCompile Include="msgassist.cpp" />
     <ClCompile Include="msgloop.cpp" />
     <ClCompile Include="pipe.cpp" />
+    <ClCompile Include="socketMsg.cpp" />
     <ClCompile Include="time_stamp.cpp" />
     <ClCompile Include="umsginterface.cpp" />
   </ItemGroup>
@@ -292,6 +293,7 @@
     <ClInclude Include="msgloop.h" />
     <ClInclude Include="pipe.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="socketMsg.h" />
     <ClInclude Include="time_stamp.h" />
     <ClInclude Include="umsginterface.h" />
   </ItemGroup>

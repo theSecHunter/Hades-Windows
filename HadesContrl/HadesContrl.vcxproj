@@ -111,13 +111,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x86\Debug</OutDir>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include</IncludePath>
+    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;D:\Hades\Hades-Windows\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\x86\Release</OutDir>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include</IncludePath>
+    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;D:\Hades\Hades-Windows\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
@@ -131,14 +131,14 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x64\Debug</OutDir>
     <TargetName>$(ProjectName)64_d</TargetName>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include</IncludePath>
+    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;D:\Hades\Hades-Windows\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\x64\Release</OutDir>
     <TargetName>$(ProjectName)64</TargetName>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include</IncludePath>
+    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;D:\Hades\Hades-Windows\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
@@ -159,7 +159,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>DuiLib_d.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;DuiLib_d.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -177,7 +177,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>DuiLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;DuiLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/SAFESEH:NO %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -209,7 +209,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>DuiLib64_d.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;DuiLib64_d.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -227,7 +227,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>DuiLib64.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;DuiLib64.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
@@ -252,6 +252,7 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="HadesContrl.h" />
     <ClInclude Include="HlprServerPip.h" />
+    <ClInclude Include="HlprIocpService.h" />
     <ClInclude Include="MessageBoxDlg.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Systeminfolib.h" />
@@ -264,6 +265,7 @@
     <ClCompile Include="DriverManager.cpp" />
     <ClCompile Include="HadesContrl.cpp" />
     <ClCompile Include="HlprServerPip.cpp" />
+    <ClCompile Include="HlprIocpService.cpp" />
     <ClCompile Include="MessageBoxDlg.cpp" />
     <ClCompile Include="Systeminfolib.cpp" />
     <ClCompile Include="Wnd\AboutUsWindow.cpp" />

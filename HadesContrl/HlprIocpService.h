@@ -1,7 +1,5 @@
 #pragma once
 
-#include <MSWSock.h>
-
 class IOCPHandler
 {
 public:
@@ -14,14 +12,15 @@ public:
 	HlprIocpService();
 	~HlprIocpService();
 
-	bool iocp_init(IOCPHandler* pHandler, int numOfIoThreads = 0);
-	bool iocp_work();
+	bool iocp_init(IOCPHandler* pHandler, int numOfIoThreads);
 	bool iocp_free();
-	bool iocp_recv();
-	bool iocp_send();
-	bool iocp_close();
+	bool iocp_registersocket(SOCKET s);
+	bool postCompletion(SOCKET s, DWORD dwTransferred, LPOVERLAPPED pol);
+	bool iocp_work();
 
 private:
-
+	HANDLE m_hIOCP;
+	HANDLE m_stopEvent;
+	IOCPHandler* m_pHandler;
 };
 

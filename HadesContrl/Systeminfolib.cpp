@@ -2,20 +2,6 @@
 #include <usysinfo.h>
 #include <Windows.h>
 
-#ifdef _WIN64
-#ifdef _DEBUG
-#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib_d64.lib")
-#else
-#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib64.lib")
-#endif
-#else
-#ifdef _DEBUG
-#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib_d.lib")
-#else
-#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib.lib")
-#endif
-#endif
-
 SystemAttributesNode SYSTEMPUBLIC::sysattriinfo;
 SystemDynamicNode SYSTEMPUBLIC::sysdynamicinfo;
 

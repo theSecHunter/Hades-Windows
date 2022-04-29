@@ -7,4 +7,5 @@
 | sysmondrv| 内核态监控/采集头文件和lib|
 | rapidjson/nlohmannjson| Json库|
 | netdrv | WFP头文件和lib|
+| hpsocket | 网络库 |
 

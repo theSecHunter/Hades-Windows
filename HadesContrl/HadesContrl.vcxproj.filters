@@ -25,6 +25,9 @@
     <Filter Include="common">
       <UniqueIdentifier>{7ccd883e-c1ee-47f4-ac41-80ccfa9240de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="iocpserver">
+      <UniqueIdentifier>{19519342-56c2-421a-b9da-19fca02ae311}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -60,6 +63,9 @@
     <ClInclude Include="HlprServerPip.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="HlprIocpService.h">
+      <Filter>iocpserver</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HadesContrl.cpp">
@@ -85,6 +91,9 @@
     </ClCompile>
     <ClCompile Include="HlprServerPip.cpp">
       <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="HlprIocpService.cpp">
+      <Filter>iocpserver</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

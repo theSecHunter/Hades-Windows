@@ -1,7 +1,8 @@
 #include "MainWindow.h"
 #include "../DriverManager.h"
 #include "../Systeminfolib.h"
-#include "../HlprSocketSvc.h"
+
+#include "MessageBoxDlg.h"
 
 #include <usysinfo.h>
 #include <TlHelp32.h>
@@ -25,8 +26,11 @@ static USysBaseInfo			g_DynSysBaseinfo;
 // 驱动管理
 static DriverManager		g_DrvManager;
 const std::wstring			g_drverName = L"sysmondriver";
-// SocketServer
-static HlprSocketSvc		g_socketPip;
+
+static DWORD WINAPI StartIocpWorkNotify(LPVOID lpThreadParameter)
+{
+	return 0;
+}
 
 void WindlgShow(HWND& hWnd)
 {
@@ -38,12 +42,20 @@ void WindlgShow(HWND& hWnd)
 }
 std::wstring GetWStringByChar(const char* szString)
 {
-	std::wstring wstrString;
-	if (szString != NULL)
+	std::wstring wstrString = L"";
+	try
 	{
-		std::string str(szString);
-		wstrString.assign(str.begin(), str.end());
+		if (szString != NULL)
+		{
+			std::string str(szString);
+			wstrString.assign(str.begin(), str.end());
+		}
 	}
+	catch (const std::exception&)
+	{
+		return wstrString;
+	}
+
 	return wstrString;
 }
 // 配置文件读取grpc配置
@@ -497,10 +509,8 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 	CreateThread(NULL, NULL, HadesSvcDeamonNotify, this, 0, 0);
 	// 设置定时器
 	SetTimer(m_hWnd, 1, 1000, NULL);
-
 	// 启动SocketServer等待HadesSvc
-	g_socketPip.sock_init();
-
+	CreateThread(NULL, NULL, StartIocpWorkNotify, this, 0, 0);
 	return lRes;
 }
 LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -530,6 +540,13 @@ LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHand
 #endif
 	
 	killProcess(killname);
+	auto IocpExEvt = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"IocpTcpExitEvent");
+	if (IocpExEvt)
+	{
+		SetEvent(IocpExEvt);
+		Sleep(100);
+		CloseHandle(IocpExEvt);
+	}
 	return __super::OnClose(uMsg, wParam, lParam, bHandled);
 }
 
