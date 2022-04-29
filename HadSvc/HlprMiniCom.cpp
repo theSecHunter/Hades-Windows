@@ -12,15 +12,6 @@ static HANDLE g_hPort = nullptr;
 static HANDLE g_comPletion = nullptr;
 static BOOL   g_InitPortStatus = FALSE;
 
-static socketMsg g_socketPip;
-
-typedef enum _MINI_COMMAND {
-	SET_PROCESSNAME = 0,
-	IPS_PROCESSSTART,
-	IPS_REGISTERTAB,
-	IPS_IMAGEDLL
-}MIN_COMMAND;
-
 #define HADES_READ_BUFFER_SIZE  4096 
 typedef struct _HADES_NOTIFICATION {
 
@@ -215,14 +206,19 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		{
 			PROCESSINFO* processinfo = (PROCESSINFO*)notification->Contents;
 			OutputDebugString(processinfo->commandLine);
-			if (false == g_socketPip.connect())
+			socketMsg g_socketPip;
+			if (false == g_socketPip.sendDlgMsg(IPS_PROCESSSTART))
 				break;
-			if (false == g_socketPip.send())
-				break;
-			// 默认等待10s,如果10s没有返回/默认返回
-			if (false == g_socketPip.recv())
-				break;
-			replyMessage.Reply.SafeToOpen = FALSE;			
+			const int hr = g_socketPip.recv();
+			if (0 == hr || 2 == hr)
+				replyMessage.Reply.SafeToOpen = TRUE;
+			else if (1 == hr)
+				replyMessage.Reply.SafeToOpen = FALSE;
+			else if (3 == hr)
+			{
+				replyMessage.Reply.SafeToOpen = FALSE;
+				// push kill process Msg
+			}
 		}
 		break;
 		case MIN_COMMAND::IPS_REGISTERTAB: break;
