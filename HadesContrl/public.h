@@ -1,0 +1,11 @@
+#pragma once
+typedef enum _MINI_COMMAND {
+	SET_PROCESSNAME = 0,
+	IPS_PROCESSSTART,
+	IPS_REGISTERTAB,
+	IPS_IMAGEDLL
+}MIN_COMMAND;
+
+typedef struct _MSG_DLGBUFFER {
+	int options;
+}MSG_DLGBUFFER, * PMSG_DLGBUFFER;

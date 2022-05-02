@@ -16,10 +16,10 @@ bool socketMsg::sendDlgMsg(const int msgid)
 {
 	bool hr = false;
 	// if not connect iocpserver, connect to iocpserver
-	if (nullptr == m_socket)
+	if (!m_socket)
 	{
 		hr = connect();
-		if (nullptr == m_socket && false == hr)
+		if (!m_socket && false == hr)
 			return false;
 	}
 
@@ -65,9 +65,10 @@ bool socketMsg::send(const int msgid)
 {
 	try
 	{
-		if (nullptr == m_socket)
+		if (!m_socket)
 			return false;
-		return ::send(m_socket, NULL, 0, false);
+
+		return ::send(m_socket, (char*)&msgid, sizeof(const int), false);
 	}
 	catch (...)
 	{
@@ -78,7 +79,7 @@ bool socketMsg::send(const int msgid, char* buffer, const int buflen)
 {
 	try
 	{
-		if (nullptr == m_socket || nullptr == buffer || 0 >= buflen)
+		if (!m_socket || nullptr == buffer || 0 >= buflen)
 			return false;
 		switch (msgid)
 		{
@@ -115,7 +116,7 @@ const int socketMsg::recv()
 	try
 	{
 		do {
-			if (nullptr == m_socket)
+			if (!m_socket)
 				break;
 			const int rebuflen = sizeof(DWORD);
 			recvbuf = new char[rebuflen];
@@ -165,7 +166,7 @@ bool socketMsg::close()
 	{
 		if (m_socket)
 			closesocket(m_socket);
-		m_socket = nullptr;
+		m_socket = 0;
 		return true;
 	}
 	catch (...)

@@ -1,10 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="源文件">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
     <Filter Include="头文件">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
@@ -19,14 +15,24 @@
     <Filter Include="Xml">
       <UniqueIdentifier>{a9294569-c908-4100-a407-cf2bc4c324c0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="sysinfolib">
-      <UniqueIdentifier>{403010a3-79b3-41f0-870a-066aa3dc2ef9}</UniqueIdentifier>
+    <Filter Include="DrvManage">
+      <UniqueIdentifier>{52810d7b-1a65-40eb-b6e9-00a4ef5f987e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="common">
+    <Filter Include="PipSvc">
       <UniqueIdentifier>{7ccd883e-c1ee-47f4-ac41-80ccfa9240de}</UniqueIdentifier>
     </Filter>
-    <Filter Include="iocpserver">
+    <Filter Include="HpsockSvc">
+      <UniqueIdentifier>{60ff0600-4fe9-421b-98d9-9d6c846a3593}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="IocpBase">
       <UniqueIdentifier>{19519342-56c2-421a-b9da-19fca02ae311}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SysinfoLib">
+      <UniqueIdentifier>{403010a3-79b3-41f0-870a-066aa3dc2ef9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Entry">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -52,24 +58,36 @@
       <Filter>Wnd</Filter>
     </ClInclude>
     <ClInclude Include="Systeminfolib.h">
-      <Filter>sysinfolib</Filter>
-    </ClInclude>
-    <ClInclude Include="DriverManager.h">
-      <Filter>common</Filter>
+      <Filter>SysinfoLib</Filter>
     </ClInclude>
     <ClInclude Include="MessageBoxDlg.h">
       <Filter>Wnd</Filter>
     </ClInclude>
     <ClInclude Include="HlprServerPip.h">
-      <Filter>common</Filter>
+      <Filter>PipSvc</Filter>
     </ClInclude>
     <ClInclude Include="HlprIocpService.h">
-      <Filter>iocpserver</Filter>
+      <Filter>IocpBase</Filter>
+    </ClInclude>
+    <ClInclude Include="public.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HpTcpSvc.h">
+      <Filter>HpsockSvc</Filter>
+    </ClInclude>
+    <ClInclude Include="DriverManager.h">
+      <Filter>DrvManage</Filter>
+    </ClInclude>
+    <ClInclude Include="HlprSocketTcp.h">
+      <Filter>IocpBase</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HadesSdk\hpsocket\Include\HPSocket\HPSocket.h">
+      <Filter>HpsockSvc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HadesContrl.cpp">
-      <Filter>源文件</Filter>
+      <Filter>Entry</Filter>
     </ClCompile>
     <ClCompile Include="Wnd\MainWindow.cpp">
       <Filter>Wnd</Filter>
@@ -81,19 +99,25 @@
       <Filter>Wnd</Filter>
     </ClCompile>
     <ClCompile Include="Systeminfolib.cpp">
-      <Filter>sysinfolib</Filter>
-    </ClCompile>
-    <ClCompile Include="DriverManager.cpp">
-      <Filter>common</Filter>
+      <Filter>SysinfoLib</Filter>
     </ClCompile>
     <ClCompile Include="MessageBoxDlg.cpp">
       <Filter>Wnd</Filter>
     </ClCompile>
     <ClCompile Include="HlprServerPip.cpp">
-      <Filter>common</Filter>
+      <Filter>PipSvc</Filter>
     </ClCompile>
     <ClCompile Include="HlprIocpService.cpp">
-      <Filter>iocpserver</Filter>
+      <Filter>IocpBase</Filter>
+    </ClCompile>
+    <ClCompile Include="HpTcpSvc.cpp">
+      <Filter>HpsockSvc</Filter>
+    </ClCompile>
+    <ClCompile Include="DriverManager.cpp">
+      <Filter>DrvManage</Filter>
+    </ClCompile>
+    <ClCompile Include="HlprSocketTcp.cpp">
+      <Filter>IocpBase</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

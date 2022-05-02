@@ -1,4 +1,6 @@
 #pragma once
+#include <winsock.h>
+
 class socketMsg
 {
 public:

@@ -206,10 +206,10 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		{
 			PROCESSINFO* processinfo = (PROCESSINFO*)notification->Contents;
 			OutputDebugString(processinfo->commandLine);
-			socketMsg g_socketPip;
-			if (false == g_socketPip.sendDlgMsg(IPS_PROCESSSTART))
+			socketMsg socketPip;
+			if (false == socketPip.sendDlgMsg(IPS_PROCESSSTART))
 				break;
-			const int hr = g_socketPip.recv();
+			const int hr = socketPip.recv();
 			if (0 == hr || 2 == hr)
 				replyMessage.Reply.SafeToOpen = TRUE;
 			else if (1 == hr)
@@ -218,6 +218,7 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 			{
 				replyMessage.Reply.SafeToOpen = FALSE;
 				// push kill process Msg
+				// QueueUserWorkItem(IPS_PROCESSSTART, processinfo->processid);
 			}
 		}
 		break;

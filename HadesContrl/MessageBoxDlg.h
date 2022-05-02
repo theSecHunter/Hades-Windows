@@ -1,11 +1,15 @@
 #pragma once
 #include <UIlib.h>
+#include "public.h"
 
 using namespace DuiLib;
 
 class MessageBoxDlg : public WindowImplBase
 {
 public:
+	inline
+		MessageBoxDlg(PMSG_DLGBUFFER& msg) { m_msgOption = msg; }
+
 	LPCTSTR GetWindowClassName() const;
 	CDuiString GetSkinFile();
 	CDuiString GetSkinFolder();
@@ -13,8 +17,8 @@ public:
 	inline
 		LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 	{
-		LRESULT lRes = __super::OnCreate(uMsg, wParam, lParam, bHandled);
-		return lRes;
+		if (!m_msgOption) return 0;
+		return __super::OnCreate(uMsg, wParam, lParam, bHandled);
 	}
 	inline
 		LRESULT OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -22,5 +26,8 @@ public:
 		return __super::OnClose(uMsg, wParam, lParam, bHandled);
 	}
 	void Notify(TNotifyUI& msg);
+
+private:
+	PMSG_DLGBUFFER m_msgOption = nullptr;
 };
 

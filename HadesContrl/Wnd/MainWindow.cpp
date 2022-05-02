@@ -1,17 +1,15 @@
+#include "../HpTcpSvc.h"
 #include "MainWindow.h"
 #include "../DriverManager.h"
 #include "../Systeminfolib.h"
-
-#include "MessageBoxDlg.h"
-
 #include <usysinfo.h>
 #include <TlHelp32.h>
 #include <mutex>
 #include <WinUser.h>
 #include <UserEnv.h>
-
+#include <stdio.h>
+#include <time.h>
 #include "../resource.h"
-
 #pragma comment(lib,"Userenv.lib")
 
 const int WM_SHOWTASK = WM_USER + 501;
@@ -21,6 +19,8 @@ const int WM_IPS_PROCESS = WM_USER + 600;
 
 // Hades状态锁
 static std::mutex			g_hadesStatuscs;
+// Start线程锁
+static std::mutex			g_startprocesslock;
 // 动态定时器需要
 static USysBaseInfo			g_DynSysBaseinfo;
 // 驱动管理
@@ -29,6 +29,9 @@ const std::wstring			g_drverName = L"sysmondriver";
 
 static DWORD WINAPI StartIocpWorkNotify(LPVOID lpThreadParameter)
 {
+	//shared_ptr<HpTcpSvc*> tcpsvc =;
+	HpTcpSvc tcpsvc;
+	tcpsvc.hpsk_init();
 	return 0;
 }
 
@@ -367,6 +370,7 @@ void MainWindow::HadesSvcDaemon()
 		{
 			StartProcess(m_cmdline);
 		}
+		Sleep(5000); //一定要等待,不然死循环启线程会很可怕,弄不好直接死机
 	}
 }
 static DWORD WINAPI HadesSvcDeamonNotify(LPVOID lpThreadParameter)
@@ -479,10 +483,18 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 				Sleep(500);
 			}
 #ifdef _WIN64
-			const wchar_t killname[] = L"HadesSvc64.exe";
+#ifdef _DEBUG
+			const wchar_t* killname = L"HadesSvc_d64.exe";
 #else
-			const wchar_t killname[] = L"HadesSvc.exe";
-#endif // !_WIN64
+			const wchar_t* killname = L"HadesSvc64.exe";
+#endif
+#else
+#ifdef _DEBUG
+			const wchar_t* = L"HadesSvc_d.exe";
+#else
+			const wchar_t* = L"HadesSvc.exe";
+#endif
+#endif
 			killProcess(killname);
 			active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVENT");
 			if (active_event)
@@ -540,7 +552,7 @@ LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHand
 #endif
 	
 	killProcess(killname);
-	auto IocpExEvt = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"IocpTcpExitEvent");
+	auto IocpExEvt = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"HpStopTcpSvcEvent");
 	if (IocpExEvt)
 	{
 		SetEvent(IocpExEvt);

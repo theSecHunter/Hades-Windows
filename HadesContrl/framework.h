@@ -17,21 +17,23 @@
 #include <memory.h>
 #include <tchar.h>
 
+#define _ZLIB_DISABLED
+
 #ifdef _WIN64
 #ifdef _DEBUG
 #pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib_d64.lib")
-#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\HPSocket_64D.lib")
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\x64\\HPSocket_UD.lib")
 #else
 #pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib64.lib")
-#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\HPSocket64.lib")
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\x64\\HPSocket_U.lib")
 #endif
 #else
 #ifdef _DEBUG
 #pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib_d.lib")
-#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\HPSocket_D.lib")
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\HPSocket_UD.lib")
 #else
 #pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib.lib")
-#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\HPSocket.lib")
+#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\hpsocket\\lib\\HPSocket_U.lib")
 #endif
 #endif
 

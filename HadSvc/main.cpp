@@ -76,7 +76,7 @@ static DWORD WINAPI HadesContrlActiveCheckNotify(LPVOID lpThreadParameter)
 	}
 	return 0;
 }
-// 检测HadesServe是否活跃
+// 检测Grpc_Server是否活跃
 static DWORD WINAPI HadesServerActiveCheckNotify(LPVOID lpThreadParameter)
 {
 	Grpc* grpcobj = (Grpc*)lpThreadParameter;
