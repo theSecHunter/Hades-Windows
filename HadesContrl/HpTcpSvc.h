@@ -4,7 +4,7 @@
 
 #include <HPSocket.h>
 
-class HpTcpSvc : public CTcpPullServerListener
+class HpTcpSvc : public CTcpServerListener //ITcpServerListener
 {
 public:
 	HpTcpSvc();
@@ -15,6 +15,7 @@ public:
 	virtual EnHandleResult OnAccept(ITcpServer* pSender, CONNID dwConnID, UINT_PTR soClient);
 	virtual EnHandleResult OnHandShake(ITcpServer* pSender, CONNID dwConnID);
 	virtual EnHandleResult OnReceive(ITcpServer* pSender, CONNID dwConnID, int iLength);
+	virtual EnHandleResult OnReceive(ITcpServer* pSender, CONNID dwConnID, const BYTE* pData, int iLength);
 	virtual EnHandleResult OnSend(ITcpServer* pSender, CONNID dwConnID, const BYTE* pData, int iLength);
 	virtual EnHandleResult OnClose(ITcpServer* pSender, CONNID dwConnID, EnSocketOperation enOperation, int iErrorCode);
 	virtual EnHandleResult OnShutdown(ITcpServer* pSender);

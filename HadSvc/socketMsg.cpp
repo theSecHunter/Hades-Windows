@@ -6,10 +6,15 @@
 
 socketMsg::socketMsg()
 {
+	WORD wVersionRequested;
+	WSADATA wsaData;
+	wVersionRequested = MAKEWORD(2, 2);
+	WSAStartup(wVersionRequested, &wsaData);
 }
 socketMsg::~socketMsg()
 {
 	this->close();
+	WSACleanup();
 }
 
 bool socketMsg::sendDlgMsg(const int msgid)

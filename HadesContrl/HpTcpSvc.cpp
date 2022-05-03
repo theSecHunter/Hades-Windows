@@ -19,7 +19,8 @@ bool HpTcpSvc::hpsk_init()
 		if (!m_listener)
 			return false;
 		// 2. Create component object (and binding with listener object)
-		CTcpPullServerPtr s_pserver(m_listener);
+		//CTcpPullServerPtr s_pserver(m_listener);
+		CTcpServerPtr s_pserver(m_listener);
 		// 3. Start component object
 		if (!s_pserver->Start(L"127.0.0.1", 10246))
 			exit(1);
@@ -53,16 +54,83 @@ EnHandleResult HpTcpSvc::OnHandShake(ITcpServer* pSender, CONNID dwConnID)
 }
 EnHandleResult HpTcpSvc::OnReceive(ITcpServer* pSender, CONNID dwConnID, int iLength)
 {
+	//TPkgInfo* pInfo = FindPkgInfo(pSender, dwConnID);
+	//ITcpPullServer* pServer = ITcpPullServer::FromS(pSender);
+
+	//if (pInfo != nullptr)
+	//{
+	//	int required = pInfo->length;
+	//	int remain = iLength;
+
+	//	while (remain >= required)
+	//	{
+	//		remain -= required;
+	//		CBufferPtr buffer(required);
+
+	//		EnFetchResult result = pServer->Fetch(dwConnID, buffer, (int)buffer.Size());
+	//		if (result == FR_OK)
+	//		{
+	//			if (pInfo->is_header)
+	//			{
+	//				TPkgHeader* pHeader = (TPkgHeader*)buffer.Ptr();
+	//				//TRACE("[Server] head -> seq: %d, body_len: %d\n", pHeader->seq, pHeader->body_len);
+
+	//				required = pHeader->body_len;
+	//			}
+	//			else
+	//			{
+	//				TPkgBody* pBody = (TPkgBody*)(BYTE*)buffer;
+
+	//				char* ch = pBody->name;
+	//				int num = MultiByteToWideChar(0, 0, ch, -1, NULL, 0);
+	//				//获得长字节所需的空间
+	//				wchar_t* wide = new wchar_t[num];
+	//				MultiByteToWideChar(0, 0, ch, -1, wide, num);
+	//				m_Info.AddString(wide);   //在控件中显示name
+
+	//				itoa(int(pBody->age), ch, 10);   //将int转换为char*
+	//				num = MultiByteToWideChar(0, 0, ch, -1, NULL, 0);
+	//				//获得长字节所需的空间
+	//				wide = new wchar_t[num];
+	//				MultiByteToWideChar(0, 0, ch, -1, wide, num);
+	//				m_Info.AddString(wide);  //在控件中显示age
+
+	//				ch = pBody->desc;
+	//				num = MultiByteToWideChar(0, 0, ch, -1, NULL, 0);
+	//				//获得长字节所需的空间
+	//				wide = new wchar_t[num];
+	//				MultiByteToWideChar(0, 0, ch, -1, wide, num);
+	//				m_Info.AddString(wide); //在控件中显示desc
+
+	//				//TRACE("[Server] body -> name: %s, age: %d, desc: %s\n", pBody->name, pBody->age, pBody->desc);
+
+	//				required = sizeof(TPkgHeader);
+	//			}
+
+	//			pInfo->is_header = !pInfo->is_header;
+	//			pInfo->length = required;
+
+	//			::PostOnReceive(dwConnID, buffer, (int)buffer.Size());
+
+	//			if (!pSender->Send(dwConnID, buffer, (int)buffer.Size()))  //发送数据
+	//				return HR_ERROR;
+	//		}
+	//	}
+	//}
+	return HR_OK;
+}
+EnHandleResult HpTcpSvc::OnReceive(ITcpServer* pSender, CONNID dwConnID, const BYTE* pData, int iLength)
+{
 	if (!pSender || !dwConnID)
 		return HR_ERROR;
 
 	// 处理单指令消息
-	if (sizeof(const int) == iLength) 
+	if (sizeof(const int) == iLength)
 	{
-		const int taskid = *((int*)dwConnID);
+		const int taskid = *((int*)pData);
 		switch (taskid)
 		{
-		case IPS_PROCESSSTART: 
+		case IPS_PROCESSSTART:
 		{
 			int options = 0;
 			MSG_DLGBUFFER* pMsgbuf = (MSG_DLGBUFFER*)new MSG_DLGBUFFER;
@@ -77,6 +145,7 @@ EnHandleResult HpTcpSvc::OnReceive(ITcpServer* pSender, CONNID dwConnID, int iLe
 				if (!pMsgbuf)
 					break;
 				options = pMsgbuf->options;
+				options = 2;
 			} while (0);
 			if (pMsgbuf)
 			{
@@ -87,7 +156,6 @@ EnHandleResult HpTcpSvc::OnReceive(ITcpServer* pSender, CONNID dwConnID, int iLe
 		}
 		break;
 		}
-
 	}
 	return HR_OK;
 }

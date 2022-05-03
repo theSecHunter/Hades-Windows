@@ -29,7 +29,6 @@ const std::wstring			g_drverName = L"sysmondriver";
 
 static DWORD WINAPI StartIocpWorkNotify(LPVOID lpThreadParameter)
 {
-	//shared_ptr<HpTcpSvc*> tcpsvc =;
 	HpTcpSvc tcpsvc;
 	tcpsvc.hpsk_init();
 	return 0;
