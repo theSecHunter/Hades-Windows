@@ -145,7 +145,6 @@ EnHandleResult HpTcpSvc::OnReceive(ITcpServer* pSender, CONNID dwConnID, const B
 				if (!pMsgbuf)
 					break;
 				options = pMsgbuf->options;
-				options = 2;
 			} while (0);
 			if (pMsgbuf)
 			{
