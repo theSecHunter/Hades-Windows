@@ -154,7 +154,8 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
         case NF_PROCESS_INFO:
         {
             PROCESSINFO* processinfo = (PROCESSINFO*)pubnode->data;
-            j["win_sysmonitor_process_pid"] = to_string(processinfo->processid);
+            j["win_sysmonitor_process_parentpid"] = to_string(processinfo->parentprocessid);
+            j["win_sysmonitor_process_pid"] = to_string(processinfo->pid);
             j["win_sysmonitor_process_endprocess"] = to_string(processinfo->endprocess);
             if (processinfo->endprocess)
             {

@@ -199,7 +199,7 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		// handler buffer
 		notification = &message->Notification;
 		// Ä¬ÈÏ·ÅÐÐ
-		replyMessage.Reply.SafeToOpen = TRUE;
+		replyMessage.Reply.SafeToOpen = 2;
 		switch (notification->CommandId)
 		{
 		case MIN_COMMAND::IPS_PROCESSSTART:
@@ -207,19 +207,9 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 			PROCESSINFO* processinfo = (PROCESSINFO*)notification->Contents;
 			OutputDebugString(processinfo->commandLine);
 			socketMsg socketPip;
-			if (false == socketPip.sendDlgMsg(IPS_PROCESSSTART))
+			if (false == socketPip.sendDlgMsg(IPS_PROCESSSTART, (char*)processinfo, sizeof(PROCESSINFO)))
 				break;
-			const int hr = socketPip.recv();
-			if (0 == hr || 2 == hr)
-				replyMessage.Reply.SafeToOpen = TRUE;
-			else if (1 == hr)
-				replyMessage.Reply.SafeToOpen = FALSE;
-			else if (3 == hr)
-			{
-				replyMessage.Reply.SafeToOpen = FALSE;
-				// push kill process Msg
-				// QueueUserWorkItem(IPS_PROCESSSTART, processinfo->processid);
-			}
+			replyMessage.Reply.SafeToOpen = socketPip.recv();
 		}
 		break;
 		case MIN_COMMAND::IPS_REGISTERTAB: break;
@@ -247,7 +237,6 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		);
 		if (result != HRESULT_FROM_WIN32(ERROR_IO_PENDING))
 			break;
-
 		OutputDebugString(L"FilterReplyMessage Message & FilterGetMessage");
 #pragma warning(push)
 #pragma warning(disable:4127)

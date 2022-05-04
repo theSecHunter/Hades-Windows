@@ -17,30 +17,33 @@ socketMsg::~socketMsg()
 	WSACleanup();
 }
 
-bool socketMsg::sendDlgMsg(const int msgid)
+bool socketMsg::sendDlgMsg(const int msgid, char* info, const int lens)
 {
 	bool hr = false;
-	// if not connect iocpserver, connect to iocpserver
 	if (!m_socket)
 	{
 		hr = connect();
 		if (!m_socket && false == hr)
-			return false;
+			return hr;
 	}
-
-	// send command 
+	// sendbuf = msgid + structinfo + 1
+	const int sendlens = sizeof(int) + lens + 1;
+	char* sendbuf = new char[sendlens];
+	if (!sendbuf)
+		return false;
+	RtlSecureZeroMemory(sendbuf, sendlens);
+	*((int*)sendbuf) = msgid;
+	memcpy(sendbuf + sizeof(int), info, lens);
 	switch (msgid)
 	{
-	case MIN_COMMAND::IPS_PROCESSSTART:
+	case MIN_COMMAND::IPS_PROCESSSTART:hr = send(msgid, sendbuf, sendlens); break;
+	}
+	if (sendbuf)
 	{
-		if (false == send(msgid))
-			return false;
+		delete[] sendbuf;
+		sendbuf = nullptr;
 	}
-	break;
-	default:return false;
-	}
-
-	return true;
+	return hr;
 }
 bool socketMsg::connect()
 {
@@ -56,7 +59,7 @@ bool socketMsg::connect()
 		struct sockaddr_in serveraddr;
 		serveraddr.sin_family = AF_INET;
 		serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-		serveraddr.sin_port = htons(10241);
+		serveraddr.sin_port = htons(10246);
 		if (::connect(m_socket, (sockaddr*)&serveraddr, sizeof(serveraddr)))
 			return true;
 		return false;
@@ -88,15 +91,11 @@ bool socketMsg::send(const int msgid, char* buffer, const int buflen)
 			return false;
 		switch (msgid)
 		{
-		case _MINI_COMMAND::IPS_PROCESSSTART:
-		{
-			// buffer
-			return ::send(m_socket, buffer, buflen, false);
-		}
-		break;
+		case _MINI_COMMAND::IPS_PROCESSSTART: break;
 		default:
 			break;
 		}
+		return ::send(m_socket, buffer, buflen, false);
 	}
 	catch (...)
 	{
@@ -117,7 +116,7 @@ bool socketMsg::sendto()
 const int socketMsg::recv()
 {// recv无参数函数，server只会返回buffer dword大小数据
 	char* recvbuf = nullptr;
-	int hrstatus = 0;
+	int hrstatus = 2;
 	try
 	{
 		do {
@@ -132,14 +131,10 @@ const int socketMsg::recv()
 			bool hr = ::recv(m_socket, recvbuf, rebuflen, false);
 			if (!hr)
 				break;
-			if (*(DWORD*)recvbuf == 1)			// 阻止
-				hrstatus = 1;
-			else if (*(DWORD*)recvbuf == 2)		// 放行
-				hrstatus = 2;
-			else if (*(DWORD*)recvbuf == 3)		// 结束进程
-				hrstatus = 3;
+			if (3 > *(DWORD*)recvbuf)
+				hrstatus = 2; // 放行
 			else
-				hrstatus = 0;					// 默认放行
+				hrstatus = *(DWORD*)recvbuf;
 		} while (false);
 		if (recvbuf)
 			delete[] recvbuf;

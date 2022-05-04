@@ -7,7 +7,7 @@ public:
 	socketMsg();
 	~socketMsg();
 
-	bool sendDlgMsg(const int msgid);
+	bool sendDlgMsg(const int msgid, char* info, const int lens);
 	bool connect();
 	bool send(const int msgid);
 	bool send(const int msgid, char* buffer, const int buflen);

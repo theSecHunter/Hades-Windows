@@ -121,41 +121,56 @@ EnHandleResult HpTcpSvc::OnReceive(ITcpServer* pSender, CONNID dwConnID, int iLe
 }
 EnHandleResult HpTcpSvc::OnReceive(ITcpServer* pSender, CONNID dwConnID, const BYTE* pData, int iLength)
 {
-	if (!pSender || !dwConnID)
+	if (!pSender || !dwConnID || !pData || (sizeof(int) > iLength))
 		return HR_ERROR;
+	
+	char* Msginfo = nullptr;
+	MSG_DLGBUFFER* pMsgbuf = nullptr;
+	const int msglen = iLength - sizeof(int);
 
-	// 处理单指令消息
-	if (sizeof(const int) == iLength)
-	{
+	do {
+		Msginfo = new char[msglen];
+		pMsgbuf = (MSG_DLGBUFFER*)new MSG_DLGBUFFER;
+		if (!Msginfo || !pMsgbuf)
+			break;
+		RtlSecureZeroMemory(Msginfo, msglen);
+		RtlSecureZeroMemory(pMsgbuf, sizeof(MSG_DLGBUFFER));
+
+		memcpy(Msginfo, pData + sizeof(int), msglen);
 		const int taskid = *((int*)pData);
+
 		switch (taskid)
 		{
 		case IPS_PROCESSSTART:
 		{
-			int options = 0;
-			MSG_DLGBUFFER* pMsgbuf = (MSG_DLGBUFFER*)new MSG_DLGBUFFER;
+			int options = 2;
 			do {
-				if (!pMsgbuf)
-					break;
-				MessageBoxDlg msgdlg(pMsgbuf);
+				pMsgbuf->options = IPS_PROCESSSTART;
+				MessageBoxDlg msgdlg(pMsgbuf, Msginfo);
 				msgdlg.Create(NULL, L"", UI_WNDSTYLE_DIALOG, WS_EX_WINDOWEDGE);
 				msgdlg.CenterWindow();
 				msgdlg.ShowModal();
-				// 根据对象判断是否允许
 				if (!pMsgbuf)
 					break;
 				options = pMsgbuf->options;
-			} while (0);
-			if (pMsgbuf)
-			{
-				delete pMsgbuf;
-				pMsgbuf = nullptr;
-			}
+			} while (false);
 			pSender->Send(dwConnID, (const BYTE*)&options, sizeof(int));
 		}
 		break;
 		}
+	} while (false);
+	
+	if (Msginfo)
+	{
+		delete[] Msginfo;
+		Msginfo = nullptr;
 	}
+	if (pMsgbuf)
+	{
+		delete pMsgbuf;
+		pMsgbuf = nullptr;
+	}
+
 	return HR_OK;
 }
 EnHandleResult HpTcpSvc::OnSend(ITcpServer* pSender, CONNID dwConnID, const BYTE* pData, int iLength)

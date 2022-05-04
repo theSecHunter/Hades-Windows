@@ -5,22 +5,22 @@
 			<Label float="true" pos="50,0,0,0" height="28"  width="32" bkimage="file='img/normal/msg_titleLog.png'" />
 			<Label float="true" pos="100,0,0,0" height="28"  width="150" text="发现程序试图执行敏感进程" align="center"/>
 		</HorizontalLayout>
-		<HorizontalLayout>
+		<HorizontalLayout padding="0,20,0,0" height="28">
 			<Label padding="20,0,0,0" width="60" height="28" text="操作程序："/>
-			<Label name="MsgWin_MaliciousBehavior_SrcProcess" height="28" align="left" text="操作程序"/>
+			<Label name="MsgWin_MaBe_SrcProcess" width="200" height="28" align="left" />
 		</HorizontalLayout>
-		<HorizontalLayout>
+		<HorizontalLayout height="28">
 			<Label padding="20,0,0,0" width="60" height="28" text="恶意描述："/>
-			<Label name="MsgWin_MaliciousBehavior_Describe" height="28" align="left" text="操作程序"/>
+			<Label name="MsgWin_MaBe_Describe" width="200" height="28" align="left" />
 		</HorizontalLayout>
-		<HorizontalLayout>
+		<HorizontalLayout height="28">
 			<Label padding="20,0,0,0" width="60" height="28" text="操作目标："/>
-			<Label name="MsgWin_MaliciousBehavior_DestProcess" height="28" align="left" text="操作程序"/>
+			<Label name="MsgWin_MaBe_DestProcess" width="200" height="28" align="left" />
 		</HorizontalLayout>
-		<Button name="MsgWin_MaliciousBehavior_Stop" padding="20,10,0,0"  bordercolor="#FF33374A" bordersize="1" text="阻止" width="260" height="28" />
+		<Button name="MsgWin_MaBe_Stop" padding="20,10,0,0"  bordercolor="#FF33374A" bordersize="1" width="260" height="28" />
 		<HorizontalLayout padding="0,10,0,0" height="28" >
-			<Button padding="20,0,0,10" name="MsgWin_MaliciousBehavior_Allow" bordercolor="#FF33374A" bordersize="1" text="允许" width="125" height="28" />
-			<Button padding="10,0,0,10" name="MsgWin_MaliciousBehavior_ProcessKill" bordercolor="#FF33374A" bordersize="1" text="结束进程" width="125" height="28" />
+			<Button padding="20,0,0,10" name="MsgWin_MaBe_Allow" bordercolor="#FF33374A" bordersize="1" text="允许" width="125" height="28" />
+			<Button padding="10,0,0,10" name="MsgWin_MaBe_ProcessKill" bordercolor="#FF33374A" bordersize="1" text="结束进程" width="125" height="28" />
 		</HorizontalLayout>
 	</VerticalLayout>
 </Window>
