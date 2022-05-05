@@ -20,7 +20,7 @@ typedef struct _HADES_NOTIFICATION {
 	UCHAR Contents[HADES_READ_BUFFER_SIZE];
 } HADES_NOTIFICATION, * PHADES_NOTIFICATION;
 typedef struct _HADES_REPLY {
-	BOOLEAN SafeToOpen;
+	DWORD SafeToOpen;
 } HADES_REPLY, * PHADES_REPLY;
 // GetMsg
 typedef struct _COMAND_MESSAGE
@@ -189,13 +189,13 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 	do {
 
 		nRet = GetQueuedCompletionStatus(g_comPletion, &outSize, &key, &pOvlp, INFINITE);
-		error_code = GetLastError();
-		message = CONTAINING_RECORD(pOvlp, COMMAND_MESSAGE, Overlapped);
 		if (FALSE == nRet) {
 			OutputDebugString(L"GetQueuedCompletionStatus sysmondriver miniPort Error");
-			break;
+			if (!g_comPletion)
+				break;
+			continue;
 		}
-
+		message = CONTAINING_RECORD(pOvlp, COMMAND_MESSAGE, Overlapped);
 		// handler buffer
 		notification = &message->Notification;
 		// Ä¬ÈÏ·ÅÐÐ
@@ -225,9 +225,11 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 			(PFILTER_REPLY_HEADER)&replyMessage,
 			sizeof(replyMessage)
 		);
-		if (!SUCCEEDED(result))
-			break;
-
+		//// Break?!
+		//if (S_OK != result)
+		//{
+		//	break;
+		//}
 		memset(&message->Overlapped, 0, sizeof(OVERLAPPED));
 		result = FilterGetMessage(
 			g_hPort,
@@ -243,8 +245,6 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 	} while (TRUE);
 #pragma warning(pop)
 
-	if (message)
-		free(message);
 }
 void HlprMiniPortIpc::MiniPortActiveCheck()
 {

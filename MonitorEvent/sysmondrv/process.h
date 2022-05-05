@@ -3,7 +3,8 @@
 
 typedef struct _PROCESSINFO
 {
-	int processid;
+	int parentprocessid;
+	int pid;
 	int endprocess;
 	wchar_t processpath[260 * 2];
 	wchar_t commandLine[260 * 2];

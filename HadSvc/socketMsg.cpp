@@ -23,7 +23,7 @@ bool socketMsg::sendDlgMsg(const int msgid, char* info, const int lens)
 	if (!m_socket)
 	{
 		hr = connect();
-		if (!m_socket && false == hr)
+		if (!m_socket || false == hr)
 			return hr;
 	}
 	// sendbuf = msgid + structinfo + 1
@@ -32,7 +32,9 @@ bool socketMsg::sendDlgMsg(const int msgid, char* info, const int lens)
 	if (!sendbuf)
 		return false;
 	RtlSecureZeroMemory(sendbuf, sendlens);
+	// msgid
 	*((int*)sendbuf) = msgid;
+	// structinfo_buffer
 	memcpy(sendbuf + sizeof(int), info, lens);
 	switch (msgid)
 	{
@@ -52,7 +54,7 @@ bool socketMsg::connect()
 		m_socket = socket(AF_INET, SOCK_STREAM, 0);
 		if (!m_socket)
 			return false;
-		int recvTimeout = 10 * 1000;
+		int recvTimeout = 11 * 1000;
 		int sendTimeout = 2000;
 		setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, (char*)&recvTimeout, sizeof(int));
 		setsockopt(m_socket, SOL_SOCKET, SO_SNDTIMEO, (char*)&sendTimeout, sizeof(int));
@@ -60,9 +62,9 @@ bool socketMsg::connect()
 		serveraddr.sin_family = AF_INET;
 		serveraddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 		serveraddr.sin_port = htons(10246);
-		if (::connect(m_socket, (sockaddr*)&serveraddr, sizeof(serveraddr)))
-			return true;
-		return false;
+		if (SOCKET_ERROR == ::connect(m_socket, (sockaddr*)&serveraddr, sizeof(serveraddr)))
+			return false;
+		return true;
 	}
 	catch (...)
 	{
@@ -92,8 +94,6 @@ bool socketMsg::send(const int msgid, char* buffer, const int buflen)
 		switch (msgid)
 		{
 		case _MINI_COMMAND::IPS_PROCESSSTART: break;
-		default:
-			break;
 		}
 		return ::send(m_socket, buffer, buflen, false);
 	}
@@ -131,8 +131,9 @@ const int socketMsg::recv()
 			bool hr = ::recv(m_socket, recvbuf, rebuflen, false);
 			if (!hr)
 				break;
-			if (3 > *(DWORD*)recvbuf)
-				hrstatus = 2; // ·ÅÐÐ
+			const int optionss = *(DWORD*)recvbuf;
+			if (optionss > 3)
+				hrstatus = 2;
 			else
 				hrstatus = *(DWORD*)recvbuf;
 		} while (false);

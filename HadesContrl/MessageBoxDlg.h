@@ -1,6 +1,7 @@
 #pragma once
 #include <UIlib.h>
 #include "public.h"
+#include <mutex>
 
 using namespace DuiLib;
 
@@ -19,12 +20,18 @@ public:
 	{
 		return __super::OnClose(uMsg, wParam, lParam, bHandled);
 	}
+	void buttonEventModifyStatus();
 	void MsgBoxTimerDefuleCloseNotify();
 	void Notify(TNotifyUI& msg);
 
 private:
-	PMSG_DLGBUFFER m_msgOption = nullptr;
-	char* m_msginfo = nullptr;
 	int taskId = 0;
+	char* m_msginfo = nullptr;
+	PMSG_DLGBUFFER m_msgOption = nullptr;
+
+	bool m_buttonevent = false;
+	std::mutex m_buttonevent_cs;
+
+	HANDLE m_msgboxtunertr = nullptr;
 };
 

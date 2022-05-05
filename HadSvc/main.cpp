@@ -411,8 +411,8 @@ int main(int argc, char* argv[])
 		g_mainMsgUlib.uMsg_EtwClose();
 	if (g_mainMsgKlib.GetKerMonStatus())
 		g_mainMsgKlib.OffMonitor();
-	if (false == g_mainMsgKlib.GetKerInitStatus())
-		g_mainMsgKlib.DriverInit();
+	if (g_mainMsgKlib.GetKerInitStatus())
+		g_mainMsgKlib.DriverFree();
 
 	g_mainMsgUlib.uMsg_Free();
 	g_mainMsgKlib.kMsg_Free();

@@ -136,9 +136,11 @@ VOID Process_NotifyProcessEx(
     if (!pinfo)
         return;
 
+    processinfo.parentprocessid = ProcessId;
+    processinfo.pid = (DWORD)ProcessId;
+
     if (NULL == CreateInfo)
     {
-        processinfo.processid = ProcessId;
         processinfo.endprocess = 0;
         pinfo->dataLength = sizeof(PROCESSINFO);
         memcpy(pinfo->dataBuffer, &processinfo, sizeof(PROCESSINFO));
@@ -147,11 +149,8 @@ VOID Process_NotifyProcessEx(
         sl_unlock(&lh);
         return;
     }
-
-    processinfo.processid = CreateInfo->ParentProcessId;
-
-    // 父进程做的操作 --> 如果没有父进程 也可能是本身
-    processinfo.endprocess = 1;
+    else
+        processinfo.endprocess = 1;
     if (CreateInfo->ImageFileName->Length < 260 * 2)
         RtlCopyMemory(processinfo.processpath, CreateInfo->ImageFileName->Buffer, CreateInfo->ImageFileName->Length);
     if(CreateInfo->CommandLine->Length < 260*2)
@@ -165,8 +164,8 @@ VOID Process_NotifyProcessEx(
         // Ips
         PHADES_NOTIFICATION  notification = NULL;
         do {
-            const int replaybuflen = sizeof(HADES_REPLY);
-            const int sendbuflen = sizeof(HADES_NOTIFICATION);
+            int replaybuflen = sizeof(HADES_REPLY);
+            int sendbuflen = sizeof(HADES_NOTIFICATION);
             notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSP');
             if (!notification)
                 break;
@@ -174,14 +173,15 @@ VOID Process_NotifyProcessEx(
 
             notification->CommandId = 1; // IPS_PROCESSSTART
             RtlCopyMemory(&notification->Contents, &processinfo, sizeof(PROCESSINFO));
-
             // 等待用户操作
             NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
-            if (!NT_SUCCESS(nSendRet))
-                break;
-            const BOOLEAN  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
+            // 返回数据缓冲区不够 - 其实已经有数据
+            //DbgBreakPoint();
+            //if (!NT_SUCCESS(nSendRet))
+            //    break;
+            const DWORD  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
             // 禁止
-            if (FALSE == ReSafeToOpen)
+            if ((1 == ReSafeToOpen) || (3 == ReSafeToOpen))
                 CreateInfo->CreationStatus = STATUS_UNSUCCESSFUL;
         } while (FALSE);
         if (notification)
@@ -190,14 +190,11 @@ VOID Process_NotifyProcessEx(
             notification = NULL;
         }
     }
-
     sl_lock(&g_processQueryhead.process_lock, &lh);
     InsertHeadList(&g_processQueryhead.process_pending, &pinfo->pEntry);
     sl_unlock(&lh);
-
     // push_devctrl
     devctrl_pushinfo(NF_PROCESS_INFO);
-
     return;
 }
 BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWORD pathlen)
@@ -236,6 +233,13 @@ void Process_Clean(void)
     KLOCK_QUEUE_HANDLE lh;
     PROCESSBUFFER* pData = NULL;
     int lock_status = 0;
+
+    // Ips Rule Name
+    if (g_proc_ipsList)
+    {
+        ExFreePool(g_proc_ipsList);
+        g_proc_ipsList = NULL;
+    }
 
     try
     {

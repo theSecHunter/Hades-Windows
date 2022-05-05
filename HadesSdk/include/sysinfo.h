@@ -68,11 +68,12 @@ enum UEtwId
 // NF_PROCESS_INFO
 typedef struct _PROCESSINFO
 {
-	int processid;
-	int endprocess;
-	wchar_t processpath[260 * 2];
-	wchar_t commandLine[260 * 2];
-	wchar_t queryprocesspath[260 * 2];
+    int parentprocessid;
+    int pid;
+    int endprocess;
+    wchar_t processpath[260 * 2];
+    wchar_t commandLine[260 * 2];
+    wchar_t queryprocesspath[260 * 2];
 }PROCESSINFO, * PPROCESSINFO;
 // NF_THREAD_INFO
 typedef struct _THREADINFO

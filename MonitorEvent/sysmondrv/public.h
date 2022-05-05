@@ -378,13 +378,11 @@ typedef intptr_t  ssize_t;
 */
 #define HADES_READ_BUFFER_SIZE  4096 
 typedef struct _HADES_NOTIFICATION {
-
     ULONG CommandId;
     ULONG Reserved;
     UCHAR Contents[HADES_READ_BUFFER_SIZE];
 } HADES_NOTIFICATION, * PHADES_NOTIFICATION;
 typedef struct _HADES_REPLY {
-    BOOLEAN SafeToOpen;
+    DWORD SafeToOpen;
 } HADES_REPLY, * PHADES_REPLY;
-
 #endif
