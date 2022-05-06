@@ -225,7 +225,6 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 			(PFILTER_REPLY_HEADER)&replyMessage,
 			sizeof(replyMessage)
 		);
-		//// Break?!
 		//if (S_OK != result)
 		//{
 		//	break;

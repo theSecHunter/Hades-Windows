@@ -136,9 +136,7 @@ VOID Process_NotifyProcessEx(
     if (!pinfo)
         return;
 
-    processinfo.parentprocessid = ProcessId;
     processinfo.pid = (DWORD)ProcessId;
-
     if (NULL == CreateInfo)
     {
         processinfo.endprocess = 0;
@@ -155,13 +153,12 @@ VOID Process_NotifyProcessEx(
         RtlCopyMemory(processinfo.processpath, CreateInfo->ImageFileName->Buffer, CreateInfo->ImageFileName->Length);
     if(CreateInfo->CommandLine->Length < 260*2)
         RtlCopyMemory(processinfo.commandLine, CreateInfo->CommandLine->Buffer, CreateInfo->CommandLine->Length);
+    processinfo.parentprocessid = CreateInfo->ParentProcessId;
 
     pinfo->dataLength = sizeof(PROCESSINFO);
     memcpy(pinfo->dataBuffer, &processinfo, sizeof(PROCESSINFO));
-
     if (QueryPathStatus && g_proc_ipsList && Process_IsIpsProcessNameInList(processinfo.queryprocesspath))
-    {
-        // Ips
+    {// Ips
         PHADES_NOTIFICATION  notification = NULL;
         do {
             int replaybuflen = sizeof(HADES_REPLY);
@@ -170,12 +167,11 @@ VOID Process_NotifyProcessEx(
             if (!notification)
                 break;
             RtlZeroMemory(notification, sendbuflen);
-
             notification->CommandId = 1; // IPS_PROCESSSTART
             RtlCopyMemory(&notification->Contents, &processinfo, sizeof(PROCESSINFO));
             // 等待用户操作
             NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
-            // 返回数据缓冲区不够 - 其实已经有数据
+            // 返回Error: 数据缓冲区不够,其实已经有数据
             //DbgBreakPoint();
             //if (!NT_SUCCESS(nSendRet))
             //    break;
