@@ -17,7 +17,11 @@
 |T1112|"HKLM\Software\Microsoft\Windows NT\CurrentVersion\Windows\Appinit_Dlls"|--|
 |T1112|"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\WMI\Security"|--|
 |T1112|"HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap"|--|
+|T1112|"HKLM\System\CurrentControlSet\Control\SecurityProviders\WDigest"|--|
 |T1112|"HKCU\Environment"|--|
+|T1112|"HKCU\Software\Microsoft\Internet Explorer\ PhishingFilter\"|--|
+|T1112|"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\"|--|
+
 ### Impact
 #### Inhibit System Recovery
 |ID|ToolsRun|Describe|

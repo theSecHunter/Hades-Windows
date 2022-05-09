@@ -1,4 +1,5 @@
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0.png)
+![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0_Response.jpg)
 
 **适用Win7/Win10 x32/x64用户态和内核态数据采集，XP未做兼容测试.**
 

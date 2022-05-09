@@ -98,9 +98,6 @@
     <ClCompile Include="Wnd\AboutUsWindow.cpp">
       <Filter>Wnd</Filter>
     </ClCompile>
-    <ClCompile Include="Systeminfolib.cpp">
-      <Filter>SysinfoLib</Filter>
-    </ClCompile>
     <ClCompile Include="MessageBoxDlg.cpp">
       <Filter>Wnd</Filter>
     </ClCompile>
@@ -118,6 +115,9 @@
     </ClCompile>
     <ClCompile Include="HlprSocketTcp.cpp">
       <Filter>IocpBase</Filter>
+    </ClCompile>
+    <ClCompile Include="Systeminfolib.cpp">
+      <Filter>SysinfoLib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

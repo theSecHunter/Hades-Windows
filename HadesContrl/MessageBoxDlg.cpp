@@ -87,7 +87,10 @@ LRESULT MessageBoxDlg::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& b
 			CLabelUI* pLabDrcStr = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("MsgWin_MaBe_DestProcess")));
 			if (!pLabDrcStr)
 				break;
-			pLabDrcStr->SetText(procinfo->commandLine);
+			if(!lstrlenW(procinfo->commandLine))
+				pLabDrcStr->SetText(procinfo->queryprocesspath);
+			else
+				pLabDrcStr->SetText(procinfo->commandLine);
 			CLabelUI* pLabDescribe = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("MsgWin_MaBe_Describe")));
 			if (!pLabDescribe)
 				break;

@@ -1,1 +1,1 @@
-#pragma once
+#include "uefi.h"
