@@ -241,6 +241,7 @@
     <ClCompile Include="MD5.cpp" />
     <ClCompile Include="uautostart.cpp" />
     <ClCompile Include="uetw.cpp" />
+    <ClCompile Include="uexterndevice.cpp" />
     <ClCompile Include="ufile.cpp" />
     <ClCompile Include="unet.cpp" />
     <ClCompile Include="uprocesstree.cpp" />
@@ -254,6 +255,7 @@
     <ClInclude Include="sync.h" />
     <ClInclude Include="uautostart.h" />
     <ClInclude Include="uetw.h" />
+    <ClInclude Include="uexterndevice.h" />
     <ClInclude Include="ufile.h" />
     <ClInclude Include="unet.h" />
     <ClInclude Include="uprocesstree.h" />

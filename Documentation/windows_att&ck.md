@@ -21,6 +21,7 @@
 |T1112|"HKCU\Environment"|--|
 |T1112|"HKCU\Software\Microsoft\Internet Explorer\ PhishingFilter\"|--|
 |T1112|"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\"|--|
+|T1112|"HKLM\SYSTEM\CurrentControlSet\Control\Session Manage"|--|
 
 ### Impact
 #### Inhibit System Recovery
