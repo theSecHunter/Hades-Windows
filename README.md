@@ -17,7 +17,7 @@
 - 第一种基于Intel-x/d虚拟化技术，绕过PG保护做花式Hook，功能强大-系统无痕。
 - 第二种基于微型过滤框架和注册回调，兼容性好/快速开发/接口完善。
 
-&emsp;&emsp;项目采用过滤驱动+注册回调，这种方案中规中矩。有想过将以前写的VT Hook移植进来，但是不可控因素较多(不完善)，有兴趣的可以跳转：https://github.com/TimelifeCzy/kHypervisor_MsrEpt_Hook
+&emsp;&emsp;项目采用过滤驱动+注册回调，这种方案中规中矩。有想过将以前写的VT Hook移植进来，但是不可控因素较多(不完善)，有兴趣的可以跳转：https://github.com/TimelifeCzy/kHypervisorBasic
 
 ##### User
 
@@ -70,7 +70,7 @@
 
 ##### 应用接口采集事件 v2.0
 
-前身：https://github.com/TimelifeCzy/Windows-emergency-servicetools，集成至该项目.
+前身：https://github.com/TimelifeCzy/Windows-emergency-servicetools 已集成该项目.
 
 | 事件         | 描述                                                         |进度  | 
 | ------------ | ------------------------------------------------------------ |------------ | 
