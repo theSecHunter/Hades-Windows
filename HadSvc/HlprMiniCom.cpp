@@ -8,6 +8,8 @@
 
 #include "socketMsg.h"
 
+#define NOTIFICATION_KEY ((ULONG_PTR)-1)
+
 static HANDLE g_hPort = nullptr;
 static HANDLE g_comPletion = nullptr;
 static BOOL   g_InitPortStatus = FALSE;
@@ -195,6 +197,8 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 				break;
 			continue;
 		}
+		else if (!pOvlp || key == NOTIFICATION_KEY)
+			continue;
 		message = CONTAINING_RECORD(pOvlp, COMMAND_MESSAGE, Overlapped);
 		// handler buffer
 		notification = &message->Notification;
