@@ -489,9 +489,9 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 #endif
 #else
 #ifdef _DEBUG
-			const wchar_t* = L"HadesSvc_d.exe";
+			const wchar_t* killname = L"HadesSvc_d.exe";
 #else
-			const wchar_t* = L"HadesSvc.exe";
+			const wchar_t* killname = L"HadesSvc.exe";
 #endif
 #endif
 			killProcess(killname);
