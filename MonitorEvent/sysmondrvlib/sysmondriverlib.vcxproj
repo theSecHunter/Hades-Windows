@@ -260,7 +260,11 @@
     <ClInclude Include="nfevents.h" />
     <ClInclude Include="nf_api.h" />
     <ClInclude Include="ntbasic.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="sync.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SysMonDrvlib.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

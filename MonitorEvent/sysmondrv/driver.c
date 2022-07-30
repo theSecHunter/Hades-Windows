@@ -106,6 +106,10 @@ NTSTATUS
     status = FsMini_Init(DriverObject);
     if (!NT_SUCCESS(status))
         return status;
+    DbgBreakPoint();
+    status = Mini_StartFilter();
+    if (!NT_SUCCESS(status))
+        return status;
     status = Fsflt_initPort();
     if (!NT_SUCCESS(status))
     {

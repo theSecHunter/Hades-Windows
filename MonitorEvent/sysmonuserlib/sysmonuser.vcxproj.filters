@@ -92,6 +92,9 @@
     <ClInclude Include="uexterndevice.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="x32.asm">
@@ -100,5 +103,10 @@
     <MASM Include="x64.asm">
       <Filter>源文件</Filter>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SysMonUserlib.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

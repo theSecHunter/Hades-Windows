@@ -252,6 +252,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MD5.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="sync.h" />
     <ClInclude Include="uautostart.h" />
     <ClInclude Include="uetw.h" />
@@ -275,6 +276,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">true</ExcludedFromBuild>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SysMonUserlib.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

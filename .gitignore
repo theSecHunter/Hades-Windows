@@ -1,5 +1,7 @@
 HadesContrl/Debug
 HadesContrl/Release
+HadesContrl/x64/Debug
+HadesContrl/x64/Release
 HadesView/Debug
 HadesView/Release
 HadSvc/Debug
@@ -9,8 +11,15 @@ bin/
 DuiLib/Release
 DuiLib/Debug
 MonitorEvent/sysmondrv/Release
+MonitorEvent/sysmondrv/x64/Release
+MonitorEvent/sysmondrv/x64/Debug
 MonitorEvent/sysmondrv/Debug
 MonitorEvent/sysmondrv/x64
 MonitorEvent/sysmondrvlib/x64
 MonitorEvent/sysmondrvlib/Debug
+MonitorEvent/sysmondrvlib/Release
+MonitorEvent/sysmonuserlib/Debug
+MonitorEvent/sysmonuserlib/Release
+MonitorEvent/sysmonuserlib/x64
 HadesSdk/asio
+HadSvc/x64

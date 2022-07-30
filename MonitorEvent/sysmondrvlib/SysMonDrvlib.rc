@@ -47,16 +47,6 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Icon
-//
-
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
-IDI_ICON1               ICON                    "D:\\Hades\\Hades-Windows\\Image\\firearms.ico"
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
 // Version
 //
 
@@ -70,20 +60,19 @@ VS_VERSION_INFO VERSIONINFO
  FILEFLAGS 0x0L
 #endif
  FILEOS 0x40004L
- FILETYPE 0x1L
+ FILETYPE 0x7L
  FILESUBTYPE 0x0L
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "080404b0"
         BEGIN
-            VALUE "CompanyName", "TODO: <公司名>"
-            VALUE "FileDescription", "TODO: <文件说明>"
+            VALUE "CompanyName", "Hades"
+            VALUE "FileDescription", "Hades For Windows DrvMonitorLib"
             VALUE "FileVersion", "22.7.30.1"
-            VALUE "InternalName", "HadesSvc.exe"
+            VALUE "InternalName", "SysMonDr.lib"
             VALUE "LegalCopyright", "Copyright (C) 2022"
-            VALUE "OriginalFilename", "HadesSvc.exe"
-            VALUE "ProductName", "TODO: <产品名>"
+            VALUE "OriginalFilename", "SysMonDr.lib"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END

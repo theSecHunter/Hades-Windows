@@ -165,9 +165,8 @@
     <ClInclude Include="minifilter.h">
       <Filter>fsminifilter</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="driver.rc" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="resource1.h" />
   </ItemGroup>
   <ItemGroup>
     <Inf Include="sysmondriver.inf" />
@@ -194,5 +193,8 @@
     <Filter Include="fsminifilter">
       <UniqueIdentifier>{0d98a94e-6ced-42e1-ac43-0c4eeceb3907}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SysMonDrv.rc" />
   </ItemGroup>
 </Project>

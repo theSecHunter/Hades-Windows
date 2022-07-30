@@ -57,12 +57,30 @@ FsFilter1InstanceTeardownComplete(
 #pragma alloc_text(PAGE, FsFilter1InstanceTeardownComplete)
 #endif
 
+FLT_PREOP_CALLBACK_STATUS
+FsFilter1PreOperation(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _Flt_CompletionContext_Outptr_ PVOID* CompletionContext
+);
+
+FLT_POSTOP_CALLBACK_STATUS
+FsFilter1PostOperation(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _In_opt_ PVOID CompletionContext,
+    _In_ FLT_POST_OPERATION_FLAGS Flags
+);
+
 //
 //  operation registration
 //
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
-
+      { IRP_MJ_CREATE,
+      0,
+      FsFilter1PreOperation,
+      FsFilter1PostOperation },
 #if 0 // TODO - List all of the requests to filter.
     { IRP_MJ_CREATE,
       0,
@@ -410,4 +428,68 @@ FsFilter1InstanceTeardownComplete(
 
     PT_DBG_PRINT(PTDBG_TRACE_ROUTINES,
         ("FsFilter1!FsFilter1InstanceTeardownComplete: Entered\n"));
+}
+
+
+FLT_PREOP_CALLBACK_STATUS
+FsFilter1PreOperation(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _Flt_CompletionContext_Outptr_ PVOID* CompletionContext
+)
+{
+    NTSTATUS status;
+
+    UNREFERENCED_PARAMETER(FltObjects);
+    UNREFERENCED_PARAMETER(CompletionContext);
+
+    PT_DBG_PRINT(PTDBG_TRACE_ROUTINES,
+        ("FsFilter1!FsFilter1PreOperation: Entered\n"));
+
+    //
+    //  See if this is an operation we would like the operation status
+    //  for.  If so request it.
+    //
+    //  NOTE: most filters do NOT need to do this.  You only need to make
+    //        this call if, for example, you need to know if the oplock was
+    //        actually granted.
+    //
+
+    //if (FsFilter1DoRequestOperationStatus(Data)) {
+
+    //    status = FltRequestOperationStatusCallback(Data,
+    //        FsFilter1OperationStatusCallback,
+    //        (PVOID)(++OperationStatusCtx));
+    //    if (!NT_SUCCESS(status)) {
+
+    //        PT_DBG_PRINT(PTDBG_TRACE_OPERATION_STATUS,
+    //            ("FsFilter1!FsFilter1PreOperation: FltRequestOperationStatusCallback Failed, status=%08x\n",
+    //                status));
+    //    }
+    //}
+
+    // This template code does not do anything with the callbackData, but
+    // rather returns FLT_PREOP_SUCCESS_WITH_CALLBACK.
+    // This passes the request down to the next miniFilter in the chain.
+
+    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+}
+
+FLT_POSTOP_CALLBACK_STATUS
+FsFilter1PostOperation(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _In_opt_ PVOID CompletionContext,
+    _In_ FLT_POST_OPERATION_FLAGS Flags
+)
+{
+    UNREFERENCED_PARAMETER(Data);
+    UNREFERENCED_PARAMETER(FltObjects);
+    UNREFERENCED_PARAMETER(CompletionContext);
+    UNREFERENCED_PARAMETER(Flags);
+
+    PT_DBG_PRINT(PTDBG_TRACE_ROUTINES,
+        ("FsFilter1!FsFilter1PostOperation: Entered\n"));
+
+    return FLT_POSTOP_FINISHED_PROCESSING;
 }

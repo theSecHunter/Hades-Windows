@@ -77,7 +77,6 @@
     <ClCompile Include="sysworkthreadinfo.c" />
     <ClCompile Include="thread.c" />
     <ClCompile Include="uefi.c" />
-    <ResourceCompile Include="driver.rc" />
     <ClCompile Include="driver.c" />
     <Inf Include="sysmondriver.inf">
       <CatalogFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -373,6 +372,8 @@
     <ClInclude Include="process.h" />
     <ClInclude Include="public.h" />
     <ClInclude Include="register.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="resource1.h" />
     <ClInclude Include="sysdpctimer.h" />
     <ClInclude Include="sysdriverinfo.h" />
     <ClInclude Include="sysenumnotify.h" />
@@ -390,6 +391,9 @@
     <ClInclude Include="thread.h" />
     <ClInclude Include="uefi.h" />
     <ClInclude Include="util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SysMonDrv.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

@@ -172,9 +172,6 @@ VOID Process_NotifyProcessEx(
             // 等待用户操作
             NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
             // 返回Error: 数据缓冲区不够,其实已经有数据
-            //DbgBreakPoint();
-            //if (!NT_SUCCESS(nSendRet))
-            //    break;
             const DWORD  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
             // 禁止
             if ((1 == ReSafeToOpen) || (3 == ReSafeToOpen))
