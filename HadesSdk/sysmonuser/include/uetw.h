@@ -1,19 +1,6 @@
 #ifndef _UETW_H
 #define _UETW_H
-
-#include <mutex>
 #include <functional>
-
-#define INITGUID
-#include <evntcons.h>
-
-typedef struct _PROCESSINFO
-{
-	int processsid;					// 进程pid
-	std::wstring processName;		// 进程名
-	std::wstring processCommLine;	// 命令
-	bool processStatus;				// 进程状态(启动/退出)
-}PROCESSINFO, *PPROCESSINFO;
 
 class UEtw
 {
@@ -26,6 +13,12 @@ public:
 	bool uf_init(const bool flag);
 	bool uf_close(const bool flag);
 	void set_on_processMonitor(const std::function<void(const PROCESSINFO&)>& on_processinfo_data);
+
+public:
+	void uf_setqueuetaskptr(std::queue<UPubNode*>& qptr);
+	void uf_setqueuelockptr(std::mutex& qptrcs);
+	void uf_setqueueeventptr(HANDLE& eventptr);
+
 
 protected:
 	bool uf_RegisterTraceFile();
