@@ -38,6 +38,7 @@ NTSTATUS Process_Init(void);
 void Process_Free(void);
 void Process_Clean(void);
 void Process_SetMonitor(BOOLEAN code);
+void Process_SetIpsMonitor(BOOLEAN code);
 
 PROCESSBUFFER* Process_PacketAllocate(int lens);
 void Process_PacketFree(PROCESSBUFFER* packet);

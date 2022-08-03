@@ -24,6 +24,10 @@ using namespace std;
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define CTL_DEVCTRL_IPS_SETPROCESSNAME \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x805, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define CTL_DEVCTRL_ENABLE_IPS_MONITOR \
+	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x806, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define CTL_DEVCTRL_DISENTABLE_IPS_MONITOR \
+	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x807, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 
 static NF_BUFFERS			g_nfBuffers;
@@ -196,6 +200,20 @@ int DevctrlIoct::devctrl_OffMonitor()
 	DWORD OutSize = 0;
 	DWORD dwSize = 0;
 	return devctrl_sendioct(CTL_DEVCTRL_DISENTABLE_MONITOR, NULL, InSize, NULL, OutSize, dwSize);
+}
+int DevctrlIoct::devctrl_OnIpsMonitor()
+{
+	DWORD InSize = 0;
+	DWORD OutSize = 0;
+	DWORD dwSize = 0;
+	return devctrl_sendioct(CTL_DEVCTRL_ENABLE_IPS_MONITOR, NULL, InSize, NULL, OutSize, dwSize);
+}
+int DevctrlIoct::devctrl_OffIpsMonitor()
+{
+	DWORD InSize = 0;
+	DWORD OutSize = 0;
+	DWORD dwSize = 0;
+	return devctrl_sendioct(CTL_DEVCTRL_DISENTABLE_IPS_MONITOR, NULL, InSize, NULL, OutSize, dwSize);
 }
 int DevctrlIoct::devctrl_SetIpsProcess(wchar_t* buf)
 {

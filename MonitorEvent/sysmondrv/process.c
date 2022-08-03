@@ -7,6 +7,8 @@
 
 static  BOOLEAN     g_proc_monitorprocess = FALSE;
 static  KSPIN_LOCK  g_proc_monitorlock = NULL;
+static  BOOLEAN     g_proc_ips_monitorprocess = FALSE;
+static  KSPIN_LOCK  g_proc_ips_monitorlock = NULL;
 
 static  PWCHAR	    g_proc_ipsList = NULL;
 
@@ -51,6 +53,7 @@ NTSTATUS Process_Init(void) {
 
     sl_init(&g_processlock);
     sl_init(&g_proc_monitorlock);
+    sl_init(&g_proc_ips_monitorlock);
 
     ExInitializeNPagedLookasideList(
         &g_processList,
@@ -89,6 +92,14 @@ void Process_SetMonitor(BOOLEAN code)
     g_proc_monitorprocess = code;
     sl_unlock(&lh);
 }
+void Process_SetIpsMonitor(BOOLEAN code)
+{
+    KLOCK_QUEUE_HANDLE lh;
+
+    sl_lock(&g_proc_ips_monitorlock, &lh);
+    g_proc_ips_monitorprocess = code;
+    sl_unlock(&lh);
+}
 BOOLEAN Mem_GetLockResource(
     PERESOURCE* ppResource, 
     BOOLEAN InitMsg)
@@ -112,7 +123,7 @@ VOID Process_NotifyProcessEx(
     UNREFERENCED_PARAMETER(Process);
 
     // ¹Ø±Õ¼à¿Ø
-    if (FALSE == g_proc_monitorprocess)
+    if (FALSE == g_proc_monitorprocess && FALSE == g_proc_ips_monitorlock)
     {
         return;
     }
@@ -157,7 +168,7 @@ VOID Process_NotifyProcessEx(
 
     pinfo->dataLength = sizeof(PROCESSINFO);
     memcpy(pinfo->dataBuffer, &processinfo, sizeof(PROCESSINFO));
-    if (QueryPathStatus && g_proc_ipsList && Process_IsIpsProcessNameInList(processinfo.queryprocesspath))
+    if (g_proc_ips_monitorlock && QueryPathStatus && g_proc_ipsList && Process_IsIpsProcessNameInList(processinfo.queryprocesspath))
     {// Ips
         PHADES_NOTIFICATION  notification = NULL;
         do {
@@ -182,6 +193,8 @@ VOID Process_NotifyProcessEx(
             ExFreePoolWithTag(notification, 'IPSP');
             notification = NULL;
         }
+        if (FALSE == g_proc_monitorprocess)
+            return;
     }
     sl_lock(&g_processQueryhead.process_lock, &lh);
     InsertHeadList(&g_processQueryhead.process_pending, &pinfo->pEntry);
@@ -288,7 +301,6 @@ void Process_PacketFree(PROCESSBUFFER* packet)
     }
     ExFreeToNPagedLookasideList(&g_processList, packet);
 }
-
 
 BOOLEAN Process_IsIpsProcessPidInList(HANDLE ProcessId)
 {

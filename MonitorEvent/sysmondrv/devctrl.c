@@ -1042,6 +1042,26 @@ VOID devctrl_setMonitor(BOOLEAN code)
 	if (FALSE == code)
 		devctrl_cancelPendingReads();
 }
+VOID devctrl_setIpsMonitor(BOOLEAN code)
+{
+	KLOCK_QUEUE_HANDLE lh;
+
+	sl_lock(&g_IoQueryLock, &lh);
+	g_monitorflag = code;
+	sl_unlock(&lh);
+
+	// estable Ips monitor
+	Process_SetIpsMonitor(code);
+	Thread_SetIpsMonitor(code);
+	Imagemod_SetIpsMonitor(code);
+	Register_SetIpsMonitor(code);
+	Wmi_SetIpsMonitor(code);
+	Session_SetIpsMonitor(code);
+
+	// clearn pennding read i/o
+	if (FALSE == code)
+		devctrl_cancelPendingReads();
+}
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -1078,6 +1098,13 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 			break;
 		case CTL_DEVCTRL_DISENTABLE_MONITOR:
 			devctrl_setMonitor(FALSE);
+			break;
+
+		case CTL_DEVCTRL_ENABLE_IPS_MONITOR:
+			devctrl_setIpsMonitor(TRUE);
+			break;
+		case CTL_DEVCTRL_DISENTABLE_IPS_MONITOR:
+			devctrl_setIpsMonitor(FALSE);
 			break;
 
 		case CTL_DEVCTRL_IPS_SETPROCESSNAME:

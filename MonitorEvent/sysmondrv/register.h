@@ -25,6 +25,7 @@ NTSTATUS Register_Init(PDRIVER_OBJECT pDriverObject);
 void Register_Free(void);
 void Register_Clean(void);
 void Register_SetMonitor(BOOLEAN code);
+void Register_SetIpsMonitor(BOOLEAN code);
 
 REGISTERBUFFER* Register_PacketAllocate(int lens);
 void Register_PacketFree(REGISTERBUFFER* packet);

@@ -6,6 +6,9 @@
 static  BOOLEAN					g_reg_monitorprocess = FALSE;
 static  KSPIN_LOCK				g_reg_monitorlock = NULL;
 
+static  BOOLEAN					g_reg_ips_monitorprocess = FALSE;
+static  KSPIN_LOCK				g_reg_ips_monitorlock = NULL;
+
 static	KSPIN_LOCK              g_registelock = NULL;
 static	NPAGED_LOOKASIDE_LIST	g_registerlist;
 
@@ -24,8 +27,15 @@ NTSTATUS Process_NotifyRegister(
 	UNREFERENCED_PARAMETER(CallbackContext);
 	UNREFERENCED_PARAMETER(Argument2);
 
-	if (FALSE == g_reg_monitorprocess)
+	if (FALSE == g_reg_monitorprocess && FALSE == g_reg_ips_monitorprocess)
 		return STATUS_SUCCESS;
+
+	// 还未做任何规则防御
+	//if (g_reg_ips_monitorprocess)
+	//{
+	//	if (FALSE == g_reg_monitorprocess)
+	//		return STATUS_SUCCESS;
+	//}
 
 	REGISTERINFO registerinfo;
 	KLOCK_QUEUE_HANDLE lh;
@@ -107,8 +117,9 @@ NTSTATUS Process_NotifyRegister(
 
 NTSTATUS Register_Init(PDRIVER_OBJECT pDriverObject)
 {
-	sl_init(&g_reg_monitorlock);
 	sl_init(&g_registelock);
+	sl_init(&g_reg_monitorlock);
+	sl_init(&g_reg_ips_monitorlock);
 
 	sl_init(&g_regdata.register_lock);
 	InitializeListHead(&g_regdata.register_pending);
@@ -182,6 +193,14 @@ void Register_SetMonitor(BOOLEAN code)
 	KLOCK_QUEUE_HANDLE lh;
 	sl_lock(&g_reg_monitorlock, &lh);
 	g_reg_monitorprocess = code;
+	sl_unlock(&lh);
+}
+
+void Register_SetIpsMonitor(BOOLEAN code)
+{
+	KLOCK_QUEUE_HANDLE lh;
+	sl_lock(&g_reg_ips_monitorlock, &lh);
+	g_reg_ips_monitorprocess = code;
 	sl_unlock(&lh);
 }
 

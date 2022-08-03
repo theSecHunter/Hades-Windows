@@ -23,6 +23,7 @@ NTSTATUS Wmi_Init();
 void Wmi_Free(void);
 void Wmi_Clean(void);
 void Wmi_SetMonitor(BOOLEAN code);
+void Wmi_SetIpsMonitor(BOOLEAN code);
 
 WMIBUFFER* Wmi_PacketAllocate(int lens);
 void Wmi_PacketFree(WMIBUFFER* packet);

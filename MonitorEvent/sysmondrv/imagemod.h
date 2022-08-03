@@ -27,6 +27,7 @@ NTSTATUS Imagemod_Init(void);
 void Imagemod_Free(void);
 void Imagemod_Clean(void);
 void Imagemod_SetMonitor(BOOLEAN code);
+void Imagemod_SetIpsMonitor(BOOLEAN code);
 
 IMAGEMODBUFFER* Imagemod_PacketAllocate(int lens);
 void Imagemod_PacketFree(IMAGEMODBUFFER* packet);

@@ -10,6 +10,9 @@
 static  BOOLEAN					g_wmi_monitor = FALSE;
 static  KSPIN_LOCK				g_wmi_monitorlock = NULL;
 
+static  BOOLEAN					g_wmi_ips_monitor = FALSE;
+static  KSPIN_LOCK				g_wmi_ips_monitorlock = NULL;
+
 static	KSPIN_LOCK              g_wmilock = NULL;
 static	NPAGED_LOOKASIDE_LIST	g_wmilist;
 
@@ -29,7 +32,7 @@ VOID Sys_NotifyWmi(
 )
 {
 	UNREFERENCED_PARAMETER(Context);
-	if (FALSE == g_wmi_monitor)
+	if (FALSE == g_wmi_monitor && FALSE == g_wmi_ips_monitor)
 		return;
 
 	WNODE_EVENT_ITEM* wnode = NULL;
@@ -45,8 +48,8 @@ VOID Sys_NotifyWmi(
 
 NTSTATUS Wmi_Init()
 {
-	sl_init(&g_wmi_monitor);
 	sl_init(&g_wmi_monitorlock);
+	sl_init(&g_wmi_ips_monitorlock);
 
 	sl_init(&g_wmidata.wmi_lock);
 	InitializeListHead(&g_wmidata.wmi_pending);
@@ -132,6 +135,14 @@ void Wmi_SetMonitor(BOOLEAN code)
 	KLOCK_QUEUE_HANDLE lh;
 	sl_lock(&g_wmi_monitorlock, &lh);
 	g_wmi_monitor = code;
+	sl_unlock(&lh);
+}
+
+void Wmi_SetIpsMonitor(BOOLEAN code)
+{
+	KLOCK_QUEUE_HANDLE lh;
+	sl_lock(&g_wmi_ips_monitorlock, &lh);
+	g_wmi_ips_monitor = code;
 	sl_unlock(&lh);
 }
 

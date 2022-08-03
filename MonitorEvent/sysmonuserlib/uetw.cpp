@@ -2,13 +2,8 @@
 #include <Windows.h>
 #include <memory>
 #include <Psapi.h>
-
-#define INITGUID
-//#include <evntrace.h>
-#include <evntcons.h>
 #include <tdh.h>
 #include <in6addr.h>
-
 #include <sysinfo.h>
 #include <map>
 #include <mutex>

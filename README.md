@@ -121,14 +121,14 @@
 **Duilib展示数据不会上报**
 
 ##### 恶意行为拦截 v2.0：
-| 事件     | 描述                            |进度  | 描述 | 
+| 事件     | 描述                            |进度  | 描述 | 引用代码 |
 | -------- | ------------------------------- |-------- | -------- |
-| 进程拦截|  Powershell/cmd/vbs/自定义进程 |完成| 回调中Name判断|
-| 注册表拦截|  自启动 |开发中| 回调中Name判断 |
-| 远程注入检测 |  无文件/远程线程注入 |开发中| 回调中VAD |
-| uefi检测 |   |开发中|  |
+| 进程拦截|  自定义进程 |完成| 基于回调过滤| |
+| 注册表拦截|  自定义注册表 |完成| 基于回调过滤 | |
+| 远程注入检测 |  远程线程注入 |完成| 基于回调过滤 | https://bbs.pediy.com/thread-193437.htm |
+| 非远程线程注入检测 |  映射内存或非CreteRemote方式执行 |开发中| 回调中VAD | https://github.com/huoji120/CobaltStrikeDetected/ |
 
-**基于回调简单行为拦截,拦截进程配置文件： config/client_config.**
+**基于回调简单行为拦截,拦截进程配置文件： config/client_config. (规则配置未生效)**
 
 ##### GRPC v2.0
 
@@ -138,7 +138,7 @@ Windows对于很多第三方生态逐步容纳，Grpc github cmake编译仍会�
 vcpkg install grpc
 ```
 
-&emsp;&emsp;配置vs2019 工具 --> 选项 --> NuGet管理即可，详细可以参考网上教程，注意vcpkg 安装的是release grpc，所以debug模式调试会有问题。
+&emsp;&emsp;配置vs2019 工具 --> 选项 --> NuGet管理即可，详细可以参考网上教程，连接程序使用MD编译。
 
 C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 
@@ -201,7 +201,7 @@ Json:
 #### 历史版本：
 v1.0 实现：主要实现引擎探针和上层数据-上报流程打通。
 
-v2.0 重构：设计模式mvp和代码质量优化，包括xp - win7 - win10等平台的兼容性。
+v2.0 重构：代码质量优化，包括win7 - win10等平台的兼容性，局部edr。
 
 #### 参考：
 

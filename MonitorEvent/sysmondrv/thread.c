@@ -2,9 +2,13 @@
 #include "thread.h"
 
 #include "devctrl.h"
+#define DebugPrint(...) DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, __VA_ARGS__)
 
 static  BOOLEAN					g_thr_monitor = FALSE;
 static  KSPIN_LOCK				g_thr_monitorlock = NULL;
+
+static  BOOLEAN					g_thr_ips_monitor = FALSE;
+static  KSPIN_LOCK				g_thr_ips_monitorlock = NULL;
 
 static KSPIN_LOCK               g_threadlock = NULL;
 NPAGED_LOOKASIDE_LIST			g_threadlist;
@@ -16,13 +20,87 @@ THREADDATA* threadctx_get()
 	return &g_threadQueryhead;
 }
 
+typedef struct _SYSTEM_THREAD_INFORMATION {
+	LARGE_INTEGER           KernelTime;
+	LARGE_INTEGER           UserTime;
+	LARGE_INTEGER           CreateTime;
+	ULONG                   WaitTime;
+	PVOID                   StartAddress;
+	CLIENT_ID               ClientId;
+	KPRIORITY               Priority;
+	LONG                    BasePriority;
+	ULONG                   ContextSwitchCount;
+	ULONG                   State;
+	KWAIT_REASON            WaitReason;
+}SYSTEM_THREAD_INFORMATION, * PSYSTEM_THREAD_INFORMATION;
+typedef struct _SYSTEM_PROCESS_INFORMATION {
+	ULONG                   NextEntryOffset;
+	ULONG                   NumberOfThreads;
+	LARGE_INTEGER           Reserved[3];
+	LARGE_INTEGER           CreateTime;
+	LARGE_INTEGER           UserTime;
+	LARGE_INTEGER           KernelTime;
+	UNICODE_STRING          ImageName;
+	KPRIORITY               BasePriority;
+	HANDLE                  ProcessId;
+	HANDLE                  InheritedFromProcessId;
+	ULONG                   HandleCount;
+	ULONG                   Reserved2[2];
+	ULONG                   PrivatePageCount;
+	VM_COUNTERS             VirtualMemoryCounters;
+	IO_COUNTERS             IoCounters;
+	SYSTEM_THREAD_INFORMATION           Threads[0];
+} SYSTEM_PROCESS_INFORMATION, * PSYSTEM_PROCESS_INFORMATION;
+
+BOOLEAN CheckIsRemoteThread(HANDLE ProcessId)
+{
+	PSYSTEM_PROCESS_INFORMATION pInfo = NULL, pMemAddr = NULL;
+	ULONG						BufferLen = 0;
+	NTSTATUS					status;
+	BOOLEAN						bRet = FALSE;
+
+	do
+	{
+		if (ZwQuerySystemInformation(SystemProcessInformation, pInfo, BufferLen, &BufferLen) == STATUS_INFO_LENGTH_MISMATCH)
+		{
+			if (!BufferLen) 
+				break;
+
+			pInfo = (PSYSTEM_PROCESS_INFORMATION)ExAllocatePool(NonPagedPool, BufferLen);
+			if (!pInfo) 
+				break;
+			pMemAddr = pInfo;
+
+			status = ZwQuerySystemInformation(SystemProcessInformation, pInfo, BufferLen, &BufferLen);
+			if (!NT_SUCCESS(status)) break;
+
+			do
+			{
+				if (pInfo->ProcessId == ProcessId)
+				{
+					//线程数如果等于1 是进程刚启动的主线程 不是"远程线程"
+					bRet = (pInfo->NumberOfThreads > 1);
+					break;
+				}
+				if (!pInfo->NextEntryOffset) 
+					break;
+			} while (pInfo = (PSYSTEM_PROCESS_INFORMATION)((SIZE_T)pInfo + (SIZE_T)pInfo->NextEntryOffset));
+			break;
+		}
+	} while (FALSE);
+
+	if (pMemAddr) 
+		ExFreePool(pMemAddr);
+	return bRet;
+}
+
 VOID Process_NotifyThread(
 	_In_ HANDLE ProcessId,
 	_In_ HANDLE ThreadId,
 	_In_ BOOLEAN Create
 	)
 {
-	if (!g_thr_monitor)
+	if (!g_thr_monitor && !g_thr_ips_monitor)
 		return;
 
 	// Create: delete (FLASE)
@@ -34,6 +112,25 @@ VOID Process_NotifyThread(
 	threadinfo.processid = ProcessId;
 	threadinfo.threadid = ThreadId;
 	threadinfo.createid = Create;
+
+	// Alter Check CraeteRemoteThread
+	const int CurrentId = PsGetCurrentProcessId();
+	if (g_thr_ips_monitor && Create && (CurrentId != (HANDLE)4) && (ProcessId != (HANDLE)4) && (CurrentId != ProcessId) && CheckIsRemoteThread(ProcessId))
+	{
+		UCHAR* SrcPsName, DstPsName;
+		PEPROCESS p = NULL;
+		p = PsGetCurrentProcess();
+		PsLookupProcessByProcessId(ProcessId, &p);
+		if (p)
+		{
+			SrcPsName = PsGetProcessImageFileName(p);
+			DstPsName = PsGetProcessImageFileName(p);
+			ObDereferenceObject(p);
+			DebugPrint("Find CraeteRemoteThread SrcPid: %08X %s DestPid: %08X %s\n", ProcessId, SrcPsName, CurrentId, DstPsName);
+		}
+		if (!g_thr_monitor)
+			return;
+	}
 
 	// Insert Query Head
 	threadbuf = (PTHREADBUFFER)Thread_PacketAllocate(sizeof(THREADINFO));
@@ -54,6 +151,8 @@ VOID Process_NotifyThread(
 NTSTATUS Thread_Init()
 {
 	sl_init(&g_thr_monitorlock);
+	sl_init(&g_thr_ips_monitorlock);
+
 	sl_init(&g_threadlock);
 	ExInitializeNPagedLookasideList(
 		&g_threadlist,
@@ -117,6 +216,14 @@ void Thread_SetMonitor(BOOLEAN code)
 	KLOCK_QUEUE_HANDLE lh;
 	sl_lock(&g_thr_monitorlock, &lh);
 	g_thr_monitor = code;
+	sl_unlock(&lh);
+}
+
+void Thread_SetIpsMonitor(BOOLEAN code)
+{
+	KLOCK_QUEUE_HANDLE lh;
+	sl_lock(&g_thr_ips_monitorlock, &lh);
+	g_thr_ips_monitor = code;
 	sl_unlock(&lh);
 }
 

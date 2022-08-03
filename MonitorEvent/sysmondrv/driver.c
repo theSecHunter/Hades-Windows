@@ -72,14 +72,13 @@ VOID driverUnload(
 {
     PAGED_CODE();
 
-    // RemoveLoadImageNotify();
     if (g_processname) {
         ExFreePoolWithTag(g_processname, 'CM');
         g_processname = NULL;
     }
 
     Fsflt_freePort();
-    FsMini_Free();
+    //FsMini_Free();
     devctrl_free();
     devctrl_ioThreadFree();
     return STATUS_SUCCESS;
@@ -102,11 +101,10 @@ NTSTATUS
 	PT_DBG_PRINT(PTDBG_TRACE_ROUTINES,
 		("driver!DriverEntry: Entered\n"));
 
-    // Init FltMiniPort
+    // Init MiniFilter
     status = FsMini_Init(DriverObject);
     if (!NT_SUCCESS(status))
         return status;
-    DbgBreakPoint();
     status = Mini_StartFilter();
     if (!NT_SUCCESS(status))
         return status;
@@ -142,7 +140,7 @@ NTSTATUS
         return 0;
     }
 
-    // Os <= Win8 (可用FileObject 8.1也可能PG)
+    // Os <= Win8 (FileObject 8.1也可能PG)
     if ((osver.dwMajorVersion == 6) && (osver.dwMinorVersion <= 1))
         g_Win10Version = TRUE;
     else if ((osver.dwMajorVersion < 6) && (osver.dwMajorVersion > 4))

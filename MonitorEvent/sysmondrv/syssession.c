@@ -6,6 +6,9 @@
 
 static  BOOLEAN					g_ses_monitor = FALSE;
 static  KSPIN_LOCK				g_ses_monitorlock = NULL;
+static  BOOLEAN					g_ses_ips_monitor = FALSE;
+static  KSPIN_LOCK				g_ses_ips_monitorlock = NULL;
+
 
 static	KSPIN_LOCK              g_sessionlock = NULL;
 static	NPAGED_LOOKASIDE_LIST	g_sessionlist;
@@ -32,7 +35,7 @@ Pio_NotifySession(
 
 	do 
 	{
-		if (FALSE == g_ses_monitor)
+		if (FALSE == g_ses_monitor && FALSE == g_ses_ips_monitor)
 			break;
 
 		IO_SESSION_STATE_INFORMATION iosession_info;
@@ -41,6 +44,12 @@ Pio_NotifySession(
 			IoGetContainerInformation(IoSessionStateInformation, SessionObject, &iosession_info, sizeof(IO_SESSION_STATE_INFORMATION));
 		else
 			break;
+
+		if (g_ses_ips_monitor)
+		{
+			if (!g_ses_monitor)
+				return;
+		}
 
 		SESSIONINFO sessioninfo;
 		RtlSecureZeroMemory(&sessioninfo, sizeof(SESSIONINFO));
@@ -72,8 +81,8 @@ Pio_NotifySession(
 
 NTSTATUS Session_Init(PDRIVER_OBJECT pDriverObject)
 {
-	sl_init(&g_ses_monitor);
 	sl_init(&g_ses_monitorlock);
+	sl_init(&g_ses_ips_monitorlock);
 
 	sl_init(&g_sessiondata.session_lock);
 	InitializeListHead(&g_sessiondata.session_pending);
@@ -154,8 +163,16 @@ void Session_Clean(void)
 void Session_SetMonitor(BOOLEAN code)
 {
 	KLOCK_QUEUE_HANDLE lh;
-	sl_lock(&g_sessionlock, &lh);
+	sl_lock(&g_ses_monitorlock, &lh);
 	g_ses_monitor = code;
+	sl_unlock(&lh);
+}
+
+void Session_SetIpsMonitor(BOOLEAN code)
+{
+	KLOCK_QUEUE_HANDLE lh;
+	sl_lock(&g_ses_ips_monitorlock, &lh);
+	g_ses_ips_monitor = code;
 	sl_unlock(&lh);
 }
 

@@ -762,10 +762,26 @@ void kMsgInterface::OffMonitor()
 }
 void kMsgInterface::OnBeSnipingMonitor()
 {
+    int status = 0;
+    // Off/Enable try Network packte Monitor
+    status = g_kernel_Ioct.devctrl_OnIpsMonitor();
+    Sleep(100);
+    if (0 > status)
+    {
+        cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+    }
     kBesnipingStatus = true;
 }
 void kMsgInterface::OffBeSnipingMonitor()
 {
+    int status = 0;
+    // Off/Enable try Network packte Monitor
+    status = g_kernel_Ioct.devctrl_OffIpsMonitor();
+    Sleep(100);
+    if (0 > status)
+    {
+        cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+    }
     kBesnipingStatus = false;
 }
 bool kMsgInterface::GetKerMonStatus()

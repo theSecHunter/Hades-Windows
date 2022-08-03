@@ -26,6 +26,7 @@ NTSTATUS Session_Init(PDRIVER_OBJECT pDriverObject);
 void Session_Free(void);
 void Session_Clean(void);
 void Session_SetMonitor(BOOLEAN code);
+void Session_SetIpsMonitor(BOOLEAN code);
 
 SESSIONBUFFER* Session_PacketAllocate(int lens);
 void Session_PacketFree(SESSIONBUFFER* packet);

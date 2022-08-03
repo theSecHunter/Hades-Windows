@@ -25,6 +25,7 @@ NTSTATUS Thread_Init();
 void Thread_Clean();
 void Thread_Free();
 void Thread_SetMonitor(BOOLEAN code);
+void Thread_SetIpsMonitor(BOOLEAN code);
 
 PTHREADBUFFER Thread_PacketAllocate(int lens);
 void Thread_PacketFree(PTHREADBUFFER packet);

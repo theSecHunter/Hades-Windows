@@ -3,7 +3,7 @@
 
 NTSTATUS FsMini_Init(PDRIVER_OBJECT DriverObject);
 NTSTATUS FsMini_Clean();
-NTSTATUS FsMini_Free();
+//NTSTATUS FsMini_Free();
 NTSTATUS Mini_StartFilter();
 
 #endif // !_MINIFILTER_H

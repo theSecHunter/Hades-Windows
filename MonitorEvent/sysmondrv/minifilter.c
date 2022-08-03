@@ -310,7 +310,6 @@ CONST FLT_REGISTRATION FilterRegistration = {
 
 NTSTATUS FsMini_Init(PDRIVER_OBJECT DriverObject)
 {
-   
     NTSTATUS nStatus = FltRegisterFilter(DriverObject, &FilterRegistration, &g_FltServerPortEvnet);
     if (NT_SUCCESS(nStatus))
         g_fltregstatus = TRUE;
@@ -357,7 +356,8 @@ FsFilter1Unload(
     PT_DBG_PRINT(PTDBG_TRACE_ROUTINES,
         ("FsFilter1!FsFilter1Unload: Entered\n"));
 
-    FltUnregisterFilter(g_FltServerPortEvnet);
+    if ((TRUE == g_fltregstatus) && g_FltServerPortEvnet)
+        FltUnregisterFilter(g_FltServerPortEvnet);
 
     return STATUS_SUCCESS;
 }
