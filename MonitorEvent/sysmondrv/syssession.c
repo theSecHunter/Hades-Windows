@@ -38,18 +38,19 @@ Pio_NotifySession(
 		if (FALSE == g_ses_monitor && FALSE == g_ses_ips_monitor)
 			break;
 
+
+		if (g_ses_ips_monitor)
+		{
+		}
+		if (!g_ses_monitor)
+			return;
+
 		IO_SESSION_STATE_INFORMATION iosession_info;
 		RtlSecureZeroMemory(&iosession_info, sizeof(IO_SESSION_STATE_INFORMATION));
 		if (SessionObject)
 			IoGetContainerInformation(IoSessionStateInformation, SessionObject, &iosession_info, sizeof(IO_SESSION_STATE_INFORMATION));
 		else
 			break;
-
-		if (g_ses_ips_monitor)
-		{
-			if (!g_ses_monitor)
-				return;
-		}
 
 		SESSIONINFO sessioninfo;
 		RtlSecureZeroMemory(&sessioninfo, sizeof(SESSIONINFO));

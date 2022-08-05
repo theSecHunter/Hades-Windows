@@ -737,11 +737,10 @@ void kMsgInterface::DriverFree()
 void kMsgInterface::OnMonitor()
 {
     int status = 0;
-    // Off/Enable try Network packte Monitor
     status = g_kernel_Ioct.devctrl_OnMonitor();
     if (0 > status)
     {
-        cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+        cout << "OnMonitor error kmsginterface" << endl;
     }
     kerMonStatus = true;
     return;
@@ -749,12 +748,11 @@ void kMsgInterface::OnMonitor()
 void kMsgInterface::OffMonitor()
 {
     int status = 0;
-    // Off/Enable try Network packte Monitor
     status = g_kernel_Ioct.devctrl_OffMonitor();
     Sleep(100);
     if (0 > status)
     {
-        cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+        cout << "OffMonitor error kmsginterface" << endl;
     }
     kerMonStatus = false;
     return;
@@ -763,24 +761,22 @@ void kMsgInterface::OffMonitor()
 void kMsgInterface::OnBeSnipingMonitor()
 {
     int status = 0;
-    // Off/Enable try Network packte Monitor
     status = g_kernel_Ioct.devctrl_OnIpsMonitor();
     Sleep(100);
     if (0 > status)
     {
-        cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+        cout << "OnBeSnipingMonitor error kmsginterface" << endl;
     }
     kBesnipingStatus = true;
 }
 void kMsgInterface::OffBeSnipingMonitor()
 {
     int status = 0;
-    // Off/Enable try Network packte Monitor
     status = g_kernel_Ioct.devctrl_OffIpsMonitor();
     Sleep(100);
     if (0 > status)
     {
-        cout << "devctrl_InitshareMem error: main.c --> lines: 375" << endl;
+        cout << "OffBeSnipingMonitor error kmsginterface" << endl;
     }
     kBesnipingStatus = false;
 }

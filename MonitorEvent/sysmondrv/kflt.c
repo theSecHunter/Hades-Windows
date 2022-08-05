@@ -91,10 +91,9 @@ NTSTATUS Fsflt_SendToMsg(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID Rep
 
 void Fsflt_ClosePort()
 {
-	if (g_FltServerPortEvnet) {
-		FltCloseCommunicationPort(g_FltServerPortEvnet);
-		g_FltServerPortEvnet = NULL;
-		// sleep 1s
+	if (g_FltServerPortEvnetPort) {
+		FltCloseCommunicationPort(g_FltServerPortEvnetPort);
+		g_FltServerPortEvnetPort = NULL;
 	}
 }
 void Fsflt_freePort()

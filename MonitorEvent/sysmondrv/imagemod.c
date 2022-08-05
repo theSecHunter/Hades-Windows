@@ -118,15 +118,15 @@ void Process_NotifyImage(
 	if (!ImageInfo)
 		return;
 
-	//if (g_imagemod_ips_monitor && PsGetCurrentProcessId() != (HANDLE)4 && PsGetCurrentProcessId() != (HANDLE)0) {
-	//	if (WalkStack(10) == false) {
+	if (g_imagemod_ips_monitor && PsGetCurrentProcessId() != (HANDLE)4 && PsGetCurrentProcessId() != (HANDLE)0) {
+		//if (WalkStack(10) == false) {
 
-	//		DebugPrint("[!!!] CobaltStrike Shellcode Detected Process Name: %s\n", PsGetProcessImageFileName(PsGetCurrentProcess()));
-	//		//ZwTerminateProcess(NtCurrentProcess(), 0);
-	//	}
-	//	if (!g_imagemod_monitor)
-	//		return;
-	//}
+		//	DebugPrint("[!!!] CobaltStrike Shellcode Detected Process Name: %s\n", PsGetProcessImageFileName(PsGetCurrentProcess()));
+		//	//ZwTerminateProcess(NtCurrentProcess(), 0);
+		//}
+	}
+	if (!g_imagemod_monitor)
+		return;
 
 	KLOCK_QUEUE_HANDLE lh;
 	IMAGEMODINFO imagemodinfo;

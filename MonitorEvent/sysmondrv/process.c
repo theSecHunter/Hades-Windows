@@ -123,7 +123,7 @@ VOID Process_NotifyProcessEx(
     UNREFERENCED_PARAMETER(Process);
 
     // 关闭监控
-    if (FALSE == g_proc_monitorprocess && FALSE == g_proc_ips_monitorlock)
+    if (FALSE == g_proc_monitorprocess && FALSE == g_proc_ips_monitorprocess)
     {
         return;
     }
@@ -142,6 +142,35 @@ VOID Process_NotifyProcessEx(
         RtlCopyMemory(processinfo.queryprocesspath, path, sizeof(WCHAR) * 260);
         QueryPathStatus = TRUE;
     }
+
+    if (g_proc_ips_monitorprocess && CreateInfo && QueryPathStatus && g_proc_ipsList && Process_IsIpsProcessNameInList(processinfo.queryprocesspath))
+    {// Ips
+        PHADES_NOTIFICATION  notification = NULL;
+        do {
+            int replaybuflen = sizeof(HADES_REPLY);
+            int sendbuflen = sizeof(HADES_NOTIFICATION);
+            notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSP');
+            if (!notification)
+                break;
+            RtlZeroMemory(notification, sendbuflen);
+            notification->CommandId = 1; // IPS_PROCESSSTART
+            RtlCopyMemory(&notification->Contents, &processinfo, sizeof(PROCESSINFO));
+            // 等待用户操作
+            NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
+            // 返回Error: 数据缓冲区不够,其实已经有数据
+            const DWORD  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
+            // 禁止
+            if ((1 == ReSafeToOpen) || (3 == ReSafeToOpen))
+                CreateInfo->CreationStatus = STATUS_UNSUCCESSFUL;
+        } while (FALSE);
+        if (notification)
+        {
+            ExFreePoolWithTag(notification, 'IPSP');
+            notification = NULL;
+        }
+    }
+    if (FALSE == g_proc_monitorprocess)
+        return;
 
     PROCESSBUFFER* pinfo = (PROCESSBUFFER*)Process_PacketAllocate(sizeof(PROCESSINFO));
     if (!pinfo)
@@ -168,34 +197,7 @@ VOID Process_NotifyProcessEx(
 
     pinfo->dataLength = sizeof(PROCESSINFO);
     memcpy(pinfo->dataBuffer, &processinfo, sizeof(PROCESSINFO));
-    if (g_proc_ips_monitorlock && QueryPathStatus && g_proc_ipsList && Process_IsIpsProcessNameInList(processinfo.queryprocesspath))
-    {// Ips
-        PHADES_NOTIFICATION  notification = NULL;
-        do {
-            int replaybuflen = sizeof(HADES_REPLY);
-            int sendbuflen = sizeof(HADES_NOTIFICATION);
-            notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSP');
-            if (!notification)
-                break;
-            RtlZeroMemory(notification, sendbuflen);
-            notification->CommandId = 1; // IPS_PROCESSSTART
-            RtlCopyMemory(&notification->Contents, &processinfo, sizeof(PROCESSINFO));
-            // 等待用户操作
-            NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
-            // 返回Error: 数据缓冲区不够,其实已经有数据
-            const DWORD  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
-            // 禁止
-            if ((1 == ReSafeToOpen) || (3 == ReSafeToOpen))
-                CreateInfo->CreationStatus = STATUS_UNSUCCESSFUL;
-        } while (FALSE);
-        if (notification)
-        {
-            ExFreePoolWithTag(notification, 'IPSP');
-            notification = NULL;
-        }
-        if (FALSE == g_proc_monitorprocess)
-            return;
-    }
+
     sl_lock(&g_processQueryhead.process_lock, &lh);
     InsertHeadList(&g_processQueryhead.process_pending, &pinfo->pEntry);
     sl_unlock(&lh);

@@ -17,6 +17,10 @@
 #include <memory.h>
 #include <tchar.h>
 
+#define INITGUID
+#include <evntrace.h>
+#include <evntcons.h>
+
 #define _ZLIB_DISABLED
 #ifdef _WIN64
 #ifdef _DEBUG

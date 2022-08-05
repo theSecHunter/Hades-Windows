@@ -288,14 +288,14 @@ CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
 
 CONST FLT_REGISTRATION FilterRegistration = {
 
-    sizeof(FLT_REGISTRATION),         //  Size
+    sizeof(FLT_REGISTRATION),           //  Size
     FLT_REGISTRATION_VERSION,           //  Version
     0,                                  //  Flags
 
     NULL,                               //  Context
     Callbacks,                          //  Operation callbacks
 
-    FsFilter1Unload,                           //  MiniFilterUnload
+    NULL,                               //  MiniFilterUnload
 
     FsFilter1InstanceSetup,                    //  InstanceSetup
     FsFilter1InstanceQueryTeardown,            //  InstanceQueryTeardown
@@ -319,7 +319,10 @@ NTSTATUS FsMini_Init(PDRIVER_OBJECT DriverObject)
 NTSTATUS FsMini_Clean()
 {
     if ((TRUE == g_fltregstatus) && g_FltServerPortEvnet)
+    {
         FltUnregisterFilter(g_FltServerPortEvnet);
+        g_FltServerPortEvnet = NULL;
+    }
 }
 
 NTSTATUS FsMini_Free()

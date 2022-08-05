@@ -39,10 +39,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 					g_klib->DriverInit();
 				kStatus = g_klib->GetKerMonStatus();
 				if (false == kStatus)
+				{
+					OutputDebugString(L"[HadesSvc] GetKerMonStatus开启内核监控");
 					g_klib->OnMonitor();
+					OutputDebugString(L"[HadesSvc] GetKerMonStatus开启内核监控成功");
+				}
 				else if (true == kStatus)
 				{
+					OutputDebugString(L"[HadesSvc] GetKerMonStatus关闭内核监控");
 					g_klib->OffMonitor();
+					OutputDebugString(L"[HadesSvc] GetKerMonStatus关闭内核监控成功");
 					if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerBeSnipingStatus()))
 						g_klib->DriverFree();
 				}
@@ -54,10 +60,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 					g_klib->DriverInit();
 				kStatus = g_klib->GetKerBeSnipingStatus();
 				if (false == kStatus)
+				{
+					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor开启行为拦截");
 					g_klib->OnBeSnipingMonitor();
+					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor开启行为拦截成功");
+				}
 				else if (true == kStatus)
 				{
+					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor关闭行为拦截");
 					g_klib->OffBeSnipingMonitor();
+					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor关闭行为拦截成功");
 					if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerMonStatus()))
 						g_klib->DriverFree();
 				}

@@ -106,31 +106,32 @@ VOID Process_NotifyThread(
 	// Create: delete (FLASE)
 	KLOCK_QUEUE_HANDLE lh;
 	PTHREADBUFFER threadbuf = NULL;
+
+	// Alter Check CraeteRemoteThread
+	const int CurrentId = PsGetCurrentProcessId();
+	if (g_thr_ips_monitor && Create && (CurrentId != (HANDLE)4) && (ProcessId != (HANDLE)4) && (CurrentId != ProcessId) && CheckIsRemoteThread(ProcessId))
+	{
+		//UCHAR* SrcPsName, DstPsName;
+		//PEPROCESS p = NULL;
+		//p = PsGetCurrentProcess();
+		//PsLookupProcessByProcessId(ProcessId, &p);
+		//if (p)
+		//{
+		//	SrcPsName = PsGetProcessImageFileName(p);
+		//	DstPsName = PsGetProcessImageFileName(p);
+		//	ObDereferenceObject(p);
+		//	DebugPrint("Find CraeteRemoteThread SrcPid: %08X %s DestPid: %08X %s\n", ProcessId, SrcPsName, CurrentId, DstPsName);
+		//}
+	}
+	if (!g_thr_monitor)
+		return;
+
 	THREADINFO threadinfo;
 	RtlSecureZeroMemory(&threadinfo, sizeof(THREADINFO));
 
 	threadinfo.processid = ProcessId;
 	threadinfo.threadid = ThreadId;
 	threadinfo.createid = Create;
-
-	// Alter Check CraeteRemoteThread
-	const int CurrentId = PsGetCurrentProcessId();
-	if (g_thr_ips_monitor && Create && (CurrentId != (HANDLE)4) && (ProcessId != (HANDLE)4) && (CurrentId != ProcessId) && CheckIsRemoteThread(ProcessId))
-	{
-		UCHAR* SrcPsName, DstPsName;
-		PEPROCESS p = NULL;
-		p = PsGetCurrentProcess();
-		PsLookupProcessByProcessId(ProcessId, &p);
-		if (p)
-		{
-			SrcPsName = PsGetProcessImageFileName(p);
-			DstPsName = PsGetProcessImageFileName(p);
-			ObDereferenceObject(p);
-			DebugPrint("Find CraeteRemoteThread SrcPid: %08X %s DestPid: %08X %s\n", ProcessId, SrcPsName, CurrentId, DstPsName);
-		}
-		if (!g_thr_monitor)
-			return;
-	}
 
 	// Insert Query Head
 	threadbuf = (PTHREADBUFFER)Thread_PacketAllocate(sizeof(THREADINFO));

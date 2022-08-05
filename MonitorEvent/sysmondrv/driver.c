@@ -78,7 +78,7 @@ VOID driverUnload(
     }
 
     Fsflt_freePort();
-    //FsMini_Free();
+    FsMini_Free();
     devctrl_free();
     devctrl_ioThreadFree();
     return STATUS_SUCCESS;

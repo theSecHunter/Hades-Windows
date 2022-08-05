@@ -31,11 +31,11 @@ NTSTATUS Process_NotifyRegister(
 		return STATUS_SUCCESS;
 
 	// 还未做任何规则防御
-	//if (g_reg_ips_monitorprocess)
-	//{
-	//	if (FALSE == g_reg_monitorprocess)
-	//		return STATUS_SUCCESS;
-	//}
+	if (g_reg_ips_monitorprocess)
+	{
+	}
+	if (FALSE == g_reg_monitorprocess)
+		return STATUS_SUCCESS;
 
 	REGISTERINFO registerinfo;
 	KLOCK_QUEUE_HANDLE lh;

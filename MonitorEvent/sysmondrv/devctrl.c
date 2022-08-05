@@ -749,6 +749,12 @@ NTSTATUS devctrl_openMem(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATI
 }
 
 // ¡î IOCTL
+void devctrl_sleep(UINT ttw)
+{
+	NDIS_EVENT  _SleepEvent;
+	NdisInitializeEvent(&_SleepEvent);
+	NdisWaitEvent(&_SleepEvent, ttw);
+}
 NTSTATUS devctrl_create(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -879,8 +885,9 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	HANDLE		pid = PsGetCurrentProcessId();
 
 	UNREFERENCED_PARAMETER(irpSp);
-
 	devctrl_setMonitor(FALSE);
+	devctrl_setIpsMonitor(FALSE);
+	devctrl_sleep(1000);
 	Process_Clean();
 	Thread_Clean();
 	Imagemod_Clean();
@@ -901,12 +908,6 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	return status;
 }
 
-void devctrl_sleep(UINT ttw)
-{
-	NDIS_EVENT  _SleepEvent;
-	NdisInitializeEvent(&_SleepEvent);
-	NdisWaitEvent(&_SleepEvent, ttw);
-}
 void devctrl_cancelPendingReads()
 {
 	PIRP                irp;
@@ -1026,9 +1027,6 @@ VOID devctrl_setMonitor(BOOLEAN code)
 	KLOCK_QUEUE_HANDLE lh;
 
 	sl_lock(&g_IoQueryLock, &lh);
-	g_monitorflag = code;
-	sl_unlock(&lh);
-
 	// estable monitor
 	Process_SetMonitor(code);
 	Thread_SetMonitor(code);
@@ -1037,19 +1035,16 @@ VOID devctrl_setMonitor(BOOLEAN code)
 	Wmi_SetMonitor(code);
 	File_SetMonitor(code);
 	Session_SetMonitor(code);
+	sl_unlock(&lh);
 
 	// clearn pennding read i/o
-	if (FALSE == code)
-		devctrl_cancelPendingReads();
+	devctrl_cancelPendingReads();
 }
 VOID devctrl_setIpsMonitor(BOOLEAN code)
 {
 	KLOCK_QUEUE_HANDLE lh;
 
 	sl_lock(&g_IoQueryLock, &lh);
-	g_monitorflag = code;
-	sl_unlock(&lh);
-
 	// estable Ips monitor
 	Process_SetIpsMonitor(code);
 	Thread_SetIpsMonitor(code);
@@ -1057,10 +1052,10 @@ VOID devctrl_setIpsMonitor(BOOLEAN code)
 	Register_SetIpsMonitor(code);
 	Wmi_SetIpsMonitor(code);
 	Session_SetIpsMonitor(code);
+	sl_unlock(&lh);
 
 	// clearn pennding read i/o
-	if (FALSE == code)
-		devctrl_cancelPendingReads();
+	devctrl_cancelPendingReads();
 }
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 {

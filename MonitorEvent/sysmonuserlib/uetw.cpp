@@ -154,9 +154,11 @@ void WINAPI ProcessEventFileLogInfo(PEVENT_RECORD EventRecord)
             }
             else if (2 == EventProcesId)
             {
-     /*           processinfo_data.processStatus = false;
-                processinfo_data.processsid = *(ULONG*)(((PUCHAR)EventRecord->UserData) + 0);
-                processinfo_data.processName = L"";*/
+                /*
+                    processinfo_data.processStatus = false;
+                    processinfo_data.processsid = *(ULONG*)(((PUCHAR)EventRecord->UserData) + 0);
+                    processinfo_data.processName = L"";
+                */
             }
             //OutputDebugString((L"[UetwMM Process] Pid: " + to_wstring(processinfo_data.processsid) + L" Status" + to_wstring(processinfo_data.processStatus) + L" Path: " + processinfo_data.processName).c_str());
             on_processinfo_(processinfo_data);
