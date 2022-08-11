@@ -136,7 +136,7 @@ void Grpc::Grpc_taskwrite()
                     return;
                 task_array_data.clear();
                 if (false == g_klib->GetKerInitStatus())
-                    g_klib->DriverInit();
+                    g_klib->DriverInit(false);
                 auto kStatus = g_klib->GetKerMonStatus();
                 if (false == kStatus)
                 {
@@ -153,7 +153,7 @@ void Grpc::Grpc_taskwrite()
                     return;
                 task_array_data.clear();
                 if (false == g_klib->GetKerInitStatus())
-                    g_klib->DriverInit();
+                    g_klib->DriverInit(false);
                 auto kStatus = g_klib->GetKerMonStatus();
                 if (true == kStatus)
                 {

@@ -172,6 +172,7 @@ VOID Process_NotifyProcessEx(
     if (FALSE == g_proc_monitorprocess)
         return;
 
+
     PROCESSBUFFER* pinfo = (PROCESSBUFFER*)Process_PacketAllocate(sizeof(PROCESSINFO));
     if (!pinfo)
         return;

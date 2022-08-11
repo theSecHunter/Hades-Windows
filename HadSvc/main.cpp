@@ -302,7 +302,7 @@ int main(int argc, char* argv[])
 	// Debug接口测试
 	if (true == grpc_send && (true == kerne_rootkit || true == kerne_mon))
 	{
-		g_mainMsgKlib.DriverInit();
+		g_mainMsgKlib.DriverInit(false);
 
 		cout << "Rootkit上报接口测试:" << endl;
 

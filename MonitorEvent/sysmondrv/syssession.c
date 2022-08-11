@@ -44,6 +44,7 @@ Pio_NotifySession(
 		}
 		if (!g_ses_monitor)
 			return;
+			
 
 		IO_SESSION_STATE_INFORMATION iosession_info;
 		RtlSecureZeroMemory(&iosession_info, sizeof(IO_SESSION_STATE_INFORMATION));

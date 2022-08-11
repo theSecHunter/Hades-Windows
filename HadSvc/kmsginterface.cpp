@@ -668,7 +668,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     }
 }
 
-void kMsgInterface::DriverInit()
+void kMsgInterface::DriverInit(const int flag)
 {
     int status = 0;
 
@@ -699,7 +699,7 @@ void kMsgInterface::DriverInit()
         }
 
         // ReadFile I/O Thread
-        status = g_kernel_Ioct.devctrl_workthread(NULL);
+        status = g_kernel_Ioct.devctrl_workthread(NULL, flag);
         if (0 > status)
         {
             OutputDebugString(L"devctrl_workthread error: main.c --> lines: 704");

@@ -45,7 +45,7 @@ public:
 	int devctrl_init();
 	void devctrl_free();
 	int devctrl_opendeviceSylink(const char* devSylinkName);
-	int devctrl_workthread(LPVOID grpcobj);
+	int devctrl_workthread(LPVOID grpcobj, const bool flag);
 	int devctrl_waitSingeObject();
 	int devctrl_InitshareMem();
 	void nf_setEventHandler(PVOID64 pHandler);

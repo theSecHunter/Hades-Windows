@@ -36,7 +36,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			case 2:
 			{//内核态开关
 				if (false == g_klib->GetKerInitStatus())
-					g_klib->DriverInit();
+					g_klib->DriverInit(false); // 初始化启动read i/o线程
 				kStatus = g_klib->GetKerMonStatus();
 				if (false == kStatus)
 				{
@@ -57,7 +57,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			case 3:
 			{//行为拦截
 				if (false == g_klib->GetKerInitStatus())
-					g_klib->DriverInit();
+					g_klib->DriverInit(true);// 初始化不启动read i/o线程
 				kStatus = g_klib->GetKerBeSnipingStatus();
 				if (false == kStatus)
 				{

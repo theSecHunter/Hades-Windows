@@ -67,6 +67,7 @@ VOID devctrl_free();
 VOID devctrl_clean();
 void devctrl_ioThreadFree();
 VOID devctrl_setShutdown();
+void devctrl_cancelPendingReads();
 VOID devctrl_setMonitor(BOOLEAN code);
 VOID devctrl_setIpsMonitor(BOOLEAN code);
 

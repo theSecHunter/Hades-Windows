@@ -22,7 +22,7 @@ public:
 
 	void kMsg_Init();
 	void kMsg_Free();
-	void DriverInit();
+	void DriverInit(const int flag);
 	void DriverFree();
 	void OnMonitor();
 	void OffMonitor();

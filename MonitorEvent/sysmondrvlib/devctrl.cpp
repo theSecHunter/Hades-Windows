@@ -94,8 +94,10 @@ void DevctrlIoct::devctrl_free()
 	Sleep(100);
 }
 
-int DevctrlIoct::devctrl_workthread(LPVOID grpcobj)
+int DevctrlIoct::devctrl_workthread(LPVOID grpcobj, const bool flag)
 {
+	if (flag)
+		return 1;
 	// start thread
 	m_threadobjhandler = CreateThread(
 		NULL, 
@@ -189,6 +191,7 @@ int DevctrlIoct::devctrl_waitSingeObject()
 }
 int DevctrlIoct::devctrl_OnMonitor()
 {
+	//SetEvent(g_HadesMonStopEvent);
 	DWORD InSize = 0;
 	DWORD OutSize = 0;
 	DWORD dwSize = 0;
@@ -196,6 +199,7 @@ int DevctrlIoct::devctrl_OnMonitor()
 }
 int DevctrlIoct::devctrl_OffMonitor()
 {
+	// ∑¢ÀÕ‘›Õ£I/Oœ˚œ¢
 	DWORD InSize = 0;
 	DWORD OutSize = 0;
 	DWORD dwSize = 0;
@@ -475,13 +479,14 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 
 	OutputDebugString(L"Entry WorkThread");
 	SetEvent(g_workThreadStartedEvent);
-
+	
 	for (;;)
 	{
 		waitTimeout = 10;
 		abortBatch = false;
 		if (g_exitthread)
 			break;
+
 		for (i = 0; i < 8; i++)
 		{
 			readBytes = 0;
