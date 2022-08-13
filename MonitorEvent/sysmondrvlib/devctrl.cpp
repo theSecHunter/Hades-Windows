@@ -76,7 +76,7 @@ int DevctrlIoct::devctrl_init()
 	g_exitthread = false;
 	return 1;
 }
-void DevctrlIoct::devctrl_free()
+void DevctrlIoct::devctrl_stopthread()
 {
 	g_exitthread = true;
 	Sleep(100);
@@ -87,6 +87,15 @@ void DevctrlIoct::devctrl_free()
 		CloseHandle(m_threadobjhandler);
 		m_threadobjhandler = NULL;
 	}
+}
+void DevctrlIoct::devctrl_startthread()
+{
+	g_exitthread = false;
+	devctrl_workthread(NULL, false);
+}
+void DevctrlIoct::devctrl_free()
+{
+	devctrl_stopthread();
 	if (g_hDevice.m_h)
 	{
 		g_hDevice.Close();
@@ -445,7 +454,7 @@ static void handleEventDispath(PNF_DATA pData)
 	break;
 	}
 }
-void handleEventDispath_(PNF_DATA pData)
+static void handleEventDispath_(PNF_DATA pData)
 {
 	if (pData && (pData->code < 150 || pData->code > 160))
 		return;
@@ -485,7 +494,10 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 		waitTimeout = 10;
 		abortBatch = false;
 		if (g_exitthread)
+		{
+			g_exitthread = false;
 			break;
+		}
 
 		for (i = 0; i < 8; i++)
 		{
@@ -539,10 +551,11 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 			pData = (PNF_DATA)g_nfBuffers.inBuf;
 			while (readBytes >= (sizeof(NF_DATA) - 1))
 			{
-				// handleEventDispath(pData);
+				//handleEventDispath(pData);
 				handleEventDispath_(pData);
 				if (g_exitthread)
 				{
+					g_exitthread = false;
 					abortBatch = true;
 					break;
 				}

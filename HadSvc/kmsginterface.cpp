@@ -734,6 +734,14 @@ void kMsgInterface::DriverFree()
     g_kernel_Ioct.devctrl_free();
     kInitStatus = false;
 }
+void kMsgInterface::StopReadFileThread()
+{
+    g_kernel_Ioct.devctrl_stopthread();
+}
+void kMsgInterface::StartReadFileThread()
+{
+    g_kernel_Ioct.devctrl_startthread();
+}
 void kMsgInterface::OnMonitor()
 {
     int status = 0;

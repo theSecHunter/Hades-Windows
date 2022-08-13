@@ -137,10 +137,14 @@ void Grpc::Grpc_taskwrite()
                 task_array_data.clear();
                 if (false == g_klib->GetKerInitStatus())
                     g_klib->DriverInit(false);
-                auto kStatus = g_klib->GetKerMonStatus();
+                const bool kStatus = g_klib->GetKerMonStatus();
+                if (false == kStatus)
+                    g_klib->StartReadFileThread();//如果不需要初始化，行为拦截正在工作 - 只启动线程
                 if (false == kStatus)
                 {
+                    OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Enable KernelMonitor Command");
                     g_klib->OnMonitor();
+
                     task_array_data[0] = "Kernel MonitorControl Enable";
                 }
                 else
@@ -155,15 +159,13 @@ void Grpc::Grpc_taskwrite()
                 if (false == g_klib->GetKerInitStatus())
                     g_klib->DriverInit(false);
                 auto kStatus = g_klib->GetKerMonStatus();
-                if (true == kStatus)
-                {
-                    g_klib->OffMonitor();
-                    task_array_data[0] = "Kernel MonitorControl Disable";
-                }
-                else
-                    task_array_data[0] = "Kernel MonitorControl NotActivated";
-                if (true == g_klib->GetKerInitStatus())
+                OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Disable KernelMonitor Command");
+                g_klib->OffMonitor();
+                OutputDebugString(L"[HadesSvc] GetKerMonStatus Disable KernelMonitor Success");
+                if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerBeSnipingStatus()))
                     g_klib->DriverFree();
+                else
+                    g_klib->StopReadFileThread(); // 开启行为拦截状态下，关闭线程 - 防止下发I/O
             }
             else
                 return;

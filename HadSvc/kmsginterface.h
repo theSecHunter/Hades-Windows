@@ -24,6 +24,8 @@ public:
 	void kMsg_Free();
 	void DriverInit(const int flag);
 	void DriverFree();
+	void StopReadFileThread();
+	void StartReadFileThread();
 	void OnMonitor();
 	void OffMonitor();
 	void OnBeSnipingMonitor();

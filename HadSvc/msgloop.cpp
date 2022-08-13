@@ -35,22 +35,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			break;
 			case 2:
 			{//内核态开关
+				kStatus = g_klib->GetKerMonStatus();
 				if (false == g_klib->GetKerInitStatus())
 					g_klib->DriverInit(false); // 初始化启动read i/o线程
-				kStatus = g_klib->GetKerMonStatus();
+				else
+				{
+					if (false == kStatus)
+						g_klib->StartReadFileThread();//如果不需要初始化，行为拦截正在工作 - 只启动线程
+				}
 				if (false == kStatus)
 				{
-					OutputDebugString(L"[HadesSvc] GetKerMonStatus开启内核监控");
+					OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Enable KernelMonitor Command");
 					g_klib->OnMonitor();
-					OutputDebugString(L"[HadesSvc] GetKerMonStatus开启内核监控成功");
+					OutputDebugString(L"[HadesSvc] GetKerMonStatus Enable KernelMonitor Success");
 				}
 				else if (true == kStatus)
 				{
-					OutputDebugString(L"[HadesSvc] GetKerMonStatus关闭内核监控");
+					OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Disable KernelMonitor Command");
 					g_klib->OffMonitor();
-					OutputDebugString(L"[HadesSvc] GetKerMonStatus关闭内核监控成功");
+					OutputDebugString(L"[HadesSvc] GetKerMonStatus Disable KernelMonitor Success");
 					if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerBeSnipingStatus()))
 						g_klib->DriverFree();
+					else
+						g_klib->StopReadFileThread(); // 开启行为拦截状态下，关闭线程 - 防止下发I/O
 				}
 			}
 			break;
@@ -61,15 +68,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				kStatus = g_klib->GetKerBeSnipingStatus();
 				if (false == kStatus)
 				{
-					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor开启行为拦截");
+					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Send Enable KernelMonitor Command");
 					g_klib->OnBeSnipingMonitor();
-					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor开启行为拦截成功");
+					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Enable KernelMonitor Success");
 				}
 				else if (true == kStatus)
 				{
-					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor关闭行为拦截");
+					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Disable Disable KernelMonitor Command");
 					g_klib->OffBeSnipingMonitor();
-					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor关闭行为拦截成功");
+					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Disable KernelMonitor Success");
 					if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerMonStatus()))
 						g_klib->DriverFree();
 				}
