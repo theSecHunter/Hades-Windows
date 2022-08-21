@@ -19,10 +19,10 @@
 #include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/sync_stream.h>
-namespace proto {
+namespace grpc {
 
 static const char* Transfer_method_names[] = {
-  "/proto.Transfer/Transfer",
+  "/grpc.Transfer/Transfer",
 };
 
 std::unique_ptr< Transfer::Stub> Transfer::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -35,31 +35,31 @@ Transfer::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, 
   : channel_(channel), rpcmethod_Transfer_(Transfer_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::BIDI_STREAMING, channel)
   {}
 
-::grpc::ClientReaderWriter< ::proto::RawData, ::proto::Command>* Transfer::Stub::TransferRaw(::grpc::ClientContext* context) {
-  return ::grpc::internal::ClientReaderWriterFactory< ::proto::RawData, ::proto::Command>::Create(channel_.get(), rpcmethod_Transfer_, context);
+::grpc::ClientReaderWriter< ::grpc::RawData, ::grpc::Command>* Transfer::Stub::TransferRaw(::grpc::ClientContext* context) {
+  return ::grpc::internal::ClientReaderWriterFactory< ::grpc::RawData, ::grpc::Command>::Create(channel_.get(), rpcmethod_Transfer_, context);
 }
 
-void Transfer::Stub::async::Transfer(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::proto::RawData,::proto::Command>* reactor) {
-  ::grpc::internal::ClientCallbackReaderWriterFactory< ::proto::RawData,::proto::Command>::Create(stub_->channel_.get(), stub_->rpcmethod_Transfer_, context, reactor);
+void Transfer::Stub::async::Transfer(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::grpc::RawData,::grpc::Command>* reactor) {
+  ::grpc::internal::ClientCallbackReaderWriterFactory< ::grpc::RawData,::grpc::Command>::Create(stub_->channel_.get(), stub_->rpcmethod_Transfer_, context, reactor);
 }
 
-::grpc::ClientAsyncReaderWriter< ::proto::RawData, ::proto::Command>* Transfer::Stub::AsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-  return ::grpc::internal::ClientAsyncReaderWriterFactory< ::proto::RawData, ::proto::Command>::Create(channel_.get(), cq, rpcmethod_Transfer_, context, true, tag);
+::grpc::ClientAsyncReaderWriter< ::grpc::RawData, ::grpc::Command>* Transfer::Stub::AsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+  return ::grpc::internal::ClientAsyncReaderWriterFactory< ::grpc::RawData, ::grpc::Command>::Create(channel_.get(), cq, rpcmethod_Transfer_, context, true, tag);
 }
 
-::grpc::ClientAsyncReaderWriter< ::proto::RawData, ::proto::Command>* Transfer::Stub::PrepareAsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncReaderWriterFactory< ::proto::RawData, ::proto::Command>::Create(channel_.get(), cq, rpcmethod_Transfer_, context, false, nullptr);
+::grpc::ClientAsyncReaderWriter< ::grpc::RawData, ::grpc::Command>* Transfer::Stub::PrepareAsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncReaderWriterFactory< ::grpc::RawData, ::grpc::Command>::Create(channel_.get(), cq, rpcmethod_Transfer_, context, false, nullptr);
 }
 
 Transfer::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       Transfer_method_names[0],
       ::grpc::internal::RpcMethod::BIDI_STREAMING,
-      new ::grpc::internal::BidiStreamingHandler< Transfer::Service, ::proto::RawData, ::proto::Command>(
+      new ::grpc::internal::BidiStreamingHandler< Transfer::Service, ::grpc::RawData, ::grpc::Command>(
           [](Transfer::Service* service,
              ::grpc::ServerContext* ctx,
-             ::grpc::ServerReaderWriter<::proto::Command,
-             ::proto::RawData>* stream) {
+             ::grpc::ServerReaderWriter<::grpc::Command,
+             ::grpc::RawData>* stream) {
                return service->Transfer(ctx, stream);
              }, this)));
 }
@@ -67,12 +67,12 @@ Transfer::Service::Service() {
 Transfer::Service::~Service() {
 }
 
-::grpc::Status Transfer::Service::Transfer(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::proto::Command, ::proto::RawData>* stream) {
+::grpc::Status Transfer::Service::Transfer(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::Command, ::grpc::RawData>* stream) {
   (void) context;
   (void) stream;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
 
-}  // namespace proto
+}  // namespace grpc
 

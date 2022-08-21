@@ -25,54 +25,54 @@
 #include <grpcpp/impl/codegen/stub_options.h>
 #include <grpcpp/impl/codegen/sync_stream.h>
 
-namespace proto {
+namespace grpc {
 
 class Transfer final {
  public:
   static constexpr char const* service_full_name() {
-    return "proto.Transfer";
+    return "grpc.Transfer";
   }
   class StubInterface {
    public:
     virtual ~StubInterface() {}
-    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::proto::RawData, ::proto::Command>> Transfer(::grpc::ClientContext* context) {
-      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::proto::RawData, ::proto::Command>>(TransferRaw(context));
+    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::grpc::RawData, ::grpc::Command>> Transfer(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::grpc::RawData, ::grpc::Command>>(TransferRaw(context));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::proto::RawData, ::proto::Command>> AsyncTransfer(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::proto::RawData, ::proto::Command>>(AsyncTransferRaw(context, cq, tag));
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::grpc::RawData, ::grpc::Command>> AsyncTransfer(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::grpc::RawData, ::grpc::Command>>(AsyncTransferRaw(context, cq, tag));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::proto::RawData, ::proto::Command>> PrepareAsyncTransfer(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::proto::RawData, ::proto::Command>>(PrepareAsyncTransferRaw(context, cq));
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::grpc::RawData, ::grpc::Command>> PrepareAsyncTransfer(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::grpc::RawData, ::grpc::Command>>(PrepareAsyncTransferRaw(context, cq));
     }
     class async_interface {
      public:
       virtual ~async_interface() {}
-      virtual void Transfer(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::proto::RawData,::proto::Command>* reactor) = 0;
+      virtual void Transfer(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::grpc::RawData,::grpc::Command>* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
     class async_interface* experimental_async() { return async(); }
    private:
-    virtual ::grpc::ClientReaderWriterInterface< ::proto::RawData, ::proto::Command>* TransferRaw(::grpc::ClientContext* context) = 0;
-    virtual ::grpc::ClientAsyncReaderWriterInterface< ::proto::RawData, ::proto::Command>* AsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
-    virtual ::grpc::ClientAsyncReaderWriterInterface< ::proto::RawData, ::proto::Command>* PrepareAsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientReaderWriterInterface< ::grpc::RawData, ::grpc::Command>* TransferRaw(::grpc::ClientContext* context) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::grpc::RawData, ::grpc::Command>* AsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::grpc::RawData, ::grpc::Command>* PrepareAsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
-    std::unique_ptr< ::grpc::ClientReaderWriter< ::proto::RawData, ::proto::Command>> Transfer(::grpc::ClientContext* context) {
-      return std::unique_ptr< ::grpc::ClientReaderWriter< ::proto::RawData, ::proto::Command>>(TransferRaw(context));
+    std::unique_ptr< ::grpc::ClientReaderWriter< ::grpc::RawData, ::grpc::Command>> Transfer(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriter< ::grpc::RawData, ::grpc::Command>>(TransferRaw(context));
     }
-    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::proto::RawData, ::proto::Command>> AsyncTransfer(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::proto::RawData, ::proto::Command>>(AsyncTransferRaw(context, cq, tag));
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::grpc::RawData, ::grpc::Command>> AsyncTransfer(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::grpc::RawData, ::grpc::Command>>(AsyncTransferRaw(context, cq, tag));
     }
-    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::proto::RawData, ::proto::Command>> PrepareAsyncTransfer(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::proto::RawData, ::proto::Command>>(PrepareAsyncTransferRaw(context, cq));
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::grpc::RawData, ::grpc::Command>> PrepareAsyncTransfer(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::grpc::RawData, ::grpc::Command>>(PrepareAsyncTransferRaw(context, cq));
     }
     class async final :
       public StubInterface::async_interface {
      public:
-      void Transfer(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::proto::RawData,::proto::Command>* reactor) override;
+      void Transfer(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::grpc::RawData,::grpc::Command>* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -84,9 +84,9 @@ class Transfer final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class async async_stub_{this};
-    ::grpc::ClientReaderWriter< ::proto::RawData, ::proto::Command>* TransferRaw(::grpc::ClientContext* context) override;
-    ::grpc::ClientAsyncReaderWriter< ::proto::RawData, ::proto::Command>* AsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) override;
-    ::grpc::ClientAsyncReaderWriter< ::proto::RawData, ::proto::Command>* PrepareAsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientReaderWriter< ::grpc::RawData, ::grpc::Command>* TransferRaw(::grpc::ClientContext* context) override;
+    ::grpc::ClientAsyncReaderWriter< ::grpc::RawData, ::grpc::Command>* AsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) override;
+    ::grpc::ClientAsyncReaderWriter< ::grpc::RawData, ::grpc::Command>* PrepareAsyncTransferRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_Transfer_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
@@ -95,7 +95,7 @@ class Transfer final {
    public:
     Service();
     virtual ~Service();
-    virtual ::grpc::Status Transfer(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::proto::Command, ::proto::RawData>* stream);
+    virtual ::grpc::Status Transfer(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::Command, ::grpc::RawData>* stream);
   };
   template <class BaseClass>
   class WithAsyncMethod_Transfer : public BaseClass {
@@ -109,11 +109,11 @@ class Transfer final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Transfer(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::proto::Command, ::proto::RawData>* /*stream*/)  override {
+    ::grpc::Status Transfer(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::grpc::Command, ::grpc::RawData>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestTransfer(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::proto::Command, ::proto::RawData>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestTransfer(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::grpc::Command, ::grpc::RawData>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncBidiStreaming(0, context, stream, new_call_cq, notification_cq, tag);
     }
   };
@@ -125,7 +125,7 @@ class Transfer final {
    public:
     WithCallbackMethod_Transfer() {
       ::grpc::Service::MarkMethodCallback(0,
-          new ::grpc::internal::CallbackBidiHandler< ::proto::RawData, ::proto::Command>(
+          new ::grpc::internal::CallbackBidiHandler< ::grpc::RawData, ::grpc::Command>(
             [this](
                    ::grpc::CallbackServerContext* context) { return this->Transfer(context); }));
     }
@@ -133,11 +133,11 @@ class Transfer final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Transfer(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::proto::Command, ::proto::RawData>* /*stream*/)  override {
+    ::grpc::Status Transfer(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::grpc::Command, ::grpc::RawData>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerBidiReactor< ::proto::RawData, ::proto::Command>* Transfer(
+    virtual ::grpc::ServerBidiReactor< ::grpc::RawData, ::grpc::Command>* Transfer(
       ::grpc::CallbackServerContext* /*context*/)
       { return nullptr; }
   };
@@ -155,7 +155,7 @@ class Transfer final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Transfer(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::proto::Command, ::proto::RawData>* /*stream*/)  override {
+    ::grpc::Status Transfer(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::grpc::Command, ::grpc::RawData>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -172,7 +172,7 @@ class Transfer final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Transfer(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::proto::Command, ::proto::RawData>* /*stream*/)  override {
+    ::grpc::Status Transfer(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::grpc::Command, ::grpc::RawData>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -195,7 +195,7 @@ class Transfer final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Transfer(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::proto::Command, ::proto::RawData>* /*stream*/)  override {
+    ::grpc::Status Transfer(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::grpc::Command, ::grpc::RawData>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -208,7 +208,7 @@ class Transfer final {
   typedef Service StreamedService;
 };
 
-}  // namespace proto
+}  // namespace grpc
 
 
 #endif  // GRPC_hades_5fwin_2eproto__INCLUDED

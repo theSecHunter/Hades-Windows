@@ -37,7 +37,7 @@ static std::mutex                               g_Ker_GrpcQueueCs_Ptr;
 static HANDLE                                   g_Ker_GrpcQueue_Event = nullptr;
 
 // Grpc双向steam接口
-bool Grpc::Grpc_Transfer(RawData rawData)
+bool Grpc::Grpc_Transfer(RawData& rawData)
 {
     bool nRet = false;
     ggrpc_writecs.lock();
@@ -52,7 +52,7 @@ bool Grpc::Grpc_Transfer(RawData rawData)
 
     return true;
 }
-inline void Grpc::Grpc_writeEx(RawData& raw)
+inline void Grpc::Grpc_writeEx(grpc::RawData& raw)
 {
     if (Grpc_Getstream())
         m_stream->Write(raw);
@@ -61,17 +61,19 @@ inline void Grpc::Grpc_writeEx(RawData& raw)
 // TaskId任务完成，数据序列化完成反馈
 void Grpc::Grpc_taskwrite()
 {
-    int taskid = 0;
-    size_t coutwrite = 0, idx = 0;
-    ::proto::RawData rawData;
-    ::proto::Record* pkg = rawData.add_pkg();
+    int taskid = 0; size_t coutwrite = 0, idx = 0;
+
+    static std::vector<std::string> task_array_data;
+    task_array_data.clear();
+
+    static ::grpc::RawData rawData;
+    static ::grpc::Item* pkg = rawData.add_item();
     if (!pkg)
         return;
-    auto MapMessage = pkg->mutable_message();
+    auto MapMessage = pkg->mutable_fields();
     if (!MapMessage)
         return;
 
-    std::vector<std::string> task_array_data;
     for (;;)
     {
         WaitForSingleObject(
@@ -83,7 +85,7 @@ void Grpc::Grpc_taskwrite()
             break;
 
         if (!pkg || !MapMessage)
-            break;;
+            break;
 
         do {
 
@@ -170,6 +172,7 @@ void Grpc::Grpc_taskwrite()
             else
                 return;
 
+            ggrpc_writecs.lock();
             coutwrite = task_array_data.size();
             for (idx = 0; idx < coutwrite; ++idx)
             {
@@ -178,12 +181,12 @@ void Grpc::Grpc_taskwrite()
                     (*MapMessage)["udata"] = task_array_data[idx]; // json
                 else
                     (*MapMessage)["udata"] = "error";
-                ggrpc_writecs.lock();
                 Grpc_writeEx(rawData);
-                ggrpc_writecs.unlock();
             }
             MapMessage->clear();
             task_array_data.clear();
+            ggrpc_writecs.unlock();
+
         } while (true);
     }
 }
@@ -194,9 +197,9 @@ static unsigned WINAPI _QueueTaskthreadProc(void* pData)
     return 0;
 }
 // TaskId入消息队列处理
-void Grpc::Grpc_ReadDispatchHandle(Command& command)
+void Grpc::Grpc_ReadDispatchHandle(grpc::Command& command)
 {
-    const int taskid = command.agentctrl();
+    const int taskid = command.has_task();
     if (taskid < 100 || taskid > 400)
         return;
     ggrpc_taskcs.lock();
@@ -210,7 +213,7 @@ void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
     // Read Server Msg
     if (!m_stream)
         return;
-    Command command;
+    grpc::Command command;
     while (true)
     {
         if (!m_stream || g_shutdown)
@@ -223,12 +226,14 @@ void Grpc::Grpc_ReadC2Thread(LPVOID lpThreadParameter)
 // Kernel_Sub订阅消息处理
 void Grpc::KerSublthreadProc()
 {
-    ::proto::RawData rawData;
-    char* ptr_Getbuffer;
-    ::proto::Record* pkg = rawData.add_pkg();
-    if (!pkg)
+    char* ptr_Getbuffer = nullptr;
+    static ::grpc::RawData rawData;
+    static ::grpc::Record* record = rawData.add_data();
+    static ::grpc::Item* pkg = rawData.add_item();
+    if (!pkg || !record)
         return;
-    auto MapMessage = pkg->mutable_message();
+    
+    auto MapMessage = pkg->mutable_fields();
     if (!MapMessage)
         return;
 
@@ -241,7 +246,7 @@ void Grpc::KerSublthreadProc()
         if (g_shutdown || g_kerneldis)
             break;
 
-        if (!pkg || !MapMessage)
+        if (!pkg || !MapMessage || !record)
             break;
 
         do {
@@ -254,10 +259,11 @@ void Grpc::KerSublthreadProc()
             subwrite = g_Ker_GrpcSubQueue_Ptr.front();
             g_Ker_GrpcSubQueue_Ptr.pop();
             g_Ker_GrpcQueueCs_Ptr.unlock();
-
+            ggrpc_writecs.lock();
+            record->set_datatype(subwrite->taskid);
+            record->set_timestamp(GetCurrentTime());
             (*MapMessage)["data_type"] = to_string(subwrite->taskid);
             (*MapMessage)["udata"] = subwrite->data->c_str(); // json
-            ggrpc_writecs.lock();
             Grpc_writeEx(rawData);
             ggrpc_writecs.unlock();
             MapMessage->clear();
@@ -272,26 +278,24 @@ static unsigned WINAPI _KerSubthreadProc(void* pData)
 // Etw_Sub订阅消息处理
 void Grpc::EtwSublthreadProc()
 {
-    ::proto::RawData rawData;
-    char* ptr_Getbuffer;
-    ::proto::Record* pkg = rawData.add_pkg();
-    if (!pkg)
+    static ::grpc::RawData rawData;
+    static ::grpc::Record* record = rawData.add_data();
+    static ::grpc::Item* pkg = rawData.add_item();
+    if (!pkg || !record)
         return;
-    auto MapMessage = pkg->mutable_message();
+    auto MapMessage = pkg->mutable_fields();
     if (!MapMessage)
         return;
 
-    std::shared_ptr<USubNode> subwrite;
-
+    static std::shared_ptr<USubNode> subwrite = nullptr;
     for (;;)
     {
-
         WaitForSingleObject(g_Etw_GrpcQueue_Event, INFINITE);
 
         if (g_shutdown || g_etwdis)
             break;
 
-        if (!pkg || !MapMessage)
+        if (!pkg || !MapMessage || !record)
             break;
 
         do {
@@ -304,10 +308,11 @@ void Grpc::EtwSublthreadProc()
             subwrite =  g_Etw_GrpcSubQueue_Ptr.front();
             g_Etw_GrpcSubQueue_Ptr.pop();
             g_Etw_GrpcQueueCs_Ptr.unlock();
-
+            ggrpc_writecs.lock();
+            record->set_datatype(subwrite->taskid);
+            record->set_timestamp(GetCurrentTime());
             (*MapMessage)["data_type"] = to_string(subwrite->taskid);
             (*MapMessage)["udata"] = subwrite->data->c_str(); // json
-            ggrpc_writecs.lock();
             Grpc_writeEx(rawData);
             ggrpc_writecs.unlock();
             MapMessage->clear();

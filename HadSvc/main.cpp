@@ -13,6 +13,7 @@
 #include "kmsginterface.h"
 #include "msgloop.h"
 #include "HlprMiniCom.h"
+#include <usysinfo.h>
 
 #ifdef _WIN64
 	#ifdef _DEBUG
@@ -37,6 +38,7 @@ static uMsgInterface	g_mainMsgUlib;
 static WinMsgLoop		g_MsgControl;
 static HlprMiniPortIpc	g_miniport;
 static HANDLE			g_hPipe = nullptr;
+static USysBaseInfo		g_DynSysBaseinfo;
 
 // Debug调试 标志控制
 static bool kerne_mon = false;		// kernel采集
@@ -44,6 +46,7 @@ static bool kerne_rootkit = false;	// rootkit接口
 static bool user_mod = false;		// user接口
 static bool etw_mon = false;		// user采集
 static bool grpc_send = false;		// grpc上报
+static char g_chNameGuid[64] = { 0 };	// agentid
 
 static HANDLE g_SvcExitEvent = nullptr;
 
@@ -89,20 +92,30 @@ static DWORD WINAPI HadesServerActiveCheckNotify(LPVOID lpThreadParameter)
 		return 0;
 	}
 
-	proto::RawData rawData;
-	::proto::Record* pkg_re = rawData.add_pkg();
-	auto MapMessage = pkg_re->mutable_message();
-	(*MapMessage)["data_type"] = "1";
+	static ::grpc::RawData rawData;
+	static ::grpc::Record* pkg = rawData.add_data();
+	static ::grpc::Item* item = rawData.add_item();
+	pkg->set_datatype(1);
+	pkg->set_timestamp(GetCurrentTime());
+	auto MapMessage = item->mutable_fields();
 	for (;;)
 	{
-		if (false == grpcobj->Grpc_Transfer(rawData))
+		try
 		{
-			if (g_SvcExitEvent)
+			(*MapMessage)["cpu"] = std::to_string(g_DynSysBaseinfo.GetSysDynSysMem());
+			(*MapMessage)["memory"] = std::to_string(g_DynSysBaseinfo.GetSysDynCpuUtiliza());
+			if (false == grpcobj->Grpc_Transfer(rawData))
 			{
-				SetEvent(g_SvcExitEvent);
-				Sleep(100);
-				break;
+				if (g_SvcExitEvent)
+				{
+					SetEvent(g_SvcExitEvent);
+					Sleep(100);
+					break;
+				}
 			}
+		}
+		catch (const std::exception&)
+		{
 		}
 		Sleep(2000); // 2s发送一次心跳检测
 	}
@@ -148,7 +161,8 @@ int main(int argc, char* argv[])
 	if (!HadesSvcConnectStatus_Event || !g_SvcExitEvent || !HadesSvcEvent)
 		return 0;
 
-	std::string ip_port = "localhost:8888";
+	// 127.0.0.1 121.4.171.129
+	std::string ip_port = "127.0.0.1:8888";
 	for (int i = 1; i < argc; i++)
 	{
 		if (strcmp(argv[i], "-ip") == 0)
@@ -198,17 +212,16 @@ int main(int argc, char* argv[])
 	ssl_opts.pem_private_key = clientkey;
 	std::shared_ptr<grpc::ChannelCredentials> channel_creds = grpc::SslCredentials(ssl_opts);
 	
-	// Grpc_SSL模式目前不支持 - 认证还有问题
-	// grpc::InsecureChannelCredentials() localhost 192.168.0.105
+	// Grpc_SSL模式未测
+	// grpc::InsecureChannelCredentials()
 	static Grpc greeter(
 		grpc::CreateChannel(ip_port.c_str(), grpc::InsecureChannelCredentials()));
-	proto::RawData rawData;
-
+	grpc::RawData rawData;
+	
 	// agent_info
 	DWORD ComUserLen = MAX_PATH;
 	CHAR ComUserName[MAX_PATH] = { 0, };
 	GetComputerNameA(ComUserName, &ComUserLen);
-	char chNameGuid[64] = { 0 };
 	GUID LinkGuid = { 0 };
 	if (S_OK == ::CoCreateGuid(&LinkGuid))
 	{
@@ -219,12 +232,11 @@ int main(int argc, char* argv[])
 			LinkGuid.Data4[2], LinkGuid.Data4[3],
 			LinkGuid.Data4[4], LinkGuid.Data4[5],
 			LinkGuid.Data4[6], LinkGuid.Data4[7]);
-		::strcpy_s(chNameGuid, ARRAYSIZE(chNameGuid), buf);
+		::strcpy_s(g_chNameGuid, ARRAYSIZE(g_chNameGuid), buf);
 	}
 	rawData.set_hostname(ComUserName);
-	rawData.set_version("v2.0");
-	rawData.set_agentid(chNameGuid); // guid = agentid
-	rawData.set_timestamp(GetCurrentTime());
+	rawData.set_version("v2.1");
+	rawData.set_agentid(g_chNameGuid);
 	if (false == greeter.Grpc_Transfer(rawData))
 		grpc_send = false;
 	else
@@ -257,25 +269,17 @@ int main(int argc, char* argv[])
 	}
 	rawData.Clear();
 	rawData.set_hostname(ComUserName);
-	rawData.set_version("v2.0");
-	rawData.set_agentid(chNameGuid);
-	rawData.set_timestamp(GetCurrentTime());
-	::proto::Record* pkg_re = rawData.add_pkg();
-	auto MapMessage = pkg_re->mutable_message();
-	(*MapMessage)["platform"] =  "windows";
-	(*MapMessage)["agent_id"] = chNameGuid;
-	(*MapMessage)["timestamp"] = dateTimeStr;
-	(*MapMessage)["hostname"] = ComUserName;
-	(*MapMessage)["version"] = to_string(osver.dwMajorVersion).c_str();
-	(*MapMessage)["in_ipv4_list"] = "localhost";
-	(*MapMessage)["in_ipv6_list"] = "localhost";
-	(*MapMessage)["data_type"] = "1";
-	(*MapMessage)["cpu"] = "1";
-	(*MapMessage)["io"] = "1";
-	(*MapMessage)["memory"] = "1";
-	(*MapMessage)["slab"] = "1";
+	rawData.set_version("v2.1");
+	rawData.set_agentid(g_chNameGuid);
+	rawData.add_intranetipv4("localhost");
+	rawData.add_extranetipv4("localhost");
+	rawData.add_intranetipv6("localhost");
+	rawData.add_extranetipv6("localhost");
+	::grpc::Record* pkg_re = rawData.add_data();
+	pkg_re->set_datatype(0);
+	pkg_re->set_timestamp(GetCurrentTime());
 	greeter.Grpc_Transfer(rawData);
-
+	
 	// start grpc Read thread (Wait server Data) handler C2_Msg loop
 	DWORD threadid = 0;
 	HANDLE grocRead = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)pthread_grpread, &greeter, 0, &threadid);
@@ -306,7 +310,7 @@ int main(int argc, char* argv[])
 
 		cout << "Rootkit上报接口测试:" << endl;
 
-		Command cmd;
+		grpc::Command cmd;
 		cmd.set_agentctrl(100);
 		greeter.Grpc_ReadDispatchHandle(cmd);
 
@@ -345,7 +349,7 @@ int main(int argc, char* argv[])
 	if (true == grpc_send && true == user_mod)
 	{
 		cout << "User下发接口测试" << endl;
-		Command cmd;
+		grpc::Command cmd;
 		cmd.set_agentctrl(200);
 		greeter.Grpc_ReadDispatchHandle(cmd);
 

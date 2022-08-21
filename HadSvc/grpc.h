@@ -7,9 +7,8 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using proto::Transfer;
-using proto::RawData;
-using proto::Command;
+using grpc::Transfer;
+using grpc::RawData;
 
 using namespace std;
 
@@ -43,9 +42,9 @@ public:
 		Grpc_steamDon();
 	}
 
-	unique_ptr<::grpc::ClientReaderWriter<::proto::RawData, ::proto::Command>>  Grpc_streamInit()
+	unique_ptr<::grpc::ClientReaderWriter<::grpc::RawData, ::grpc::Command>>  Grpc_streamInit()
 	{
-		 unique_ptr<::grpc::ClientReaderWriter<::proto::RawData, ::proto::Command>> stream(stub_->Transfer(&m_context));
+		 unique_ptr<::grpc::ClientReaderWriter<::grpc::RawData, ::grpc::Command>> stream(stub_->Transfer(&m_context));
 		 return stream;
 	}
 
@@ -68,12 +67,12 @@ public:
 		}
 	}
 
-	bool Grpc_Transfer(RawData rawData);
-	void Grpc_writeEx(RawData& raw);
+	bool Grpc_Transfer(RawData& rawData);
+	void Grpc_writeEx(grpc::RawData& raw);
 
 	// interface test public
 	void Grpc_taskwrite();
-	void Grpc_ReadDispatchHandle(Command& command);
+	void Grpc_ReadDispatchHandle(grpc::Command& command);
 	void Grpc_ReadC2Thread(LPVOID lpThreadParameter);
 
 	bool ThreadPool_Init();
@@ -91,7 +90,7 @@ private:
 
 	unique_ptr<Transfer::Stub> stub_;
 	ClientContext m_context;
-	unique_ptr<::grpc::ClientReaderWriter<::proto::RawData, ::proto::Command>> m_stream;
+	unique_ptr<::grpc::ClientReaderWriter<::grpc::RawData, ::grpc::Command>> m_stream;
 
 	typedef std::vector<HANDLE> tThreads;
 	tThreads m_ker_subthreads;

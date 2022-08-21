@@ -49,43 +49,51 @@ struct TableStruct_hades_5fwin_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[5]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[7]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
   static const ::PROTOBUF_NAMESPACE_ID::uint32 offsets[];
 };
 extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_hades_5fwin_2eproto;
-namespace proto {
+namespace grpc {
 class Command;
 struct CommandDefaultTypeInternal;
 extern CommandDefaultTypeInternal _Command_default_instance_;
-class Command_MessageEntry_DoNotUse;
-struct Command_MessageEntry_DoNotUseDefaultTypeInternal;
-extern Command_MessageEntry_DoNotUseDefaultTypeInternal _Command_MessageEntry_DoNotUse_default_instance_;
+class ConfigItem;
+struct ConfigItemDefaultTypeInternal;
+extern ConfigItemDefaultTypeInternal _ConfigItem_default_instance_;
+class Item;
+struct ItemDefaultTypeInternal;
+extern ItemDefaultTypeInternal _Item_default_instance_;
+class Item_FieldsEntry_DoNotUse;
+struct Item_FieldsEntry_DoNotUseDefaultTypeInternal;
+extern Item_FieldsEntry_DoNotUseDefaultTypeInternal _Item_FieldsEntry_DoNotUse_default_instance_;
+class PluginTask;
+struct PluginTaskDefaultTypeInternal;
+extern PluginTaskDefaultTypeInternal _PluginTask_default_instance_;
 class RawData;
 struct RawDataDefaultTypeInternal;
 extern RawDataDefaultTypeInternal _RawData_default_instance_;
 class Record;
 struct RecordDefaultTypeInternal;
 extern RecordDefaultTypeInternal _Record_default_instance_;
-class Record_MessageEntry_DoNotUse;
-struct Record_MessageEntry_DoNotUseDefaultTypeInternal;
-extern Record_MessageEntry_DoNotUseDefaultTypeInternal _Record_MessageEntry_DoNotUse_default_instance_;
-}  // namespace proto
+}  // namespace grpc
 PROTOBUF_NAMESPACE_OPEN
-template<> ::proto::Command* Arena::CreateMaybeMessage<::proto::Command>(Arena*);
-template<> ::proto::Command_MessageEntry_DoNotUse* Arena::CreateMaybeMessage<::proto::Command_MessageEntry_DoNotUse>(Arena*);
-template<> ::proto::RawData* Arena::CreateMaybeMessage<::proto::RawData>(Arena*);
-template<> ::proto::Record* Arena::CreateMaybeMessage<::proto::Record>(Arena*);
-template<> ::proto::Record_MessageEntry_DoNotUse* Arena::CreateMaybeMessage<::proto::Record_MessageEntry_DoNotUse>(Arena*);
+template<> ::grpc::Command* Arena::CreateMaybeMessage<::grpc::Command>(Arena*);
+template<> ::grpc::ConfigItem* Arena::CreateMaybeMessage<::grpc::ConfigItem>(Arena*);
+template<> ::grpc::Item* Arena::CreateMaybeMessage<::grpc::Item>(Arena*);
+template<> ::grpc::Item_FieldsEntry_DoNotUse* Arena::CreateMaybeMessage<::grpc::Item_FieldsEntry_DoNotUse>(Arena*);
+template<> ::grpc::PluginTask* Arena::CreateMaybeMessage<::grpc::PluginTask>(Arena*);
+template<> ::grpc::RawData* Arena::CreateMaybeMessage<::grpc::RawData>(Arena*);
+template<> ::grpc::Record* Arena::CreateMaybeMessage<::grpc::Record>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
-namespace proto {
+namespace grpc {
 
 // ===================================================================
 
 class RawData final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:proto.RawData) */ {
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:grpc.RawData) */ {
  public:
   inline RawData() : RawData(nullptr) {}
   ~RawData() override;
@@ -183,7 +191,7 @@ class RawData final :
   void InternalSwap(RawData* other);
   friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
   static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "proto.RawData";
+    return "grpc.RawData";
   }
   protected:
   explicit RawData(::PROTOBUF_NAMESPACE_ID::Arena* arena,
@@ -203,15 +211,54 @@ class RawData final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kIntranetIPv4FieldNumber = 1,
-    kIntranetIPv6FieldNumber = 2,
-    kPkgFieldNumber = 7,
-    kHostnameFieldNumber = 3,
-    kAgentIDFieldNumber = 4,
-    kVersionFieldNumber = 6,
-    kTimestampFieldNumber = 5,
+    kDataFieldNumber = 1,
+    kItemFieldNumber = 2,
+    kIntranetIPv4FieldNumber = 4,
+    kExtranetIPv4FieldNumber = 5,
+    kIntranetIPv6FieldNumber = 6,
+    kExtranetIPv6FieldNumber = 7,
+    kAgentIDFieldNumber = 3,
+    kHostnameFieldNumber = 8,
+    kVersionFieldNumber = 9,
+    kProductFieldNumber = 10,
   };
-  // repeated string IntranetIPv4 = 1;
+  // repeated .grpc.Record Data = 1;
+  int data_size() const;
+  private:
+  int _internal_data_size() const;
+  public:
+  void clear_data();
+  ::grpc::Record* mutable_data(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::Record >*
+      mutable_data();
+  private:
+  const ::grpc::Record& _internal_data(int index) const;
+  ::grpc::Record* _internal_add_data();
+  public:
+  const ::grpc::Record& data(int index) const;
+  ::grpc::Record* add_data();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::Record >&
+      data() const;
+
+  // repeated .grpc.Item Item = 2;
+  int item_size() const;
+  private:
+  int _internal_item_size() const;
+  public:
+  void clear_item();
+  ::grpc::Item* mutable_item(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::Item >*
+      mutable_item();
+  private:
+  const ::grpc::Item& _internal_item(int index) const;
+  ::grpc::Item* _internal_add_item();
+  public:
+  const ::grpc::Item& item(int index) const;
+  ::grpc::Item* add_item();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::Item >&
+      item() const;
+
+  // repeated string IntranetIPv4 = 4;
   int intranetipv4_size() const;
   private:
   int _internal_intranetipv4_size() const;
@@ -235,7 +282,31 @@ class RawData final :
   std::string* _internal_add_intranetipv4();
   public:
 
-  // repeated string IntranetIPv6 = 2;
+  // repeated string ExtranetIPv4 = 5;
+  int extranetipv4_size() const;
+  private:
+  int _internal_extranetipv4_size() const;
+  public:
+  void clear_extranetipv4();
+  const std::string& extranetipv4(int index) const;
+  std::string* mutable_extranetipv4(int index);
+  void set_extranetipv4(int index, const std::string& value);
+  void set_extranetipv4(int index, std::string&& value);
+  void set_extranetipv4(int index, const char* value);
+  void set_extranetipv4(int index, const char* value, size_t size);
+  std::string* add_extranetipv4();
+  void add_extranetipv4(const std::string& value);
+  void add_extranetipv4(std::string&& value);
+  void add_extranetipv4(const char* value);
+  void add_extranetipv4(const char* value, size_t size);
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>& extranetipv4() const;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>* mutable_extranetipv4();
+  private:
+  const std::string& _internal_extranetipv4(int index) const;
+  std::string* _internal_add_extranetipv4();
+  public:
+
+  // repeated string IntranetIPv6 = 6;
   int intranetipv6_size() const;
   private:
   int _internal_intranetipv6_size() const;
@@ -259,39 +330,31 @@ class RawData final :
   std::string* _internal_add_intranetipv6();
   public:
 
-  // repeated .proto.Record Pkg = 7;
-  int pkg_size() const;
+  // repeated string ExtranetIPv6 = 7;
+  int extranetipv6_size() const;
   private:
-  int _internal_pkg_size() const;
+  int _internal_extranetipv6_size() const;
   public:
-  void clear_pkg();
-  ::proto::Record* mutable_pkg(int index);
-  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::proto::Record >*
-      mutable_pkg();
+  void clear_extranetipv6();
+  const std::string& extranetipv6(int index) const;
+  std::string* mutable_extranetipv6(int index);
+  void set_extranetipv6(int index, const std::string& value);
+  void set_extranetipv6(int index, std::string&& value);
+  void set_extranetipv6(int index, const char* value);
+  void set_extranetipv6(int index, const char* value, size_t size);
+  std::string* add_extranetipv6();
+  void add_extranetipv6(const std::string& value);
+  void add_extranetipv6(std::string&& value);
+  void add_extranetipv6(const char* value);
+  void add_extranetipv6(const char* value, size_t size);
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>& extranetipv6() const;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>* mutable_extranetipv6();
   private:
-  const ::proto::Record& _internal_pkg(int index) const;
-  ::proto::Record* _internal_add_pkg();
-  public:
-  const ::proto::Record& pkg(int index) const;
-  ::proto::Record* add_pkg();
-  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::proto::Record >&
-      pkg() const;
-
-  // string Hostname = 3;
-  void clear_hostname();
-  const std::string& hostname() const;
-  template <typename ArgT0 = const std::string&, typename... ArgT>
-  void set_hostname(ArgT0&& arg0, ArgT... args);
-  std::string* mutable_hostname();
-  PROTOBUF_MUST_USE_RESULT std::string* release_hostname();
-  void set_allocated_hostname(std::string* hostname);
-  private:
-  const std::string& _internal_hostname() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_hostname(const std::string& value);
-  std::string* _internal_mutable_hostname();
+  const std::string& _internal_extranetipv6(int index) const;
+  std::string* _internal_add_extranetipv6();
   public:
 
-  // string AgentID = 4;
+  // string AgentID = 3;
   void clear_agentid();
   const std::string& agentid() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
@@ -305,7 +368,21 @@ class RawData final :
   std::string* _internal_mutable_agentid();
   public:
 
-  // string Version = 6;
+  // string Hostname = 8;
+  void clear_hostname();
+  const std::string& hostname() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_hostname(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_hostname();
+  PROTOBUF_MUST_USE_RESULT std::string* release_hostname();
+  void set_allocated_hostname(std::string* hostname);
+  private:
+  const std::string& _internal_hostname() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_hostname(const std::string& value);
+  std::string* _internal_mutable_hostname();
+  public:
+
+  // string Version = 9;
   void clear_version();
   const std::string& version() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
@@ -319,63 +396,44 @@ class RawData final :
   std::string* _internal_mutable_version();
   public:
 
-  // int64 Timestamp = 5;
-  void clear_timestamp();
-  ::PROTOBUF_NAMESPACE_ID::int64 timestamp() const;
-  void set_timestamp(::PROTOBUF_NAMESPACE_ID::int64 value);
+  // string Product = 10;
+  void clear_product();
+  const std::string& product() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_product(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_product();
+  PROTOBUF_MUST_USE_RESULT std::string* release_product();
+  void set_allocated_product(std::string* product);
   private:
-  ::PROTOBUF_NAMESPACE_ID::int64 _internal_timestamp() const;
-  void _internal_set_timestamp(::PROTOBUF_NAMESPACE_ID::int64 value);
+  const std::string& _internal_product() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_product(const std::string& value);
+  std::string* _internal_mutable_product();
   public:
 
-  // @@protoc_insertion_point(class_scope:proto.RawData)
+  // @@protoc_insertion_point(class_scope:grpc.RawData)
  private:
   class _Internal;
 
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::Record > data_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::Item > item_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> intranetipv4_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> extranetipv4_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> intranetipv6_;
-  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::proto::Record > pkg_;
-  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr hostname_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> extranetipv6_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr agentid_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr hostname_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr version_;
-  ::PROTOBUF_NAMESPACE_ID::int64 timestamp_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr product_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_hades_5fwin_2eproto;
 };
 // -------------------------------------------------------------------
 
-class Record_MessageEntry_DoNotUse : public ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<Record_MessageEntry_DoNotUse, 
-    std::string, std::string,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> {
-public:
-  typedef ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<Record_MessageEntry_DoNotUse, 
-    std::string, std::string,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> SuperType;
-  Record_MessageEntry_DoNotUse();
-  explicit constexpr Record_MessageEntry_DoNotUse(
-      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
-  explicit Record_MessageEntry_DoNotUse(::PROTOBUF_NAMESPACE_ID::Arena* arena);
-  void MergeFrom(const Record_MessageEntry_DoNotUse& other);
-  static const Record_MessageEntry_DoNotUse* internal_default_instance() { return reinterpret_cast<const Record_MessageEntry_DoNotUse*>(&_Record_MessageEntry_DoNotUse_default_instance_); }
-  static bool ValidateKey(std::string* s) {
-    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "proto.Record.MessageEntry.key");
- }
-  static bool ValidateValue(std::string* s) {
-    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "proto.Record.MessageEntry.value");
- }
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
-};
-
-// -------------------------------------------------------------------
-
 class Record final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:proto.Record) */ {
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:grpc.Record) */ {
  public:
   inline Record() : Record(nullptr) {}
   ~Record() override;
@@ -422,7 +480,7 @@ class Record final :
                &_Record_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    2;
+    1;
 
   friend void swap(Record& a, Record& b) {
     a.Swap(&b);
@@ -473,10 +531,207 @@ class Record final :
   void InternalSwap(Record* other);
   friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
   static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "proto.Record";
+    return "grpc.Record";
   }
   protected:
   explicit Record(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kBodyFieldNumber = 3,
+    kTimestampFieldNumber = 2,
+    kDataTypeFieldNumber = 1,
+  };
+  // bytes Body = 3;
+  void clear_body();
+  const std::string& body() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_body(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_body();
+  PROTOBUF_MUST_USE_RESULT std::string* release_body();
+  void set_allocated_body(std::string* body);
+  private:
+  const std::string& _internal_body() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_body(const std::string& value);
+  std::string* _internal_mutable_body();
+  public:
+
+  // int64 Timestamp = 2;
+  void clear_timestamp();
+  ::PROTOBUF_NAMESPACE_ID::int64 timestamp() const;
+  void set_timestamp(::PROTOBUF_NAMESPACE_ID::int64 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::int64 _internal_timestamp() const;
+  void _internal_set_timestamp(::PROTOBUF_NAMESPACE_ID::int64 value);
+  public:
+
+  // int32 DataType = 1;
+  void clear_datatype();
+  ::PROTOBUF_NAMESPACE_ID::int32 datatype() const;
+  void set_datatype(::PROTOBUF_NAMESPACE_ID::int32 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::int32 _internal_datatype() const;
+  void _internal_set_datatype(::PROTOBUF_NAMESPACE_ID::int32 value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:grpc.Record)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr body_;
+  ::PROTOBUF_NAMESPACE_ID::int64 timestamp_;
+  ::PROTOBUF_NAMESPACE_ID::int32 datatype_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_hades_5fwin_2eproto;
+};
+// -------------------------------------------------------------------
+
+class Item_FieldsEntry_DoNotUse : public ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<Item_FieldsEntry_DoNotUse, 
+    std::string, std::string,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> {
+public:
+  typedef ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<Item_FieldsEntry_DoNotUse, 
+    std::string, std::string,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> SuperType;
+  Item_FieldsEntry_DoNotUse();
+  explicit constexpr Item_FieldsEntry_DoNotUse(
+      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+  explicit Item_FieldsEntry_DoNotUse(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  void MergeFrom(const Item_FieldsEntry_DoNotUse& other);
+  static const Item_FieldsEntry_DoNotUse* internal_default_instance() { return reinterpret_cast<const Item_FieldsEntry_DoNotUse*>(&_Item_FieldsEntry_DoNotUse_default_instance_); }
+  static bool ValidateKey(std::string* s) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "grpc.Item.FieldsEntry.key");
+ }
+  static bool ValidateValue(std::string* s) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "grpc.Item.FieldsEntry.value");
+ }
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+};
+
+// -------------------------------------------------------------------
+
+class Item final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:grpc.Item) */ {
+ public:
+  inline Item() : Item(nullptr) {}
+  ~Item() override;
+  explicit constexpr Item(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  Item(const Item& from);
+  Item(Item&& from) noexcept
+    : Item() {
+    *this = ::std::move(from);
+  }
+
+  inline Item& operator=(const Item& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline Item& operator=(Item&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const Item& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const Item* internal_default_instance() {
+    return reinterpret_cast<const Item*>(
+               &_Item_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    3;
+
+  friend void swap(Item& a, Item& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(Item* other) {
+    if (other == this) return;
+    if (GetOwningArena() == other->GetOwningArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(Item* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline Item* New() const final {
+    return new Item();
+  }
+
+  Item* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<Item>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const Item& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const Item& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Item* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "grpc.Item";
+  }
+  protected:
+  explicit Item(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                        bool is_message_owned = false);
   private:
   static void ArenaDtor(void* object);
@@ -494,26 +749,26 @@ class Record final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kMessageFieldNumber = 1,
+    kFieldsFieldNumber = 1,
   };
-  // map<string, string> message = 1;
-  int message_size() const;
+  // map<string, string> Fields = 1;
+  int fields_size() const;
   private:
-  int _internal_message_size() const;
+  int _internal_fields_size() const;
   public:
-  void clear_message();
+  void clear_fields();
   private:
   const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
-      _internal_message() const;
+      _internal_fields() const;
   ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
-      _internal_mutable_message();
+      _internal_mutable_fields();
   public:
   const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
-      message() const;
+      fields() const;
   ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
-      mutable_message();
+      mutable_fields();
 
-  // @@protoc_insertion_point(class_scope:proto.Record)
+  // @@protoc_insertion_point(class_scope:grpc.Item)
  private:
   class _Internal;
 
@@ -521,44 +776,17 @@ class Record final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::internal::MapField<
-      Record_MessageEntry_DoNotUse,
+      Item_FieldsEntry_DoNotUse,
       std::string, std::string,
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> message_;
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> fields_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_hades_5fwin_2eproto;
 };
 // -------------------------------------------------------------------
 
-class Command_MessageEntry_DoNotUse : public ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<Command_MessageEntry_DoNotUse, 
-    std::string, std::string,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> {
-public:
-  typedef ::PROTOBUF_NAMESPACE_ID::internal::MapEntry<Command_MessageEntry_DoNotUse, 
-    std::string, std::string,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> SuperType;
-  Command_MessageEntry_DoNotUse();
-  explicit constexpr Command_MessageEntry_DoNotUse(
-      ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
-  explicit Command_MessageEntry_DoNotUse(::PROTOBUF_NAMESPACE_ID::Arena* arena);
-  void MergeFrom(const Command_MessageEntry_DoNotUse& other);
-  static const Command_MessageEntry_DoNotUse* internal_default_instance() { return reinterpret_cast<const Command_MessageEntry_DoNotUse*>(&_Command_MessageEntry_DoNotUse_default_instance_); }
-  static bool ValidateKey(std::string* s) {
-    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "proto.Command.MessageEntry.key");
- }
-  static bool ValidateValue(std::string* s) {
-    return ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(s->data(), static_cast<int>(s->size()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::PARSE, "proto.Command.MessageEntry.value");
- }
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
-};
-
-// -------------------------------------------------------------------
-
 class Command final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:proto.Command) */ {
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:grpc.Command) */ {
  public:
   inline Command() : Command(nullptr) {}
   ~Command() override;
@@ -656,7 +884,7 @@ class Command final :
   void InternalSwap(Command* other);
   friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
   static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "proto.Command";
+    return "grpc.Command";
   }
   protected:
   explicit Command(::PROTOBUF_NAMESPACE_ID::Arena* arena,
@@ -673,29 +901,48 @@ class Command final :
 
   // nested types ----------------------------------------------------
 
-
   // accessors -------------------------------------------------------
 
   enum : int {
-    kMessageFieldNumber = 2,
+    kConfigFieldNumber = 3,
+    kTaskFieldNumber = 2,
     kAgentCtrlFieldNumber = 1,
   };
-  // map<string, string> message = 2;
-  int message_size() const;
+  // repeated .grpc.ConfigItem Config = 3;
+  int config_size() const;
   private:
-  int _internal_message_size() const;
+  int _internal_config_size() const;
   public:
-  void clear_message();
+  void clear_config();
+  ::grpc::ConfigItem* mutable_config(int index);
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::ConfigItem >*
+      mutable_config();
   private:
-  const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
-      _internal_message() const;
-  ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
-      _internal_mutable_message();
+  const ::grpc::ConfigItem& _internal_config(int index) const;
+  ::grpc::ConfigItem* _internal_add_config();
   public:
-  const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
-      message() const;
-  ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
-      mutable_message();
+  const ::grpc::ConfigItem& config(int index) const;
+  ::grpc::ConfigItem* add_config();
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::ConfigItem >&
+      config() const;
+
+  // .grpc.PluginTask Task = 2;
+  bool has_task() const;
+  private:
+  bool _internal_has_task() const;
+  public:
+  void clear_task();
+  const ::grpc::PluginTask& task() const;
+  PROTOBUF_MUST_USE_RESULT ::grpc::PluginTask* release_task();
+  ::grpc::PluginTask* mutable_task();
+  void set_allocated_task(::grpc::PluginTask* task);
+  private:
+  const ::grpc::PluginTask& _internal_task() const;
+  ::grpc::PluginTask* _internal_mutable_task();
+  public:
+  void unsafe_arena_set_allocated_task(
+      ::grpc::PluginTask* task);
+  ::grpc::PluginTask* unsafe_arena_release_task();
 
   // int32 AgentCtrl = 1;
   void clear_agentctrl();
@@ -706,19 +953,461 @@ class Command final :
   void _internal_set_agentctrl(::PROTOBUF_NAMESPACE_ID::int32 value);
   public:
 
-  // @@protoc_insertion_point(class_scope:proto.Command)
+  // @@protoc_insertion_point(class_scope:grpc.Command)
  private:
   class _Internal;
 
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
-  ::PROTOBUF_NAMESPACE_ID::internal::MapField<
-      Command_MessageEntry_DoNotUse,
-      std::string, std::string,
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING,
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::TYPE_STRING> message_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::ConfigItem > config_;
+  ::grpc::PluginTask* task_;
   ::PROTOBUF_NAMESPACE_ID::int32 agentctrl_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_hades_5fwin_2eproto;
+};
+// -------------------------------------------------------------------
+
+class PluginTask final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:grpc.PluginTask) */ {
+ public:
+  inline PluginTask() : PluginTask(nullptr) {}
+  ~PluginTask() override;
+  explicit constexpr PluginTask(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  PluginTask(const PluginTask& from);
+  PluginTask(PluginTask&& from) noexcept
+    : PluginTask() {
+    *this = ::std::move(from);
+  }
+
+  inline PluginTask& operator=(const PluginTask& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PluginTask& operator=(PluginTask&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const PluginTask& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const PluginTask* internal_default_instance() {
+    return reinterpret_cast<const PluginTask*>(
+               &_PluginTask_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    5;
+
+  friend void swap(PluginTask& a, PluginTask& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(PluginTask* other) {
+    if (other == this) return;
+    if (GetOwningArena() == other->GetOwningArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PluginTask* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline PluginTask* New() const final {
+    return new PluginTask();
+  }
+
+  PluginTask* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<PluginTask>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const PluginTask& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const PluginTask& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(PluginTask* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "grpc.PluginTask";
+  }
+  protected:
+  explicit PluginTask(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kNameFieldNumber = 2,
+    kDataFieldNumber = 3,
+    kTokenFieldNumber = 4,
+    kDataTypeFieldNumber = 1,
+  };
+  // string Name = 2;
+  void clear_name();
+  const std::string& name() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_name(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_name();
+  PROTOBUF_MUST_USE_RESULT std::string* release_name();
+  void set_allocated_name(std::string* name);
+  private:
+  const std::string& _internal_name() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_name(const std::string& value);
+  std::string* _internal_mutable_name();
+  public:
+
+  // string Data = 3;
+  void clear_data();
+  const std::string& data() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_data(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_data();
+  PROTOBUF_MUST_USE_RESULT std::string* release_data();
+  void set_allocated_data(std::string* data);
+  private:
+  const std::string& _internal_data() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_data(const std::string& value);
+  std::string* _internal_mutable_data();
+  public:
+
+  // string Token = 4;
+  void clear_token();
+  const std::string& token() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_token(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_token();
+  PROTOBUF_MUST_USE_RESULT std::string* release_token();
+  void set_allocated_token(std::string* token);
+  private:
+  const std::string& _internal_token() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_token(const std::string& value);
+  std::string* _internal_mutable_token();
+  public:
+
+  // int32 DataType = 1;
+  void clear_datatype();
+  ::PROTOBUF_NAMESPACE_ID::int32 datatype() const;
+  void set_datatype(::PROTOBUF_NAMESPACE_ID::int32 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::int32 _internal_datatype() const;
+  void _internal_set_datatype(::PROTOBUF_NAMESPACE_ID::int32 value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:grpc.PluginTask)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr name_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr data_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr token_;
+  ::PROTOBUF_NAMESPACE_ID::int32 datatype_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_hades_5fwin_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ConfigItem final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:grpc.ConfigItem) */ {
+ public:
+  inline ConfigItem() : ConfigItem(nullptr) {}
+  ~ConfigItem() override;
+  explicit constexpr ConfigItem(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ConfigItem(const ConfigItem& from);
+  ConfigItem(ConfigItem&& from) noexcept
+    : ConfigItem() {
+    *this = ::std::move(from);
+  }
+
+  inline ConfigItem& operator=(const ConfigItem& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ConfigItem& operator=(ConfigItem&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ConfigItem& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ConfigItem* internal_default_instance() {
+    return reinterpret_cast<const ConfigItem*>(
+               &_ConfigItem_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    6;
+
+  friend void swap(ConfigItem& a, ConfigItem& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ConfigItem* other) {
+    if (other == this) return;
+    if (GetOwningArena() == other->GetOwningArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ConfigItem* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline ConfigItem* New() const final {
+    return new ConfigItem();
+  }
+
+  ConfigItem* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<ConfigItem>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ConfigItem& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ConfigItem& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ConfigItem* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "grpc.ConfigItem";
+  }
+  protected:
+  explicit ConfigItem(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kDownloadURLFieldNumber = 6,
+    kNameFieldNumber = 1,
+    kTypeFieldNumber = 2,
+    kVersionFieldNumber = 3,
+    kSHA256FieldNumber = 4,
+    kSignatureFieldNumber = 5,
+    kDetailFieldNumber = 7,
+  };
+  // repeated string DownloadURL = 6;
+  int downloadurl_size() const;
+  private:
+  int _internal_downloadurl_size() const;
+  public:
+  void clear_downloadurl();
+  const std::string& downloadurl(int index) const;
+  std::string* mutable_downloadurl(int index);
+  void set_downloadurl(int index, const std::string& value);
+  void set_downloadurl(int index, std::string&& value);
+  void set_downloadurl(int index, const char* value);
+  void set_downloadurl(int index, const char* value, size_t size);
+  std::string* add_downloadurl();
+  void add_downloadurl(const std::string& value);
+  void add_downloadurl(std::string&& value);
+  void add_downloadurl(const char* value);
+  void add_downloadurl(const char* value, size_t size);
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>& downloadurl() const;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>* mutable_downloadurl();
+  private:
+  const std::string& _internal_downloadurl(int index) const;
+  std::string* _internal_add_downloadurl();
+  public:
+
+  // string Name = 1;
+  void clear_name();
+  const std::string& name() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_name(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_name();
+  PROTOBUF_MUST_USE_RESULT std::string* release_name();
+  void set_allocated_name(std::string* name);
+  private:
+  const std::string& _internal_name() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_name(const std::string& value);
+  std::string* _internal_mutable_name();
+  public:
+
+  // string Type = 2;
+  void clear_type();
+  const std::string& type() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_type(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_type();
+  PROTOBUF_MUST_USE_RESULT std::string* release_type();
+  void set_allocated_type(std::string* type);
+  private:
+  const std::string& _internal_type() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_type(const std::string& value);
+  std::string* _internal_mutable_type();
+  public:
+
+  // string Version = 3;
+  void clear_version();
+  const std::string& version() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_version(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_version();
+  PROTOBUF_MUST_USE_RESULT std::string* release_version();
+  void set_allocated_version(std::string* version);
+  private:
+  const std::string& _internal_version() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_version(const std::string& value);
+  std::string* _internal_mutable_version();
+  public:
+
+  // string SHA256 = 4;
+  void clear_sha256();
+  const std::string& sha256() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_sha256(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_sha256();
+  PROTOBUF_MUST_USE_RESULT std::string* release_sha256();
+  void set_allocated_sha256(std::string* sha256);
+  private:
+  const std::string& _internal_sha256() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_sha256(const std::string& value);
+  std::string* _internal_mutable_sha256();
+  public:
+
+  // string Signature = 5;
+  void clear_signature();
+  const std::string& signature() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_signature(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_signature();
+  PROTOBUF_MUST_USE_RESULT std::string* release_signature();
+  void set_allocated_signature(std::string* signature);
+  private:
+  const std::string& _internal_signature() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_signature(const std::string& value);
+  std::string* _internal_mutable_signature();
+  public:
+
+  // string Detail = 7;
+  void clear_detail();
+  const std::string& detail() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_detail(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_detail();
+  PROTOBUF_MUST_USE_RESULT std::string* release_detail();
+  void set_allocated_detail(std::string* detail);
+  private:
+  const std::string& _internal_detail() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_detail(const std::string& value);
+  std::string* _internal_mutable_detail();
+  public:
+
+  // @@protoc_insertion_point(class_scope:grpc.ConfigItem)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> downloadurl_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr name_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr type_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr version_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr sha256_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr signature_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr detail_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_hades_5fwin_2eproto;
 };
@@ -733,208 +1422,92 @@ class Command final :
 #endif  // __GNUC__
 // RawData
 
-// repeated string IntranetIPv4 = 1;
-inline int RawData::_internal_intranetipv4_size() const {
-  return intranetipv4_.size();
+// repeated .grpc.Record Data = 1;
+inline int RawData::_internal_data_size() const {
+  return data_.size();
 }
-inline int RawData::intranetipv4_size() const {
-  return _internal_intranetipv4_size();
+inline int RawData::data_size() const {
+  return _internal_data_size();
 }
-inline void RawData::clear_intranetipv4() {
-  intranetipv4_.Clear();
+inline void RawData::clear_data() {
+  data_.Clear();
 }
-inline std::string* RawData::add_intranetipv4() {
-  std::string* _s = _internal_add_intranetipv4();
-  // @@protoc_insertion_point(field_add_mutable:proto.RawData.IntranetIPv4)
-  return _s;
+inline ::grpc::Record* RawData::mutable_data(int index) {
+  // @@protoc_insertion_point(field_mutable:grpc.RawData.Data)
+  return data_.Mutable(index);
 }
-inline const std::string& RawData::_internal_intranetipv4(int index) const {
-  return intranetipv4_.Get(index);
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::Record >*
+RawData::mutable_data() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.RawData.Data)
+  return &data_;
 }
-inline const std::string& RawData::intranetipv4(int index) const {
-  // @@protoc_insertion_point(field_get:proto.RawData.IntranetIPv4)
-  return _internal_intranetipv4(index);
+inline const ::grpc::Record& RawData::_internal_data(int index) const {
+  return data_.Get(index);
 }
-inline std::string* RawData::mutable_intranetipv4(int index) {
-  // @@protoc_insertion_point(field_mutable:proto.RawData.IntranetIPv4)
-  return intranetipv4_.Mutable(index);
+inline const ::grpc::Record& RawData::data(int index) const {
+  // @@protoc_insertion_point(field_get:grpc.RawData.Data)
+  return _internal_data(index);
 }
-inline void RawData::set_intranetipv4(int index, const std::string& value) {
-  intranetipv4_.Mutable(index)->assign(value);
-  // @@protoc_insertion_point(field_set:proto.RawData.IntranetIPv4)
+inline ::grpc::Record* RawData::_internal_add_data() {
+  return data_.Add();
 }
-inline void RawData::set_intranetipv4(int index, std::string&& value) {
-  intranetipv4_.Mutable(index)->assign(std::move(value));
-  // @@protoc_insertion_point(field_set:proto.RawData.IntranetIPv4)
+inline ::grpc::Record* RawData::add_data() {
+  ::grpc::Record* _add = _internal_add_data();
+  // @@protoc_insertion_point(field_add:grpc.RawData.Data)
+  return _add;
 }
-inline void RawData::set_intranetipv4(int index, const char* value) {
-  GOOGLE_DCHECK(value != nullptr);
-  intranetipv4_.Mutable(index)->assign(value);
-  // @@protoc_insertion_point(field_set_char:proto.RawData.IntranetIPv4)
-}
-inline void RawData::set_intranetipv4(int index, const char* value, size_t size) {
-  intranetipv4_.Mutable(index)->assign(
-    reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:proto.RawData.IntranetIPv4)
-}
-inline std::string* RawData::_internal_add_intranetipv4() {
-  return intranetipv4_.Add();
-}
-inline void RawData::add_intranetipv4(const std::string& value) {
-  intranetipv4_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add:proto.RawData.IntranetIPv4)
-}
-inline void RawData::add_intranetipv4(std::string&& value) {
-  intranetipv4_.Add(std::move(value));
-  // @@protoc_insertion_point(field_add:proto.RawData.IntranetIPv4)
-}
-inline void RawData::add_intranetipv4(const char* value) {
-  GOOGLE_DCHECK(value != nullptr);
-  intranetipv4_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add_char:proto.RawData.IntranetIPv4)
-}
-inline void RawData::add_intranetipv4(const char* value, size_t size) {
-  intranetipv4_.Add()->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_add_pointer:proto.RawData.IntranetIPv4)
-}
-inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
-RawData::intranetipv4() const {
-  // @@protoc_insertion_point(field_list:proto.RawData.IntranetIPv4)
-  return intranetipv4_;
-}
-inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
-RawData::mutable_intranetipv4() {
-  // @@protoc_insertion_point(field_mutable_list:proto.RawData.IntranetIPv4)
-  return &intranetipv4_;
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::Record >&
+RawData::data() const {
+  // @@protoc_insertion_point(field_list:grpc.RawData.Data)
+  return data_;
 }
 
-// repeated string IntranetIPv6 = 2;
-inline int RawData::_internal_intranetipv6_size() const {
-  return intranetipv6_.size();
+// repeated .grpc.Item Item = 2;
+inline int RawData::_internal_item_size() const {
+  return item_.size();
 }
-inline int RawData::intranetipv6_size() const {
-  return _internal_intranetipv6_size();
+inline int RawData::item_size() const {
+  return _internal_item_size();
 }
-inline void RawData::clear_intranetipv6() {
-  intranetipv6_.Clear();
+inline void RawData::clear_item() {
+  item_.Clear();
 }
-inline std::string* RawData::add_intranetipv6() {
-  std::string* _s = _internal_add_intranetipv6();
-  // @@protoc_insertion_point(field_add_mutable:proto.RawData.IntranetIPv6)
-  return _s;
+inline ::grpc::Item* RawData::mutable_item(int index) {
+  // @@protoc_insertion_point(field_mutable:grpc.RawData.Item)
+  return item_.Mutable(index);
 }
-inline const std::string& RawData::_internal_intranetipv6(int index) const {
-  return intranetipv6_.Get(index);
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::Item >*
+RawData::mutable_item() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.RawData.Item)
+  return &item_;
 }
-inline const std::string& RawData::intranetipv6(int index) const {
-  // @@protoc_insertion_point(field_get:proto.RawData.IntranetIPv6)
-  return _internal_intranetipv6(index);
+inline const ::grpc::Item& RawData::_internal_item(int index) const {
+  return item_.Get(index);
 }
-inline std::string* RawData::mutable_intranetipv6(int index) {
-  // @@protoc_insertion_point(field_mutable:proto.RawData.IntranetIPv6)
-  return intranetipv6_.Mutable(index);
+inline const ::grpc::Item& RawData::item(int index) const {
+  // @@protoc_insertion_point(field_get:grpc.RawData.Item)
+  return _internal_item(index);
 }
-inline void RawData::set_intranetipv6(int index, const std::string& value) {
-  intranetipv6_.Mutable(index)->assign(value);
-  // @@protoc_insertion_point(field_set:proto.RawData.IntranetIPv6)
+inline ::grpc::Item* RawData::_internal_add_item() {
+  return item_.Add();
 }
-inline void RawData::set_intranetipv6(int index, std::string&& value) {
-  intranetipv6_.Mutable(index)->assign(std::move(value));
-  // @@protoc_insertion_point(field_set:proto.RawData.IntranetIPv6)
+inline ::grpc::Item* RawData::add_item() {
+  ::grpc::Item* _add = _internal_add_item();
+  // @@protoc_insertion_point(field_add:grpc.RawData.Item)
+  return _add;
 }
-inline void RawData::set_intranetipv6(int index, const char* value) {
-  GOOGLE_DCHECK(value != nullptr);
-  intranetipv6_.Mutable(index)->assign(value);
-  // @@protoc_insertion_point(field_set_char:proto.RawData.IntranetIPv6)
-}
-inline void RawData::set_intranetipv6(int index, const char* value, size_t size) {
-  intranetipv6_.Mutable(index)->assign(
-    reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:proto.RawData.IntranetIPv6)
-}
-inline std::string* RawData::_internal_add_intranetipv6() {
-  return intranetipv6_.Add();
-}
-inline void RawData::add_intranetipv6(const std::string& value) {
-  intranetipv6_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add:proto.RawData.IntranetIPv6)
-}
-inline void RawData::add_intranetipv6(std::string&& value) {
-  intranetipv6_.Add(std::move(value));
-  // @@protoc_insertion_point(field_add:proto.RawData.IntranetIPv6)
-}
-inline void RawData::add_intranetipv6(const char* value) {
-  GOOGLE_DCHECK(value != nullptr);
-  intranetipv6_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add_char:proto.RawData.IntranetIPv6)
-}
-inline void RawData::add_intranetipv6(const char* value, size_t size) {
-  intranetipv6_.Add()->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_add_pointer:proto.RawData.IntranetIPv6)
-}
-inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
-RawData::intranetipv6() const {
-  // @@protoc_insertion_point(field_list:proto.RawData.IntranetIPv6)
-  return intranetipv6_;
-}
-inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
-RawData::mutable_intranetipv6() {
-  // @@protoc_insertion_point(field_mutable_list:proto.RawData.IntranetIPv6)
-  return &intranetipv6_;
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::Item >&
+RawData::item() const {
+  // @@protoc_insertion_point(field_list:grpc.RawData.Item)
+  return item_;
 }
 
-// string Hostname = 3;
-inline void RawData::clear_hostname() {
-  hostname_.ClearToEmpty();
-}
-inline const std::string& RawData::hostname() const {
-  // @@protoc_insertion_point(field_get:proto.RawData.Hostname)
-  return _internal_hostname();
-}
-template <typename ArgT0, typename... ArgT>
-inline PROTOBUF_ALWAYS_INLINE
-void RawData::set_hostname(ArgT0&& arg0, ArgT... args) {
- 
- hostname_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set:proto.RawData.Hostname)
-}
-inline std::string* RawData::mutable_hostname() {
-  std::string* _s = _internal_mutable_hostname();
-  // @@protoc_insertion_point(field_mutable:proto.RawData.Hostname)
-  return _s;
-}
-inline const std::string& RawData::_internal_hostname() const {
-  return hostname_.Get();
-}
-inline void RawData::_internal_set_hostname(const std::string& value) {
-  
-  hostname_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
-}
-inline std::string* RawData::_internal_mutable_hostname() {
-  
-  return hostname_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
-}
-inline std::string* RawData::release_hostname() {
-  // @@protoc_insertion_point(field_release:proto.RawData.Hostname)
-  return hostname_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
-}
-inline void RawData::set_allocated_hostname(std::string* hostname) {
-  if (hostname != nullptr) {
-    
-  } else {
-    
-  }
-  hostname_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), hostname,
-      GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set_allocated:proto.RawData.Hostname)
-}
-
-// string AgentID = 4;
+// string AgentID = 3;
 inline void RawData::clear_agentid() {
   agentid_.ClearToEmpty();
 }
 inline const std::string& RawData::agentid() const {
-  // @@protoc_insertion_point(field_get:proto.RawData.AgentID)
+  // @@protoc_insertion_point(field_get:grpc.RawData.AgentID)
   return _internal_agentid();
 }
 template <typename ArgT0, typename... ArgT>
@@ -942,11 +1515,11 @@ inline PROTOBUF_ALWAYS_INLINE
 void RawData::set_agentid(ArgT0&& arg0, ArgT... args) {
  
  agentid_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set:proto.RawData.AgentID)
+  // @@protoc_insertion_point(field_set:grpc.RawData.AgentID)
 }
 inline std::string* RawData::mutable_agentid() {
   std::string* _s = _internal_mutable_agentid();
-  // @@protoc_insertion_point(field_mutable:proto.RawData.AgentID)
+  // @@protoc_insertion_point(field_mutable:grpc.RawData.AgentID)
   return _s;
 }
 inline const std::string& RawData::_internal_agentid() const {
@@ -961,7 +1534,7 @@ inline std::string* RawData::_internal_mutable_agentid() {
   return agentid_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
 }
 inline std::string* RawData::release_agentid() {
-  // @@protoc_insertion_point(field_release:proto.RawData.AgentID)
+  // @@protoc_insertion_point(field_release:grpc.RawData.AgentID)
   return agentid_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
 }
 inline void RawData::set_allocated_agentid(std::string* agentid) {
@@ -972,35 +1545,361 @@ inline void RawData::set_allocated_agentid(std::string* agentid) {
   }
   agentid_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), agentid,
       GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set_allocated:proto.RawData.AgentID)
+  // @@protoc_insertion_point(field_set_allocated:grpc.RawData.AgentID)
 }
 
-// int64 Timestamp = 5;
-inline void RawData::clear_timestamp() {
-  timestamp_ = int64_t{0};
+// repeated string IntranetIPv4 = 4;
+inline int RawData::_internal_intranetipv4_size() const {
+  return intranetipv4_.size();
 }
-inline ::PROTOBUF_NAMESPACE_ID::int64 RawData::_internal_timestamp() const {
-  return timestamp_;
+inline int RawData::intranetipv4_size() const {
+  return _internal_intranetipv4_size();
 }
-inline ::PROTOBUF_NAMESPACE_ID::int64 RawData::timestamp() const {
-  // @@protoc_insertion_point(field_get:proto.RawData.Timestamp)
-  return _internal_timestamp();
+inline void RawData::clear_intranetipv4() {
+  intranetipv4_.Clear();
 }
-inline void RawData::_internal_set_timestamp(::PROTOBUF_NAMESPACE_ID::int64 value) {
+inline std::string* RawData::add_intranetipv4() {
+  std::string* _s = _internal_add_intranetipv4();
+  // @@protoc_insertion_point(field_add_mutable:grpc.RawData.IntranetIPv4)
+  return _s;
+}
+inline const std::string& RawData::_internal_intranetipv4(int index) const {
+  return intranetipv4_.Get(index);
+}
+inline const std::string& RawData::intranetipv4(int index) const {
+  // @@protoc_insertion_point(field_get:grpc.RawData.IntranetIPv4)
+  return _internal_intranetipv4(index);
+}
+inline std::string* RawData::mutable_intranetipv4(int index) {
+  // @@protoc_insertion_point(field_mutable:grpc.RawData.IntranetIPv4)
+  return intranetipv4_.Mutable(index);
+}
+inline void RawData::set_intranetipv4(int index, const std::string& value) {
+  intranetipv4_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set:grpc.RawData.IntranetIPv4)
+}
+inline void RawData::set_intranetipv4(int index, std::string&& value) {
+  intranetipv4_.Mutable(index)->assign(std::move(value));
+  // @@protoc_insertion_point(field_set:grpc.RawData.IntranetIPv4)
+}
+inline void RawData::set_intranetipv4(int index, const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  intranetipv4_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:grpc.RawData.IntranetIPv4)
+}
+inline void RawData::set_intranetipv4(int index, const char* value, size_t size) {
+  intranetipv4_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:grpc.RawData.IntranetIPv4)
+}
+inline std::string* RawData::_internal_add_intranetipv4() {
+  return intranetipv4_.Add();
+}
+inline void RawData::add_intranetipv4(const std::string& value) {
+  intranetipv4_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:grpc.RawData.IntranetIPv4)
+}
+inline void RawData::add_intranetipv4(std::string&& value) {
+  intranetipv4_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:grpc.RawData.IntranetIPv4)
+}
+inline void RawData::add_intranetipv4(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  intranetipv4_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:grpc.RawData.IntranetIPv4)
+}
+inline void RawData::add_intranetipv4(const char* value, size_t size) {
+  intranetipv4_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:grpc.RawData.IntranetIPv4)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
+RawData::intranetipv4() const {
+  // @@protoc_insertion_point(field_list:grpc.RawData.IntranetIPv4)
+  return intranetipv4_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
+RawData::mutable_intranetipv4() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.RawData.IntranetIPv4)
+  return &intranetipv4_;
+}
+
+// repeated string ExtranetIPv4 = 5;
+inline int RawData::_internal_extranetipv4_size() const {
+  return extranetipv4_.size();
+}
+inline int RawData::extranetipv4_size() const {
+  return _internal_extranetipv4_size();
+}
+inline void RawData::clear_extranetipv4() {
+  extranetipv4_.Clear();
+}
+inline std::string* RawData::add_extranetipv4() {
+  std::string* _s = _internal_add_extranetipv4();
+  // @@protoc_insertion_point(field_add_mutable:grpc.RawData.ExtranetIPv4)
+  return _s;
+}
+inline const std::string& RawData::_internal_extranetipv4(int index) const {
+  return extranetipv4_.Get(index);
+}
+inline const std::string& RawData::extranetipv4(int index) const {
+  // @@protoc_insertion_point(field_get:grpc.RawData.ExtranetIPv4)
+  return _internal_extranetipv4(index);
+}
+inline std::string* RawData::mutable_extranetipv4(int index) {
+  // @@protoc_insertion_point(field_mutable:grpc.RawData.ExtranetIPv4)
+  return extranetipv4_.Mutable(index);
+}
+inline void RawData::set_extranetipv4(int index, const std::string& value) {
+  extranetipv4_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set:grpc.RawData.ExtranetIPv4)
+}
+inline void RawData::set_extranetipv4(int index, std::string&& value) {
+  extranetipv4_.Mutable(index)->assign(std::move(value));
+  // @@protoc_insertion_point(field_set:grpc.RawData.ExtranetIPv4)
+}
+inline void RawData::set_extranetipv4(int index, const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  extranetipv4_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:grpc.RawData.ExtranetIPv4)
+}
+inline void RawData::set_extranetipv4(int index, const char* value, size_t size) {
+  extranetipv4_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:grpc.RawData.ExtranetIPv4)
+}
+inline std::string* RawData::_internal_add_extranetipv4() {
+  return extranetipv4_.Add();
+}
+inline void RawData::add_extranetipv4(const std::string& value) {
+  extranetipv4_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:grpc.RawData.ExtranetIPv4)
+}
+inline void RawData::add_extranetipv4(std::string&& value) {
+  extranetipv4_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:grpc.RawData.ExtranetIPv4)
+}
+inline void RawData::add_extranetipv4(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  extranetipv4_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:grpc.RawData.ExtranetIPv4)
+}
+inline void RawData::add_extranetipv4(const char* value, size_t size) {
+  extranetipv4_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:grpc.RawData.ExtranetIPv4)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
+RawData::extranetipv4() const {
+  // @@protoc_insertion_point(field_list:grpc.RawData.ExtranetIPv4)
+  return extranetipv4_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
+RawData::mutable_extranetipv4() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.RawData.ExtranetIPv4)
+  return &extranetipv4_;
+}
+
+// repeated string IntranetIPv6 = 6;
+inline int RawData::_internal_intranetipv6_size() const {
+  return intranetipv6_.size();
+}
+inline int RawData::intranetipv6_size() const {
+  return _internal_intranetipv6_size();
+}
+inline void RawData::clear_intranetipv6() {
+  intranetipv6_.Clear();
+}
+inline std::string* RawData::add_intranetipv6() {
+  std::string* _s = _internal_add_intranetipv6();
+  // @@protoc_insertion_point(field_add_mutable:grpc.RawData.IntranetIPv6)
+  return _s;
+}
+inline const std::string& RawData::_internal_intranetipv6(int index) const {
+  return intranetipv6_.Get(index);
+}
+inline const std::string& RawData::intranetipv6(int index) const {
+  // @@protoc_insertion_point(field_get:grpc.RawData.IntranetIPv6)
+  return _internal_intranetipv6(index);
+}
+inline std::string* RawData::mutable_intranetipv6(int index) {
+  // @@protoc_insertion_point(field_mutable:grpc.RawData.IntranetIPv6)
+  return intranetipv6_.Mutable(index);
+}
+inline void RawData::set_intranetipv6(int index, const std::string& value) {
+  intranetipv6_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set:grpc.RawData.IntranetIPv6)
+}
+inline void RawData::set_intranetipv6(int index, std::string&& value) {
+  intranetipv6_.Mutable(index)->assign(std::move(value));
+  // @@protoc_insertion_point(field_set:grpc.RawData.IntranetIPv6)
+}
+inline void RawData::set_intranetipv6(int index, const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  intranetipv6_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:grpc.RawData.IntranetIPv6)
+}
+inline void RawData::set_intranetipv6(int index, const char* value, size_t size) {
+  intranetipv6_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:grpc.RawData.IntranetIPv6)
+}
+inline std::string* RawData::_internal_add_intranetipv6() {
+  return intranetipv6_.Add();
+}
+inline void RawData::add_intranetipv6(const std::string& value) {
+  intranetipv6_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:grpc.RawData.IntranetIPv6)
+}
+inline void RawData::add_intranetipv6(std::string&& value) {
+  intranetipv6_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:grpc.RawData.IntranetIPv6)
+}
+inline void RawData::add_intranetipv6(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  intranetipv6_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:grpc.RawData.IntranetIPv6)
+}
+inline void RawData::add_intranetipv6(const char* value, size_t size) {
+  intranetipv6_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:grpc.RawData.IntranetIPv6)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
+RawData::intranetipv6() const {
+  // @@protoc_insertion_point(field_list:grpc.RawData.IntranetIPv6)
+  return intranetipv6_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
+RawData::mutable_intranetipv6() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.RawData.IntranetIPv6)
+  return &intranetipv6_;
+}
+
+// repeated string ExtranetIPv6 = 7;
+inline int RawData::_internal_extranetipv6_size() const {
+  return extranetipv6_.size();
+}
+inline int RawData::extranetipv6_size() const {
+  return _internal_extranetipv6_size();
+}
+inline void RawData::clear_extranetipv6() {
+  extranetipv6_.Clear();
+}
+inline std::string* RawData::add_extranetipv6() {
+  std::string* _s = _internal_add_extranetipv6();
+  // @@protoc_insertion_point(field_add_mutable:grpc.RawData.ExtranetIPv6)
+  return _s;
+}
+inline const std::string& RawData::_internal_extranetipv6(int index) const {
+  return extranetipv6_.Get(index);
+}
+inline const std::string& RawData::extranetipv6(int index) const {
+  // @@protoc_insertion_point(field_get:grpc.RawData.ExtranetIPv6)
+  return _internal_extranetipv6(index);
+}
+inline std::string* RawData::mutable_extranetipv6(int index) {
+  // @@protoc_insertion_point(field_mutable:grpc.RawData.ExtranetIPv6)
+  return extranetipv6_.Mutable(index);
+}
+inline void RawData::set_extranetipv6(int index, const std::string& value) {
+  extranetipv6_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set:grpc.RawData.ExtranetIPv6)
+}
+inline void RawData::set_extranetipv6(int index, std::string&& value) {
+  extranetipv6_.Mutable(index)->assign(std::move(value));
+  // @@protoc_insertion_point(field_set:grpc.RawData.ExtranetIPv6)
+}
+inline void RawData::set_extranetipv6(int index, const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  extranetipv6_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:grpc.RawData.ExtranetIPv6)
+}
+inline void RawData::set_extranetipv6(int index, const char* value, size_t size) {
+  extranetipv6_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:grpc.RawData.ExtranetIPv6)
+}
+inline std::string* RawData::_internal_add_extranetipv6() {
+  return extranetipv6_.Add();
+}
+inline void RawData::add_extranetipv6(const std::string& value) {
+  extranetipv6_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:grpc.RawData.ExtranetIPv6)
+}
+inline void RawData::add_extranetipv6(std::string&& value) {
+  extranetipv6_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:grpc.RawData.ExtranetIPv6)
+}
+inline void RawData::add_extranetipv6(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  extranetipv6_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:grpc.RawData.ExtranetIPv6)
+}
+inline void RawData::add_extranetipv6(const char* value, size_t size) {
+  extranetipv6_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:grpc.RawData.ExtranetIPv6)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
+RawData::extranetipv6() const {
+  // @@protoc_insertion_point(field_list:grpc.RawData.ExtranetIPv6)
+  return extranetipv6_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
+RawData::mutable_extranetipv6() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.RawData.ExtranetIPv6)
+  return &extranetipv6_;
+}
+
+// string Hostname = 8;
+inline void RawData::clear_hostname() {
+  hostname_.ClearToEmpty();
+}
+inline const std::string& RawData::hostname() const {
+  // @@protoc_insertion_point(field_get:grpc.RawData.Hostname)
+  return _internal_hostname();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void RawData::set_hostname(ArgT0&& arg0, ArgT... args) {
+ 
+ hostname_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.RawData.Hostname)
+}
+inline std::string* RawData::mutable_hostname() {
+  std::string* _s = _internal_mutable_hostname();
+  // @@protoc_insertion_point(field_mutable:grpc.RawData.Hostname)
+  return _s;
+}
+inline const std::string& RawData::_internal_hostname() const {
+  return hostname_.Get();
+}
+inline void RawData::_internal_set_hostname(const std::string& value) {
   
-  timestamp_ = value;
+  hostname_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
 }
-inline void RawData::set_timestamp(::PROTOBUF_NAMESPACE_ID::int64 value) {
-  _internal_set_timestamp(value);
-  // @@protoc_insertion_point(field_set:proto.RawData.Timestamp)
+inline std::string* RawData::_internal_mutable_hostname() {
+  
+  return hostname_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* RawData::release_hostname() {
+  // @@protoc_insertion_point(field_release:grpc.RawData.Hostname)
+  return hostname_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void RawData::set_allocated_hostname(std::string* hostname) {
+  if (hostname != nullptr) {
+    
+  } else {
+    
+  }
+  hostname_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), hostname,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.RawData.Hostname)
 }
 
-// string Version = 6;
+// string Version = 9;
 inline void RawData::clear_version() {
   version_.ClearToEmpty();
 }
 inline const std::string& RawData::version() const {
-  // @@protoc_insertion_point(field_get:proto.RawData.Version)
+  // @@protoc_insertion_point(field_get:grpc.RawData.Version)
   return _internal_version();
 }
 template <typename ArgT0, typename... ArgT>
@@ -1008,11 +1907,11 @@ inline PROTOBUF_ALWAYS_INLINE
 void RawData::set_version(ArgT0&& arg0, ArgT... args) {
  
  version_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set:proto.RawData.Version)
+  // @@protoc_insertion_point(field_set:grpc.RawData.Version)
 }
 inline std::string* RawData::mutable_version() {
   std::string* _s = _internal_mutable_version();
-  // @@protoc_insertion_point(field_mutable:proto.RawData.Version)
+  // @@protoc_insertion_point(field_mutable:grpc.RawData.Version)
   return _s;
 }
 inline const std::string& RawData::_internal_version() const {
@@ -1027,7 +1926,7 @@ inline std::string* RawData::_internal_mutable_version() {
   return version_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
 }
 inline std::string* RawData::release_version() {
-  // @@protoc_insertion_point(field_release:proto.RawData.Version)
+  // @@protoc_insertion_point(field_release:grpc.RawData.Version)
   return version_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
 }
 inline void RawData::set_allocated_version(std::string* version) {
@@ -1038,85 +1937,179 @@ inline void RawData::set_allocated_version(std::string* version) {
   }
   version_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), version,
       GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set_allocated:proto.RawData.Version)
+  // @@protoc_insertion_point(field_set_allocated:grpc.RawData.Version)
 }
 
-// repeated .proto.Record Pkg = 7;
-inline int RawData::_internal_pkg_size() const {
-  return pkg_.size();
+// string Product = 10;
+inline void RawData::clear_product() {
+  product_.ClearToEmpty();
 }
-inline int RawData::pkg_size() const {
-  return _internal_pkg_size();
+inline const std::string& RawData::product() const {
+  // @@protoc_insertion_point(field_get:grpc.RawData.Product)
+  return _internal_product();
 }
-inline void RawData::clear_pkg() {
-  pkg_.Clear();
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void RawData::set_product(ArgT0&& arg0, ArgT... args) {
+ 
+ product_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.RawData.Product)
 }
-inline ::proto::Record* RawData::mutable_pkg(int index) {
-  // @@protoc_insertion_point(field_mutable:proto.RawData.Pkg)
-  return pkg_.Mutable(index);
+inline std::string* RawData::mutable_product() {
+  std::string* _s = _internal_mutable_product();
+  // @@protoc_insertion_point(field_mutable:grpc.RawData.Product)
+  return _s;
 }
-inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::proto::Record >*
-RawData::mutable_pkg() {
-  // @@protoc_insertion_point(field_mutable_list:proto.RawData.Pkg)
-  return &pkg_;
+inline const std::string& RawData::_internal_product() const {
+  return product_.Get();
 }
-inline const ::proto::Record& RawData::_internal_pkg(int index) const {
-  return pkg_.Get(index);
+inline void RawData::_internal_set_product(const std::string& value) {
+  
+  product_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
 }
-inline const ::proto::Record& RawData::pkg(int index) const {
-  // @@protoc_insertion_point(field_get:proto.RawData.Pkg)
-  return _internal_pkg(index);
+inline std::string* RawData::_internal_mutable_product() {
+  
+  return product_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
 }
-inline ::proto::Record* RawData::_internal_add_pkg() {
-  return pkg_.Add();
+inline std::string* RawData::release_product() {
+  // @@protoc_insertion_point(field_release:grpc.RawData.Product)
+  return product_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
 }
-inline ::proto::Record* RawData::add_pkg() {
-  ::proto::Record* _add = _internal_add_pkg();
-  // @@protoc_insertion_point(field_add:proto.RawData.Pkg)
-  return _add;
+inline void RawData::set_allocated_product(std::string* product) {
+  if (product != nullptr) {
+    
+  } else {
+    
+  }
+  product_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), product,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.RawData.Product)
 }
-inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::proto::Record >&
-RawData::pkg() const {
-  // @@protoc_insertion_point(field_list:proto.RawData.Pkg)
-  return pkg_;
-}
-
-// -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
 
 // Record
 
-// map<string, string> message = 1;
-inline int Record::_internal_message_size() const {
-  return message_.size();
+// int32 DataType = 1;
+inline void Record::clear_datatype() {
+  datatype_ = 0;
 }
-inline int Record::message_size() const {
-  return _internal_message_size();
+inline ::PROTOBUF_NAMESPACE_ID::int32 Record::_internal_datatype() const {
+  return datatype_;
 }
-inline void Record::clear_message() {
-  message_.Clear();
+inline ::PROTOBUF_NAMESPACE_ID::int32 Record::datatype() const {
+  // @@protoc_insertion_point(field_get:grpc.Record.DataType)
+  return _internal_datatype();
 }
-inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
-Record::_internal_message() const {
-  return message_.GetMap();
+inline void Record::_internal_set_datatype(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  
+  datatype_ = value;
 }
-inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
-Record::message() const {
-  // @@protoc_insertion_point(field_map:proto.Record.message)
-  return _internal_message();
+inline void Record::set_datatype(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  _internal_set_datatype(value);
+  // @@protoc_insertion_point(field_set:grpc.Record.DataType)
 }
-inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
-Record::_internal_mutable_message() {
-  return message_.MutableMap();
+
+// int64 Timestamp = 2;
+inline void Record::clear_timestamp() {
+  timestamp_ = int64_t{0};
 }
-inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
-Record::mutable_message() {
-  // @@protoc_insertion_point(field_mutable_map:proto.Record.message)
-  return _internal_mutable_message();
+inline ::PROTOBUF_NAMESPACE_ID::int64 Record::_internal_timestamp() const {
+  return timestamp_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int64 Record::timestamp() const {
+  // @@protoc_insertion_point(field_get:grpc.Record.Timestamp)
+  return _internal_timestamp();
+}
+inline void Record::_internal_set_timestamp(::PROTOBUF_NAMESPACE_ID::int64 value) {
+  
+  timestamp_ = value;
+}
+inline void Record::set_timestamp(::PROTOBUF_NAMESPACE_ID::int64 value) {
+  _internal_set_timestamp(value);
+  // @@protoc_insertion_point(field_set:grpc.Record.Timestamp)
+}
+
+// bytes Body = 3;
+inline void Record::clear_body() {
+  body_.ClearToEmpty();
+}
+inline const std::string& Record::body() const {
+  // @@protoc_insertion_point(field_get:grpc.Record.Body)
+  return _internal_body();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void Record::set_body(ArgT0&& arg0, ArgT... args) {
+ 
+ body_.SetBytes(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.Record.Body)
+}
+inline std::string* Record::mutable_body() {
+  std::string* _s = _internal_mutable_body();
+  // @@protoc_insertion_point(field_mutable:grpc.Record.Body)
+  return _s;
+}
+inline const std::string& Record::_internal_body() const {
+  return body_.Get();
+}
+inline void Record::_internal_set_body(const std::string& value) {
+  
+  body_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* Record::_internal_mutable_body() {
+  
+  return body_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* Record::release_body() {
+  // @@protoc_insertion_point(field_release:grpc.Record.Body)
+  return body_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void Record::set_allocated_body(std::string* body) {
+  if (body != nullptr) {
+    
+  } else {
+    
+  }
+  body_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), body,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.Record.Body)
 }
 
 // -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// Item
+
+// map<string, string> Fields = 1;
+inline int Item::_internal_fields_size() const {
+  return fields_.size();
+}
+inline int Item::fields_size() const {
+  return _internal_fields_size();
+}
+inline void Item::clear_fields() {
+  fields_.Clear();
+}
+inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+Item::_internal_fields() const {
+  return fields_.GetMap();
+}
+inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
+Item::fields() const {
+  // @@protoc_insertion_point(field_map:grpc.Item.Fields)
+  return _internal_fields();
+}
+inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+Item::_internal_mutable_fields() {
+  return fields_.MutableMap();
+}
+inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
+Item::mutable_fields() {
+  // @@protoc_insertion_point(field_mutable_map:grpc.Item.Fields)
+  return _internal_mutable_fields();
+}
 
 // -------------------------------------------------------------------
 
@@ -1130,7 +2123,7 @@ inline ::PROTOBUF_NAMESPACE_ID::int32 Command::_internal_agentctrl() const {
   return agentctrl_;
 }
 inline ::PROTOBUF_NAMESPACE_ID::int32 Command::agentctrl() const {
-  // @@protoc_insertion_point(field_get:proto.Command.AgentCtrl)
+  // @@protoc_insertion_point(field_get:grpc.Command.AgentCtrl)
   return _internal_agentctrl();
 }
 inline void Command::_internal_set_agentctrl(::PROTOBUF_NAMESPACE_ID::int32 value) {
@@ -1139,36 +2132,654 @@ inline void Command::_internal_set_agentctrl(::PROTOBUF_NAMESPACE_ID::int32 valu
 }
 inline void Command::set_agentctrl(::PROTOBUF_NAMESPACE_ID::int32 value) {
   _internal_set_agentctrl(value);
-  // @@protoc_insertion_point(field_set:proto.Command.AgentCtrl)
+  // @@protoc_insertion_point(field_set:grpc.Command.AgentCtrl)
 }
 
-// map<string, string> message = 2;
-inline int Command::_internal_message_size() const {
-  return message_.size();
+// .grpc.PluginTask Task = 2;
+inline bool Command::_internal_has_task() const {
+  return this != internal_default_instance() && task_ != nullptr;
 }
-inline int Command::message_size() const {
-  return _internal_message_size();
+inline bool Command::has_task() const {
+  return _internal_has_task();
 }
-inline void Command::clear_message() {
-  message_.Clear();
+inline void Command::clear_task() {
+  if (GetArenaForAllocation() == nullptr && task_ != nullptr) {
+    delete task_;
+  }
+  task_ = nullptr;
 }
-inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
-Command::_internal_message() const {
-  return message_.GetMap();
+inline const ::grpc::PluginTask& Command::_internal_task() const {
+  const ::grpc::PluginTask* p = task_;
+  return p != nullptr ? *p : reinterpret_cast<const ::grpc::PluginTask&>(
+      ::grpc::_PluginTask_default_instance_);
 }
-inline const ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >&
-Command::message() const {
-  // @@protoc_insertion_point(field_map:proto.Command.message)
-  return _internal_message();
+inline const ::grpc::PluginTask& Command::task() const {
+  // @@protoc_insertion_point(field_get:grpc.Command.Task)
+  return _internal_task();
 }
-inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
-Command::_internal_mutable_message() {
-  return message_.MutableMap();
+inline void Command::unsafe_arena_set_allocated_task(
+    ::grpc::PluginTask* task) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(task_);
+  }
+  task_ = task;
+  if (task) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:grpc.Command.Task)
 }
-inline ::PROTOBUF_NAMESPACE_ID::Map< std::string, std::string >*
-Command::mutable_message() {
-  // @@protoc_insertion_point(field_mutable_map:proto.Command.message)
-  return _internal_mutable_message();
+inline ::grpc::PluginTask* Command::release_task() {
+  
+  ::grpc::PluginTask* temp = task_;
+  task_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::grpc::PluginTask* Command::unsafe_arena_release_task() {
+  // @@protoc_insertion_point(field_release:grpc.Command.Task)
+  
+  ::grpc::PluginTask* temp = task_;
+  task_ = nullptr;
+  return temp;
+}
+inline ::grpc::PluginTask* Command::_internal_mutable_task() {
+  
+  if (task_ == nullptr) {
+    auto* p = CreateMaybeMessage<::grpc::PluginTask>(GetArenaForAllocation());
+    task_ = p;
+  }
+  return task_;
+}
+inline ::grpc::PluginTask* Command::mutable_task() {
+  ::grpc::PluginTask* _msg = _internal_mutable_task();
+  // @@protoc_insertion_point(field_mutable:grpc.Command.Task)
+  return _msg;
+}
+inline void Command::set_allocated_task(::grpc::PluginTask* task) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete task_;
+  }
+  if (task) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper<::grpc::PluginTask>::GetOwningArena(task);
+    if (message_arena != submessage_arena) {
+      task = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, task, submessage_arena);
+    }
+    
+  } else {
+    
+  }
+  task_ = task;
+  // @@protoc_insertion_point(field_set_allocated:grpc.Command.Task)
+}
+
+// repeated .grpc.ConfigItem Config = 3;
+inline int Command::_internal_config_size() const {
+  return config_.size();
+}
+inline int Command::config_size() const {
+  return _internal_config_size();
+}
+inline void Command::clear_config() {
+  config_.Clear();
+}
+inline ::grpc::ConfigItem* Command::mutable_config(int index) {
+  // @@protoc_insertion_point(field_mutable:grpc.Command.Config)
+  return config_.Mutable(index);
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::ConfigItem >*
+Command::mutable_config() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.Command.Config)
+  return &config_;
+}
+inline const ::grpc::ConfigItem& Command::_internal_config(int index) const {
+  return config_.Get(index);
+}
+inline const ::grpc::ConfigItem& Command::config(int index) const {
+  // @@protoc_insertion_point(field_get:grpc.Command.Config)
+  return _internal_config(index);
+}
+inline ::grpc::ConfigItem* Command::_internal_add_config() {
+  return config_.Add();
+}
+inline ::grpc::ConfigItem* Command::add_config() {
+  ::grpc::ConfigItem* _add = _internal_add_config();
+  // @@protoc_insertion_point(field_add:grpc.Command.Config)
+  return _add;
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::grpc::ConfigItem >&
+Command::config() const {
+  // @@protoc_insertion_point(field_list:grpc.Command.Config)
+  return config_;
+}
+
+// -------------------------------------------------------------------
+
+// PluginTask
+
+// int32 DataType = 1;
+inline void PluginTask::clear_datatype() {
+  datatype_ = 0;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 PluginTask::_internal_datatype() const {
+  return datatype_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 PluginTask::datatype() const {
+  // @@protoc_insertion_point(field_get:grpc.PluginTask.DataType)
+  return _internal_datatype();
+}
+inline void PluginTask::_internal_set_datatype(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  
+  datatype_ = value;
+}
+inline void PluginTask::set_datatype(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  _internal_set_datatype(value);
+  // @@protoc_insertion_point(field_set:grpc.PluginTask.DataType)
+}
+
+// string Name = 2;
+inline void PluginTask::clear_name() {
+  name_.ClearToEmpty();
+}
+inline const std::string& PluginTask::name() const {
+  // @@protoc_insertion_point(field_get:grpc.PluginTask.Name)
+  return _internal_name();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void PluginTask::set_name(ArgT0&& arg0, ArgT... args) {
+ 
+ name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.PluginTask.Name)
+}
+inline std::string* PluginTask::mutable_name() {
+  std::string* _s = _internal_mutable_name();
+  // @@protoc_insertion_point(field_mutable:grpc.PluginTask.Name)
+  return _s;
+}
+inline const std::string& PluginTask::_internal_name() const {
+  return name_.Get();
+}
+inline void PluginTask::_internal_set_name(const std::string& value) {
+  
+  name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* PluginTask::_internal_mutable_name() {
+  
+  return name_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* PluginTask::release_name() {
+  // @@protoc_insertion_point(field_release:grpc.PluginTask.Name)
+  return name_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void PluginTask::set_allocated_name(std::string* name) {
+  if (name != nullptr) {
+    
+  } else {
+    
+  }
+  name_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), name,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.PluginTask.Name)
+}
+
+// string Data = 3;
+inline void PluginTask::clear_data() {
+  data_.ClearToEmpty();
+}
+inline const std::string& PluginTask::data() const {
+  // @@protoc_insertion_point(field_get:grpc.PluginTask.Data)
+  return _internal_data();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void PluginTask::set_data(ArgT0&& arg0, ArgT... args) {
+ 
+ data_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.PluginTask.Data)
+}
+inline std::string* PluginTask::mutable_data() {
+  std::string* _s = _internal_mutable_data();
+  // @@protoc_insertion_point(field_mutable:grpc.PluginTask.Data)
+  return _s;
+}
+inline const std::string& PluginTask::_internal_data() const {
+  return data_.Get();
+}
+inline void PluginTask::_internal_set_data(const std::string& value) {
+  
+  data_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* PluginTask::_internal_mutable_data() {
+  
+  return data_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* PluginTask::release_data() {
+  // @@protoc_insertion_point(field_release:grpc.PluginTask.Data)
+  return data_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void PluginTask::set_allocated_data(std::string* data) {
+  if (data != nullptr) {
+    
+  } else {
+    
+  }
+  data_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), data,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.PluginTask.Data)
+}
+
+// string Token = 4;
+inline void PluginTask::clear_token() {
+  token_.ClearToEmpty();
+}
+inline const std::string& PluginTask::token() const {
+  // @@protoc_insertion_point(field_get:grpc.PluginTask.Token)
+  return _internal_token();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void PluginTask::set_token(ArgT0&& arg0, ArgT... args) {
+ 
+ token_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.PluginTask.Token)
+}
+inline std::string* PluginTask::mutable_token() {
+  std::string* _s = _internal_mutable_token();
+  // @@protoc_insertion_point(field_mutable:grpc.PluginTask.Token)
+  return _s;
+}
+inline const std::string& PluginTask::_internal_token() const {
+  return token_.Get();
+}
+inline void PluginTask::_internal_set_token(const std::string& value) {
+  
+  token_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* PluginTask::_internal_mutable_token() {
+  
+  return token_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* PluginTask::release_token() {
+  // @@protoc_insertion_point(field_release:grpc.PluginTask.Token)
+  return token_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void PluginTask::set_allocated_token(std::string* token) {
+  if (token != nullptr) {
+    
+  } else {
+    
+  }
+  token_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), token,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.PluginTask.Token)
+}
+
+// -------------------------------------------------------------------
+
+// ConfigItem
+
+// string Name = 1;
+inline void ConfigItem::clear_name() {
+  name_.ClearToEmpty();
+}
+inline const std::string& ConfigItem::name() const {
+  // @@protoc_insertion_point(field_get:grpc.ConfigItem.Name)
+  return _internal_name();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ConfigItem::set_name(ArgT0&& arg0, ArgT... args) {
+ 
+ name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.ConfigItem.Name)
+}
+inline std::string* ConfigItem::mutable_name() {
+  std::string* _s = _internal_mutable_name();
+  // @@protoc_insertion_point(field_mutable:grpc.ConfigItem.Name)
+  return _s;
+}
+inline const std::string& ConfigItem::_internal_name() const {
+  return name_.Get();
+}
+inline void ConfigItem::_internal_set_name(const std::string& value) {
+  
+  name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::_internal_mutable_name() {
+  
+  return name_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::release_name() {
+  // @@protoc_insertion_point(field_release:grpc.ConfigItem.Name)
+  return name_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void ConfigItem::set_allocated_name(std::string* name) {
+  if (name != nullptr) {
+    
+  } else {
+    
+  }
+  name_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), name,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.ConfigItem.Name)
+}
+
+// string Type = 2;
+inline void ConfigItem::clear_type() {
+  type_.ClearToEmpty();
+}
+inline const std::string& ConfigItem::type() const {
+  // @@protoc_insertion_point(field_get:grpc.ConfigItem.Type)
+  return _internal_type();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ConfigItem::set_type(ArgT0&& arg0, ArgT... args) {
+ 
+ type_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.ConfigItem.Type)
+}
+inline std::string* ConfigItem::mutable_type() {
+  std::string* _s = _internal_mutable_type();
+  // @@protoc_insertion_point(field_mutable:grpc.ConfigItem.Type)
+  return _s;
+}
+inline const std::string& ConfigItem::_internal_type() const {
+  return type_.Get();
+}
+inline void ConfigItem::_internal_set_type(const std::string& value) {
+  
+  type_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::_internal_mutable_type() {
+  
+  return type_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::release_type() {
+  // @@protoc_insertion_point(field_release:grpc.ConfigItem.Type)
+  return type_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void ConfigItem::set_allocated_type(std::string* type) {
+  if (type != nullptr) {
+    
+  } else {
+    
+  }
+  type_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), type,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.ConfigItem.Type)
+}
+
+// string Version = 3;
+inline void ConfigItem::clear_version() {
+  version_.ClearToEmpty();
+}
+inline const std::string& ConfigItem::version() const {
+  // @@protoc_insertion_point(field_get:grpc.ConfigItem.Version)
+  return _internal_version();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ConfigItem::set_version(ArgT0&& arg0, ArgT... args) {
+ 
+ version_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.ConfigItem.Version)
+}
+inline std::string* ConfigItem::mutable_version() {
+  std::string* _s = _internal_mutable_version();
+  // @@protoc_insertion_point(field_mutable:grpc.ConfigItem.Version)
+  return _s;
+}
+inline const std::string& ConfigItem::_internal_version() const {
+  return version_.Get();
+}
+inline void ConfigItem::_internal_set_version(const std::string& value) {
+  
+  version_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::_internal_mutable_version() {
+  
+  return version_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::release_version() {
+  // @@protoc_insertion_point(field_release:grpc.ConfigItem.Version)
+  return version_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void ConfigItem::set_allocated_version(std::string* version) {
+  if (version != nullptr) {
+    
+  } else {
+    
+  }
+  version_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), version,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.ConfigItem.Version)
+}
+
+// string SHA256 = 4;
+inline void ConfigItem::clear_sha256() {
+  sha256_.ClearToEmpty();
+}
+inline const std::string& ConfigItem::sha256() const {
+  // @@protoc_insertion_point(field_get:grpc.ConfigItem.SHA256)
+  return _internal_sha256();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ConfigItem::set_sha256(ArgT0&& arg0, ArgT... args) {
+ 
+ sha256_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.ConfigItem.SHA256)
+}
+inline std::string* ConfigItem::mutable_sha256() {
+  std::string* _s = _internal_mutable_sha256();
+  // @@protoc_insertion_point(field_mutable:grpc.ConfigItem.SHA256)
+  return _s;
+}
+inline const std::string& ConfigItem::_internal_sha256() const {
+  return sha256_.Get();
+}
+inline void ConfigItem::_internal_set_sha256(const std::string& value) {
+  
+  sha256_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::_internal_mutable_sha256() {
+  
+  return sha256_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::release_sha256() {
+  // @@protoc_insertion_point(field_release:grpc.ConfigItem.SHA256)
+  return sha256_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void ConfigItem::set_allocated_sha256(std::string* sha256) {
+  if (sha256 != nullptr) {
+    
+  } else {
+    
+  }
+  sha256_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), sha256,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.ConfigItem.SHA256)
+}
+
+// string Signature = 5;
+inline void ConfigItem::clear_signature() {
+  signature_.ClearToEmpty();
+}
+inline const std::string& ConfigItem::signature() const {
+  // @@protoc_insertion_point(field_get:grpc.ConfigItem.Signature)
+  return _internal_signature();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ConfigItem::set_signature(ArgT0&& arg0, ArgT... args) {
+ 
+ signature_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.ConfigItem.Signature)
+}
+inline std::string* ConfigItem::mutable_signature() {
+  std::string* _s = _internal_mutable_signature();
+  // @@protoc_insertion_point(field_mutable:grpc.ConfigItem.Signature)
+  return _s;
+}
+inline const std::string& ConfigItem::_internal_signature() const {
+  return signature_.Get();
+}
+inline void ConfigItem::_internal_set_signature(const std::string& value) {
+  
+  signature_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::_internal_mutable_signature() {
+  
+  return signature_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::release_signature() {
+  // @@protoc_insertion_point(field_release:grpc.ConfigItem.Signature)
+  return signature_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void ConfigItem::set_allocated_signature(std::string* signature) {
+  if (signature != nullptr) {
+    
+  } else {
+    
+  }
+  signature_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), signature,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.ConfigItem.Signature)
+}
+
+// repeated string DownloadURL = 6;
+inline int ConfigItem::_internal_downloadurl_size() const {
+  return downloadurl_.size();
+}
+inline int ConfigItem::downloadurl_size() const {
+  return _internal_downloadurl_size();
+}
+inline void ConfigItem::clear_downloadurl() {
+  downloadurl_.Clear();
+}
+inline std::string* ConfigItem::add_downloadurl() {
+  std::string* _s = _internal_add_downloadurl();
+  // @@protoc_insertion_point(field_add_mutable:grpc.ConfigItem.DownloadURL)
+  return _s;
+}
+inline const std::string& ConfigItem::_internal_downloadurl(int index) const {
+  return downloadurl_.Get(index);
+}
+inline const std::string& ConfigItem::downloadurl(int index) const {
+  // @@protoc_insertion_point(field_get:grpc.ConfigItem.DownloadURL)
+  return _internal_downloadurl(index);
+}
+inline std::string* ConfigItem::mutable_downloadurl(int index) {
+  // @@protoc_insertion_point(field_mutable:grpc.ConfigItem.DownloadURL)
+  return downloadurl_.Mutable(index);
+}
+inline void ConfigItem::set_downloadurl(int index, const std::string& value) {
+  downloadurl_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set:grpc.ConfigItem.DownloadURL)
+}
+inline void ConfigItem::set_downloadurl(int index, std::string&& value) {
+  downloadurl_.Mutable(index)->assign(std::move(value));
+  // @@protoc_insertion_point(field_set:grpc.ConfigItem.DownloadURL)
+}
+inline void ConfigItem::set_downloadurl(int index, const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  downloadurl_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:grpc.ConfigItem.DownloadURL)
+}
+inline void ConfigItem::set_downloadurl(int index, const char* value, size_t size) {
+  downloadurl_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:grpc.ConfigItem.DownloadURL)
+}
+inline std::string* ConfigItem::_internal_add_downloadurl() {
+  return downloadurl_.Add();
+}
+inline void ConfigItem::add_downloadurl(const std::string& value) {
+  downloadurl_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:grpc.ConfigItem.DownloadURL)
+}
+inline void ConfigItem::add_downloadurl(std::string&& value) {
+  downloadurl_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:grpc.ConfigItem.DownloadURL)
+}
+inline void ConfigItem::add_downloadurl(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  downloadurl_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:grpc.ConfigItem.DownloadURL)
+}
+inline void ConfigItem::add_downloadurl(const char* value, size_t size) {
+  downloadurl_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:grpc.ConfigItem.DownloadURL)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
+ConfigItem::downloadurl() const {
+  // @@protoc_insertion_point(field_list:grpc.ConfigItem.DownloadURL)
+  return downloadurl_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
+ConfigItem::mutable_downloadurl() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.ConfigItem.DownloadURL)
+  return &downloadurl_;
+}
+
+// string Detail = 7;
+inline void ConfigItem::clear_detail() {
+  detail_.ClearToEmpty();
+}
+inline const std::string& ConfigItem::detail() const {
+  // @@protoc_insertion_point(field_get:grpc.ConfigItem.Detail)
+  return _internal_detail();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ConfigItem::set_detail(ArgT0&& arg0, ArgT... args) {
+ 
+ detail_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:grpc.ConfigItem.Detail)
+}
+inline std::string* ConfigItem::mutable_detail() {
+  std::string* _s = _internal_mutable_detail();
+  // @@protoc_insertion_point(field_mutable:grpc.ConfigItem.Detail)
+  return _s;
+}
+inline const std::string& ConfigItem::_internal_detail() const {
+  return detail_.Get();
+}
+inline void ConfigItem::_internal_set_detail(const std::string& value) {
+  
+  detail_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, value, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::_internal_mutable_detail() {
+  
+  return detail_.Mutable(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, GetArenaForAllocation());
+}
+inline std::string* ConfigItem::release_detail() {
+  // @@protoc_insertion_point(field_release:grpc.ConfigItem.Detail)
+  return detail_.Release(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArenaForAllocation());
+}
+inline void ConfigItem::set_allocated_detail(std::string* detail) {
+  if (detail != nullptr) {
+    
+  } else {
+    
+  }
+  detail_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), detail,
+      GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set_allocated:grpc.ConfigItem.Detail)
 }
 
 #ifdef __GNUC__
@@ -1182,10 +2793,14 @@ Command::mutable_message() {
 
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 
-}  // namespace proto
+}  // namespace grpc
 
 // @@protoc_insertion_point(global_scope)
 

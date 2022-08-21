@@ -1,0 +1,60 @@
+syntax = "proto3";
+option go_package = "proto";
+package grpc;
+
+// protoc --go_out=plugins=grpc:. *.proto
+
+message RawData{
+  repeated Record Data = 1;
+  repeated Item Item = 2;
+  string AgentID = 3;
+  repeated string IntranetIPv4 = 4;
+  repeated string ExtranetIPv4 = 5;
+  repeated string IntranetIPv6 = 6;
+  repeated string ExtranetIPv6 = 7;
+  string Hostname = 8;
+  string Version = 9;
+  string Product = 10;
+}
+
+message Record{
+  int32 DataType = 1;
+  int64 Timestamp = 2;
+  bytes Body = 3;
+}
+
+message Item{
+  map<string,string> Fields = 1;
+}
+
+//server --> agent
+message Command {
+  int32 AgentCtrl = 1; // Agent control command
+  PluginTask Task = 2; // Agent task
+  repeated ConfigItem Config = 3; // Plugin/Agent-host config
+}
+
+message PluginTask{
+  //DataType which used to uniquely identify different  format of Data
+  int32 DataType = 1;
+  // Plugin name, which used to uniquely identify different plugins
+  string Name = 2;
+  // Data transparently transmitted to the plugin
+  string Data = 3;
+  // The token is used for reconciliation
+  string Token = 4;
+}
+
+message ConfigItem{
+  string Name = 1;
+  string Type = 2;
+  string Version = 3;
+  string SHA256 = 4;
+  string Signature = 5;
+  repeated string DownloadURL = 6;
+  string Detail = 7;
+}
+
+service Transfer {
+  rpc Transfer (stream RawData) returns (stream Command){}
+}
