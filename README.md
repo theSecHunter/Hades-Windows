@@ -138,7 +138,7 @@ Windows对于很多第三方生态逐步容纳，Grpc github cmake编译仍会�
 vcpkg install grpc
 ```
 
-&emsp;&emsp;配置vs2019 工具 --> 选项 --> NuGet管理即可，详细可以参考网上教程，连接程序使用MD编译。
+配置vs2019 工具 --> 选项 --> NuGet管理即可，详细可以参考网上教程，连接程序使用MD编译。
 
 C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 
