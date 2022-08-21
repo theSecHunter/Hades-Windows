@@ -7,7 +7,7 @@
 
 - v2.0开发中，对v1.0的引擎重构，采集器构建用户态和内核态lib，Svc业务剥离灵活，如Server使用epoll/asio，少量代码就可以同将采集数据推送至不同的Server。
 - v2.0修正v1.0存在的诸多问题，添加Duilib界面和完善Win7/Win8/WIn10系统兼容性。
-- v2.0 Hades_Win兼容Linux数据上报，添加Go_Server完整数据格式解析处理，采集数据目前通过Grpc上报至Go_server进行解析即可，发布者数据还有很多未清洗。支持Server主动下发采集任务，Rootkit数据采集平台有待完善。支持Server管理Client监控/开启，Go_Server还未引入主分支详细见: https://github.com/theSecHunter/Hades-Linux
+- v2.0 Hades_Win兼容Linux数据上报，添加Go_Server完整数据格式解析处理，采集数据目前通过Grpc上报至Go_server进行解析即可，发布者数据还有很多未清洗。支持Server主动下发采集任务，Rootkit数据采集平台有待完善。支持Server管理Client监控/开启，Go_Server已合并新项目: https://github.com/theSecHunter/Hboat
 
 #### 方案：
 ##### Kernel
