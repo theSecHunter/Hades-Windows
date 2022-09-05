@@ -21,6 +21,7 @@ public:
 	LRESULT OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnTimer(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	
+	void InitWindows();
 	void FlushData();
 	void AddTrayIcon();
 	void HadesSvcDaemon();

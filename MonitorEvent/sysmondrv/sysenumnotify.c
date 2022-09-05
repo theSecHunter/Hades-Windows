@@ -118,6 +118,7 @@ VOID Enum_ImageModNotify(PNOTIFY_INFO pNotify)
 	UNICODE_STRING	unstrFunc;
 	ULONG64	PspLoadImageNotifyRoutine = 0;
 	RtlInitUnicodeString(&unstrFunc, L"PsSetLoadImageNotifyRoutine");
+	// Windows PsSetLoadImageNotifyRoutineEx≤≈ø…“‘
 	pCheckArea = (ULONG64)MmGetSystemRoutineAddress(&unstrFunc);
 	//DbgPrint("PsSetLoadImageNotifyRoutine: %llx\n",pCheckArea);
 	for (i = pCheckArea; i < pCheckArea + 0xff; i++)

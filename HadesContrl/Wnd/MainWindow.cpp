@@ -369,7 +369,7 @@ void MainWindow::HadesSvcDaemon()
 		{
 			StartProcess(m_cmdline);
 		}
-		Sleep(5000); //一定要等待,不然死循环启线程会很可怕,弄不好直接死机
+		Sleep(5000);
 	}
 }
 static DWORD WINAPI HadesSvcDeamonNotify(LPVOID lpThreadParameter)
@@ -391,6 +391,37 @@ LPCTSTR MainWindow::GetWindowClassName() const
 	return _T("HadesMainWindow");
 }
 
+void MainWindow::InitWindows()
+{
+	try
+	{
+		//初始化数据
+		Systeminfolib libobj;
+		CLabelUI* pCurrentUser_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_currentuser_lab")));
+		pCurrentUser_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.currentUser.c_str()).c_str());
+		CLabelUI* pCpu_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_cpu_lab")));
+		pCpu_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.cpuinfo.c_str()).c_str());
+		CLabelUI* pSysver_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_sysver_lab")));
+		pSysver_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.verkerlinfo.c_str()).c_str());
+		CLabelUI* pMainbocard_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_mainbocard_lab")));
+		if (!SYSTEMPUBLIC::sysattriinfo.mainboard.empty())
+			pMainbocard_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.mainboard[0].c_str()).c_str());
+		CLabelUI* pBattery_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_battery_lab")));
+		if (!SYSTEMPUBLIC::sysattriinfo.monitor.empty())
+			pBattery_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.monitor[0].c_str()).c_str());
+
+		pMainOptemp = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOptemperature_VLayout")));
+		pMainOpcpu = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOpCpu_VLayout")));
+		pMainOpbox = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOpBox_VLayout")));
+		pMainOptemp->SetVisible(false);
+		pMainOpbox->SetVisible(false);
+		pMainOpcpu->SetVisible(true);
+	}
+	catch (const std::exception&)
+	{
+
+	}
+}
 void MainWindow::AddTrayIcon() {
 	memset(&m_trayInfo, 0, sizeof(NOTIFYICONDATA));
 	m_trayInfo.cbSize = sizeof(NOTIFYICONDATA);
@@ -444,27 +475,8 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 	m_pMenu->Create(m_hWnd, _T(""), WS_POPUP, WS_EX_TOOLWINDOW);
 	m_pMenu->ShowWindow(false);
 
-	//初始化数据
-	Systeminfolib libobj;
-	CLabelUI* pCurrentUser_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_currentuser_lab")));
-	pCurrentUser_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.currentUser.c_str()).c_str());
-	CLabelUI* pCpu_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_cpu_lab")));
-	pCpu_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.cpuinfo.c_str()).c_str());
-	CLabelUI* pSysver_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_sysver_lab")));
-	pSysver_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.verkerlinfo.c_str()).c_str());
-	CLabelUI* pMainbocard_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_mainbocard_lab")));
-	if (!SYSTEMPUBLIC::sysattriinfo.mainboard.empty())
-		pMainbocard_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.mainboard[0].c_str()).c_str());
-	CLabelUI* pBattery_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_battery_lab")));
-	if (!SYSTEMPUBLIC::sysattriinfo.monitor.empty())
-		pBattery_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.monitor[0].c_str()).c_str());
-
-	pMainOptemp = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOptemperature_VLayout")));
-	pMainOpcpu = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOpCpu_VLayout")));
-	pMainOpbox = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOpBox_VLayout")));
-	pMainOptemp->SetVisible(false);
-	pMainOpbox->SetVisible(false);
-	pMainOpcpu->SetVisible(true);
+	// 初始化界面数据
+	InitWindows();
 
 	// 界面启动之前HadesSvc已启动，需要强制退出Svc
 	do {
@@ -563,22 +575,29 @@ LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHand
 
 void MainWindow::FlushData()
 {
-	//cpu
-	const double cpuutilize = g_DynSysBaseinfo.GetSysDynCpuUtiliza();
-	CString m_Cpusyl;
-	m_Cpusyl.Format(L"CPU: %0.2lf", cpuutilize);
-	m_Cpusyl += "%";
-	CLabelUI* pCpuut = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("winmain_layout_cpuinfo")));
-	pCpuut->SetText(m_Cpusyl.GetBuffer());
+	try
+	{
+		//cpu
+		const double cpuutilize = g_DynSysBaseinfo.GetSysDynCpuUtiliza();
+		CString m_Cpusyl;
+		m_Cpusyl.Format(L"CPU: %0.2lf", cpuutilize);
+		m_Cpusyl += "%";
+		CLabelUI* pCpuut = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("winmain_layout_cpuinfo")));
+		pCpuut->SetText(m_Cpusyl.GetBuffer());
 
-	//memory
-	const DWORD dwMem = g_DynSysBaseinfo.GetSysDynSysMem();
-	// 当前占用率 Occupancy rate
-	CString m_MemoryBFB;
-	m_MemoryBFB.Format(L"内存: %u", dwMem);
-	m_MemoryBFB += "%";
-	CLabelUI* pMem = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("winmain_layout_memory")));
-	pMem->SetText(m_MemoryBFB.GetBuffer());
+		//memory
+		const DWORD dwMem = g_DynSysBaseinfo.GetSysDynSysMem();
+		// 当前占用率 Occupancy rate
+		CString m_MemoryBFB;
+		m_MemoryBFB.Format(L"内存: %u", dwMem);
+		m_MemoryBFB += "%";
+		CLabelUI* pMem = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("winmain_layout_memory")));
+		pMem->SetText(m_MemoryBFB.GetBuffer());
+	}
+	catch (const std::exception&)
+	{
+
+	}
 }
 static DWORD WINAPI ThreadFlush(LPVOID lpThreadParameter)
 {

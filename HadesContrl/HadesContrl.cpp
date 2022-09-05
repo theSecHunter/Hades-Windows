@@ -5,6 +5,7 @@
 #include "HadesContrl.h"
 #include "Wnd/MainWindow.h"
 #include "resource.h"
+#include "crashreport.h"
 
 using namespace DuiLib;
 #define MAX_LOADSTRING 100
@@ -101,6 +102,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		::ShowWindow(wxHand, 1);
 		return 0;
 	}
+
+	// 异常捕获
+	Crash_Report_installer::GetInstance()->InstallCrashReport();
 
 	// 初始化窗口
 	MainWindow mainwin;

@@ -222,6 +222,7 @@
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>MaxSpeed</Optimization>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -250,6 +251,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\HadesSdk\hpsocket\Include\HPSocket\HPSocket.h" />
+    <ClInclude Include="crashreport.h" />
     <ClInclude Include="DriverManager.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="HadesContrl.h" />
@@ -267,6 +269,7 @@
     <ClInclude Include="Wnd\Menu.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="crashreport.cpp" />
     <ClCompile Include="DriverManager.cpp" />
     <ClCompile Include="HadesContrl.cpp" />
     <ClCompile Include="HlprServerPip.cpp" />
