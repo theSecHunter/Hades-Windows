@@ -54,7 +54,7 @@
     <ClCompile Include="msgloop.cpp">
       <Filter>HadesControlPip</Filter>
     </ClCompile>
-    <ClCompile Include="Pipe.cpp">
+    <ClCompile Include="NamedPipe.cpp">
       <Filter>PluginPip</Filter>
     </ClCompile>
     <ClCompile Include="HlprMiniCom.cpp">
@@ -68,6 +68,9 @@
     </ClCompile>
     <ClCompile Include="DataHandler.cpp">
       <Filter>DataHandler</Filter>
+    </ClCompile>
+    <ClCompile Include="AnonymousPipe.cpp">
+      <Filter>PluginPip</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -89,7 +92,7 @@
     <ClInclude Include="..\HadesSdk\include\sysinfo.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Pipe.h">
+    <ClInclude Include="NamedPipe.h">
       <Filter>PluginPip</Filter>
     </ClInclude>
     <ClInclude Include="HlprMiniCom.h">
@@ -103,6 +106,9 @@
     </ClInclude>
     <ClInclude Include="DataHandler.h">
       <Filter>DataHandler</Filter>
+    </ClInclude>
+    <ClInclude Include="AnonymousPipe.h">
+      <Filter>PluginPip</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

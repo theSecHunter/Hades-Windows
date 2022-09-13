@@ -267,25 +267,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AnonymousPipe.cpp" />
     <ClCompile Include="DataHandler.cpp" />
     <ClCompile Include="HlprMiniCom.cpp" />
     <ClCompile Include="kmsginterface.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="msgassist.cpp" />
     <ClCompile Include="msgloop.cpp" />
-    <ClCompile Include="Pipe.cpp" />
+    <ClCompile Include="NamedPipe.cpp" />
     <ClCompile Include="socketMsg.cpp" />
     <ClCompile Include="time_stamp.cpp" />
     <ClCompile Include="umsginterface.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\HadesSdk\include\sysinfo.h" />
+    <ClInclude Include="AnonymousPipe.h" />
     <ClInclude Include="DataHandler.h" />
     <ClInclude Include="HlprMiniCom.h" />
     <ClInclude Include="kmsginterface.h" />
     <ClInclude Include="msgassist.h" />
     <ClInclude Include="msgloop.h" />
-    <ClInclude Include="Pipe.h" />
+    <ClInclude Include="NamedPipe.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="socketMsg.h" />
     <ClInclude Include="time_stamp.h" />

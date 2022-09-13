@@ -477,54 +477,14 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 
 	// 初始化界面数据
 	InitWindows();
-
-	// 界面启动之前HadesSvc已启动，需要强制退出Svc
-	do {
-		HANDLE active_event = nullptr;
-		active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVENT");
-		if (active_event)
-		{
-			CloseHandle(active_event);
-			active_event = nullptr;
-			auto exithandSvc = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
-			if (exithandSvc)
-			{
-				SetEvent(exithandSvc);
-				CloseHandle(exithandSvc);
-				Sleep(500);
-			}
-#ifdef _WIN64
-#ifdef _DEBUG
-			const wchar_t* killname = L"HadesSvc_d64.exe";
-#else
-			const wchar_t* killname = L"HadesSvc64.exe";
-#endif
-#else
-#ifdef _DEBUG
-			const wchar_t* killname = L"HadesSvc_d.exe";
-#else
-			const wchar_t* killname = L"HadesSvc.exe";
-#endif
-#endif
-			killProcess(killname);
-			active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVENT");
-			if (active_event)
-			{
-				OutputDebugString(L"HadesSvc已经启动，请手动结束后在重新启动");
-				CloseHandle(active_event);
-				active_event = nullptr;
-				return lRes;
-			}
-		}
-	} while (false);
 	
-	// 等待HadesSvc连接Grpc服务成功状态更新
+	// 等待HadesSvc(Agent)连接GRPC服务成功状态反馈
 	CreateThread(NULL, NULL, HadesConnectEventNotify, this, 0, 0);
 	Sleep(100);
-	// 检测HadesSvc是否活跃，设置GRPC连接状态
+	// 检测HadesSvc是否活跃设置GRPC连接状态
 	CreateThread(NULL, NULL, HadesSvcActiveEventNotify, this, 0, 0);
 	Sleep(100);
-	// 启动HadesSvc进程
+	// 启动Agent进程守护
 	if (false == m_hadesSvcStatus)
 		StartProcess(m_cmdline);
 	Sleep(100);

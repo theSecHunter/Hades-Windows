@@ -51,13 +51,13 @@ static HANDLE g_SvcExitEvent = nullptr;
 
 int main(int argc, char* argv[])
 {
-	// HadesSvc Exit Event - HadesContrl Event标识(退出界面使用)
+	Sleep(5000);
+	// HadesSvc Exit Event - HadesSvc退出标识
 	g_SvcExitEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
 	// Init PipConnect
-	true == g_DataHandler.PipInit() ? gpip_send = true : gpip_send = false;
+	true == g_DataHandler.PipInitAnonymous() ? gpip_send = true : gpip_send = false;
 	if (!gpip_send || !g_SvcExitEvent)
 		return 0;
-
 	if(false == gpip_send)
 	{
 		g_DataHandler.PipFree();
@@ -75,12 +75,26 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	// 设置Lib对象指针
+	// Test Pip
+	//std::shared_ptr<uint8_t> data{ new uint8_t[MAX_PATH] };
+	//DWORD dwRead = sizeof("hello server");
+	//::memcpy(data.get(), "hello server", dwRead);
+	//for (;;)
+	//{
+	//	g_DataHandler.PipWriteAnonymous(data, dwRead);
+	//	Sleep(2000);
+	//}
+
+	// 初始化接收对象
+	g_DataHandler.ThreadPool_Init();
+
+	// Set HadesControl Lib ObjectPtr
 	if (false == g_MsgControl.setUmsgLib(&g_mainMsgUlib) || false == g_MsgControl.setKmsgLib(&g_mainMsgKlib))
 	{
 		OutputDebugString(L"设置MsgViewController指针失败");
 		return 0;
 	}
+	// Set DataHandler Lib ObjectPtr
 	if (false == g_DataHandler.SetUMontiorLibPtr(&g_mainMsgUlib) || false == g_DataHandler.SetKMontiorLibPtr(&g_mainMsgKlib))
 	{
 		OutputDebugString(L"设置GrpcLib指针失败");
