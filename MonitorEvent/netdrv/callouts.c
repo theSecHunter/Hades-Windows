@@ -997,7 +997,7 @@ callouts_registerCallouts(
 			0,
 			&g_calloutId_flow_established_v4
 		);
-
+		
 		// FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6
 		status = helper_callout_registerCallout(
 			deviceObject,

@@ -13,99 +13,96 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="grpc">
-      <UniqueIdentifier>{f5786f9a-b4d8-4337-aa63-296c32994e28}</UniqueIdentifier>
+    <Filter Include="HadesControlPip">
+      <UniqueIdentifier>{5fa7c6ca-ee87-412b-9a54-25f3ab596d5c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="common">
-      <UniqueIdentifier>{0584de7e-1a26-48f2-8350-a6374486f21d}</UniqueIdentifier>
+    <Filter Include="PluginPip">
+      <UniqueIdentifier>{ae41dd91-9373-4a61-b29b-751133b764a8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="kmsg">
+    <Filter Include="MinifilterPip">
+      <UniqueIdentifier>{b888099b-ce83-4bdf-8be4-25d1b0d3117b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SocketPip">
+      <UniqueIdentifier>{53623d37-f186-441c-8aa8-915619cf8b98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="KerConsumerMsg">
       <UniqueIdentifier>{c785e7f4-4387-4cd0-aa7b-ecbc3f8f156d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="umsg">
+    <Filter Include="UserConsumerMsg">
       <UniqueIdentifier>{1846fa97-1da4-4e41-ae06-9d7ecf6c0ac6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="msghandler">
-      <UniqueIdentifier>{5fa7c6ca-ee87-412b-9a54-25f3ab596d5c}</UniqueIdentifier>
+    <Filter Include="Common">
+      <UniqueIdentifier>{0584de7e-1a26-48f2-8350-a6374486f21d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DataHandler">
+      <UniqueIdentifier>{145aa740-0f36-4718-ae86-5e20d88c4617}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="grpc.cpp">
-      <Filter>grpc</Filter>
-    </ClCompile>
-    <ClCompile Include="hades_win.grpc.pb.cc">
-      <Filter>grpc</Filter>
-    </ClCompile>
-    <ClCompile Include="hades_win.pb.cc">
-      <Filter>grpc</Filter>
-    </ClCompile>
-    <ClCompile Include="pipe.cpp">
-      <Filter>msghandler</Filter>
-    </ClCompile>
-    <ClCompile Include="time_stamp.cpp">
-      <Filter>msghandler</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="umsginterface.cpp">
-      <Filter>umsg</Filter>
+      <Filter>UserConsumerMsg</Filter>
     </ClCompile>
     <ClCompile Include="kmsginterface.cpp">
-      <Filter>kmsg</Filter>
+      <Filter>KerConsumerMsg</Filter>
     </ClCompile>
     <ClCompile Include="msgassist.cpp">
-      <Filter>common</Filter>
+      <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="msgloop.cpp">
-      <Filter>msghandler</Filter>
+      <Filter>HadesControlPip</Filter>
+    </ClCompile>
+    <ClCompile Include="Pipe.cpp">
+      <Filter>PluginPip</Filter>
     </ClCompile>
     <ClCompile Include="HlprMiniCom.cpp">
-      <Filter>msghandler</Filter>
+      <Filter>MinifilterPip</Filter>
+    </ClCompile>
+    <ClCompile Include="time_stamp.cpp">
+      <Filter>PluginPip</Filter>
     </ClCompile>
     <ClCompile Include="socketMsg.cpp">
-      <Filter>msghandler</Filter>
+      <Filter>SocketPip</Filter>
+    </ClCompile>
+    <ClCompile Include="DataHandler.cpp">
+      <Filter>DataHandler</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="grpc.h">
-      <Filter>grpc</Filter>
-    </ClInclude>
-    <ClInclude Include="hades_win.grpc.pb.h">
-      <Filter>grpc</Filter>
-    </ClInclude>
-    <ClInclude Include="hades_win.pb.h">
-      <Filter>grpc</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="pipe.h">
-      <Filter>msghandler</Filter>
-    </ClInclude>
-    <ClInclude Include="time_stamp.h">
-      <Filter>msghandler</Filter>
-    </ClInclude>
     <ClInclude Include="umsginterface.h">
-      <Filter>umsg</Filter>
+      <Filter>UserConsumerMsg</Filter>
     </ClInclude>
     <ClInclude Include="kmsginterface.h">
-      <Filter>kmsg</Filter>
+      <Filter>KerConsumerMsg</Filter>
     </ClInclude>
     <ClInclude Include="msgassist.h">
-      <Filter>common</Filter>
+      <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="msgloop.h">
-      <Filter>msghandler</Filter>
+      <Filter>HadesControlPip</Filter>
     </ClInclude>
     <ClInclude Include="..\HadesSdk\include\sysinfo.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Pipe.h">
+      <Filter>PluginPip</Filter>
+    </ClInclude>
     <ClInclude Include="HlprMiniCom.h">
-      <Filter>msghandler</Filter>
+      <Filter>MinifilterPip</Filter>
+    </ClInclude>
+    <ClInclude Include="time_stamp.h">
+      <Filter>PluginPip</Filter>
     </ClInclude>
     <ClInclude Include="socketMsg.h">
-      <Filter>msghandler</Filter>
+      <Filter>SocketPip</Filter>
+    </ClInclude>
+    <ClInclude Include="DataHandler.h">
+      <Filter>DataHandler</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -120,8 +117,5 @@
     <Image Include="..\Image\firearms.ico">
       <Filter>资源文件</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>

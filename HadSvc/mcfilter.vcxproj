@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props" Condition="Exists('..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -85,9 +84,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Label="Shared">
-    <Import Project="..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets" Condition="Exists('..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets')" />
-  </ImportGroup>
+  <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -170,7 +167,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -186,7 +183,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -223,7 +220,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -239,7 +236,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
@@ -270,29 +267,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="grpc.cpp" />
-    <ClCompile Include="hades_win.grpc.pb.cc" />
-    <ClCompile Include="hades_win.pb.cc" />
+    <ClCompile Include="DataHandler.cpp" />
     <ClCompile Include="HlprMiniCom.cpp" />
     <ClCompile Include="kmsginterface.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="msgassist.cpp" />
     <ClCompile Include="msgloop.cpp" />
-    <ClCompile Include="pipe.cpp" />
+    <ClCompile Include="Pipe.cpp" />
     <ClCompile Include="socketMsg.cpp" />
     <ClCompile Include="time_stamp.cpp" />
     <ClCompile Include="umsginterface.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\HadesSdk\include\sysinfo.h" />
-    <ClInclude Include="grpc.h" />
-    <ClInclude Include="hades_win.grpc.pb.h" />
-    <ClInclude Include="hades_win.pb.h" />
+    <ClInclude Include="DataHandler.h" />
     <ClInclude Include="HlprMiniCom.h" />
     <ClInclude Include="kmsginterface.h" />
     <ClInclude Include="msgassist.h" />
     <ClInclude Include="msgloop.h" />
-    <ClInclude Include="pipe.h" />
+    <ClInclude Include="Pipe.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="socketMsg.h" />
     <ClInclude Include="time_stamp.h" />
@@ -305,15 +298,5 @@
     <Image Include="..\Image\firearms.ico" />
     <Image Include="C:\Users\zy.chen\Desktop\hunter_Win_x64_v1.0\hunter.ico" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>这台计算机上缺少此项目引用的 NuGet 程序包。使用“NuGet 程序包还原”可下载这些程序包。有关更多信息，请参见 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 {0}。</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props')" Text="$([System.String]::Format('$(ErrorText)', '..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.props'))" />
-    <Error Condition="!Exists('..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\build\packages\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.1.0.0\build\native\vcpkg.D.vcpkg2022.03.10.vcpkg2022.03.10.targets'))" />
-  </Target>
 </Project>

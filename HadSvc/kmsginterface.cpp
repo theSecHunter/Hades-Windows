@@ -34,20 +34,20 @@ static DevctrlIoct          g_kernel_Ioct;
 static bool                 g_exit = false;
 const char devSyLinkName[] = "\\??\\Sysmondrv_hades";
 
-// 设置Grpc消费者指针(被消费者调用)
-static std::queue<std::shared_ptr<USubNode>>*       g_GrpcQueue_Ptr = NULL;
-static std::mutex*                                  g_GrpcQueueCs_Ptr = NULL;
-static HANDLE                                       g_GrpcQueue_Event = NULL;
-void kMsgInterface::kMsg_SetSubQueuePtr(std::queue<std::shared_ptr<USubNode>>& qptr) { g_GrpcQueue_Ptr = &qptr; }
-void kMsgInterface::kMsg_SetSubQueueLockPtr(std::mutex& qptrcs) { g_GrpcQueueCs_Ptr = &qptrcs; }
-void kMsgInterface::kMsg_SetSubEventPtr(HANDLE& eventptr) { g_GrpcQueue_Event = eventptr; }
-
-static std::queue<UPubNode*>    g_kerdata_queue;
-static std::mutex               g_kerdata_cs;
+static std::queue<UPubNode*>    g_RecvDataQueue;
+static std::mutex               g_RecvDataQueueCs;
 static HANDLE                   g_kjobAvailableEvent = nullptr;
-inline void kMsgInterface::kMsg_SetTopicQueuePtr() { g_kernel_Ioct.kf_setqueuetaskptr(g_kerdata_queue); }
-inline void kMsgInterface::kMsg_SetTopicQueueLockPtr() { g_kernel_Ioct.kf_setqueuelockptr(g_kerdata_cs); }
+inline void kMsgInterface::kMsg_SetTopicQueuePtr() { g_kernel_Ioct.kf_setqueuetaskptr(g_RecvDataQueue); }
+inline void kMsgInterface::kMsg_SetTopicQueueLockPtr() { g_kernel_Ioct.kf_setqueuelockptr(g_RecvDataQueueCs); }
 inline void kMsgInterface::kMsg_SetTopicEventPtr() { g_kernel_Ioct.kf_setqueueeventptr(g_kjobAvailableEvent); }
+
+// 设置Grpc消费者指针(被消费者调用)
+static std::queue<std::shared_ptr<USubNode>>*       g_SendQueueData_Ptr = NULL;
+static std::mutex*                                  g_SendQueueCs_Ptr = NULL;
+static HANDLE                                       g_SendQueue_Event = NULL;
+void kMsgInterface::kMsg_SetSubQueuePtr(std::queue<std::shared_ptr<USubNode>>& qptr) { g_SendQueueData_Ptr = &qptr; }
+void kMsgInterface::kMsg_SetSubQueueLockPtr(std::mutex& qptrcs) { g_SendQueueCs_Ptr = &qptrcs; }
+void kMsgInterface::kMsg_SetSubEventPtr(HANDLE& eventptr) { g_SendQueue_Event = eventptr; }
 
 kMsgInterface::kMsgInterface()
 {
@@ -128,187 +128,194 @@ void Choose_register(string& opearestring, const int code)
 }
 void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
 {
-    static json_t j;
-    UPubNode* pubnode = nullptr;
-    static std::string tmpstr;
-
-    g_kerdata_cs.lock();
-    for (;;)
+    try
     {
-        Sleep(10);
-        if (g_kerdata_queue.empty())
+        static json_t j;
+        UPubNode* pubnode = nullptr;
+        static std::string tmpstr;
+
+        g_RecvDataQueueCs.lock();
+        for (;;)
         {
-            g_kerdata_cs.unlock();
-            return;
-        }
-        pubnode = g_kerdata_queue.front();
-        g_kerdata_queue.pop();  
-        if (!pubnode)
-        {
-            g_kerdata_cs.unlock();
-            return;
-        }
-        const int taskid = pubnode->taskid;
-        switch (taskid)
-        {
-        case NF_PROCESS_INFO:
-        {
-            PROCESSINFO* processinfo = (PROCESSINFO*)pubnode->data;
-            j["win_sysmonitor_process_parentpid"] = to_string(processinfo->parentprocessid);
-            j["win_sysmonitor_process_pid"] = to_string(processinfo->pid);
-            j["win_sysmonitor_process_endprocess"] = to_string(processinfo->endprocess);
-            if (processinfo->endprocess)
+            Sleep(10);
+            if (g_RecvDataQueue.empty())
             {
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo->queryprocesspath);
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_sysmonitor_process_queryprocesspath"] = tmpstr.c_str();
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo->processpath);
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_sysmonitor_process_processpath"] = tmpstr.c_str();
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo->commandLine);
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_sysmonitor_process_commandLine"] = tmpstr.c_str();
+                g_RecvDataQueueCs.unlock();
+                return;
             }
+            pubnode = g_RecvDataQueue.front();
+            g_RecvDataQueue.pop();
+            if (!pubnode)
+            {
+                g_RecvDataQueueCs.unlock();
+                return;
+            }
+            const int taskid = pubnode->taskid;
+            switch (taskid)
+            {
+            case NF_PROCESS_INFO:
+            {
+                PROCESSINFO* processinfo = (PROCESSINFO*)pubnode->data;
+                j["win_sysmonitor_process_parentpid"] = to_string(processinfo->parentprocessid);
+                j["win_sysmonitor_process_pid"] = to_string(processinfo->pid);
+                j["win_sysmonitor_process_endprocess"] = to_string(processinfo->endprocess);
+                if (processinfo->endprocess)
+                {
+                    tmpstr.clear();
+                    Wchar_tToString(tmpstr, processinfo->queryprocesspath);
+                    tmpstr = String_ToUtf8(tmpstr);
+                    j["win_sysmonitor_process_queryprocesspath"] = tmpstr.c_str();
+                    tmpstr.clear();
+                    Wchar_tToString(tmpstr, processinfo->processpath);
+                    tmpstr = String_ToUtf8(tmpstr);
+                    j["win_sysmonitor_process_processpath"] = tmpstr.c_str();
+                    tmpstr.clear();
+                    Wchar_tToString(tmpstr, processinfo->commandLine);
+                    tmpstr = String_ToUtf8(tmpstr);
+                    j["win_sysmonitor_process_commandLine"] = tmpstr.c_str();
+                }
+                else
+                {
+                    tmpstr.clear();
+                    Wchar_tToString(tmpstr, processinfo->queryprocesspath);
+                    tmpstr = String_ToUtf8(tmpstr);
+                    j["win_sysmonitor_process_queryprocesspath"] = tmpstr.c_str();
+                }
+            }
+            break;
+            case NF_THREAD_INFO:
+            {
+                THREADINFO* threadinfo = (THREADINFO*)pubnode->data;
+                j["win_sysmonitor_thread_pid"] = to_string(threadinfo->processid);
+                j["win_sysmonitor_thread_id"] = to_string(threadinfo->threadid);
+                j["win_sysmonitor_thread_status"] = to_string(threadinfo->createid);
+            }
+            break;
+            case NF_IMAGEGMOD_INFO:
+            {
+                IMAGEMODINFO* imageinfo = (IMAGEMODINFO*)pubnode->data;
+                j["win_sysmonitor_mod_pid"] = to_string(imageinfo->processid);
+                j["win_sysmonitor_mod_base"] = to_string(imageinfo->imagebase);
+                j["win_sysmonitor_mod_size"] = to_string(imageinfo->imagesize);
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, imageinfo->imagename);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_sysmonitor_mod_path"] = tmpstr.c_str();
+                j["win_sysmonitor_mod_sysimage"] = to_string(imageinfo->systemmodeimage);
+            }
+            break;
+            case NF_REGISTERTAB_INFO:
+            {
+                REGISTERINFO* registerinfo = (REGISTERINFO*)pubnode->data;
+                tmpstr.clear();
+                Choose_register(tmpstr, registerinfo->opeararg);
+                if (tmpstr.size())
+                {
+                    j["win_sysmonitor_regtab_pid"] = to_string(registerinfo->processid);
+                    j["win_sysmonitor_regtab_tpid"] = to_string(registerinfo->threadid);
+                    j["win_sysmonitor_regtab_opeares"] = tmpstr.c_str();
+                }
+                else
+                {
+                    // server 会丢弃该包 - 不关心的操作
+                    j["win_sysmonitor_regtab_pid"] = to_string(2);
+                    j["win_sysmonitor_regtab_pid"] = to_string(2);
+                }
+            }
+            break;
+            case NF_FILE_INFO:
+            {
+                FILEINFO* fileinfo = (FILEINFO*)pubnode->data;
+                j["win_sysmonitor_file_pid"] = to_string(fileinfo->processid);
+                j["win_sysmonitor_file_tpid"] = to_string(fileinfo->threadid);
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, fileinfo->DosName);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_sysmonitor_file_dosname"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, fileinfo->FileName);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_sysmonitor_file_name"] = tmpstr.c_str();
+
+                //file attir
+                j["win_sysmonitor_file_LockOperation"] = to_string(fileinfo->LockOperation);
+                j["win_sysmonitor_file_DeletePending"] = to_string(fileinfo->DeletePending);
+                j["win_sysmonitor_file_ReadAccess"] = to_string(fileinfo->ReadAccess);
+                j["win_sysmonitor_file_WriteAccess"] = to_string(fileinfo->WriteAccess);
+                j["win_sysmonitor_file_DeleteAccess"] = to_string(fileinfo->DeleteAccess);
+                j["win_sysmonitor_file_SharedRead"] = to_string(fileinfo->SharedRead);
+                j["win_sysmonitor_file_SharedWrite"] = to_string(fileinfo->SharedWrite);
+                j["win_sysmonitor_file_SharedDelete"] = to_string(fileinfo->SharedDelete);
+                j["win_sysmonitor_file_flag"] = to_string(fileinfo->flag);
+            }
+            break;
+            case NF_SESSION_INFO:
+            {
+                SESSIONINFO* sessioninfo = (SESSIONINFO*)pubnode->data;;
+                std::shared_ptr<IO_SESSION_STATE_INFORMATION> iosession;
+                RtlSecureZeroMemory(&iosession, sizeof(IO_SESSION_STATE_INFORMATION));
+                RtlCopyMemory(&iosession, sessioninfo->iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
+
+                tmpstr.clear();
+                Choose_session(tmpstr, sessioninfo->evens);
+
+                if (iosession->LocalSession)
+                    tmpstr += " - User Local Login";
+                else
+                    tmpstr += " - User Remote Login";
+
+                j["win_sysmonitor_session_pid"] = to_string(sessioninfo->processid);
+                j["win_sysmonitor_session_tpid"] = to_string(sessioninfo->threadid);
+                j["win_sysmonitor_session_event"] = tmpstr.c_str();
+                j["win_sysmonitor_session_sessionid"] = to_string(iosession->SessionId);
+
+            }
+            break;
+            }
+
+            // 注: Topic 释放 Pub的数据指针
+            if (pubnode)
+            {
+                delete[] pubnode;
+                pubnode = nullptr;
+            }
+
+            // 序列化
+            std::shared_ptr<std::string> data;
+            if (j.size())
+                data = std::make_shared<std::string>(j.dump());
             else
+                continue;
+
+            if (!g_SendQueueData_Ptr && !g_SendQueueCs_Ptr && !g_SendQueue_Event)
             {
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, processinfo->queryprocesspath);
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_sysmonitor_process_queryprocesspath"] = tmpstr.c_str();
+                g_RecvDataQueueCs.unlock();
+                OutputDebugString(L"Grpc没设置订阅指针");
+                return;
             }
-        }
-        break;
-        case NF_THREAD_INFO:
-        {
-            THREADINFO* threadinfo = (THREADINFO*)pubnode->data;
-            j["win_sysmonitor_thread_pid"] = to_string(threadinfo->processid);
-            j["win_sysmonitor_thread_id"] = to_string(threadinfo->threadid);
-            j["win_sysmonitor_thread_status"] = to_string(threadinfo->createid);
-        }
-        break;
-        case NF_IMAGEGMOD_INFO:
-        {
-            IMAGEMODINFO* imageinfo = (IMAGEMODINFO*)pubnode->data;
-            j["win_sysmonitor_mod_pid"] = to_string(imageinfo->processid);
-            j["win_sysmonitor_mod_base"] = to_string(imageinfo->imagebase);
-            j["win_sysmonitor_mod_size"] = to_string(imageinfo->imagesize);
-            tmpstr.clear();
-            Wchar_tToString(tmpstr, imageinfo->imagename);
-            tmpstr = String_ToUtf8(tmpstr);
-            j["win_sysmonitor_mod_path"] = tmpstr.c_str();
-            j["win_sysmonitor_mod_sysimage"] = to_string(imageinfo->systemmodeimage);
-        }
-        break;
-        case NF_REGISTERTAB_INFO:
-        {
-            REGISTERINFO* registerinfo = (REGISTERINFO*)pubnode->data;
-            tmpstr.clear();
-            Choose_register(tmpstr, registerinfo->opeararg);
-            if (tmpstr.size())
+
+            std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
+            if (!sub || !data)
             {
-                j["win_sysmonitor_regtab_pid"] = to_string(registerinfo->processid);
-                j["win_sysmonitor_regtab_tpid"] = to_string(registerinfo->threadid);
-                j["win_sysmonitor_regtab_opeares"] = tmpstr.c_str();
+                g_RecvDataQueueCs.unlock();
+                return;
             }
-            else
-            {
-                // server 会丢弃该包 - 不关心的操作
-                j["win_sysmonitor_regtab_pid"] = to_string(2);
-                j["win_sysmonitor_regtab_pid"] = to_string(2);
-            }
-        }
-        break;
-        case NF_FILE_INFO:
-        {
-            FILEINFO* fileinfo = (FILEINFO*)pubnode->data;
-            j["win_sysmonitor_file_pid"] = to_string(fileinfo->processid);
-            j["win_sysmonitor_file_tpid"] = to_string(fileinfo->threadid);
+            sub->data = data;
+            sub->taskid = taskid;
+            g_SendQueueCs_Ptr->lock();
+            g_SendQueueData_Ptr->push(sub);
+            g_SendQueueCs_Ptr->unlock();
+            SetEvent(g_SendQueue_Event);
+
+            j.clear();
             tmpstr.clear();
-            Wchar_tToString(tmpstr, fileinfo->DosName);
-            tmpstr = String_ToUtf8(tmpstr);
-            j["win_sysmonitor_file_dosname"] = tmpstr.c_str();
-            tmpstr.clear();
-            Wchar_tToString(tmpstr, fileinfo->FileName);
-            tmpstr = String_ToUtf8(tmpstr);
-            j["win_sysmonitor_file_name"] = tmpstr.c_str();
-
-            //file attir
-            j["win_sysmonitor_file_LockOperation"] = to_string(fileinfo->LockOperation);
-            j["win_sysmonitor_file_DeletePending"] = to_string(fileinfo->DeletePending);
-            j["win_sysmonitor_file_ReadAccess"] = to_string(fileinfo->ReadAccess);
-            j["win_sysmonitor_file_WriteAccess"] = to_string(fileinfo->WriteAccess);
-            j["win_sysmonitor_file_DeleteAccess"] = to_string(fileinfo->DeleteAccess);
-            j["win_sysmonitor_file_SharedRead"] = to_string(fileinfo->SharedRead);
-            j["win_sysmonitor_file_SharedWrite"] = to_string(fileinfo->SharedWrite);
-            j["win_sysmonitor_file_SharedDelete"] = to_string(fileinfo->SharedDelete);
-            j["win_sysmonitor_file_flag"] = to_string(fileinfo->flag);
         }
-        break;
-        case NF_SESSION_INFO:
-        {
-            SESSIONINFO* sessioninfo = (SESSIONINFO*)pubnode->data;;
-            std::shared_ptr<IO_SESSION_STATE_INFORMATION> iosession;
-            RtlSecureZeroMemory(&iosession, sizeof(IO_SESSION_STATE_INFORMATION));
-            RtlCopyMemory(&iosession, sessioninfo->iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
-
-            tmpstr.clear();
-            Choose_session(tmpstr, sessioninfo->evens);
-
-            if (iosession->LocalSession)
-                tmpstr += " - User Local Login";
-            else
-                tmpstr += " - User Remote Login";
-
-            j["win_sysmonitor_session_pid"] = to_string(sessioninfo->processid);
-            j["win_sysmonitor_session_tpid"] = to_string(sessioninfo->threadid);
-            j["win_sysmonitor_session_event"] = tmpstr.c_str();
-            j["win_sysmonitor_session_sessionid"] = to_string(iosession->SessionId);
-        
-        }
-        break;
-        }
-
-        // 注: Topic 释放 Pub的数据指针
-        if (pubnode)
-        {
-            delete[] pubnode;
-            pubnode = nullptr;
-        }
-
-        // 序列化
-        std::shared_ptr<std::string> data;
-        if (j.size())
-            data = std::make_shared<std::string>(j.dump());
-        else
-            continue;
-
-        if (!g_GrpcQueue_Ptr && !g_GrpcQueueCs_Ptr && !g_GrpcQueue_Event)
-        {
-            g_kerdata_cs.unlock();
-            OutputDebugString(L"Grpc没设置订阅指针");
-            return;
-        }
-
-        std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
-        if (!sub || !data)
-        {
-            g_kerdata_cs.unlock();
-            return;
-        }
-        sub->data = data;
-        sub->taskid = taskid;
-        g_GrpcQueueCs_Ptr->lock();
-        g_GrpcQueue_Ptr->push(sub);
-        g_GrpcQueueCs_Ptr->unlock();
-        SetEvent(g_GrpcQueue_Event);
-
-        j.clear();
-        tmpstr.clear();
     }
-    g_kerdata_cs.unlock();
+    catch (const std::exception&)
+    {
+        g_RecvDataQueueCs.unlock();
+    }
+    g_RecvDataQueueCs.unlock();
 }
 
 void kMsgInterface::kMsg_taskPopNotifyRoutineLoop()

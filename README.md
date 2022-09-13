@@ -130,7 +130,7 @@
 
 **基于回调简单行为拦截,拦截进程配置文件： config/client_config. (规则配置未生效)**
 
-##### GRPC v2.0
+##### GRPC v2.0(已被Ageng代替)
 
 Windows对于很多第三方生态逐步容纳，Grpc github cmake编译仍会出现很多问题，最好的办法:
 
@@ -145,6 +145,8 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 **GRPC配置文件: config/client_config**
 
 **See Code: grpc.h grpc.cpp**
+
+**考虑Grpc编译复杂性和移植编码都比较麻烦，新的架构中Go WinAgent代替HadeSvc中的Grpc**
 
 #### 规划：
 

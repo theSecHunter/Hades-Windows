@@ -1,44 +1,24 @@
-﻿/*
-* PipClient
-*/
-#include <windows.h>
+﻿#include <Windows.h>
+#include <cstdint>
+#include <string>
+#include <thread>
+#include <atomic>
+#include <deque>
+#include <condition_variable>
+#include <mutex>
 #include <tchar.h>
 #include <cassert>
 #include <vector>
-
-#include "pipe.h"
+#include <chrono>
+#include "Pipe.h"
 #include "time_stamp.h"
 
-/*
-use example:
-
-pipinit:
-    std::shared_ptr<NamedPipe> pipe_;
-    pipe_ = std::make_shared<NamedPipe>();
-    pipe_->set_on_read(std::bind(&UIMessageHandle::on_ui_message, this, std::placeholders::_1, std::placeholders::_2));
-    if (!pipe_->init(pipe_name))
-    {
-        return false;
-    }
-    
-pipread:
-    void on_ui_message(const std::shared_ptr<uint8_t>& data, size_t size);
-    std::string str{ data.get(),data.get() + size };
-
-pipwrite:
-    auto buf = std::shared_ptr<uint8_t>(new uint8_t[str.length()]);
-    memcpy(buf.get(), str.data(), str.length());
-    pipe_->write(buf, str.length());
-    return true;
-*/
 
 bool NamedPipe::init(const std::wstring& pipe_name)
 {
     pipe_name_ = pipe_name;
     if (!connect_pipe())
-    {
         return false;
-    }
     read_thread_ = std::thread{ std::bind(&NamedPipe::read_loop, this) };
     write_thread_ = std::thread{ std::bind(&NamedPipe::write_loop, this) };
     return true;
@@ -124,7 +104,7 @@ bool NamedPipe::connect_pipe()
         //失败
         if (GetLastError() != ERROR_PIPE_BUSY)
         {
-            OutputDebugString(_T("open pipe failed error"));
+            OutputDebugString(_T("open pipe failed error:%d"));
             return false;
         }
 
@@ -137,7 +117,7 @@ bool NamedPipe::connect_pipe()
 
 void NamedPipe::read_loop()
 {
-    constexpr size_t kBufferSize = 10 * 1024 * 1024; //10MB，收UI发过来的Json数据
+    constexpr size_t kBufferSize = 10 * 1024 * 1024; //10MB，收发过来的Json数据
     std::vector<uint8_t> buffer;
     buffer.resize(kBufferSize);
     while (!stoped_)
@@ -183,6 +163,7 @@ void NamedPipe::write_loop()
         {
             return;
         }
+
         while (!write_buffer_.empty())
         {
             auto buff = write_buffer_.front();
@@ -192,7 +173,7 @@ void NamedPipe::write_loop()
             if (!success)
             {
                 //错误处理
-                OutputDebugString(_T("WriteFile fail"));
+                OutputDebugString(_T("WriteFile fail %d"));
             }
         }
     }

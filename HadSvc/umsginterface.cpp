@@ -44,22 +44,22 @@ static UServerSoftware          g_user_userversoftware;
 static UFile                    g_user_ufile;
 static UEtw                     g_user_etw;
 // Topic主题队列指针1
-static std::queue<UPubNode*>    g_etwdata_queue;
-static std::mutex               g_etwdata_cs;
+static std::mutex               g_RecvQueueCs;
+static std::queue<UPubNode*>    g_RecvQueueData;
 static HANDLE                   g_jobAvailableEvent;
 static bool                     g_exit = false;
-// Topic主题队列指针1设置,对于Etw属于消费者，对于Grpc属于生产者或接口数据中转
-inline void uMsgInterface::uMsg_SetTopicQueuePtr() { g_user_etw.uf_setqueuetaskptr(g_etwdata_queue); }
-inline void uMsgInterface::uMsg_SetTopicQueueLockPtr() { g_user_etw.uf_setqueuelockptr(g_etwdata_cs); }
+// Topic主题队列指针1设置,对于Etw属于消费者
+inline void uMsgInterface::uMsg_SetTopicQueuePtr() { g_user_etw.uf_setqueuetaskptr(g_RecvQueueData); }
+inline void uMsgInterface::uMsg_SetTopicQueueLockPtr() { g_user_etw.uf_setqueuelockptr(g_RecvQueueCs); }
 inline void uMsgInterface::uMsg_SetTopicEventPtr() { g_user_etw.uf_setqueueeventptr(g_jobAvailableEvent); }
 
-// 设置Grpc消费者指针(被消费者调用)
-static std::queue<std::shared_ptr<USubNode>>*       g_GrpcQueue_Ptr = NULL;
-static std::mutex*                                  g_GrpcQueueCs_Ptr = NULL;
-static HANDLE                                       g_GrpcQueue_Event = NULL;
-void uMsgInterface::uMsg_SetSubQueuePtr(std::queue<std::shared_ptr<USubNode>>& qptr) { g_GrpcQueue_Ptr = &qptr; }
-void uMsgInterface::uMsg_SetSubQueueLockPtr(std::mutex& qptrcs) { g_GrpcQueueCs_Ptr = &qptrcs; }
-void uMsgInterface::uMsg_SetSubEventPtr(HANDLE& eventptr) { g_GrpcQueue_Event = eventptr; }
+// 设置消费者指针(被消费者调用)
+static std::queue<std::shared_ptr<USubNode>>*       g_SendQueueData_Ptr = NULL;
+static std::mutex*                                  g_SendQueueCs_Ptr = NULL;
+static HANDLE                                       g_SendQueue_Event = NULL;
+void uMsgInterface::uMsg_SetSubQueuePtr(std::queue<std::shared_ptr<USubNode>>& qptr) { g_SendQueueData_Ptr = &qptr; }
+void uMsgInterface::uMsg_SetSubQueueLockPtr(std::mutex& qptrcs) { g_SendQueueCs_Ptr = &qptrcs; }
+void uMsgInterface::uMsg_SetSubEventPtr(HANDLE& eventptr) { g_SendQueue_Event = eventptr; }
 const int EtwSubLens = sizeof(USubNode);
 
 
@@ -79,22 +79,23 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
     static std::string tmpstr;
     UPubNode* etw_taskdata = nullptr;
 
-    g_etwdata_cs.lock();
+    g_RecvQueueCs.lock();
     for (;;)
     {
         Sleep(10);
-        if (g_etwdata_queue.empty())
+        if (g_RecvQueueData.empty())
         {
-            g_etwdata_cs.unlock();
+            g_RecvQueueCs.unlock();
             return;
         }
-        etw_taskdata = g_etwdata_queue.front();
-        g_etwdata_queue.pop();
+        etw_taskdata = g_RecvQueueData.front();
+        g_RecvQueueData.pop();
         if (!etw_taskdata)
         {
-            g_etwdata_cs.unlock();
+            g_RecvQueueCs.unlock();
             return;
         }
+
         const int taskid = etw_taskdata->taskid;
         switch (taskid)
         {
@@ -214,36 +215,36 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             }
             else
                 continue;
-
-            if (!g_GrpcQueue_Ptr && !g_GrpcQueueCs_Ptr && !g_GrpcQueue_Event)
+            
+            if (!g_SendQueueData_Ptr && !g_SendQueueCs_Ptr && !g_SendQueue_Event)
             {
                 OutputDebugString(L"Grpc没设置订阅指针");
-                g_etwdata_cs.unlock();
+                g_RecvQueueCs.unlock();
                 return;
             }
 
             std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
             if (!sub || !data)
             {
-                g_etwdata_cs.unlock();
+                g_RecvQueueCs.unlock();
                 return;
             }
                 
             sub->data = data;
             sub->taskid = taskid;
-            g_GrpcQueueCs_Ptr->lock();
-            g_GrpcQueue_Ptr->push(sub);
-            g_GrpcQueueCs_Ptr->unlock();
-            SetEvent(g_GrpcQueue_Event);
+            g_SendQueueCs_Ptr->lock();
+            g_SendQueueData_Ptr->push(sub);
+            g_SendQueueCs_Ptr->unlock();
+            SetEvent(g_SendQueue_Event);
             j.clear();
             tmpstr.clear();
         }
         catch (const std::exception&)
         {
-            g_etwdata_cs.unlock();
+            g_RecvQueueCs.unlock();
         }
     }
-    g_etwdata_cs.unlock();
+    g_RecvQueueCs.unlock();
 }
 // Topic监控,异步事件等待
 void uMsgInterface::uMsg_taskPopEtwLoop()

@@ -1,15 +1,5 @@
 #pragma once
-#include <Windows.h>
-
-#include <cstdint>
-#include <string>
 #include <functional>
-#include <thread>
-#include <atomic>
-#include <deque>
-#include <vector>
-#include <condition_variable>
-#include <mutex>
 
 class NamedPipe
 {
