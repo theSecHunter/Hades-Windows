@@ -11,7 +11,7 @@ public:
 	void PipFree();
 	bool PipInitAnonymous();
 	void PipFreeAnonymous();
-	bool PipWriteAnonymous(const std::shared_ptr<uint8_t>& data, size_t size);
+	bool PipWriteAnonymous(std::string& serializbuf, const int datasize);
 
 	bool ThreadPool_Init();
 	bool ThreadPool_Free();

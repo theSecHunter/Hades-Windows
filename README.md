@@ -130,7 +130,7 @@
 
 **基于回调简单行为拦截,拦截进程配置文件： config/client_config. (规则配置未生效)**
 
-### GRPC v2.0(已被Ageng代替)
+### GRPC/Protobuf v2.0(已被Ageng代替)
 
 Windows对于很多第三方生态逐步容纳，Grpc github cmake编译仍会出现很多问题，最好的办法:
 
@@ -139,14 +139,17 @@ vcpkg install grpc
 ```
 
 配置vs2019 工具 --> 选项 --> NuGet管理即可，详细可以参考网上教程，连接程序使用MD编译。
-
 C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
-
 **GRPC配置文件: config/client_config**
-
 **See Code: grpc.h grpc.cpp**
 
 **考虑Grpc编译复杂性和移植编码都比较麻烦，新的架构中Go WinAgent代替HadeSvc中的Grpc**
+**ProtoBuf最初方案也想GO导出DLL，C++调用.See Code: export_proto3.go，生成格式如下：**
+
+```
+go build -buildmode=c-shared -o protobuf.dll .\export_proto3.go
+```
+**问题在于GO和/C++字符的转换格外的内存回收，对于数据量大的传输增加一层DLL调用也不友好，这里还是用c/c++调用protobuf**
 
 ### 规划：
 

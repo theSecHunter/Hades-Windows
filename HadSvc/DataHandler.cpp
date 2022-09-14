@@ -14,13 +14,11 @@
 #include <vector>
 #include <time.h>
 #include <functional>
-
 #include "DataHandler.h"
 
-static bool                         g_shutdown = false;
-static bool                         g_etwdis = false;
-static bool                         g_kerneldis = false;
+#include "transfer.pb.h"
 
+static bool                         g_shutdown = false;
 static LPVOID                       g_user_interface = nullptr;
 static LPVOID                       g_kern_interface = nullptr;
 
@@ -38,9 +36,9 @@ const std::wstring PIPE_HADESWIN_NAME = L"\\\\.\\Pipe\\HadesPipe";
 std::shared_ptr<NamedPipe> g_namedpipe = nullptr;
 std::shared_ptr<AnonymousPipe> g_anonymouspipe = nullptr;
 
-
 DataHandler::DataHandler()
 {
+
 }
 DataHandler::~DataHandler() 
 {
@@ -145,59 +143,95 @@ void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_
 // 内核数据ConSumer
 void DataHandler::KerSublthreadProc()
 {
+    static std::mutex krecord_mutex;
+    std::shared_ptr<protocol::Record> record = std::make_shared<protocol::Record>();
+    if (!record)
+        return;
+    static protocol::Payload* PayloadMsg = record->mutable_data();
+    if (!PayloadMsg)
+        return;
+    static auto MapMessage = PayloadMsg->mutable_fields();
+    if (!MapMessage)
+        return;
+    static std::string serializbuf;
 
-    WaitForSingleObject(g_Ker_Queue_Event, INFINITE);
+    do {
+        WaitForSingleObject(g_Ker_Queue_Event, INFINITE);
+        if (g_shutdown)
+            break;
+        do{
+            {
+                g_Ker_QueueCs_Ptr.lock();
+                if (g_Ker_SubQueue_Ptr.empty())
+                {
+                    g_Ker_QueueCs_Ptr.unlock();
+                    break;
+                }
+                const auto subwrite = g_Ker_SubQueue_Ptr.front();
+                g_Ker_SubQueue_Ptr.pop();
+                g_Ker_QueueCs_Ptr.unlock();
 
-    //if (g_shutdown || g_kerneldis)
-    //    break;
+                krecord_mutex.lock();
+                record->set_data_type(subwrite->taskid);
+                record->set_timestamp(GetCurrentTime());
+                (*MapMessage)["data_type"] = to_string(subwrite->taskid);
+                (*MapMessage)["udata"] = subwrite->data->c_str(); // json
+                serializbuf = record->SerializeAsString();
+                const int datasize = serializbuf.size();
+                this->PipWriteAnonymous(serializbuf, datasize);
+                krecord_mutex.unlock();
+            }
+            MapMessage->clear();
+            serializbuf.clear();
+        } while (false);
 
-    //do {
-    //    g_Ker_QueueCs_Ptr.lock();
-    //    if (g_Ker_GrpcSubQueue_Ptr.empty())
-    //    {
-    //        g_Ker_QueueCs_Ptr.unlock();
-    //        break;
-    //    }
-    //    subwrite = g_Ker_GrpcSubQueue_Ptr.front();
-    //    g_Ker_GrpcSubQueue_Ptr.pop();
-    //    g_Ker_QueueCs_Ptr.unlock();
-
-    //    ggrpc_writecs.lock();
-    //    record->set_datatype(subwrite->taskid);
-    //    record->set_timestamp(GetCurrentTime());
-    //    (*MapMessage)["data_type"] = to_string(subwrite->taskid);
-    //    (*MapMessage)["udata"] = subwrite->data->c_str(); // json
-    //    Grpc_writeEx(rawData);
-    //    ggrpc_writecs.unlock();
-    //    MapMessage->clear();
-
-    //} while (!g_shutdown);
+    } while (!g_shutdown);
 }
 // Etw数据ConSumer
 void DataHandler::EtwSublthreadProc()
 {
+    static std::mutex urecord_mutex;
+    static std::shared_ptr<protocol::Record> record = std::make_shared<protocol::Record>();
+    if (!record)
+        return;
+    static protocol::Payload* PayloadMsg = record->mutable_data();
+    if (!PayloadMsg)
+        return;
+    static auto MapMessage = PayloadMsg->mutable_fields();
+    if (!MapMessage)
+        return;
+
+    static std::string serializbuf;
     do {
         WaitForSingleObject(g_Etw_Queue_Event, INFINITE);
-
-        if (g_shutdown || g_etwdis)
+        if (g_shutdown || !record)
             break;
-        std::shared_ptr<USubNode> subwrite;
-        g_Etw_QueueCs_Ptr.lock();
-        if (g_Etw_SubQueue_Ptr.empty())
-        {
-            g_Etw_QueueCs_Ptr.unlock();
-            break;
-        }
-        subwrite = g_Etw_SubQueue_Ptr.front();
-        g_Etw_SubQueue_Ptr.pop();
-        g_Etw_QueueCs_Ptr.unlock();
 
-        // WirtePip
-        const int datasize = subwrite->data->size();
-        std::shared_ptr<uint8_t> data{ new uint8_t[datasize] };
-        ::memcpy(data.get(), subwrite->data->c_str(), datasize);
-        this->PipWriteAnonymous(data, datasize);
+        do {
+            {
+                g_Etw_QueueCs_Ptr.lock();
+                if (g_Etw_SubQueue_Ptr.empty())
+                {
+                    g_Etw_QueueCs_Ptr.unlock();
+                    break;
+                }
+                const auto subwrite = g_Etw_SubQueue_Ptr.front();
+                g_Etw_SubQueue_Ptr.pop();
+                g_Etw_QueueCs_Ptr.unlock();
 
+                urecord_mutex.lock();
+                record->set_data_type(subwrite->taskid);
+                record->set_timestamp(GetCurrentTime());
+                (*MapMessage)["data_type"] = to_string(subwrite->taskid);
+                (*MapMessage)["udata"] = subwrite->data->c_str(); // json
+                serializbuf = record->SerializeAsString();
+                const int datasize = serializbuf.size();
+                this->PipWriteAnonymous(serializbuf, datasize);
+                urecord_mutex.unlock();
+            }
+            MapMessage->clear();
+            serializbuf.clear();
+        } while (false);
     } while (!g_shutdown);
 }
 static unsigned WINAPI _KerSubthreadProc(void* pData)
@@ -238,13 +272,23 @@ void DataHandler::PipFreeAnonymous()
     if (g_anonymouspipe)
         g_anonymouspipe->uninPip();
 }
-bool DataHandler::PipWriteAnonymous(const std::shared_ptr<uint8_t>& data, size_t size)
+bool DataHandler::PipWriteAnonymous(std::string& serializbuf, const int datasize)
 {
+    /*
+    * |---------------------------------
+    * | Serializelengs|  SerializeBuf  |
+    * |---------------------------------
+    * |   4 byte      |    xxx byte    |
+    * |---------------------------------
+    */
+    const int sendlens = datasize + sizeof(uint32_t);
+    std::shared_ptr<uint8_t> data{ new uint8_t[sendlens] };
+    *(uint32_t*)(data.get()) = datasize;
+    ::memcpy(data.get() + 0x4, serializbuf.c_str(), datasize);
     if (g_anonymouspipe)
-        g_anonymouspipe->write(data, size);
+        g_anonymouspipe->write(data, sendlens);
     return true;
 }
-
 
 // 初始化Lib库指针
 bool DataHandler::SetUMontiorLibPtr(void* ulibptr)

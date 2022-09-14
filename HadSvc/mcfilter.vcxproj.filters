@@ -37,6 +37,9 @@
     <Filter Include="DataHandler">
       <UniqueIdentifier>{145aa740-0f36-4718-ae86-5e20d88c4617}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Protobuf">
+      <UniqueIdentifier>{306d0201-bdc6-4c6d-a9f9-6a833d64f234}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -71,6 +74,9 @@
     </ClCompile>
     <ClCompile Include="AnonymousPipe.cpp">
       <Filter>PluginPip</Filter>
+    </ClCompile>
+    <ClCompile Include="transfer.pb.cc">
+      <Filter>Protobuf</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -109,6 +115,9 @@
     </ClInclude>
     <ClInclude Include="AnonymousPipe.h">
       <Filter>PluginPip</Filter>
+    </ClInclude>
+    <ClInclude Include="transfer.pb.h">
+      <Filter>Protobuf</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
