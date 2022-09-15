@@ -22,6 +22,10 @@ bool AnonymousPipe::initPip()
 
 void AnonymousPipe::uninPip()
 {
+    if (m_hStdout)
+        CloseHandle(m_hStdout);
+    if (m_hStdin)
+        CloseHandle(m_hStdin);
     m_stopevent = true;
     if (m_rthread.joinable())
     {

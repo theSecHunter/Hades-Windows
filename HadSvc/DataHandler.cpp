@@ -19,6 +19,7 @@
 #include "transfer.pb.h"
 
 static bool                         g_shutdown = false;
+static mutex                        g_pipwritecs;
 static LPVOID                       g_user_interface = nullptr;
 static LPVOID                       g_kern_interface = nullptr;
 
@@ -32,6 +33,9 @@ static std::queue<std::shared_ptr<USubNode>>    g_Ker_SubQueue_Ptr;
 static std::mutex                               g_Ker_QueueCs_Ptr;
 static HANDLE                                   g_Ker_Queue_Event = nullptr;
 
+// ExitEvent
+static HANDLE                                   g_ExitEvent;
+
 const std::wstring PIPE_HADESWIN_NAME = L"\\\\.\\Pipe\\HadesPipe";
 std::shared_ptr<NamedPipe> g_namedpipe = nullptr;
 std::shared_ptr<AnonymousPipe> g_anonymouspipe = nullptr;
@@ -44,20 +48,50 @@ DataHandler::~DataHandler()
 {
 }
 
+bool PipWriteAnonymous(std::string& serializbuf, const int datasize)
+{
+    /*
+    * |---------------------------------
+    * | Serializelengs|  SerializeBuf  |
+    * |---------------------------------
+    * |   4 byte      |    xxx byte    |
+    * |---------------------------------
+    */
+    {
+        std::lock_guard<std::mutex> lock{ g_pipwritecs };
+        const int sendlens = datasize + sizeof(uint32_t);
+        std::shared_ptr<uint8_t> data{ new uint8_t[sendlens] };
+        *(uint32_t*)(data.get()) = datasize;
+        ::memcpy(data.get() + 0x4, serializbuf.c_str(), datasize);
+        if (g_anonymouspipe)
+            g_anonymouspipe->write(data, sendlens);
+    }
+
+    return true;
+}
+
+void DataHandler::SetExitSvcEvent(HANDLE & hexitEvent)
+{
+    g_ExitEvent = hexitEvent;
+}
+
 // Task Handler
 DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
 {
-    if (!lpThreadParameter)
+    if (!lpThreadParameter || g_shutdown)
         return 0;
 
-    size_t coutwrite = 0, idx = 0;
-    static std::vector<std::string> task_array_data;
+    std::vector<std::string> task_array_data;
     task_array_data.clear();
-    if (g_shutdown)
-        return 0;
-
+    
     const int taskid = (DWORD)lpThreadParameter;
-    if ((taskid >= 100) && (taskid < 200))
+    if (taskid == 188)
+    {
+        if(g_ExitEvent)
+            SetEvent(g_ExitEvent);
+        CloseHandle(g_ExitEvent);
+    }
+    else if ((taskid >= 100) && (taskid < 200))
         ((kMsgInterface*)g_kern_interface)->kMsg_taskPush(taskid, task_array_data);
     else if ((taskid >= 200) && (taskid < 300))
         ((uMsgInterface*)g_user_interface)->uMsg_taskPush(taskid, task_array_data);
@@ -71,10 +105,10 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
         if (false == uStatus)
         {
             g_ulib->uMsg_EtwInit();
-            task_array_data[0] = "User_Etw MonitorControl Enable";
+            task_array_data.push_back("User_Etw MonitorControl Enable");
         }
         else
-            task_array_data[0] = "User_Etw MonitorControl Runing";
+            task_array_data.push_back("User_Etw MonitorControl Runing");
     }
     else if (402 == taskid) {
         auto g_ulib = ((uMsgInterface*)g_user_interface);
@@ -84,11 +118,11 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
         auto uStatus = g_ulib->GetEtwMonStatus();
         if (true == uStatus)
         {
-            task_array_data[0] = "User_Etw MonitorControl Disable";
+            task_array_data.push_back("User_Etw MonitorControl Disable");
             g_ulib->uMsg_EtwClose();
         }
         else
-            task_array_data[0] = "User_Etw MonitorControl NotActivated";
+            task_array_data.push_back("User_Etw MonitorControl NotActivated");
     }
     else if (403 == taskid) {
         auto g_klib = ((kMsgInterface*)g_kern_interface);
@@ -105,10 +139,10 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
             OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Enable KernelMonitor Command");
             g_klib->OnMonitor();
 
-            task_array_data[0] = "Kernel MonitorControl Enable";
+            task_array_data.push_back("Kernel MonitorControl Enable");
         }
         else
-            task_array_data[0] = "Kernel MonitorControl Runing";
+            task_array_data.push_back("Kernel MonitorControl Runing");
     }
     else if (404 == taskid)
     {//内核态开关
@@ -131,13 +165,67 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
         return 0;
 
     // Write Pip
+    {
+        size_t coutwrite = 0, idx = 0;
+        std::string serializbuf;
+        std::shared_ptr<protocol::Record> record = std::make_shared<protocol::Record>();
+        if (!record)
+            return 0;
+        protocol::Payload* PayloadMsg = record->mutable_data();
+        if (!PayloadMsg)
+            return 0;
+        auto MapMessage = PayloadMsg->mutable_fields();
+        if (!MapMessage)
+            return 0;
+        std::mutex crecord_mutex;
+        std::lock_guard<std::mutex> lock{ crecord_mutex };
+        coutwrite = task_array_data.size();
+        record->set_data_type(taskid);
+        record->set_timestamp(GetCurrentTime());
+        for (idx = 0; idx < coutwrite; ++idx)
+        {
+            (*MapMessage)["data_type"] = to_string(taskid);
+            if (task_array_data[idx].size())
+                (*MapMessage)["udata"] = task_array_data[idx]; // json
+            else
+                (*MapMessage)["udata"] = "error";
 
+            serializbuf = record->SerializeAsString();
+            const int datasize = serializbuf.size();
+            PipWriteAnonymous(serializbuf, datasize);
+            MapMessage->clear();
+        }
+    }
+
+    task_array_data.clear();
     return 0;
 }
 // Recv Task
 void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_t size)
 {
-    QueueUserWorkItem(DataHandler::PTaskHandlerNotify, NULL, WT_EXECUTEDEFAULT);
+    if (!data && (size <= 1024 && size >= 0))
+        return;
+    try
+    {
+        const int isize = *((int*)data.get());
+        // 匿名管道不确定因素多，插件下发Task MaxLen <= 1024
+        if (isize <= 0 && isize >= 1024)
+            return;
+        // 反序列化成Task
+        protocol::Task pTask;
+        pTask.ParseFromString((char*)(data.get() + 0x4));
+        const int taskid = pTask.data_type();
+        QueueUserWorkItem(DataHandler::PTaskHandlerNotify, (LPVOID)taskid, WT_EXECUTEDEFAULT);
+    }
+    catch (const std::exception&)
+    {
+        return;
+    }  
+}
+// Debug interface
+void DataHandler::DebugTaskInterface(const int taskid)
+{
+    QueueUserWorkItem(DataHandler::PTaskHandlerNotify, (PVOID)taskid, WT_EXECUTEDEFAULT);
 }
 
 // 内核数据ConSumer
@@ -178,7 +266,7 @@ void DataHandler::KerSublthreadProc()
                 (*MapMessage)["udata"] = subwrite->data->c_str(); // json
                 serializbuf = record->SerializeAsString();
                 const int datasize = serializbuf.size();
-                this->PipWriteAnonymous(serializbuf, datasize);
+                PipWriteAnonymous(serializbuf, datasize);
                 krecord_mutex.unlock();
             }
             MapMessage->clear();
@@ -226,7 +314,7 @@ void DataHandler::EtwSublthreadProc()
                 (*MapMessage)["udata"] = subwrite->data->c_str(); // json
                 serializbuf = record->SerializeAsString();
                 const int datasize = serializbuf.size();
-                this->PipWriteAnonymous(serializbuf, datasize);
+                PipWriteAnonymous(serializbuf, datasize);
                 urecord_mutex.unlock();
             }
             MapMessage->clear();
@@ -271,23 +359,6 @@ void DataHandler::PipFreeAnonymous()
 {
     if (g_anonymouspipe)
         g_anonymouspipe->uninPip();
-}
-bool DataHandler::PipWriteAnonymous(std::string& serializbuf, const int datasize)
-{
-    /*
-    * |---------------------------------
-    * | Serializelengs|  SerializeBuf  |
-    * |---------------------------------
-    * |   4 byte      |    xxx byte    |
-    * |---------------------------------
-    */
-    const int sendlens = datasize + sizeof(uint32_t);
-    std::shared_ptr<uint8_t> data{ new uint8_t[sendlens] };
-    *(uint32_t*)(data.get()) = datasize;
-    ::memcpy(data.get() + 0x4, serializbuf.c_str(), datasize);
-    if (g_anonymouspipe)
-        g_anonymouspipe->write(data, sendlens);
-    return true;
 }
 
 // 初始化Lib库指针

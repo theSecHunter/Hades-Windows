@@ -6,7 +6,9 @@
 - v1.0单独引擎版本，存在许多问题，Rootkit接口Win10 1909进行测试。
 
 - v2.0开发中，对v1.0的引擎重构，采集器构建用户态和内核态lib，Svc业务剥离灵活，如Server使用epoll/asio，少量代码就可以同将采集数据推送至不同的Server。
+
 - v2.0修正v1.0存在的诸多问题，添加Duilib界面和完善Win7/Win8/WIn10系统兼容性。
+
 - v2.0 Hades_Win兼容Linux数据上报，添加Go_Server完整数据格式解析处理，采集数据目前通过Grpc上报至Go_server进行解析即可，发布者数据还有很多未清洗。支持Server主动下发采集任务，Rootkit数据采集平台有待完善。支持Server管理Client监控/开启，Go_Server已合并新项目: https://github.com/theSecHunter/Hboat
 
 ## 方案：
@@ -130,7 +132,9 @@
 
 **基于回调简单行为拦截,拦截进程配置文件： config/client_config. (规则配置未生效)**
 
-### GRPC/Protobuf v2.0(已被Ageng代替)
+### GRPC/Protobuf v2.0
+
+**考虑Grpc编译复杂性和移植编码都比较麻烦，从v2.0中剥离出去，新的架构中Go WinAgent代替HadeSvc中的Grpc,Protobuf协议还是c++使用lib链接使用。**
 
 Windows对于很多第三方生态逐步容纳，Grpc github cmake编译仍会出现很多问题，最好的办法:
 
@@ -139,17 +143,18 @@ vcpkg install grpc
 ```
 
 配置vs2019 工具 --> 选项 --> NuGet管理即可，详细可以参考网上教程，连接程序使用MD编译。
-C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
-**GRPC配置文件: config/client_config**
-**See Code: grpc.h grpc.cpp**
 
-**考虑Grpc编译复杂性和移植编码都比较麻烦，新的架构中Go WinAgent代替HadeSvc中的Grpc**
-**ProtoBuf最初方案也想GO导出DLL，C++调用.See Code: export_proto3.go，生成格式如下：**
+C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
+
+**GRPC配置文件: config/client_config**
+
+**See Code: grpc.h grpc.cpp**
 
 ```
 go build -buildmode=c-shared -o protobuf.dll .\export_proto3.go
 ```
-**问题在于GO和/C++字符的转换格外的内存回收，对于数据量大的传输增加一层DLL调用也不友好，这里还是用c/c++调用protobuf**
+
+**GO和/C++数据量大频繁传输不高效不友好，用c/c++添加编译protobuf.lib工程使用**
 
 ### 规划：
 

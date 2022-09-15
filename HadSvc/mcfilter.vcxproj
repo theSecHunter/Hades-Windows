@@ -277,6 +277,7 @@
     <ClCompile Include="msgassist.cpp" />
     <ClCompile Include="msgloop.cpp" />
     <ClCompile Include="NamedPipe.cpp" />
+    <ClCompile Include="pipeManage.cpp" />
     <ClCompile Include="socketMsg.cpp" />
     <ClCompile Include="time_stamp.cpp" />
     <ClCompile Include="transfer.pb.cc" />
@@ -291,6 +292,7 @@
     <ClInclude Include="msgassist.h" />
     <ClInclude Include="msgloop.h" />
     <ClInclude Include="NamedPipe.h" />
+    <ClInclude Include="pipeManage.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="socketMsg.h" />
     <ClInclude Include="time_stamp.h" />

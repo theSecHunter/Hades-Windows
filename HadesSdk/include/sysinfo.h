@@ -42,7 +42,7 @@ enum USystemCollId
 {
     UF_PROCESS_ENUM = 200,
     UF_PROCESS_PID_TREE,		    //201
-    UF_SYSAUTO_START,			    //201
+    UF_SYSAUTO_START,			    //202
     UF_SYSNET_INFO,				    //203
     UF_SYSSESSION_INFO,			    //204
     UF_SYSINFO_ID,				    //205

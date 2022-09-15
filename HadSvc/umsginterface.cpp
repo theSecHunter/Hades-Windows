@@ -62,7 +62,6 @@ void uMsgInterface::uMsg_SetSubQueueLockPtr(std::mutex& qptrcs) { g_SendQueueCs_
 void uMsgInterface::uMsg_SetSubEventPtr(HANDLE& eventptr) { g_SendQueue_Event = eventptr; }
 const int EtwSubLens = sizeof(USubNode);
 
-
 uMsgInterface::uMsgInterface()
 {
 }
@@ -70,7 +69,6 @@ uMsgInterface::uMsgInterface()
 uMsgInterface::~uMsgInterface()
 {
 }
-
 
 // Topic数据处理和推送反馈Sub
 void uMsgInterface::uMsgEtwDataHandlerEx()
@@ -345,6 +343,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     j["win_user_process_thrcout"] = to_string(procesNode->sysprocess[i].threadcout).c_str();
                     vec_task_string.push_back(j.dump());
                 }
+                OutputDebugString(L"[User] Process Enum Success");
                 std::cout << "[User] Process Enum Success" << std::endl;
             }
             break;
@@ -394,7 +393,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     j["win_user_autorun_tscCommand"] = tmpstr.c_str();
                     vec_task_string.push_back(j.dump());
                 }
-
+                OutputDebugString(L"[User] SystemAutoStartRun Enum Success");
                 std::cout << "[User] SystemAutoStartRun Enum Success" << std::endl;
             }
             break;
@@ -425,18 +424,19 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     j["win_user_net_pid"] = netnode->tcpnode[i].PidString;
                     vec_task_string.push_back(j.dump());
                 }
+                OutputDebugString(L"[User] EnumNetwork Enum Success");
                 std::cout << "[User] EnumNetwork Enum Success" << std::endl;
             }
             break;
-            case UF_SYSSESSION_INFO: // v2.0
+            case UF_SYSSESSION_INFO:    // v2.0
             {
             }
             break;
-            case UF_SYSINFO_ID:     // v1.0 --> 是否上线时候主动发送?非被动采集
+            case UF_SYSINFO_ID:         // v1.0 --> 是否上线时候主动发送?非被动采集
             {
             }
             break;
-            case UF_SYSLOG_ID:      // 待定 --> etw完全可以取代
+            case UF_SYSLOG_ID:          // 待定 --> etw完全可以取代
             {
             }
             break;
@@ -463,6 +463,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     j["win_user_sysuser_flag"] = to_string(pusernode->usernode[i].serveruflag).c_str();
                     vec_task_string.push_back(j.dump());
                 }
+                OutputDebugString(L"[User] SysUser Enum Success");
                 std::cout << "[User] SysUser Enum Success" << std::endl;
             }
             break;
@@ -533,6 +534,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     j["win_user_software_venrel"] = tmpstr.c_str();
                     vec_task_string.push_back(j.dump());
                 }
+                OutputDebugString(L"[User] Software_Server Enum Success");
                 std::cout << "[User] Software_Server Enum Success" << std::endl;
             }
             break;
@@ -569,6 +571,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     j["win_user_driectinfo_fileSize"] = to_string(directinfo->fileEntry[i].filesize).c_str();
                     vec_task_string.push_back(j.dump());
                 }
+                OutputDebugString(L"[User] GetDirectoryFile Enum Success");
                 std::cout << "[User] GetDirectoryFile Enum Success" << std::endl;
             }
             break;
@@ -609,6 +612,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 Wchar_tToString(tmpstr, fileinfo->seFileModify);
                 j["win_user_fileinfo_seFileModify"] = tmpstr.c_str();
                 vec_task_string.push_back(j.dump());
+                OutputDebugString(L"[User] GetFIleInfo Success");
                 std::cout << "[User] GetFIleInfo Success" << std::endl;
             }
             break;

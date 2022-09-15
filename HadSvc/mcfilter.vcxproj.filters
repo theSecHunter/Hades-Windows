@@ -78,6 +78,9 @@
     <ClCompile Include="transfer.pb.cc">
       <Filter>Protobuf</Filter>
     </ClCompile>
+    <ClCompile Include="pipeManage.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -118,6 +121,9 @@
     </ClInclude>
     <ClInclude Include="transfer.pb.h">
       <Filter>Protobuf</Filter>
+    </ClInclude>
+    <ClInclude Include="pipeManage.h">
+      <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

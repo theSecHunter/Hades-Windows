@@ -11,7 +11,7 @@ public:
 	void PipFree();
 	bool PipInitAnonymous();
 	void PipFreeAnonymous();
-	bool PipWriteAnonymous(std::string& serializbuf, const int datasize);
+	void DebugTaskInterface(const int taskid);
 
 	bool ThreadPool_Init();
 	bool ThreadPool_Free();
@@ -27,6 +27,9 @@ public:
 	// Set Lib Ptr
 	bool SetUMontiorLibPtr(void* ulibptr);
 	bool SetKMontiorLibPtr(void* klibptr);
+
+	// Set ExitEvent
+	void SetExitSvcEvent(HANDLE& hexitEvent);
 
 private:
 	typedef std::vector<HANDLE> tThreads;
