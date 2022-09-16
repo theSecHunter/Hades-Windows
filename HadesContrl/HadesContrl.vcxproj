@@ -111,13 +111,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x86\Debug</OutDir>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;D:\Hades\Hades-Windows\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
+    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\x86\Release</OutDir>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;D:\Hades\Hades-Windows\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
+    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
@@ -131,14 +131,14 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x64\Debug</OutDir>
     <TargetName>$(ProjectName)64_d</TargetName>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;D:\Hades\Hades-Windows\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
+    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\x64\Release</OutDir>
     <TargetName>$(ProjectName)64</TargetName>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\Hades\Hades-Windows\HadesSdk\sysmonuser\include;D:\Hades\Hades-Windows\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
+    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
@@ -204,7 +204,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>HPSOCKET_STATIC_LIB;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -252,7 +252,6 @@
   <ItemGroup>
     <ClInclude Include="..\HadesSdk\hpsocket\Include\HPSocket\HPSocket.h" />
     <ClInclude Include="crashreport.h" />
-    <ClInclude Include="DriverManager.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="HadesContrl.h" />
     <ClInclude Include="HlprServerPip.h" />
@@ -270,7 +269,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="crashreport.cpp" />
-    <ClCompile Include="DriverManager.cpp" />
     <ClCompile Include="HadesContrl.cpp" />
     <ClCompile Include="HlprServerPip.cpp" />
     <ClCompile Include="HlprIocpService.cpp" />

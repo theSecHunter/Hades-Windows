@@ -15,9 +15,6 @@
     <Filter Include="Xml">
       <UniqueIdentifier>{a9294569-c908-4100-a407-cf2bc4c324c0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="DrvManage">
-      <UniqueIdentifier>{52810d7b-1a65-40eb-b6e9-00a4ef5f987e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="PipSvc">
       <UniqueIdentifier>{7ccd883e-c1ee-47f4-ac41-80ccfa9240de}</UniqueIdentifier>
     </Filter>
@@ -78,9 +75,6 @@
     <ClInclude Include="HpTcpSvc.h">
       <Filter>HpsockSvc</Filter>
     </ClInclude>
-    <ClInclude Include="DriverManager.h">
-      <Filter>DrvManage</Filter>
-    </ClInclude>
     <ClInclude Include="HlprSocketTcp.h">
       <Filter>IocpBase</Filter>
     </ClInclude>
@@ -115,9 +109,6 @@
     </ClCompile>
     <ClCompile Include="HpTcpSvc.cpp">
       <Filter>HpsockSvc</Filter>
-    </ClCompile>
-    <ClCompile Include="DriverManager.cpp">
-      <Filter>DrvManage</Filter>
     </ClCompile>
     <ClCompile Include="HlprSocketTcp.cpp">
       <Filter>IocpBase</Filter>

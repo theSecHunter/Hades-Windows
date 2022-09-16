@@ -1,6 +1,6 @@
 #include "../HpTcpSvc.h"
 #include "MainWindow.h"
-#include "../DriverManager.h"
+#include "DriverManager.h"
 #include "../Systeminfolib.h"
 #include <usysinfo.h>
 #include <TlHelp32.h>

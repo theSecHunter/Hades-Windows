@@ -239,6 +239,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DriverManager.cpp" />
     <ClCompile Include="MD5.cpp" />
     <ClCompile Include="uautostart.cpp" />
     <ClCompile Include="uetw.cpp" />
@@ -252,6 +253,7 @@
     <ClCompile Include="usysuser.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DriverManager.h" />
     <ClInclude Include="MD5.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="sync.h" />
