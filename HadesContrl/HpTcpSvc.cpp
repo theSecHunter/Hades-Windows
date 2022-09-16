@@ -27,7 +27,11 @@ bool HpTcpSvc::hpsk_init()
 		// 4. wating stop event
 		HANDLE stopevent = CreateEvent(NULL, FALSE, FALSE, L"HpStopTcpSvcEvent");
 		if (!stopevent)
+		{
+			if (s_pserver)
+				s_pserver->Stop();
 			return false;
+		}
 		WaitForSingleObject(stopevent, INFINITE);
 		if (s_pserver)
 			s_pserver->Stop();

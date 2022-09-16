@@ -210,6 +210,7 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		{
 			PROCESSINFO* processinfo = (PROCESSINFO*)notification->Contents;
 			OutputDebugString(processinfo->commandLine);
+			// 启动界面情况发送到界面等待用户操作
 			socketMsg socketPip;
 			if (false == socketPip.sendDlgMsg(IPS_PROCESSSTART, (char*)processinfo, sizeof(PROCESSINFO)))
 				break;

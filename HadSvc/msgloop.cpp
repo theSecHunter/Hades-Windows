@@ -10,6 +10,7 @@
 #include "kmsginterface.h"
 #include "umsginterface.h"
 
+const int WM_GETMONITORSTATUS = WM_USER + 504;
 static kMsgInterface* g_klib = nullptr;
 static uMsgInterface* g_ulib = nullptr;
 
@@ -26,6 +27,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			{
 			case 1:
 			{//用户态开关
+				if (!g_ulib)
+					break;
 				uStatus = g_ulib->GetEtwMonStatus();
 				if (false == uStatus)
 					g_ulib->uMsg_EtwInit();
@@ -35,6 +38,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			break;
 			case 2:
 			{//内核态开关
+				if (!g_klib)
+					break;
 				kStatus = g_klib->GetKerMonStatus();
 				if (false == g_klib->GetKerInitStatus())
 					g_klib->DriverInit(false); // 初始化启动read i/o线程
@@ -63,6 +68,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			break;
 			case 3:
 			{//行为拦截
+				if (!g_klib)
+					break;
 				if (false == g_klib->GetKerInitStatus())
 					g_klib->DriverInit(true);// 初始化不启动read i/o线程
 				kStatus = g_klib->GetKerBeSnipingStatus();
@@ -85,6 +92,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			default:
 				break;
 			}
+		}
+		else if (Message == WM_GETMONITORSTATUS)
+		{// 获取当前监控状态
+			do
+			{
+				if (!g_klib || !g_ulib)
+					break;
+				HWND m_ControlHwnd = FindWindow(L"HadesMainWindow", NULL);
+				if (!m_ControlHwnd)
+					break;
+				const bool bUStatus = g_ulib->GetEtwMonStatus();
+				const DWORD dwId = bUStatus ? 0x20 : 0x21;
+				::PostMessage(m_ControlHwnd, WM_GETMONITORSTATUS, dwId, NULL);
+				const bool bkStatus = g_klib->GetKerMonStatus();
+				const DWORD dwId1 = bkStatus ? 0x22 : 0x23;
+				::PostMessage(m_ControlHwnd, WM_GETMONITORSTATUS, dwId1, NULL);
+				const bool bkMStatus = g_klib->GetKerBeSnipingStatus();
+				const DWORD dwId2 = bkMStatus ? 0x24 : 0x25;
+				::PostMessage(m_ControlHwnd, WM_GETMONITORSTATUS, dwId2, NULL);
+			} while (false);				
 		}
 	}
 	catch (const std::exception&)

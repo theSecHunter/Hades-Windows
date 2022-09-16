@@ -47,14 +47,6 @@ std::shared_ptr<AnonymousPipe> g_anonymouspipe = nullptr;
 static DriverManager		g_DrvManager;
 const std::wstring			g_drverName = L"sysmondriver";
 
-DataHandler::DataHandler()
-{
-
-}
-DataHandler::~DataHandler() 
-{
-}
-
 void GetOSVersion(std::string& strOSVersion, int& verMajorVersion, int& verMinorVersion, bool& Is64)
 {
     try
@@ -353,8 +345,9 @@ bool DrvCheckStart()
         }
     }
     break;
-    default:
-    {	// 仅未安装驱动的时候提醒
+    case 0x424:
+    {
+        // 仅未安装驱动的时候提醒
         const int nret = MessageBox(NULL, L"开启内核采集需要安装驱动，系统并未安装\n示例驱动没有签名,请自行打签名或者关闭系统驱动签名认证安装.\n是否进行驱动安装开启内核态采集\n", L"提示", MB_OKCANCEL | MB_ICONWARNING);
         if (nret == 1)
         {
@@ -374,9 +367,18 @@ bool DrvCheckStart()
             return false;
     }
     break;
+    default:
+        return false;
     }
 
     return true;
+}
+
+DataHandler::DataHandler()
+{
+}
+DataHandler::~DataHandler() 
+{
 }
 
 // 管道写

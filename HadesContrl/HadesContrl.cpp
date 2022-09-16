@@ -96,6 +96,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	LoadResourceZip();
 
+	// 界面已存在
 	HWND wxHand = FindWindowEx(NULL, NULL, L"HadesMainWindow", NULL);
 	if (wxHand)
 	{

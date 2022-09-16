@@ -3,13 +3,15 @@
 
 **适用Win7/Win10 x32/x64用户态和内核态数据采集，XP未做兼容测试.**
 
-- v1.0单独引擎版本，存在许多问题，Rootkit接口Win10 1909进行测试。
+- v1.0： 单独引擎版本.
 
-- v2.0开发中，对v1.0的引擎重构，采集器构建用户态和内核态lib，Svc业务剥离灵活，如Server使用epoll/asio，少量代码就可以同将采集数据推送至不同的Server。
+- v2.0： v1.0引擎重构，采集器分离用户态和内核态lib，HadesSvc数据引擎消费lib生产数据，组织格式(json和protobuf)。Duilib界面完善，Win7/Win8/WIn10系统兼容性完善。
 
-- v2.0修正v1.0存在的诸多问题，添加Duilib界面和完善Win7/Win8/WIn10系统兼容性。
+Hboat支持Windows插件上报数据解析，GoAgent统一管理和上报(部分数据未清洗)，可作为插件下发。
 
-- v2.0 Hades_Win兼容Linux数据上报，添加Go_Server完整数据格式解析处理，采集数据目前通过Grpc上报至Go_server进行解析即可，发布者数据还有很多未清洗。支持Server主动下发采集任务，Rootkit数据采集平台有待完善。支持Server管理Client监控/开启，Go_Server已合并新项目: https://github.com/theSecHunter/Hboat
+GoAgent负责GRPC和WIN下插件管理(跨平台)：https://github.com/theSecHunter/Hades-Linux/tree/main
+
+GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboat
 
 ## 方案：
 ### Kernel
@@ -33,6 +35,7 @@
 | 应用层文档       | win_user_event.md                  |v1.0|
 | WFP文档          | win_wfp_event.md                   |v1.0|
 | Grpc 传输结构(c) | windows struct_c.md(see sysinfo.h) |v1.0|
+| Hboat插件管理指令(Windows) | HboatCommand.md |v2.0|
 
 ### 框架:
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/image-windows.png)
@@ -134,9 +137,9 @@
 
 ### GRPC/Protobuf v2.0
 
-**考虑Grpc编译复杂性和移植编码都比较麻烦，从v2.0中剥离出去，新的架构中Go WinAgent代替HadeSvc中的Grpc,Protobuf协议还是c++使用lib链接使用。**
+**考虑GRPC编译复杂性和移植编码比较麻烦，v2.0 HadesSvc将Grpc剔除，Go Agent负责Grpc统一管理，Protobuf协议沿用c++ lib链接。**
 
-Windows对于很多第三方生态逐步容纳，Grpc github cmake编译仍会出现很多问题，最好的办法:
+Windows对于很多第三方生态逐步容纳，Grpc github cmake编译会出现很多问题，如果使用推荐方式:
 
 ```
 vcpkg install grpc
@@ -150,12 +153,6 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 
 **See Code: grpc.h grpc.cpp**
 
-```
-go build -buildmode=c-shared -o protobuf.dll .\export_proto3.go
-```
-
-**GO和/C++数据量大频繁传输不高效不友好，用c/c++添加编译protobuf.lib工程使用**
-
 ### 规划：
 
 #### v2.0
@@ -164,7 +161,7 @@ go build -buildmode=c-shared -o protobuf.dll .\export_proto3.go
 | --------------------------------------------------------- | -------------- |-------------- |
 | Duilib终端界面| 中|完成 |
 | Etw和内核态回调监控兼容Win7/Win10 x32/x64版本，稳定性测试|高|完成 |
-| 优化通信：Win下目前使用Grpc，少量代码灵活支持其它接上报接口订阅数据 | 中     |完成|
+| 采集Lib接口尽可能提供单生产者多消费者数据同步推送 | 中     |待定|
 
 **Rootkit接口先不考虑兼容性，等完善了数据对比以后在考虑兼容**
 

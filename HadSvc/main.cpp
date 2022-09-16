@@ -5,6 +5,7 @@
 #include <vector>
 #include <queue>
 #include <WinSock2.h>
+#include <TlHelp32.h>
 #pragma comment(lib, "ws2_32.lib")
 
 #include "DataHandler.h"
@@ -50,9 +51,43 @@ static char g_chNameGuid[64] = { 0 };	// agentid
 
 static HANDLE g_SvcExitEvent = nullptr;
 
+bool IsProcessExist(LPCTSTR lpProcessName)
+{
+	PROCESSENTRY32 pe32;
+	pe32.dwSize = sizeof(pe32);
+	HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hProcessSnap == INVALID_HANDLE_VALUE) {
+		return false;
+	}
+	BOOL bResult = Process32First(hProcessSnap, &pe32);
+	bool bExist = false;
+	string strExeName;
+	while (bResult)
+	{
+		if (lstrcmpi(pe32.szExeFile, lpProcessName) == 0)
+		{
+			bExist = true;
+			break;
+		}
+		bResult = Process32Next(hProcessSnap, &pe32);
+	}
+	CloseHandle(hProcessSnap);
+	return bExist;
+}
+
 int main(int argc, char* argv[])
 {
-	//Sleep(5000);
+	// 只允许运行单进程
+	const HANDLE hExit = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
+	if (hExit)
+		return 0;
+	// 判断HadesAgent是否存在
+//#ifdef _WIN64
+//	if (!IsProcessExist(L"HadesSvc64.exe"))
+//#else
+//	if (!IsProcessExist(L"HadesSvc.exe"))
+//#endif
+//		return 0;
 	// HadesSvc Exit Event - HadesSvc退出标识
 	g_SvcExitEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
 	// Init PipConnect
@@ -64,16 +99,6 @@ int main(int argc, char* argv[])
 		g_DataHandler.PipFree();
 		CloseHandle(g_SvcExitEvent);
 		return 0;
-	}
-	else
-	{
-		// 通知界面Contrl连接Pip Success
-		HANDLE HadesControlEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesContrl_Event");
-		if (HadesControlEvent)
-		{
-			SetEvent(HadesControlEvent);
-			CloseHandle(HadesControlEvent);
-		}
 	}
 
 	// 设置退出Event

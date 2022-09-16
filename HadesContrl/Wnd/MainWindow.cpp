@@ -15,6 +15,7 @@
 const int WM_SHOWTASK = WM_USER + 501;
 const int WM_ONCLOSE = WM_USER + 502;
 const int WM_ONOPEN = WM_USER + 503;
+const int WM_GETMONITORSTATUS = WM_USER + 504;
 const int WM_IPS_PROCESS = WM_USER + 600;
 
 // Hades状态锁
@@ -27,20 +28,31 @@ static USysBaseInfo			g_DynSysBaseinfo;
 static DriverManager		g_DrvManager;
 const std::wstring			g_drverName = L"sysmondriver";
 
-static DWORD WINAPI StartIocpWorkNotify(LPVOID lpThreadParameter)
-{
-	HpTcpSvc tcpsvc;
-	tcpsvc.hpsk_init();
-	return 0;
-}
+static HpTcpSvc				g_tcpsvc;
 
-void WindlgShow(HWND& hWnd)
+
+bool IsProcessExist(LPCTSTR lpProcessName)
 {
-	typedef void    (WINAPI* PROCSWITCHTOTHISWINDOW)    (HWND, BOOL);
-	PROCSWITCHTOTHISWINDOW    SwitchToThisWindow;
-	HMODULE    hUser32 = GetModuleHandle(L"user32");
-	SwitchToThisWindow = (PROCSWITCHTOTHISWINDOW)GetProcAddress(hUser32, "SwitchToThisWindow");
-	SwitchToThisWindow(hWnd, TRUE);
+	PROCESSENTRY32 pe32;
+	pe32.dwSize = sizeof(pe32);
+	HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hProcessSnap == INVALID_HANDLE_VALUE) {
+		return false;
+	}
+	BOOL bResult = Process32First(hProcessSnap, &pe32);
+	bool bExist = false;
+	string strExeName;
+	while (bResult)
+	{
+		if (lstrcmpi(pe32.szExeFile, lpProcessName) == 0)
+		{
+			bExist = true;
+			break;
+		}
+		bResult = Process32Next(hProcessSnap, &pe32);
+	}
+	CloseHandle(hProcessSnap);
+	return bExist;
 }
 std::wstring GetWStringByChar(const char* szString)
 {
@@ -60,82 +72,14 @@ std::wstring GetWStringByChar(const char* szString)
 
 	return wstrString;
 }
-// 配置文件读取grpc配置
-std::wstring ReadConfigtoIpPort(std::wstring& config_root)
+
+// HpSocket Init
+static DWORD WINAPI StartIocpWorkNotify(LPVOID lpThreadParameter)
 {
-	std::wstring ip_port;
-	HANDLE hFile = CreateFile(config_root.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (!hFile)
-		return ip_port;
-	bool boolinit = false;
-	BYTE* guardData = NULL;
-	do {
-
-		const int guardDataSize = GetFileSize(hFile, NULL);
-		if (guardDataSize <= 0)
-			break;
-
-		guardData = (BYTE*)new char[guardDataSize];
-		if (!guardData)
-			break;
-
-		DWORD redSize = 0;
-		ReadFile(hFile, guardData, guardDataSize, &redSize, NULL);
-		if (redSize != guardDataSize)
-			break;
-
-		boolinit = true;
-
-	} while (false);
-
-	if (hFile) {
-		CloseHandle(hFile);
-		hFile = NULL;
-	}
-	if (false == boolinit)
-	{
-		if (guardData)
-			delete[] guardData;
-		return ip_port;
-	}
-
-	// \r\n切割
-	std::vector<std::wstring> vector_;
-	char* vector_routeip = strtok((char*)guardData, "\r\n");
-	if (NULL == vector_routeip)
-		vector_routeip = strtok((char*)guardData, "\n");
-	if (NULL == vector_routeip)
-		vector_routeip = strtok((char*)guardData, "\r");
-	while (vector_routeip != NULL)
-	{
-		vector_.push_back(GetWStringByChar(vector_routeip));
-		vector_routeip = strtok(NULL, "\r");
-	}
-
-	// find "xx"包含的数据
-	ip_port.clear();
-	for (size_t idx = 0; idx < vector_.size(); ++idx)
-	{
-		const int start = vector_[idx].find_first_of('"');
-		const int end = vector_[idx].find_last_of('"');
-		if (idx == 0)
-		{
-			ip_port += L"-ip ";
-		}
-		else if (idx == 1)
-		{
-			ip_port += L" -p ";
-		}
-		else
-			break;
-		ip_port += vector_[idx].substr(start + 1, end - start - 1);
-
-	}
-
-	if (guardData)
-		delete[] guardData;
-	return ip_port;
+	g_tcpsvc.hpsk_init();
+	return 0;
 }
+
 // 检测驱动是否安装
 bool DrvCheckStart()
 {
@@ -177,15 +121,15 @@ bool DrvCheckStart()
 		}
 	}
 	break;
-	default:
-	{	//仅未安装驱动的时候提醒
+	case 0x424:
+	{//仅未安装驱动的时候提醒
 		const int nret = MessageBox(NULL, L"开启内核采集需要安装驱动，系统并未安装\n示例驱动没有签名,请自行打签名或者关闭系统驱动签名认证安装.\n是否进行驱动安装开启内核态采集\n", L"提示", MB_OKCANCEL | MB_ICONWARNING);
 		if (nret == 1)
 		{
 			wchar_t output[MAX_PATH] = { 0, };
 			wsprintf(output, L"[Hades] SysMaver: %d SysMiver: %d", SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion);
 			OutputDebugStringW(output);
-			
+
 			if (!g_DrvManager.nf_DriverInstall_Start(SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion, SYSTEMPUBLIC::sysattriinfo.Is64))
 			{
 				MessageBox(NULL, L"驱动安装失败，请您手动安装再次开启内核态采集", L"提示", MB_OKCANCEL);
@@ -196,10 +140,12 @@ bool DrvCheckStart()
 			return false;
 	}
 	break;
+	default:
+		return false;
 	}
-
 	return true;
 }
+
 // 结束进程
 void killProcess(const wchar_t* const processname)
 {
@@ -229,20 +175,20 @@ void killProcess(const wchar_t* const processname)
 	CloseHandle(hSnapshort);
 }
 // 启动进程
-void StartProcess(std::wstring& cmdline)
+bool StartHadesAgentProcess()
 {
 	// 启动
 	wchar_t szModule[1024] = { 0, };
 	GetModuleFileName(NULL, szModule, sizeof(szModule) / sizeof(char));
 	std::wstring dirpath = szModule;
 	if (0 >= dirpath.size())
-		return;
+		return false;
 	int offset = dirpath.rfind(L"\\");
 	if (0 >= offset)
-		return;
+		return false;
 	dirpath = dirpath.substr(0, offset + 1);
 
-	cmdline = L"\"";
+	std::wstring cmdline;
 	cmdline += dirpath;
 
 	HANDLE hToken = NULL;
@@ -262,119 +208,190 @@ void StartProcess(std::wstring& cmdline)
 	si.wShowWindow = SW_HIDE;
 	si.cbReserved2 = NULL;
 	si.lpReserved2 = NULL;
-	// Read Local Config
-	std::wstring filepath = dirpath + L"config\\client_config";
-	std::wstring ip_port_cmdline = ReadConfigtoIpPort(filepath);
-	if (ip_port_cmdline.empty())
-		ip_port_cmdline = L"-ip localhost -p 8888";
 
-	// Start HadesSvc.exe
+	// Start HadesAgent.exe
 #ifdef _WIN64
-#ifdef _DEBUG
-	cmdline += L"HadesSvc_d64.exe\" ";
+	cmdline += L"HadesAgent64.exe";
 #else
-	cmdline += L"HadesSvc64.exe\" ";
+	cmdline += L"HadesAgent.exe";
 #endif
-#else
-#ifdef _DEBUG
-	cmdline += L"HadesSvc_d.exe\" ";
-#else
-	cmdline += L"HadesSvc.exe\" ";
-#endif
-#endif
-
-	// "HadesSvc_d.exe" -ip localhost -p 8888
-	cmdline += ip_port_cmdline;
-	wchar_t ipport_arg[MAX_PATH] = { 0, };
-	if (cmdline.size() <= MAX_PATH)
-		lstrcpyW(ipport_arg, cmdline.c_str());
-	//BOOL ok = CreateProcessAsUser(
-	//	hToken, cmdline.c_str(), NULL, NULL, NULL, FALSE,
-	//	(Environ ? CREATE_UNICODE_ENVIRONMENT : 0),
-	//	Environ, NULL, &si, &pi);
-	BOOL ok = CreateProcess(NULL, (LPWSTR)cmdline.c_str(), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
-
+	BOOL ok = CreateProcess(cmdline.c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
 	if (Environ)
 		DestroyEnvironmentBlock(Environ);
-
 	if (ok) {
 
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 	}
+	return ok;
 }
 
-// HadesSvc进程，防止运行中HadesSvc挂掉，界面没有感知
-void MainWindow::GetHadesSvctStatus()
+// Agent/Svc/监控状态刷新
+void MainWindow::UpdateHadesSvcStatus()
 {
-	//检测HadesSvc是否挂了
+	try
+	{
+#ifdef _WIN64
+		if (!IsProcessExist(L"HadesSvc64.exe"))
+#else
+		if (!IsProcessExist(L"HadesSvc.exe"))
+#endif
+		{
+			if (!m_hadesSvcStatus)
+				return;
+			m_pImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerSvcConnectImg")));
+			m_pConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerSvcConnectStatus")));
+			m_pImage_lab->SetBkImage(L"img/normal/winmain_connectfailuer1.png");
+			m_pConnectSvc_lab->SetText(L"HadesSvc未加载");
+			g_hadesStatuscs.lock();
+			m_hadesSvcStatus = false;
+			g_hadesStatuscs.unlock();
+		}
+		else
+		{
+			if (m_hadesSvcStatus)
+				return;
+			m_pImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerSvcConnectImg")));
+			m_pConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerSvcConnectStatus")));
+			m_pImage_lab->SetBkImage(L"img/normal/winmain_connectsuccess.png");
+			m_pConnectSvc_lab->SetText(L"HadesSvc已加载");
+			g_hadesStatuscs.lock();
+			m_hadesSvcStatus = true;
+			g_hadesStatuscs.unlock();
+		}
+	}
+	catch (const std::exception&)
+	{
+
+	}
+}
+void MainWindow::UpdateHadesAgentStatus()
+{
+	try
+	{
+		// 检测HadesAgent进程是否存在
+#ifdef _WIN64
+		if (!IsProcessExist(L"HadesAgent64.exe"))
+#else
+		if (!IsProcessExist(L"HadesAgent.exe"))
+#endif
+		{
+			if (!m_hadesAgentStatus)
+				return;
+			m_pAgentImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerAgentConnectImg")));
+			m_pAgentConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerAgentConnectStatus")));
+			m_pAgentImage_lab->SetBkImage(L"img/normal/winmain_connectfailuer1.png");
+			m_pAgentConnectSvc_lab->SetText(L"HadesAgent未加载");
+			g_hadesStatuscs.lock();
+			m_hadesAgentStatus = false;
+			g_hadesStatuscs.unlock();
+		}
+		else
+		{
+			if (m_hadesAgentStatus)
+				return;
+			m_pAgentImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerAgentConnectImg")));
+			m_pAgentConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerAgentConnectStatus")));
+			m_pAgentImage_lab->SetBkImage(L"img/normal/winmain_connectsuccess.png");
+			m_pAgentConnectSvc_lab->SetText(L"HadesAgent已加载");
+			g_hadesStatuscs.lock();
+			m_hadesAgentStatus = true;
+			g_hadesStatuscs.unlock();
+		}
+	}
+	catch (const std::exception&)
+	{
+
+	}
+}
+void MainWindow::UpdateMonitorSvcStatus(LPARAM lParam)
+{
+	try
+	{
+		const int dStatusId = (DWORD)lParam;
+		if (!dStatusId && (0x20 <= dStatusId) && (0x25 >= dStatusId))
+			return;
+		// 用户态监控
+		static COptionUI* pUOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonUserBtn")));
+		static COptionUI* pKOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonKerBtn")));
+		static COptionUI* pMOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonBeSnipingBtn")));
+		switch (dStatusId)
+		{
+		case 0x20:
+			pUOption->Selected(true);
+			break;
+		case 0x21:
+			pUOption->Selected(false);
+			break;
+		case 0x22:
+			pKOption->Selected(true);
+			break;
+		case 0x23:
+			pKOption->Selected(false);
+			break;
+		case 0x24:
+			pMOption->Selected(true);
+			break;
+		case 0x25:
+			pMOption->Selected(false);
+			break;
+		default:
+			break;
+		}
+	}
+	catch (const std::exception&)
+	{
+
+	}
+}
+
+// 注:GoAgent没有使用CreateEvent事件，这里也不用事件等待和定时器了 - 线程中5s检测一次
+// HadesAgent状态展示
+void MainWindow::GetHadesAgentStatus()
+{
+	//检测HadesAgent是否挂了
 	for (;;)
 	{
-		auto active_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVENT");
-		if (0 >= (int)active_event)
-		{
-			if (true == m_hadesSvcStatus)
-			{
-				// HadesSvc掉线，未启动
-				// 更新界面状态
-				m_pImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerConnectImg")));
-				m_pImage_lab->SetBkImage(L"img/normal/winmain_connectfailuer1.png");
-				m_pConnectSvc_lab->SetText(L"未连接平台");
-				g_hadesStatuscs.lock();
-				m_hadesSvcStatus = false;
-				g_hadesStatuscs.unlock();
-			}	
-		}
-		CloseHandle(active_event);
-		Sleep(1000);
+		UpdateHadesAgentStatus();
+		Sleep(5000);
+	}
+}
+static DWORD WINAPI HadesAgentActiveEventNotify(LPVOID lpThreadParameter)
+{
+	(reinterpret_cast<MainWindow*>(lpThreadParameter))->GetHadesAgentStatus();
+	return 0;
+}
+// HadesSvc状态展示
+void MainWindow::GetHadesSvcStatus()
+{
+	// 检测HadesSvc进程是否存在
+	for (;;)
+	{
+		UpdateHadesSvcStatus();
+		Sleep(5000);
 	}
 }
 static DWORD WINAPI HadesSvcActiveEventNotify(LPVOID lpThreadParameter)
 {
-	(reinterpret_cast<MainWindow*>(lpThreadParameter))->GetHadesSvctStatus();
+	(reinterpret_cast<MainWindow*>(lpThreadParameter))->GetHadesSvcStatus();
 	return 0;
 }
-
-// 等待HadesSvc是否连接GRPC成功反馈
-void MainWindow::GetHadesSvcConnectStatus()
+// 监控状态展示
+void MainWindow::GetMonitorStatus()
 {
-	m_pImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerConnectImg")));
-	m_pConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerConnectStatus")));
+	// 检测HadesSvc正在使用的监控服务
 	for (;;)
 	{
-		WaitForSingleObject(m_HadesControlEvent, INFINITE);
-		// 更新界面状态
-		m_pImage_lab->SetBkImage(L"img/normal/winmain_connectsuccess.png");
-		m_pConnectSvc_lab->SetText(L"已连接平台");
-		g_hadesStatuscs.lock();
-		m_hadesSvcStatus = true;
-		g_hadesStatuscs.unlock();
-	}
-}
-static DWORD WINAPI HadesConnectEventNotify(LPVOID lpThreadParameter)
-{
-	//等待Grpc唤醒 - 否则不激活
-	(reinterpret_cast<MainWindow*>(lpThreadParameter))->GetHadesSvcConnectStatus();
-	return 0;
-}
-
-// HadesSvc守护进程
-void MainWindow::HadesSvcDaemon()
-{
-	// 因为主线程刚启动，所以m_hadesSvcStatus标志位不会瞬间更新，需要等待5s左右
-	Sleep(5000);
-	while (true)
-	{
-		if (false == m_hadesSvcStatus)
-		{
-			StartProcess(m_cmdline);
-		}
+		HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
+		if (m_SvcHwnd)
+			::PostMessage(m_SvcHwnd, WM_GETMONITORSTATUS, NULL, NULL);
 		Sleep(5000);
+		
 	}
 }
-static DWORD WINAPI HadesSvcDeamonNotify(LPVOID lpThreadParameter)
+static DWORD WINAPI HadesMonitorNotify(LPVOID lpThreadParameter)
 {
-	(reinterpret_cast<MainWindow*>(lpThreadParameter))->HadesSvcDaemon();
+	(reinterpret_cast<MainWindow*>(lpThreadParameter))->GetMonitorStatus();
 	return 0;
 }
 
@@ -409,6 +426,52 @@ void MainWindow::InitWindows()
 		CLabelUI* pBattery_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_battery_lab")));
 		if (!SYSTEMPUBLIC::sysattriinfo.monitor.empty())
 			pBattery_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.monitor[0].c_str()).c_str());
+
+		m_pImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerSvcConnectImg")));
+		m_pConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerSvcConnectStatus")));
+#ifdef _WIN64
+		if (!IsProcessExist(L"HadesSvc64.exe"))
+#else
+		if (!IsProcessExist(L"HadesSvc.exe"))
+#endif
+		{
+			m_pImage_lab->SetBkImage(L"img/normal/winmain_connectfailuer1.png");
+			m_pConnectSvc_lab->SetText(L"HadesSvc未加载");
+			g_hadesStatuscs.lock();
+			m_hadesSvcStatus = false;
+			g_hadesStatuscs.unlock();
+		}
+		else
+		{
+			m_pImage_lab->SetBkImage(L"img/normal/winmain_connectsuccess.png");
+			m_pConnectSvc_lab->SetText(L"HadesSvc已加载");
+			g_hadesStatuscs.lock();
+			m_hadesSvcStatus = true;
+			g_hadesStatuscs.unlock();
+		}
+
+		m_pAgentImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerAgentConnectImg")));
+		m_pAgentConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerAgentConnectStatus")));
+#ifdef _WIN64
+		if (!IsProcessExist(L"HadesAgent64.exe"))
+#else
+		if (!IsProcessExist(L"HadesAgent.exe"))
+#endif
+		{
+			m_pAgentImage_lab->SetBkImage(L"img/normal/winmain_connectfailuer1.png");
+			m_pAgentConnectSvc_lab->SetText(L"HadesAgent未加载");
+			g_hadesStatuscs.lock();
+			m_hadesAgentStatus = false;
+			g_hadesStatuscs.unlock();
+		}
+		else
+		{
+			m_pAgentImage_lab->SetBkImage(L"img/normal/winmain_connectsuccess.png");
+			m_pAgentConnectSvc_lab->SetText(L"HadesAgent已加载");
+			g_hadesStatuscs.lock();
+			m_hadesAgentStatus = true;
+			g_hadesStatuscs.unlock();
+		}
 
 		pMainOptemp = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOptemperature_VLayout")));
 		pMainOpcpu = static_cast<CHorizontalLayoutUI*>(m_PaintManager.FindControl(_T("MainOpCpu_VLayout")));
@@ -468,8 +531,6 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 {
 	LRESULT lRes = __super::OnCreate(uMsg, wParam, lParam, bHandled);
 
-	m_HadesControlEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesContrl_Event");
-
 	// Create Meue
 	m_pMenu = new Menu();
 	m_pMenu->Create(m_hWnd, _T(""), WS_POPUP, WS_EX_TOOLWINDOW);
@@ -478,51 +539,38 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 	// 初始化界面数据
 	InitWindows();
 	
-	// 等待HadesSvc(Agent)连接GRPC服务成功状态反馈
-	CreateThread(NULL, NULL, HadesConnectEventNotify, this, 0, 0);
+	// 检测HadesAgent上线
+	CreateThread(NULL, NULL, HadesAgentActiveEventNotify, this, 0, 0);
 	Sleep(100);
-	// 检测HadesSvc是否活跃设置GRPC连接状态
+
+	// 检测HadesSvc上线
 	CreateThread(NULL, NULL, HadesSvcActiveEventNotify, this, 0, 0);
 	Sleep(100);
-	// 启动Agent进程守护
-	if (false == m_hadesSvcStatus)
-		StartProcess(m_cmdline);
+
+	// 检测监控状态
+	CreateThread(NULL, NULL, HadesMonitorNotify, this, 0, 0);
 	Sleep(100);
-	// 启用HadesSvc守护进程
-	CreateThread(NULL, NULL, HadesSvcDeamonNotify, this, 0, 0);
-	// 设置定时器
+	
+	// 设置定时器,刷新界面数据(cpu,mem)
 	SetTimer(m_hWnd, 1, 1000, NULL);
-	// 启动SocketServer等待HadesSvc
+	
+	// 启动HpSocketServer等待HadesSvc - HpSocket用于行为拦截交互
 	CreateThread(NULL, NULL, StartIocpWorkNotify, this, 0, 0);
 	return lRes;
 }
 LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	KillTimer(m_hWnd, 1);
-	auto exithandSvc = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
-	if (exithandSvc)
-	{
-		SetEvent(exithandSvc);
-		CloseHandle(exithandSvc);
-	}
-	if (m_HadesControlEvent)
-		CloseHandle(m_HadesControlEvent);
 	Sleep(100);
-#ifdef _WIN64
-#ifdef _DEBUG
-	const wchar_t killname[] = L"HadesSvc_d64.exe";
-#else
-	const wchar_t killname[] = L"HadesSvc64.exe";
-#endif
-#else
-#ifdef _DEBUG
-	const wchar_t killname[] = L"HadesSvc_d.exe";
-#else
-	const wchar_t killname[] = L"HadesSvc.exe";
-#endif
-#endif
+	// 界面退出是否将HadesSvc退出?
+	//const auto exithandSvc = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
+	//if (exithandSvc)
+	//{
+	//	SetEvent(exithandSvc);
+	//	CloseHandle(exithandSvc);
+	//}
 	
-	killProcess(killname);
+	// 退出HpSocket
 	auto IocpExEvt = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"HpStopTcpSvcEvent");
 	if (IocpExEvt)
 	{
@@ -603,6 +651,24 @@ void MainWindow::Notify(TNotifyUI& msg)
 			{
 				::ShowWindow(m_hWnd, SW_MINIMIZE);
 			}
+			else if (strControlName == _T("StartHadesAgentExe"))
+			{
+#ifdef _WIN64
+				if (!IsProcessExist(L"HadesAgent64.exe"))
+#else
+				if (!IsProcessExist(L"HadesAgent.exe"))
+#endif
+				{
+					if(StartHadesAgentProcess())
+						MessageBox(m_hWnd, L"成功代理HadesAgent成功", L"提示", MB_OK);
+					else
+						MessageBox(m_hWnd, L"创建代理HadesAgent失败,请联系管理员", L"提示", MB_OK);
+				}
+				else
+				{
+					MessageBox(m_hWnd, L"HadesAgent已启动，如有问题联系排查", L"提示", MB_OK);
+				}
+			}
 		}
 		else if (strClassName == DUI_CTR_OPTION)
 		{
@@ -633,86 +699,86 @@ void MainWindow::Notify(TNotifyUI& msg)
 			}
 			else if (strControlName == _T("MainMonUserBtn"))
 			{//下发用户态监控指令
-				COptionUI* pOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonUserBtn")));
-				if (!pOption)
-					return;
-				if (false == m_hadesSvcStatus)
-				{
-					pOption->Selected(true);
-					MessageBox(m_hWnd, L"请先连接Grpc上报平台，后点击采集", L"提示", MB_OK);
-					return;
-				}
-				HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
-				COPYDATASTRUCT c2_;
-				c2_.dwData = 1;
-				c2_.cbData = 0;
-				c2_.lpData = NULL;
-				//发送消息
-				::SendMessage(m_SvcHwnd, WM_COPYDATA, NULL, (LPARAM)&c2_);
+				//COptionUI* pOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonUserBtn")));
+				//if (!pOption)
+				//	return;
+				//if (false == m_hadesSvcStatus)
+				//{
+				//	pOption->Selected(true);
+				//	MessageBox(m_hWnd, L"请先连接Grpc上报平台，后点击采集", L"提示", MB_OK);
+				//	return;
+				//}
+				//HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
+				//COPYDATASTRUCT c2_;
+				//c2_.dwData = 1;
+				//c2_.cbData = 0;
+				//c2_.lpData = NULL;
+				////发送消息
+				//::SendMessage(m_SvcHwnd, WM_COPYDATA, NULL, (LPARAM)&c2_);
 			}
 			else if (strControlName == _T("MainMonKerBtn"))
 			{//下发内核态监控指令
-				COptionUI* pOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonKerBtn")));
-				if (!pOption)
-					return;
-				if (false == m_hadesSvcStatus)
-				{
-					pOption->Selected(true);
-					MessageBox(m_hWnd, L"请先连接Grpc上报平台，后点击采集", L"提示", MB_OK);
-					return;
-				}
-				if (SYSTEMPUBLIC::sysattriinfo.verMajorVersion < 6)
-				{
-					pOption->Selected(true);
-					MessageBox(m_hWnd, L"当前系统驱动模式不兼容，请保证操作系统win7~win10之间", L"提示", MB_OK);
-					return;
-				}
-				const bool nret = DrvCheckStart();
-				if (true == nret)
-				{
-					HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
-					COPYDATASTRUCT c2_;
-					c2_.dwData = 2;
-					c2_.cbData = 0;
-					c2_.lpData = NULL;
-					::SendMessage(m_SvcHwnd, WM_COPYDATA, NULL, (LPARAM)&c2_);
-				}
-				else {
-					pOption->Selected(true);
-					MessageBox(m_hWnd, L"内核态监控启动失败\n请使用cmd: sc query/delete hadesmondrv查看驱动状态\ndelete删除后请重新开启。", L"提示", MB_OK);
-				}
+				//COptionUI* pOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonKerBtn")));
+				//if (!pOption)
+				//	return;
+				//if (false == m_hadesSvcStatus)
+				//{
+				//	pOption->Selected(true);
+				//	MessageBox(m_hWnd, L"请先连接Grpc上报平台，后点击采集", L"提示", MB_OK);
+				//	return;
+				//}
+				//if (SYSTEMPUBLIC::sysattriinfo.verMajorVersion < 6)
+				//{
+				//	pOption->Selected(true);
+				//	MessageBox(m_hWnd, L"当前系统驱动模式不兼容，请保证操作系统win7~win10之间", L"提示", MB_OK);
+				//	return;
+				//}
+				//const bool nret = DrvCheckStart();
+				//if (true == nret)
+				//{
+				//	HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
+				//	COPYDATASTRUCT c2_;
+				//	c2_.dwData = 2;
+				//	c2_.cbData = 0;
+				//	c2_.lpData = NULL;
+				//	::SendMessage(m_SvcHwnd, WM_COPYDATA, NULL, (LPARAM)&c2_);
+				//}
+				//else {
+				//	pOption->Selected(true);
+				//	MessageBox(m_hWnd, L"内核态监控启动失败\n请使用cmd: sc query/delete hadesmondrv查看驱动状态\ndelete删除后请重新开启。", L"提示", MB_OK);
+				//}
 			}
 			else if (strControlName == _T("MainMonBeSnipingBtn"))
 			{//拦截恶意行为
-				COptionUI* pOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonBeSnipingBtn")));
-				if (!pOption)
-					return;
-				if (false == m_hadesSvcStatus)
-				{
-					pOption->Selected(true);
-					MessageBox(m_hWnd, L"请先连接Grpc上报平台，后点击采集", L"提示", MB_OK);
-					return;
-				}
-				if (SYSTEMPUBLIC::sysattriinfo.verMajorVersion < 6)
-				{
-					pOption->Selected(true);
-					MessageBox(m_hWnd, L"当前系统驱动模式不兼容，请保证操作系统win7~win10之间", L"提示", MB_OK);
-					return;
-				}
-				const bool nret = DrvCheckStart();
-				if (true == nret)
-				{
-					HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
-					COPYDATASTRUCT c2_;
-					c2_.dwData = 3;
-					c2_.cbData = 0;
-					c2_.lpData = NULL;
-					::SendMessage(m_SvcHwnd, WM_COPYDATA, NULL, (LPARAM)&c2_);
-				}
-				else {
-					pOption->Selected(true);
-					MessageBox(m_hWnd, L"内核态监控启动失败\n请使用cmd: sc query/delete hadesmondrv查看驱动状态\ndelete删除后请重新开启。", L"提示", MB_OK);
-				}
+				//COptionUI* pOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonBeSnipingBtn")));
+				//if (!pOption)
+				//	return;
+				//if (false == m_hadesSvcStatus)
+				//{
+				//	pOption->Selected(true);
+				//	MessageBox(m_hWnd, L"请先连接Grpc上报平台，后点击采集", L"提示", MB_OK);
+				//	return;
+				//}
+				//if (SYSTEMPUBLIC::sysattriinfo.verMajorVersion < 6)
+				//{
+				//	pOption->Selected(true);
+				//	MessageBox(m_hWnd, L"当前系统驱动模式不兼容，请保证操作系统win7~win10之间", L"提示", MB_OK);
+				//	return;
+				//}
+				//const bool nret = DrvCheckStart();
+				//if (true == nret)
+				//{
+				//	HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
+				//	COPYDATASTRUCT c2_;
+				//	c2_.dwData = 3;
+				//	c2_.cbData = 0;
+				//	c2_.lpData = NULL;
+				//	::SendMessage(m_SvcHwnd, WM_COPYDATA, NULL, (LPARAM)&c2_);
+				//}
+				//else {
+				//	pOption->Selected(true);
+				//	MessageBox(m_hWnd, L"内核态监控启动失败\n请使用cmd: sc query/delete hadesmondrv查看驱动状态\ndelete删除后请重新开启。", L"提示", MB_OK);
+				//}
 			}
 		}
 	}
@@ -731,6 +797,7 @@ LRESULT MainWindow::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam,
 	switch (uMsg) {
 	case WM_TIMER: lRes = OnTimer(uMsg, wParam, lParam, bHandled); break;	// 刷新界面数据
 	case WM_SHOWTASK: OnTrayIcon(uMsg, wParam, lParam, bHandled); break;	// 托盘处理
+	case WM_GETMONITORSTATUS: UpdateMonitorSvcStatus(wParam); break;		// 处理监控状态
 	case WM_IPS_PROCESS: break;
 	default:
 		bHandled = FALSE;

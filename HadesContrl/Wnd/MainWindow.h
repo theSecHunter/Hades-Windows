@@ -24,18 +24,23 @@ public:
 	void InitWindows();
 	void FlushData();
 	void AddTrayIcon();
-	void HadesSvcDaemon();
-	void GetHadesSvctStatus();
-	void GetHadesSvcConnectStatus();
+	void GetHadesSvcStatus();
+	void UpdateHadesSvcStatus();
+	void GetHadesAgentStatus();
+	void UpdateHadesAgentStatus();
+	void GetMonitorStatus();
+	void UpdateMonitorSvcStatus(LPARAM lParam);
 	LRESULT OnTrayIcon(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
 private:
 	std::wstring m_cmdline;
 	bool m_hadesSvcStatus = false;
+	bool m_hadesAgentStatus = false;
 	Menu* m_pMenu = nullptr;
 	CLabelUI* m_pImage_lab = nullptr;
 	CLabelUI* m_pConnectSvc_lab = nullptr;
-	HANDLE m_HadesControlEvent = nullptr;
+	CLabelUI* m_pAgentImage_lab = nullptr;
+	CLabelUI* m_pAgentConnectSvc_lab = nullptr;
 	CHorizontalLayoutUI* pMainOptemp = nullptr;
 	CHorizontalLayoutUI* pMainOpcpu = nullptr;
 	CHorizontalLayoutUI* pMainOpbox = nullptr;
