@@ -15,24 +15,6 @@
 #include "HlprMiniCom.h"
 #include <usysinfo.h>
 
-//#ifdef _WIN64
-//	#ifdef _DEBUG
-//		#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmondrv\\lib\\SysMonDrvlib_d64.lib")
-//		#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib_d64.lib")
-//	#else
-//		#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmondrv\\lib\\SysMonDrvlib64.lib")
-//		#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib64.lib")
-//	#endif
-//#else
-//	#ifdef _DEBUG
-//		#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmondrv\\lib\\SysMonDrvlib_d.lib")
-//		#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib_d.lib")
-//	#else
-//		#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmondrv\\lib\\SysMonDrvlib.lib")
-//		#pragma comment(lib, "D:\\Hades\\Hades-Windows\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib.lib")
-//	#endif
-//#endif
-
 static kMsgInterface	g_mainMsgKlib;
 static uMsgInterface	g_mainMsgUlib;
 static WinMsgLoop		g_MsgControl;
@@ -75,19 +57,38 @@ bool IsProcessExist(LPCTSTR lpProcessName)
 	return bExist;
 }
 
+static DWORD WINAPI HadesAgentActiveCheckThread(LPVOID lpThreadParameter)
+{
+	// 判断HadesAgent是否存在
+	for (;;)
+	{
+#ifdef _WIN64
+		if (!IsProcessExist(L"HadesAgent64.exe"))
+#else
+		if (!IsProcessExist(L"HadesAgent.exe"))
+#endif
+		{
+			if (g_SvcExitEvent)
+			{
+				SetEvent(g_SvcExitEvent);
+				CloseHandle(g_SvcExitEvent);
+			}
+			break;
+		}
+		Sleep(5000);
+	}
+	return 0;
+}
+
 int main(int argc, char* argv[])
 {
 	// 只允许运行单进程
 	const HANDLE hExit = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
 	if (hExit)
 		return 0;
-	// 判断HadesAgent是否存在
-//#ifdef _WIN64
-//	if (!IsProcessExist(L"HadesSvc64.exe"))
-//#else
-//	if (!IsProcessExist(L"HadesSvc.exe"))
-//#endif
-//		return 0;
+	// 检测HadesAgent
+	CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
+	Sleep(100);
 	// HadesSvc Exit Event - HadesSvc退出标识
 	g_SvcExitEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
 	// Init PipConnect
@@ -101,22 +102,11 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	// 设置退出Event
-	g_DataHandler.SetExitSvcEvent(g_SvcExitEvent);
-
-	// Test Pip
-	//std::shared_ptr<uint8_t> data{ new uint8_t[MAX_PATH] };
-	//DWORD dwRead = sizeof("hello server");
-	//::memcpy(data.get(), "hello server", dwRead);
-	//for (;;)
-	//{
-	//	g_DataHandler.PipWriteAnonymous(data, dwRead);
-	//	Sleep(2000);
-	//}
-
 	// 初始化接收对象
 	g_DataHandler.ThreadPool_Init();
 
+	// Set Exit Event
+	g_DataHandler.SetExitSvcEvent(g_SvcExitEvent);
 	// Set HadesControl Lib ObjectPtr
 	if (false == g_MsgControl.setUmsgLib(&g_mainMsgUlib) || false == g_MsgControl.setKmsgLib(&g_mainMsgKlib))
 	{
@@ -179,6 +169,9 @@ int main(int argc, char* argv[])
 		g_mainMsgUlib.uMsg_EtwClose();
 	if (g_mainMsgKlib.GetKerMonStatus())
 		g_mainMsgKlib.OffMonitor();
+	if (g_mainMsgKlib.GetKerBeSnipingStatus())
+		g_mainMsgKlib.OffBeSnipingMonitor();
+	Sleep(1000);
 	if (g_mainMsgKlib.GetKerInitStatus())
 		g_mainMsgKlib.DriverFree();
 	if (gpip_send)

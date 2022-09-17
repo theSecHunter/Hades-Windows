@@ -246,6 +246,8 @@ void MainWindow::UpdateHadesSvcStatus()
 			g_hadesStatuscs.lock();
 			m_hadesSvcStatus = false;
 			g_hadesStatuscs.unlock();
+			// Set View Button
+			::PostMessage(m_hWnd, WM_GETMONITORSTATUS, 0x26, NULL);
 		}
 		else
 		{
@@ -309,7 +311,7 @@ void MainWindow::UpdateMonitorSvcStatus(LPARAM lParam)
 	try
 	{
 		const int dStatusId = (DWORD)lParam;
-		if (!dStatusId && (0x20 <= dStatusId) && (0x25 >= dStatusId))
+		if (!dStatusId && (0x20 <= dStatusId) && (0x26 >= dStatusId))
 			return;
 		// ÓÃ»§Ì¬¼à¿Ø
 		static COptionUI* pUOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonUserBtn")));
@@ -333,6 +335,11 @@ void MainWindow::UpdateMonitorSvcStatus(LPARAM lParam)
 			pMOption->Selected(true);
 			break;
 		case 0x25:
+			pMOption->Selected(false);
+			break;
+		case 0x26:
+			pUOption->Selected(false);
+			pKOption->Selected(false);
 			pMOption->Selected(false);
 			break;
 		default:
@@ -386,7 +393,6 @@ void MainWindow::GetMonitorStatus()
 		if (m_SvcHwnd)
 			::PostMessage(m_SvcHwnd, WM_GETMONITORSTATUS, NULL, NULL);
 		Sleep(5000);
-		
 	}
 }
 static DWORD WINAPI HadesMonitorNotify(LPVOID lpThreadParameter)

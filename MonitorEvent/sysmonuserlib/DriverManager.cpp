@@ -450,7 +450,7 @@ int GetServicesStatus(const wchar_t* driverName)
 	if (NULL == schSCManager)
 	{
 		OutputDebugStringA("hades OpenSCManager error");
-		return -1;
+		return GetLastError();
 
 	}
 
@@ -462,9 +462,10 @@ int GetServicesStatus(const wchar_t* driverName)
 
 	if (schService == NULL)
 	{
+		
 		OutputDebugStringA("OpenService failed");
 		CloseServiceHandle(schSCManager);
-		return -1;
+		return GetLastError();
 	}
 
 	if (!QueryServiceStatusEx(
@@ -598,7 +599,7 @@ bool DriverManager::nf_DriverInstall_Start(const int mav, const int miv, const b
 		return false;
 	std::wstring DriverPath;
 	std::wstring PathAll;
-	std::wstring pszCmd = L"sc start hadesmondrv";
+	std::wstring pszCmd = L"sc start sysmondriver";
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
 	DWORD nSeriverstatus = -1;
 	TCHAR szFilePath[MAX_PATH + 1] = { 0 };

@@ -12,7 +12,7 @@
 	<VerticalLayout bordersize="1" bordercolor="#FF33374A" bkcolor="#FFFFFFFF" >
 
 		<HorizontalLayout heigth="28" childpadding="2" >
-			<Label height="28" text="Hades监控" textpadding="5,0,0,0" font="4" />
+			<Label height="28" text="Hades Security Protect v2.0" textpadding="5,0,0,0" font="4" />
 			<Button name="MainMenuBtn" width="28" height="28" normalimage="file='img/normal/icon_menu.png' source='0,0,28,28'" hotimage="file='img/normal/icon_menu.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_menu.png' source='56,0,84,28'" />
 			<Button name="MainMinsizeBtn" width="28" height="28" normalimage="file='img/normal/icon_min.png' source='0,0,28,28'" hotimage="file='img/normal/icon_min.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_min.png' source='56,0,84,28'" />
 			<Button name="MainCloseBtn" width="28" height="28" normalimage="file='img/normal/icon_close.png' source='0,0,28,28'" hotimage="file='img/normal/icon_close.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_close.png' source='0,0,28,28'" />

@@ -1160,40 +1160,49 @@ bool UEtw::uf_init()
 }
 bool UEtw::uf_close()
 {
-    //问题：虽然做了停止，但是ProcessTrace仍会阻塞，logman -ets query "NT Kernel Logger"查询已经关闭了
-    //解决办法：这里要在ProcessTrace回调函数做退出标志位，从Event里面关闭ProcessTrace即可.
-    g_etwevent_exit = true;
-    // 停止Etw_Session
-    map<TRACEHANDLE, TracGuidNode>::iterator  iter;
-    for (iter = g_tracMap.begin(); iter != g_tracMap.end();)
+    if (g_etwevent_exit)
+        return false;
+    try
     {
-        if (iter->first && iter->second.bufconfig)
+        // 问题：ControlTrace停止后，ProcessTrace仍会阻塞，通过logman -ets query "NT Kernel Logger"查询是已经关闭状态
+        // 解决办法：ProcessTrace回调函数做退出标志位，从Event里面关闭ProcessTrace即可.
+        g_etwevent_exit = true;
+        // 停止Etw_Session
+        map<TRACEHANDLE, TracGuidNode>::iterator  iter;
+        for (iter = g_tracMap.begin(); iter != g_tracMap.end();)
         {
-            ControlTrace(iter->first, KERNEL_LOGGER_NAME, iter->second.bufconfig, EVENT_TRACE_CONTROL_STOP);
-            CloseTrace(iter->first);
-        }
-        else
-            ControlTrace(NULL, KERNEL_LOGGER_NAME, iter->second.bufconfig, EVENT_TRACE_CONTROL_STOP);
+            if (iter->first && iter->second.bufconfig)
+            {
+                ControlTrace(iter->first, KERNEL_LOGGER_NAME, iter->second.bufconfig, EVENT_TRACE_CONTROL_STOP);
+                CloseTrace(iter->first);
+            }
+            else
+                ControlTrace(NULL, KERNEL_LOGGER_NAME, iter->second.bufconfig, EVENT_TRACE_CONTROL_STOP);
 
-        if (iter->second.bufconfig)
+            if (iter->second.bufconfig)
+            {
+                delete[] iter->second.bufconfig;
+                iter->second.bufconfig = NULL;
+            }
+
+            g_ms.Lock();
+            g_tracMap.erase(iter++);
+            g_ms.Unlock();
+        }
+
+        g_th.Lock();
+        for (size_t i = 0; i < g_thrhandle.size(); ++i)
         {
-            delete[] iter->second.bufconfig;
-            iter->second.bufconfig = NULL;
+            WaitForSingleObject(g_thrhandle[i], 1000);
+            CloseHandle(g_thrhandle[i]);
         }
-
-        g_ms.Lock();
-        g_tracMap.erase(iter++);
-        g_ms.Unlock();
+        g_thrhandle.clear();
+        g_th.Unlock();
     }
-
-    g_th.Lock();
-    for (size_t i = 0; i < g_thrhandle.size(); ++i)
+    catch (const std::exception&)
     {
-        WaitForSingleObject(g_thrhandle[i], 1000);
-        CloseHandle(g_thrhandle[i]);
+
     }
-    g_thrhandle.clear();
-    g_th.Unlock();
     return true;
 }
 
