@@ -107,7 +107,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x86\Debug</OutDir>
-    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);..\HadesSdk\sysmondrv\lib</LibraryPath>
     <TargetName>$(ProjectName)_d</TargetName>
     <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\sysmonuser\include;..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;$(IncludePath);..\HadesSdk\include</IncludePath>
   </PropertyGroup>
@@ -168,6 +168,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -184,6 +185,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -240,6 +242,7 @@
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
+      <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

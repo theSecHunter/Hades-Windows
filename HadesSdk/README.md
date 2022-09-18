@@ -8,4 +8,5 @@
 | rapidjson/nlohmannjson| Json库|
 | netdrv | WFP头文件和lib|
 | hpsocket | 网络库 |
+| protobuf | 协议 |
 
