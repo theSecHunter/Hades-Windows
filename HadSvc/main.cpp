@@ -82,31 +82,39 @@ static DWORD WINAPI HadesAgentActiveCheckThread(LPVOID lpThreadParameter)
 
 int main(int argc, char* argv[])
 {
-	// 只允许运行单进程
+	// 允许单进程运行
 	const HANDLE hExit = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
 	if (hExit)
 		return 0;
-	// 检测HadesAgent
+
+	// Check HadesAgent Process
+#ifdef _WIN64
+	if (!IsProcessExist(L"HadesAgent64.exe"))
+#else
+	if (!IsProcessExist(L"HadesAgent.exe"))
+#endif
+		return 0;
 	CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
-	Sleep(100);
-	// HadesSvc Exit Event - HadesSvc退出标识
+	
+	// HadesSvc Exit Event - HadesSvc
 	g_SvcExitEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
+	if (!g_SvcExitEvent)
+		return 0;
+
 	// Init PipConnect
 	true == g_DataHandler.PipInitAnonymous() ? gpip_send = true : gpip_send = false;
-	if (!gpip_send || !g_SvcExitEvent)
-		return 0;
-	if(false == gpip_send)
+	if (!gpip_send)
 	{
-		g_DataHandler.PipFree();
-		CloseHandle(g_SvcExitEvent);
+		g_DataHandler.PipFreeAnonymous();
 		return 0;
 	}
 
-	// 初始化接收对象
+	// Init Recv Etw/Kernel Data
 	g_DataHandler.ThreadPool_Init();
 
 	// Set Exit Event
 	g_DataHandler.SetExitSvcEvent(g_SvcExitEvent);
+
 	// Set HadesControl Lib ObjectPtr
 	if (false == g_MsgControl.setUmsgLib(&g_mainMsgUlib) || false == g_MsgControl.setKmsgLib(&g_mainMsgKlib))
 	{
@@ -123,7 +131,7 @@ int main(int argc, char* argv[])
 	g_mainMsgUlib.uMsg_Init();
 	g_mainMsgKlib.kMsg_Init();
 
-	// Debug接口测试
+	// Debug Test
 	if (true == gpip_send && (true == kerne_rootkit || true == kerne_mon))
 	{
 		g_mainMsgKlib.DriverInit(false);
@@ -159,7 +167,7 @@ int main(int argc, char* argv[])
 	if (true == gpip_send && true == etw_mon) {
 		g_mainMsgUlib.uMsg_EtwInit();
 	}
-	
+
 	// 等待AgentEvent Exit 否则不退出
 	WaitForSingleObject(g_SvcExitEvent, INFINITE);
 	CloseHandle(g_SvcExitEvent);
