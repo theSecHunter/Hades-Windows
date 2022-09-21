@@ -41,30 +41,30 @@ enum KAnRootkitId
 enum USystemCollId
 {
     UF_PROCESS_ENUM = 200,
-    UF_PROCESS_PID_TREE,		    //201
-    UF_SYSAUTO_START,			    //202
-    UF_SYSNET_INFO,				    //203
-    UF_SYSSESSION_INFO,			    //204
-    UF_SYSINFO_ID,				    //205
-    UF_SYSLOG_ID,				    //206
-    UF_SYSUSER_ID,				    //207
-    UF_SYSSERVICE_SOFTWARE_ID,	    //208
-    UF_SYSFILE_ID,				    //209
-    UF_FILE_INFO,				    //210
-    UF_ROOTKIT_ID				    //211
+    UF_PROCESS_PID_TREE,		    // 201
+    UF_SYSAUTO_START,			    // 202
+    UF_SYSNET_INFO,				    // 203
+    UF_SYSSESSION_INFO,			    // 204
+    UF_SYSINFO_ID,				    // 205
+    UF_SYSLOG_ID,				    // 206
+    UF_SYSUSER_ID,				    // 207
+    UF_SYSSERVICE_SOFTWARE_ID,	    // 208
+    UF_SYSFILE_ID,				    // 209
+    UF_FILE_INFO,				    // 210
+    UF_ROOTKIT_ID				    // 211
 };
 // etw id
 enum UEtwId
 {
-    UF_ETW_PROCESSINFO = 300,
-    UF_ETW_THREADINFO,
-    UF_ETW_IMAGEMOD,
-    UF_ETW_NETWORK,
-    UF_ETW_REGISTERTAB,
-    UF_ETW_FILEIO
+    UF_ETW_PROCESSINFO = 300,       
+    UF_ETW_THREADINFO,              // 301
+    UF_ETW_IMAGEMOD,                // 302
+    UF_ETW_NETWORK,                 // 303
+    UF_ETW_REGISTERTAB,             // 304
+    UF_ETW_FILEIO                   // 305
 };
 
-//======================register kernel caloutback============================
+//======================register kernel calloutnotify============================
 // NF_PROCESS_INFO
 typedef struct _PROCESSINFO
 {
@@ -226,7 +226,7 @@ typedef struct _SESSIONINFO
     char            iosessioninfo[sizeof(IO_SESSION_STATE_INFORMATION)];
 }SESSIONINFO, * PSESSIONINFO;
 
-//============================rootkit struct============================
+//=======================rootkit struct===========================================
 typedef struct _SSDTINFO
 {
     short			ssdt_id;
@@ -339,7 +339,7 @@ typedef struct _MINIFILTER_INFO
     CHAR	PostImgPath[MAX_PATH];
 }MINIFILTER_INFO, * PMINIFILTER_INFO;
 
-//======================user struct============================
+//======================user struct==================================================
 // u_autorun
 typedef struct _URegRun
 {
@@ -476,12 +476,15 @@ typedef struct _USubNode
     std::shared_ptr<std::string> data; 
 }USubNode, * PUSubNode;
 
-//======================User etw============================
+//======================User etw=======================
 // u_etw_process
 typedef struct _UEtwProcessInfo
 {
-    WCHAR  processPath[MAX_PATH * 2];
-    UINT64 processId;
+    std::wstring    processName;		// 进程名
+    std::wstring    processPath;
+    UINT64          processId;
+    UINT64          parentId;
+    bool            processStatus;		// 进程状态(启动/退出)
 }UEtwProcessInfo, * PUEtwProcessInfo;
 // u_etw_network
 typedef USHORT ADDRESS_FAMILY;
@@ -553,12 +556,16 @@ typedef struct _UEtwFileIoTabInfo {
     UINT64 FileObject;
     UINT64 FileKey;
     UINT64 TTID;
+    UINT64 CreateOptions;
+    UINT64 ShareAccess;
+    UINT64 FileAttributes;
     WCHAR  FileName[MAX_PATH];
+    WCHAR  FilePath[MAX_PATH];
 }UEtwFileIoTabInfo, * PUEtwFileIoTabInfo;
 
 //======================public function============================
 // wchar to string
-void Wchar_tToString(std::string& szDst, wchar_t* wchar);
+void Wchar_tToString(std::string& szDst, const wchar_t* wchar);
 
 
 //======================Etw GUID===================================

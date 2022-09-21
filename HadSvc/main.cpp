@@ -26,7 +26,7 @@ static DataHandler		g_DataHandler;
 static bool kerne_mon = false;		// kernel采集
 static bool kerne_rootkit = false;	// rootkit接口
 static bool user_mod = false;		// user接口
-static bool etw_mon = false;		// user采集
+static bool etw_mon = true;			// user采集
 
 static bool gpip_send = false;		// pip上报
 static char g_chNameGuid[64] = { 0 };	// agentid
@@ -88,13 +88,13 @@ int main(int argc, char* argv[])
 		return 0;
 
 	// Check HadesAgent Process
-#ifdef _WIN64
-	if (!IsProcessExist(L"HadesAgent64.exe"))
-#else
-	if (!IsProcessExist(L"HadesAgent.exe"))
-#endif
-		return 0;
-	CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
+//#ifdef _WIN64
+//	if (!IsProcessExist(L"HadesAgent64.exe"))
+//#else
+//	if (!IsProcessExist(L"HadesAgent.exe"))
+//#endif
+//		return 0;
+//	CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
 	
 	// HadesSvc Exit Event - HadesSvc
 	g_SvcExitEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
@@ -118,13 +118,13 @@ int main(int argc, char* argv[])
 	// Set HadesControl Lib ObjectPtr
 	if (false == g_MsgControl.setUmsgLib(&g_mainMsgUlib) || false == g_MsgControl.setKmsgLib(&g_mainMsgKlib))
 	{
-		OutputDebugString(L"设置MsgViewController指针失败");
+		OutputDebugString(L"设置HadesControl指针失败");
 		return 0;
 	}
 	// Set DataHandler Lib ObjectPtr
 	if (false == g_DataHandler.SetUMontiorLibPtr(&g_mainMsgUlib) || false == g_DataHandler.SetKMontiorLibPtr(&g_mainMsgKlib))
 	{
-		OutputDebugString(L"设置GrpcLib指针失败");
+		OutputDebugString(L"设置DataHandler指针失败");
 		return 0;
 	}
 	

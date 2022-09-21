@@ -1,7 +1,7 @@
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0.png)
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0_Response.jpg)
 
-**适用Win7/Win10 x32/x64用户态和内核态数据采集，XP未做兼容测试.**
+**适用Win7/Win11 x32/x64用户态和内核态数据采集，XP未做兼容测试.**
 
 ### v1.0： 
 
@@ -34,11 +34,12 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 
 | 文档             | 文件名                             | 版本|
 | ---------------- | ---------------------------------- |----|
-| 内核文档         | win_kernel_event.md                |v1.0|
-| 应用层文档       | win_user_event.md                  |v1.0|
-| WFP文档          | win_wfp_event.md                   |v1.0|
-| Grpc 传输结构(c) | windows struct_c.md(see sysinfo.h) |v1.0|
-| Hboat插件管理指令(Windows) | HboatCommand.md |v2.0|
+| 内核文档         | win_kernel_event.md                	|v2.0|
+| 应用层文档       | win_user_event.md                  	|v2.0|
+| ETW文档       | etw_event_struct.md                  	|v2.0|
+| WFP文档          | win_wfp_event.md                   	|v1.0|
+| 传输结构(c) | windows struct_c.md(see sysinfo.h) 		|v2.0|
+| Hboat插件管理指令(Windows) | HboatCommand.md 			|v2.0|
 
 ### 框架:
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/image-windows.png)
@@ -167,8 +168,8 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 |v2.0~v2.3| 采集Lib接口更改为订阅-发布者模式 | 中     |完成|
 |v2.0~v2.3| 插件模式改造 | 高     |完成|
 |v2.4| 数据采集粒度可用性完善 | 高     |进行中|
-|v2.5| HIPS规则配置，进程(黑名单) - 注册表(特殊键值保护_进程白名单) - 进程目录访问保护(进程白名单) | 高     |进行中|
-|v2.6| ETW GUID LOG方式注册，非"NT KERNEL LOG"，很多环境下容易冲突，注册被覆盖 | 中     |进行中|
+|v2.4| HIPS规则配置，进程(黑名单) - 注册表(特殊键值保护_进程白名单) - 进程目录访问保护(进程白名单) | 高 |进行中|
+|v2.5| ETW GUID LOG方式注册，非"NT KERNEL LOG"，很多环境下容易冲突，注册被覆盖 | 中     |待定|
 
 #### v3.x
 

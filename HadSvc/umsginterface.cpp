@@ -126,7 +126,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             //lstrcatW(output, etwProcess->processPath);
             //OutputDebugString(output);
             j["win_etw_processinfo_pid"] = to_string(etwProcess->processId);
-            Wchar_tToString(tmpstr, etwProcess->processPath);
+            Wchar_tToString(tmpstr, etwProcess->processPath.c_str());
             if (tmpstr.empty())
                 break;
             tmpstr = String_ToUtf8(tmpstr);

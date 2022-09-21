@@ -1,4 +1,4 @@
-# win_user_event v1.0
+# win_user_event v2.0
 
 #### 应用层采集
 
@@ -11,7 +11,7 @@
 | 进程树        | see code:uprocesstree.h/cpp     | CreateToolhelp32Snapshot \| EnumProcessModulesEx             |
 | 枚举目录文件  | see code:usysinfo.h/cpp         | 递归调用FindFirstFile                                        |
 | 文件详细      | see code:usysinfo.h/cpp         | WIN32_FIND_DATA stFileData = { 0 };<br>HANDLE hFile = FindFirstFile(filestr, &stFileData); |
-| 系统信息      | see code:usysinfo.h/cpp         |                                                              |
+| 系统信息      | see code:usysinfo.h/cpp         |									 |
 
 
 
