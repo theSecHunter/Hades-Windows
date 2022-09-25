@@ -137,9 +137,6 @@
 	else if (0 == lstrcmpW(propName.c_str(), L"KeyName"))
 ```
 
-###### 备注
-注册表操作关联不到进程PID，应用层可以选择关闭该Event，内核采集注册表会关联进程。
-
 ##### ImageMod
 
 ###### Guid

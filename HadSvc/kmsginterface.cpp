@@ -130,11 +130,10 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
 {
     try
     {
-        static json_t j;
-        UPubNode* pubnode = nullptr;
-        static std::string tmpstr;
-
         g_RecvDataQueueCs.lock();
+        static json_t j;
+        static UPubNode* pubnode = nullptr;
+        static std::string tmpstr;
         for (;;)
         {
             Sleep(10);
@@ -155,7 +154,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             {
             case NF_PROCESS_INFO:
             {
-                PROCESSINFO* processinfo = (PROCESSINFO*)pubnode->data;
+                const PROCESSINFO* const processinfo = (PROCESSINFO*)pubnode->data;
                 j["win_sysmonitor_process_parentpid"] = to_string(processinfo->parentprocessid);
                 j["win_sysmonitor_process_pid"] = to_string(processinfo->pid);
                 j["win_sysmonitor_process_endprocess"] = to_string(processinfo->endprocess);
@@ -185,7 +184,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             break;
             case NF_THREAD_INFO:
             {
-                THREADINFO* threadinfo = (THREADINFO*)pubnode->data;
+                const THREADINFO* const threadinfo = (THREADINFO*)pubnode->data;
                 j["win_sysmonitor_thread_pid"] = to_string(threadinfo->processid);
                 j["win_sysmonitor_thread_id"] = to_string(threadinfo->threadid);
                 j["win_sysmonitor_thread_status"] = to_string(threadinfo->createid);
@@ -193,7 +192,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             break;
             case NF_IMAGEGMOD_INFO:
             {
-                IMAGEMODINFO* imageinfo = (IMAGEMODINFO*)pubnode->data;
+                const IMAGEMODINFO* const imageinfo = (IMAGEMODINFO*)pubnode->data;
                 j["win_sysmonitor_mod_pid"] = to_string(imageinfo->processid);
                 j["win_sysmonitor_mod_base"] = to_string(imageinfo->imagebase);
                 j["win_sysmonitor_mod_size"] = to_string(imageinfo->imagesize);
@@ -206,7 +205,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             break;
             case NF_REGISTERTAB_INFO:
             {
-                REGISTERINFO* registerinfo = (REGISTERINFO*)pubnode->data;
+                const REGISTERINFO* const registerinfo = (REGISTERINFO*)pubnode->data;
                 tmpstr.clear();
                 Choose_register(tmpstr, registerinfo->opeararg);
                 if (tmpstr.size())
@@ -225,7 +224,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             break;
             case NF_FILE_INFO:
             {
-                FILEINFO* fileinfo = (FILEINFO*)pubnode->data;
+                const FILEINFO* const fileinfo = (FILEINFO*)pubnode->data;
                 j["win_sysmonitor_file_pid"] = to_string(fileinfo->processid);
                 j["win_sysmonitor_file_tpid"] = to_string(fileinfo->threadid);
                 tmpstr.clear();
@@ -251,7 +250,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             break;
             case NF_SESSION_INFO:
             {
-                SESSIONINFO* sessioninfo = (SESSIONINFO*)pubnode->data;;
+                const SESSIONINFO* const sessioninfo = (SESSIONINFO*)pubnode->data;;
                 std::shared_ptr<IO_SESSION_STATE_INFORMATION> iosession;
                 RtlSecureZeroMemory(&iosession, sizeof(IO_SESSION_STATE_INFORMATION));
                 RtlCopyMemory(&iosession, sessioninfo->iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
@@ -294,7 +293,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
                 return;
             }
 
-            std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
+            const std::shared_ptr<USubNode> const sub = std::make_shared<USubNode>();
             if (!sub || !data)
             {
                 g_RecvDataQueueCs.unlock();
@@ -378,7 +377,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     std::string tmpstr; wstring catstr;
     int i = 0, index = 0;
     DWORD dwAllocateMemSize = 0;
-    char* ptr_Getbuffer;
+    char* ptr_Getbuffer = nullptr;
     bool nstatus = Choose_mem(ptr_Getbuffer, dwAllocateMemSize, taskcode);
     if (false == nstatus || nullptr == ptr_Getbuffer || dwAllocateMemSize == 0)
         return;
@@ -392,7 +391,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         {
             if (false == g_kernel_ssdtobj.nf_GetSysCurrentSsdtData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
                 break;
-            SSDTINFO* ssdtinfo = (SSDTINFO*)ptr_Getbuffer;
+            const SSDTINFO* const ssdtinfo = (SSDTINFO*)ptr_Getbuffer;
             if (!ssdtinfo)
                 break;
 
@@ -415,7 +414,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         {
             if (!g_kernel_idtobj.nf_GetIdtData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
                 break;
-            IDTINFO* idtinfo = (IDTINFO*)ptr_Getbuffer;
+            const IDTINFO* const idtinfo = (IDTINFO*)ptr_Getbuffer;
             if (!idtinfo)
                 break;
 
@@ -435,7 +434,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     {
         if (false == g_kernel_dpcobj.nf_GetDpcTimerData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
             break;
-        DPC_TIMERINFO* dpcinfo = (DPC_TIMERINFO*)ptr_Getbuffer;
+        const DPC_TIMERINFO* const dpcinfo = (DPC_TIMERINFO*)ptr_Getbuffer;
         if (!dpcinfo)
             break;
 
@@ -457,7 +456,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_fsdobj.nf_GetFsdInfo(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        ULONGLONG* MjAddrArry = (ULONGLONG*)ptr_Getbuffer;
+        const ULONGLONG* const MjAddrArry = (ULONGLONG*)ptr_Getbuffer;
         if (!MjAddrArry)
             break;
 
@@ -492,7 +491,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_mousekeyboardobj.nf_GetMouseKeyInfoData(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        ULONGLONG* MjAddrArry = (ULONGLONG*)ptr_Getbuffer;
+        const ULONGLONG* const MjAddrArry = (ULONGLONG*)ptr_Getbuffer;
         if (!MjAddrArry)
             break;
 
@@ -534,11 +533,10 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_networkobj.nf_GetNteworkProcessInfo(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        PSYSNETWORKINFONODE networkinfo = (PSYSNETWORKINFONODE)ptr_Getbuffer;
+        const PSYSNETWORKINFONODE const networkinfo = (PSYSNETWORKINFONODE)ptr_Getbuffer;
         if (!networkinfo)
             break;
 
-        
         // Tcp
         j["win_rootkit_is_mod"] = "1";
         for (i = 0; i < networkinfo->tcpcout; ++i)
@@ -569,7 +567,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_processinfo.nf_EnumProcess(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        PHANDLE_INFO phandleinfo = (PHANDLE_INFO)ptr_Getbuffer;
+        const PHANDLE_INFO const phandleinfo = (PHANDLE_INFO)ptr_Getbuffer;
         if (phandleinfo && phandleinfo[0].CountNum)
         {
 
@@ -608,7 +606,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_processinfo.nf_GetProcessMod(Process_Pid, ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        PPROCESS_MOD modptr = (PPROCESS_MOD)ptr_Getbuffer;
+        const PPROCESS_MOD const modptr = (PPROCESS_MOD)ptr_Getbuffer;
         if (modptr)
         {
             j["win_rootkit_processmod_pid"] = to_string(Process_Pid).c_str();
@@ -644,7 +642,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             break;
 
 
-        PPROCESS_MOD modptr = (PPROCESS_MOD)ptr_Getbuffer;
+        const PPROCESS_MOD const modptr = (PPROCESS_MOD)ptr_Getbuffer;
         if (modptr)
         {
             for (i = 0; i < 1024 * 2; ++i)
@@ -672,6 +670,12 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
 
     default:
         break;
+    }
+
+    if (ptr_Getbuffer)
+    {
+        delete[] ptr_Getbuffer;
+        ptr_Getbuffer = nullptr;
     }
 }
 

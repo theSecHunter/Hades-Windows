@@ -88,13 +88,13 @@ int main(int argc, char* argv[])
 		return 0;
 
 	// Check HadesAgent Process
-//#ifdef _WIN64
-//	if (!IsProcessExist(L"HadesAgent64.exe"))
-//#else
-//	if (!IsProcessExist(L"HadesAgent.exe"))
-//#endif
-//		return 0;
-//	CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
+#ifdef _WIN64
+	if (!IsProcessExist(L"HadesAgent64.exe"))
+#else
+	if (!IsProcessExist(L"HadesAgent.exe"))
+#endif
+		return 0;
+	CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
 	
 	// HadesSvc Exit Event - HadesSvc
 	g_SvcExitEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");

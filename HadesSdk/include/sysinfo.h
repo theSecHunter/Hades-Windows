@@ -480,11 +480,12 @@ typedef struct _USubNode
 // u_etw_process
 typedef struct _UEtwProcessInfo
 {
-    std::wstring    processName;		// 进程名
-    std::wstring    processPath;
+    wchar_t         EventName[50];
+    wchar_t         processName[MAX_PATH];		// 进程名
+    wchar_t         processPath[MAX_PATH * 2];
     UINT64          processId;
     UINT64          parentId;
-    bool            processStatus;		// 进程状态(启动/退出)
+    bool            processStatus;		        // 进程状态(启动/退出)
 }UEtwProcessInfo, * PUEtwProcessInfo;
 // u_etw_network
 typedef USHORT ADDRESS_FAMILY;
@@ -516,11 +517,12 @@ typedef struct _UEtwNetWork
         UINT32 ipv4toRemoteAddr;
     };
 #pragma warning(pop)
-    UINT16 toRemotePort;
+    UINT16  toRemotePort;
 
-    WCHAR  processPath[MAX_PATH * 2];
-    int	   processPathSize;
-    ULONG  processId;
+    wchar_t     processPath[MAX_PATH * 2];
+    int	        processPathSize;
+    ULONG       processId;
+    wchar_t     EventName[50];
 }UEtwNetWork, * PUEtwNetWork;
 // u_etw_image
 typedef struct _UEtwImageInfo {
@@ -532,7 +534,8 @@ typedef struct _UEtwImageInfo {
     UINT64 ImageChecksum;
     UINT64 TimeDateStamp;
     UINT64 DefaultBase;
-    WCHAR  FileName[MAX_PATH];
+    wchar_t     FileName[MAX_PATH * 2];
+    wchar_t     EventName[50];
 }UEtwImageInfo, * PUEtwImageInfo;
 // u_etw_thread
 typedef struct _UEtwThreadInfo {
@@ -540,6 +543,7 @@ typedef struct _UEtwThreadInfo {
     UINT64 threadId;
     UINT64 Win32StartAddr;
     UINT64 ThreadFlags;
+    wchar_t EventName[50];
 }UEtwThreadInfo, * PUEtwThreadInfo;
 // u_etw_register
 typedef struct _UEtwRegisterTabInfo {
@@ -547,7 +551,8 @@ typedef struct _UEtwRegisterTabInfo {
     UINT64 Status;
     UINT64 Index;
     UINT64 KeyHandle;
-    WCHAR  KeyName[MAX_PATH];
+    wchar_t     KeyName[MAX_PATH * 2];
+    wchar_t     EventName[50];
 }UEtwRegisterTabInfo, * PUEtwRegisterTabInfo;
 // u_etw_file_io
 typedef struct _UEtwFileIoTabInfo {
@@ -556,11 +561,13 @@ typedef struct _UEtwFileIoTabInfo {
     UINT64 FileObject;
     UINT64 FileKey;
     UINT64 TTID;
+    UINT64 PID;
     UINT64 CreateOptions;
     UINT64 ShareAccess;
     UINT64 FileAttributes;
     WCHAR  FileName[MAX_PATH];
-    WCHAR  FilePath[MAX_PATH];
+    WCHAR  FilePath[MAX_PATH * 2];
+    WCHAR  EventName[50];
 }UEtwFileIoTabInfo, * PUEtwFileIoTabInfo;
 
 //======================public function============================

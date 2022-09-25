@@ -422,8 +422,11 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
     // Driver Install Check 
     const int taskid = (DWORD)lpThreadParameter;
     if ((403 <= taskid) && (406 >= taskid))
-        DrvCheckStart();
-
+    {
+        if (!DrvCheckStart())
+            return false;
+    }
+        
     if (taskid == 188)
     {
         if(g_ExitEvent)
