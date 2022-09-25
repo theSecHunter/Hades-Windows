@@ -52,7 +52,7 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 | :----- | :---- | :----  |
 | 进程   | 进程创建 - 销毁 - 进程数据 | 完成 |
 | 线程   | 线程创建 - 销毁 - 线程数据  | 完成 |
-| 注册表 | 删除 -  修改 - 枚举 - 重命名等（缺少具体的包解析） | 数据未清洗 |
+| 注册表 | 删除 -  修改 - 枚举 - 重命名等 | 完成 |
 | 模块 | DLL -  驱动 |完成 |
 | 会话 | 用户登录/退出/Session切换 |完成 |
 | WMI    | 待定(应用层etw实现) |ETW实现 |
@@ -91,9 +91,9 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 | 系统日志     | 应用程序日志、安全日志、系统日志数据|ETW|
 | 系统用户     | 系统用户|完成 |
 | 系统软件服务 | 已安装软件/服务|完成 |
-| 摄像头         | 监控，如果状态改变上报数据 |开发中|
-| 麦克风         | 监控，如果状态改变上报数据|开发中|
-| 蓝牙         | 监控，如果状态改变上报数据|开发中|
+| 摄像头         | 监控，如果状态改变上报数据 |未开发|
+| 麦克风         | 监控，如果状态改变上报数据|未开发|
+| 蓝牙         | 监控，如果状态改变上报数据|未开发|
 | 文件         | 列举指定目录下文件，可与ntfs数据对比.|未开发|
 | Rootkit_PE   | Rootkit相关PE文件地址解析，提取数据源Offset.|未开发 - 数据用于和内核提取地址匹配|
 
@@ -101,8 +101,8 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 
 | 事件     | 描述                            |进度  | 
 | -------- | ------------------------------- |-------- |
-| 文件     | 创建、删除、读写                |事件数据未完全解析|
-| 注册表   | 创建、删除、读写                |事件数据未完全解析|
+| 文件     | 创建、删除、读写                |完成|
+| 注册表   | 创建、删除、读写                |完成|
 | 进程树   | 进程、线程 - 创建/销毁/模块加载 |完成|
 | 网络     | tcp/udp五要素                   |完成|
 
@@ -129,7 +129,7 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 
 **Duilib展示数据不会上报**
 
-### 恶意行为拦截 v2.0：
+### 驱动行为拦截 v2.0：
 | 事件     | 描述                            |进度  | 描述 | 引用代码 |
 | -------- | ------------------------------- |-------- | -------- |-------- |
 | 进程拦截|  自定义进程 |完成| 基于回调过滤| |
@@ -137,7 +137,76 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 | 远程注入检测 |  远程线程注入 |完成| 基于回调过滤 | https://bbs.pediy.com/thread-193437.htm |
 | 非远程线程注入检测 |  映射内存或非CreteRemote方式执行 |开发中| 回调中VAD | https://github.com/huoji120/CobaltStrikeDetected/ |
 
-**基于回调简单行为拦截,拦截进程配置文件： config/client_config. (规则配置未生效)**
+
+**基于回调行为拦截,服务端管理配置随着插件下发，HadesSvc.exe解析下发规则写入内核,支持规则热更新。**
+**白名单模式：启动规则后(不包含已存在进程)，只允许白名单定义的规则操作。**
+**黑名单模式：启动规则后(不包含已存在进程)，不允许黑名单定义的规则操作。**
+**开发中，预计v2.4 release版本完成**
+#### 进程黑/白名单模式(内核规则匹配)
+```
+{
+
+	// 1白名单,2黑名单 只能开启一种模式
+	"processRuleMod": 1
+	// 如果白名单，规则生效后只允许执行cmd.exe|powershell.exe等进程
+	// 如果黑名单，规则生效后不允许执行cmd.exe|powershell.exe等进程
+	"processName": "cmd.exe|powershell.exe|vbs.exe|wscript.exe"
+}
+```
+
+#### 注册表黑/白名单模式(应用规则匹配)
+```
+{
+	{
+		// 只允许cmd.exe|powershell.exe对regusterValuse进行修改操作
+		// 1白名单,2黑名单
+		"registerRuleMod": 1
+		"processName": "cmd.exe|powershell.exe"
+		"registerValuse": "xx\\xx|xx\\xx"
+		// 1读，2修改，3读改
+		"permissions": 2
+	}
+	{
+		// 不允许cmd.exe|vbs.exe|wscript.exe对regusterValuse进行读操作
+		"registerRuleMod": 2
+		"processName": "cmd.exe|vbs.exe|wscript.exe"
+		"registerValuse": "xx\\xx|xx\\xx"
+		"permissions": 1
+	}
+	// cmd.exe既可以是白名单-又可以是黑名单，比如Run注册表不允许cmd.exe访问，CurrentRun允许cmd.exe访问，不冲突。
+	{
+		// 不允许svhost.exe.exe对regusterValuse进行读写操作
+		"registerRuleMod": 2
+		"processName": "svhost.exe.exe"
+		"registerValuse": "xx\\xx|xx\\xx"
+		"permissions": 3
+	}
+}
+```
+
+#### 目录访问/文件rwx进程黑白名单模式(应用规则匹配)
+```
+{
+	{
+		// 仅允许word.exe|wps.exe对规则的目录/文件/后缀规则进行写操作
+		// 如果文件规则包含在某目录下，以目录规则为准。
+		// 1白名单,2黑名单
+		"FileIORuleMod": 1
+		"processName": "word.exe|wps.exe"
+		"Directory": "|"
+		"FileName": "|"
+		"FileSuffixName": "|"
+		// 1读，2写，3执行，4读写，5读执行，6写执行，7读写执行
+		"permissions": 2
+	}
+	{
+	}
+	{
+	}
+}
+```
+
+**应用规则匹配：内核先会根据模式对进程过滤，过滤后上抛至应用层规则逻辑处理，根据规则返回引擎处理结果内核做出拦截或放行。这种处理方式会牺牲性能，对于系统来说可以忽略不计。**
 
 ### GRPC/Protobuf v2.0
 
@@ -164,10 +233,10 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 |版本 | 任务                                                      | 优先级         | 状态         |
 |--------| --------------------------------------------------------- | -------------- |-------------- |
 |v2.0~v2.3| Duilib终端界面| 中|完成 |
-|v2.0~v2.3| ETW和内核态回调监控兼容Win7/Win10 x32/x64版本，稳定性测试|高|完成 |
+|v2.0~v2.3| ETW和内核态回调监控兼容Win7/Win11 x32/x64版本，稳定性测试|高|完成 |
 |v2.0~v2.3| 采集Lib接口更改为订阅-发布者模式 | 中     |完成|
 |v2.0~v2.3| 插件模式改造 | 高     |完成|
-|v2.4| 数据采集粒度可用性完善 | 高     |进行中|
+|v2.4| 数据采集粒度完善 | 高     |完成|
 |v2.4| HIPS规则配置，进程(黑名单) - 注册表(特殊键值保护_进程白名单) - 进程目录访问保护(进程白名单) | 高 |进行中|
 |v2.5| ETW GUID LOG方式注册，非"NT KERNEL LOG"，很多环境下容易冲突，注册被覆盖 | 中     |待定|
 
