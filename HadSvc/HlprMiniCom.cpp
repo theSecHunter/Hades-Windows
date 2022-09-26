@@ -217,7 +217,12 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 			replyMessage.Reply.SafeToOpen = socketPip.recv();
 		}
 		break;
-		case MIN_COMMAND::IPS_REGISTERTAB: break;
+		case MIN_COMMAND::IPS_REGISTERTAB: 
+		{
+			// ≤‚ ‘ƒ¨»œ
+			replyMessage.Reply.SafeToOpen = 1;
+		}
+		break;
 		case MIN_COMMAND::IPS_IMAGEDLL: break;
 		}
 

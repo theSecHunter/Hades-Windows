@@ -4,10 +4,10 @@
 #include "devctrl.h"
 
 static  BOOLEAN					g_file_monitor = FALSE;
-static  KSPIN_LOCK				g_file_monitorlock = NULL;
+static  KSPIN_LOCK				g_file_monitorlock = 0;
 
-static	KSPIN_LOCK              g_filelock = NULL;
 static	NPAGED_LOOKASIDE_LIST	g_filelist;
+static	KSPIN_LOCK              g_filelock = 0;
 
 static	FILEDATA				g_filedata;
 
@@ -97,7 +97,7 @@ NTSTATUS File_Init(PDRIVER_OBJECT pDriverObject)
 	ldr = (PLDR_DATA_TABLE_ENTRY64)pDriverObject->DriverSection;
 	ldr->Flags |= 0x20;
 
-	sl_init(&g_file_monitor);
+	sl_init(&g_filelock);
 	sl_init(&g_file_monitorlock);
 
 	sl_init(&g_filedata.file_lock);

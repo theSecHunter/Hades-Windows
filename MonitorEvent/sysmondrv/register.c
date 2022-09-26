@@ -1,94 +1,143 @@
 #include "public.h"
 #include "register.h"
-
+#include "kflt.h"
 #include "devctrl.h"
+#include "utiltools.h"
 
 static  BOOLEAN					g_reg_monitorprocess = FALSE;
-static  KSPIN_LOCK				g_reg_monitorlock = NULL;
+static  KSPIN_LOCK				g_reg_monitorlock = 0;
 
 static  BOOLEAN					g_reg_ips_monitorprocess = FALSE;
-static  KSPIN_LOCK				g_reg_ips_monitorlock = NULL;
+static  KSPIN_LOCK				g_reg_ips_monitorlock = 0;
 
-static	KSPIN_LOCK              g_registelock = NULL;
+//static  int						g_reg_ipsmod = 0;
+//static	KSPIN_LOCK				g_reg_ipsmodlock = 0;
+
+static	PWCHAR					g_reg_ipsNameList = NULL;
+static	KSPIN_LOCK				g_reg_ipsNameListlock = 0;
+
 static	NPAGED_LOOKASIDE_LIST	g_registerlist;
+static	KSPIN_LOCK              g_registelock = 0;
 
 static	REGISTERDATA			g_regdata;
 
 static 	LARGE_INTEGER			g_plareg;
 static	UNICODE_STRING			g_regstring;
 
-
-NTSTATUS Process_NotifyRegister(
+static NTSTATUS Process_NotifyRegister(
 	_In_ PVOID CallbackContext,
 	_In_opt_ PVOID Argument1,
 	_In_opt_ PVOID Argument2
 )
 {
 	UNREFERENCED_PARAMETER(CallbackContext);
-	UNREFERENCED_PARAMETER(Argument2);
-
-	if (FALSE == g_reg_monitorprocess && FALSE == g_reg_ips_monitorprocess)
-		return STATUS_SUCCESS;
-
-	// 还未做任何规则防御
-	if (g_reg_ips_monitorprocess)
-	{
-	}
-	if (FALSE == g_reg_monitorprocess)
+	if ((FALSE == g_reg_monitorprocess) && (FALSE == g_reg_ips_monitorprocess) && !Argument1 && !Argument2)
 		return STATUS_SUCCESS;
 
 	REGISTERINFO registerinfo;
-	KLOCK_QUEUE_HANDLE lh;
-	LONG lOperateType = -1;
 	RtlSecureZeroMemory(&registerinfo, sizeof(REGISTERINFO));
-
-	registerinfo.processid = (int)PsGetCurrentProcessId();
-	registerinfo.threadid = (int)PsGetCurrentThreadId();
+	NTSTATUS status = STATUS_SUCCESS;
+	const int processid = (int)PsGetCurrentProcessId();
+	const int threadid = (int)PsGetCurrentThreadId();
+	WCHAR path[260 * 2] = { 0 };
+	BOOLEAN QueryPathStatus = FALSE;
+	if (QueryProcessNamePath((DWORD)processid, path, sizeof(path))) {
+		RtlCopyMemory(registerinfo.ProcessPath, path, sizeof(WCHAR) * 260);
+		QueryPathStatus = TRUE;
+	}
 
 	// Argument1 = _REG_NOTIFY_CLASS 
-	if (Argument1)
-		lOperateType = (REG_NOTIFY_CLASS)Argument1;
+	const LONG lOperateType = (REG_NOTIFY_CLASS)Argument1;
+
+	registerinfo.processid = processid;
+	registerinfo.threadid = threadid;
 	registerinfo.opeararg = lOperateType;
 
 	// Argument2 = Argument1.Struct
 	switch (lOperateType)
-	{
-		// 创建Key
+	{// 默认Ex解析结构是>=Win7
+		// 创建Key - 打开Key
 		case RegNtPreCreateKey:
-		{
-
-		}
-		break;
-		// 打开Key
 		case RegNtPreOpenKey:
 		{
-		
+			//DbgBreakPoint();
+			PREG_PRE_CREATE_KEY_INFORMATION RegCreateOpeninfo = (PREG_PRE_CREATE_KEY_INFORMATION)Argument2;
+			if (!RegCreateOpeninfo)
+				break;
+			if (RegCreateOpeninfo->CompleteName->Length && RegCreateOpeninfo->CompleteName->Length <= 260)
+				RtlCopyMemory(registerinfo.CompleteName, RegCreateOpeninfo->CompleteName->Buffer, RegCreateOpeninfo->CompleteName->Length);
+		}
+		break;
+
+		case RegNtPreCreateKeyEx:
+		case RegNtPreOpenKeyEx:
+		{
+			PREG_CREATE_KEY_INFORMATION_V1 RegCreateOpenExinfo = (PREG_CREATE_KEY_INFORMATION_V1)Argument2;
+			if (!RegCreateOpenExinfo)
+				break;
+			RegCreateOpenExinfo->CompleteName;
+			RegCreateOpenExinfo->Attributes;
+			// DesiredAccess - KEY_READ KEY_ALL_ACCESS
+			RegCreateOpenExinfo->DesiredAccess;
+			// REG_CREATED_NEW_KEY|REG_OPENED_EXISTING_KEY
+			RegCreateOpenExinfo->Disposition;
+			// 
+			RegCreateOpenExinfo->GrantedAccess;
+			// Root
+			RegCreateOpenExinfo->RootObject;
+			// CreateOptions
+			RegCreateOpenExinfo->Options;
+			// Wow64
+			RegCreateOpenExinfo->Wow64Flags;
 		}
 		break;
 
 		// 修改Key
 		case RegNtSetValueKey:
 		{
-
+			PREG_SET_VALUE_KEY_INFORMATION RegSetValueinfo = (PREG_CREATE_KEY_INFORMATION_V1)Argument2;
+			if (!RegSetValueinfo)
+				break;
+			RegSetValueinfo->Object;
+			RegSetValueinfo->ValueName;
+			RegSetValueinfo->Type;
+			RegSetValueinfo->Data;
+			RegSetValueinfo->DataSize;
 		}
+		break;
+
 		// 删除Key
 		case RegNtPreDeleteKey:
 		{
-		
+			PREG_DELETE_KEY_INFORMATION RegDeleteValueinfo = (PREG_DELETE_KEY_INFORMATION)Argument2;
+			if (!RegDeleteValueinfo)
+				break;
+			RegDeleteValueinfo->Object;
+
 		}
 		break;
 
 		// 枚举Key
 		case RegNtEnumerateKey:
 		{
-
+			PREG_ENUMERATE_KEY_INFORMATION RegEmumeratinfo = (PREG_ENUMERATE_KEY_INFORMATION)Argument2;
+			if (!RegEmumeratinfo)
+				break;
+			RegEmumeratinfo->Object;
+			RegEmumeratinfo->Index;
+			RegEmumeratinfo->KeyInformationClass;
 		}
 		break;
 
 		// 重命名注册表
-		case RegNtPostRenameKey:
+		case RegNtRenameKey:
+		//case RegNtPostRenameKey:
 		{
-		
+			PREG_RENAME_KEY_INFORMATION RegRenameinfo = (PREG_RENAME_KEY_INFORMATION)Argument2;
+			if (!RegRenameinfo)
+				break;
+			RegRenameinfo->Object;
+			RegRenameinfo->NewName;
 		}
 		break;
 
@@ -96,23 +145,47 @@ NTSTATUS Process_NotifyRegister(
 			return STATUS_SUCCESS;
 	}
 
+	if (g_reg_ips_monitorprocess && g_reg_ipsNameList && QueryPathStatus && Register_IsIpsProcessNameInList(path))
+	{
+		PHADES_NOTIFICATION  notification = NULL;
+		do {
+		    int replaybuflen = sizeof(HADES_REPLY);
+		    int sendbuflen = sizeof(HADES_NOTIFICATION);
+		    notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSR');
+		    if (!notification)
+		        break;
+		    RtlZeroMemory(notification, sendbuflen);
+		    notification->CommandId = 2; // MINIPORT_IPS_REGISTER
+			RtlCopyMemory(&notification->Contents, &registerinfo, sizeof(REGISTERINFO));
+		    NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
+		    const DWORD  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
+		    // 拦截
+			if (1 == ReSafeToOpen)
+				status = STATUS_ACCESS_DENIED;
+		} while (FALSE);
+		if (notification)
+		{
+		    ExFreePoolWithTag(notification, 'IPSR');
+		    notification = NULL;
+		} 
+	}
+	if (FALSE == g_reg_monitorprocess)
+		return status;
+
+	KLOCK_QUEUE_HANDLE lh;
 	REGISTERBUFFER* regbuf = (REGISTERBUFFER*)Register_PacketAllocate(sizeof(REGISTERINFO));
 	if (!regbuf)
-		return;
-
+		return status;
 	regbuf->dataLength = sizeof(REGISTERINFO);
 	if (regbuf->dataBuffer)
-	{
-		memcpy(regbuf->dataBuffer, &registerinfo, sizeof(REGISTERINFO));
-	}
+		RtlCopyMemory(regbuf->dataBuffer, &registerinfo, sizeof(REGISTERINFO));
 
 	sl_lock(&g_regdata.register_lock, &lh);
 	InsertHeadList(&g_regdata.register_pending, &regbuf->pEntry);
 	sl_unlock(&lh);
-
 	devctrl_pushinfo(NF_REGISTERTAB_INFO);
 
-	return STATUS_SUCCESS;
+	return status;
 }
 
 NTSTATUS Register_Init(PDRIVER_OBJECT pDriverObject)
@@ -120,6 +193,8 @@ NTSTATUS Register_Init(PDRIVER_OBJECT pDriverObject)
 	sl_init(&g_registelock);
 	sl_init(&g_reg_monitorlock);
 	sl_init(&g_reg_ips_monitorlock);
+	//KeInitializeSpinLock(&g_reg_ipsmodlock);
+	KeInitializeSpinLock(&g_reg_ipsNameListlock);
 
 	sl_init(&g_regdata.register_lock);
 	InitializeListHead(&g_regdata.register_pending);
@@ -148,7 +223,6 @@ NTSTATUS Register_Init(PDRIVER_OBJECT pDriverObject)
 	);
 	return STATUS_SUCCESS;
 }
-
 void Register_Free(void)
 {
 	Register_Clean();
@@ -158,12 +232,19 @@ void Register_Free(void)
 		CmUnRegisterCallback(g_plareg);
 	}
 }
-
 void Register_Clean(void)
 {
 	KLOCK_QUEUE_HANDLE lh;
 	REGISTERBUFFER* pData = NULL;
 	int lock_status = 0;
+
+	sl_lock(&g_reg_ipsNameListlock, &lh);
+	if (g_reg_ipsNameList)
+	{
+		ExFreePool(g_reg_ipsNameList);
+		g_reg_ipsNameList = NULL;
+	}
+	sl_unlock(&lh);
 
 	try {
 		sl_lock(&g_regdata.register_lock, &lh);
@@ -195,13 +276,104 @@ void Register_SetMonitor(BOOLEAN code)
 	g_reg_monitorprocess = code;
 	sl_unlock(&lh);
 }
-
 void Register_SetIpsMonitor(BOOLEAN code)
 {
 	KLOCK_QUEUE_HANDLE lh;
 	sl_lock(&g_reg_ips_monitorlock, &lh);
 	g_reg_ips_monitorprocess = code;
 	sl_unlock(&lh);
+}
+//void Register_SetIpsModEx(const int mods)
+//{
+//	KLOCK_QUEUE_HANDLE lh;
+//	sl_lock(&g_reg_ipsmodlock, &lh);
+//	g_reg_ipsmod = mods;
+//	sl_unlock(&lh);
+//}
+void Register_ClrIpsProcess()
+{
+	Register_SetIpsMonitor(FALSE);
+	//Register_SetIpsModEx(0);
+	utiltools_sleep(1000);
+	KLOCK_QUEUE_HANDLE lh;
+	sl_lock(&g_reg_ipsNameListlock, &lh);
+	if (g_reg_ipsNameList)
+	{
+		ExFreePool(g_reg_ipsNameList);
+		g_reg_ipsNameList = NULL;
+	}
+	sl_unlock(&lh);
+}
+BOOLEAN Register_IsIpsProcessNameInList(const PWCHAR path)
+{
+	BOOLEAN bRet = FALSE;
+
+	KLOCK_QUEUE_HANDLE lh;
+	sl_lock(&g_reg_ipsNameListlock, &lh);
+	if (g_reg_ipsNameList)
+	{
+		PWCHAR pName = wcsrchr(path, L'\\');
+		if (pName)
+		{
+			PWCHAR pIpsName = g_reg_ipsNameList;
+			pName++;
+			while (*pIpsName)
+			{
+				if (wcscmp(pIpsName, pName) == 0)
+				{
+					bRet = TRUE;
+					break;
+				}
+				while (*pIpsName++);
+			}
+		}
+	}
+	sl_unlock(&lh);
+	return bRet;
+}
+NTSTATUS Register_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+	PVOID inputBuffer = irp->AssociatedIrp.SystemBuffer;
+	ULONG inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
+	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+	NTSTATUS status = STATUS_SUCCESS;
+
+	Register_ClrIpsProcess();
+	do
+	{
+		PWCHAR p1, p2;
+		ULONG i;
+		if (NULL == inputBuffer || inputBufferLength < sizeof(WCHAR))
+		{
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		}
+		p1 = (PWCHAR)inputBuffer;
+		p2 = ExAllocatePoolWithTag(NonPagedPool, inputBufferLength, MEM_TAG_DK);
+		if (NULL == p2)
+		{
+			status = STATUS_INSUFFICIENT_RESOURCES;
+			break;
+		}
+		RtlCopyMemory(p2, p1, inputBufferLength);
+		inputBufferLength >>= 1;
+		for (i = 0; i < inputBufferLength; i++)
+		{
+			if (p2[i] == L'|')
+				p2[i] = 0;
+		}
+		p1 = g_reg_ipsNameList;
+		g_reg_ipsNameList = p2;
+		if (p1)
+		{
+			ExFreePool(p1);
+		}
+	} while (FALSE);
+
+	irp->IoStatus.Status = status;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
+	return status;
 }
 
 REGISTERBUFFER* Register_PacketAllocate(int lens)
@@ -224,7 +396,6 @@ REGISTERBUFFER* Register_PacketAllocate(int lens)
 	}
 	return regbuf;
 }
-
 void Register_PacketFree(REGISTERBUFFER* packet)
 {
 	if (packet->dataBuffer)
@@ -234,7 +405,6 @@ void Register_PacketFree(REGISTERBUFFER* packet)
 	}
 	ExFreeToNPagedLookasideList(&g_registerlist, packet);
 }
-
 REGISTERDATA* registerctx_get()
 {
 	return &g_regdata;

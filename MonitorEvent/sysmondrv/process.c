@@ -2,58 +2,127 @@
 #include "process.h"
 #include "devctrl.h"
 #include "kflt.h"
+#include "utiltools.h"
 
 #include <ntddk.h>
+#include <ndis.h>
 
 static  BOOLEAN     g_proc_monitorprocess = FALSE;
-static  KSPIN_LOCK  g_proc_monitorlock = NULL;
+static  KSPIN_LOCK  g_proc_monitorlock = 0;
+
 static  BOOLEAN     g_proc_ips_monitorprocess = FALSE;
-static  KSPIN_LOCK  g_proc_ips_monitorlock = NULL;
+static  KSPIN_LOCK  g_proc_ips_monitorlock = 0;
+
+static  int         g_proc_ipsmod = 0;
+static  KSPIN_LOCK  g_proc_ipslock = 0;
 
 static  PWCHAR	    g_proc_ipsList = NULL;
+static  KSPIN_LOCK  g_proc_ipsListlock = 0;
 
-static KSPIN_LOCK               g_processlock = NULL;
+static KSPIN_LOCK               g_processlock = 0;
 static NPAGED_LOOKASIDE_LIST    g_processList;
 static PROCESSDATA              g_processQueryhead;
 
-//static KEVENT					g_testEvent;
-
-typedef NTSTATUS(*PfnNtQueryInformationProcess) (
-    __in HANDLE ProcessHandle,
-    __in PROCESSINFOCLASS ProcessInformationClass,
-    __out_bcount(ProcessInformationLength) PVOID ProcessInformation,
-    __in ULONG ProcessInformationLength,
-    __out_opt PULONG ReturnLength
-    );
-static PfnNtQueryInformationProcess ZwQueryInformationProcess;
-
-static void Process_NotifyProcessEx(
+static VOID Process_NotifyProcessEx(
     _Inout_ PEPROCESS Process,
     _In_ HANDLE ProcessId,
-    _Inout_opt_ PPS_CREATE_NOTIFY_INFO CreateInfo);
-
-BOOLEAN Mem_GetLockResource(PERESOURCE* ppResource, BOOLEAN InitMsg);
-BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWORD pathlen);
-
-
-
-void InitGloableFunction_Process()
+    _Inout_opt_ PPS_CREATE_NOTIFY_INFO CreateInfo)
 {
-    UNICODE_STRING UtrZwQueryInformationProcessName =
-        RTL_CONSTANT_STRING(L"ZwQueryInformationProcess");
-    ZwQueryInformationProcess =
-        (PfnNtQueryInformationProcess)MmGetSystemRoutineAddress(&UtrZwQueryInformationProcessName);
+    UNREFERENCED_PARAMETER(ProcessId);
+    UNREFERENCED_PARAMETER(Process);
+
+    // 关闭监控
+    if (FALSE == g_proc_monitorprocess && FALSE == g_proc_ips_monitorprocess)
+    {
+        return;
+    }
+
+    NTSTATUS status = STATUS_SUCCESS;
+    // 父进程Pid -- BUG
+    WCHAR path[260 * 2] = { 0 };
+    BOOLEAN QueryPathStatus = FALSE;
+    if (QueryProcessNamePath((DWORD)ProcessId, path, sizeof(path)))
+        QueryPathStatus = TRUE;
+    if (g_proc_ips_monitorprocess && g_proc_ipsmod && CreateInfo && QueryPathStatus && g_proc_ipsList)
+    {// Ips
+        const BOOLEAN nRet = Process_IsIpsProcessNameInList(path);
+        //PHADES_NOTIFICATION  notification = NULL;
+        //do {
+        //    int replaybuflen = sizeof(HADES_REPLY);
+        //    int sendbuflen = sizeof(HADES_NOTIFICATION);
+        //    notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSP');
+        //    if (!notification)
+        //        break;
+        //    RtlZeroMemory(notification, sendbuflen);
+        //    notification->CommandId = 1; // MINIPORT_IPS_PROCESSSTART
+        //    processinfo.parentprocessid = CreateInfo->ParentProcessId;
+        //    RtlCopyMemory(&notification->Contents, &processinfo, sizeof(PROCESSINFO));
+        //    // 等待用户操作
+        //    NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
+        //    // 返回Error: 数据缓冲区不够,其实已经有数据
+        //    const DWORD  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
+        //    // 禁止
+        //    if ((1 == ReSafeToOpen) || (3 == ReSafeToOpen))
+        //        CreateInfo->CreationStatus = STATUS_UNSUCCESSFUL;
+        //} while (FALSE);
+        //if (notification)
+        //{
+        //    ExFreePoolWithTag(notification, 'IPSP');
+        //    notification = NULL;
+        //} 
+        if (!nRet && g_proc_ipsmod == 1)
+            CreateInfo->CreationStatus = STATUS_UNSUCCESSFUL;
+        else if (nRet && g_proc_ipsmod == 2)
+            CreateInfo->CreationStatus = STATUS_UNSUCCESSFUL;
+    }
+    if (FALSE == g_proc_monitorprocess)
+        return;
+
+    PROCESSINFO processinfo;
+    RtlZeroMemory(&processinfo, sizeof(PROCESSINFO));
+    processinfo.pid = (DWORD)ProcessId;
+    if (QueryPathStatus)
+        RtlCopyMemory(processinfo.queryprocesspath, path, sizeof(WCHAR) * 260);
+
+    KLOCK_QUEUE_HANDLE lh;
+    PROCESSBUFFER* pinfo = (PROCESSBUFFER*)Process_PacketAllocate(sizeof(PROCESSINFO));
+    if (!pinfo)
+        return;
+    if (NULL == CreateInfo)
+    {
+        processinfo.endprocess = 0;
+        pinfo->dataLength = sizeof(PROCESSINFO);
+        RtlCopyMemory(pinfo->dataBuffer, &processinfo, sizeof(PROCESSINFO));
+        sl_lock(&g_processQueryhead.process_lock, &lh);
+        InsertHeadList(&g_processQueryhead.process_pending, &pinfo->pEntry);
+        sl_unlock(&lh);
+        return;
+    }
+    else
+        processinfo.endprocess = 1;
+    if (CreateInfo->ImageFileName->Length < 260 * 2)
+        RtlCopyMemory(processinfo.processpath, CreateInfo->ImageFileName->Buffer, CreateInfo->ImageFileName->Length);
+    if (CreateInfo->CommandLine->Length < 260 * 2)
+        RtlCopyMemory(processinfo.commandLine, CreateInfo->CommandLine->Buffer, CreateInfo->CommandLine->Length);
+    processinfo.parentprocessid = CreateInfo->ParentProcessId;
+
+    pinfo->dataLength = sizeof(PROCESSINFO);
+    RtlCopyMemory(pinfo->dataBuffer, &processinfo, sizeof(PROCESSINFO));
+
+    sl_lock(&g_processQueryhead.process_lock, &lh);
+    InsertHeadList(&g_processQueryhead.process_pending, &pinfo->pEntry);
+    sl_unlock(&lh);
+    devctrl_pushinfo(NF_PROCESS_INFO);
+    return;
 }
 
-PROCESSDATA* processctx_get()
-{
-    return &g_processQueryhead;
-}
 NTSTATUS Process_Init(void) {
 
     sl_init(&g_processlock);
     sl_init(&g_proc_monitorlock);
+    sl_init(&g_proc_ipslock);
     sl_init(&g_proc_ips_monitorlock);
+    sl_init(&g_proc_ipsListlock);
 
     ExInitializeNPagedLookasideList(
         &g_processList,
@@ -84,159 +153,6 @@ void Process_Free(void)
     ExDeleteNPagedLookasideList(&g_processList);
     PsSetCreateProcessNotifyRoutineEx((PCREATE_PROCESS_NOTIFY_ROUTINE_EX)Process_NotifyProcessEx, TRUE);
 }
-void Process_SetMonitor(BOOLEAN code)
-{
-    KLOCK_QUEUE_HANDLE lh;
-
-    sl_lock(&g_proc_monitorlock, &lh);
-    g_proc_monitorprocess = code;
-    sl_unlock(&lh);
-}
-void Process_SetIpsMonitor(BOOLEAN code)
-{
-    KLOCK_QUEUE_HANDLE lh;
-
-    sl_lock(&g_proc_ips_monitorlock, &lh);
-    g_proc_ips_monitorprocess = code;
-    sl_unlock(&lh);
-}
-BOOLEAN Mem_GetLockResource(
-    PERESOURCE* ppResource, 
-    BOOLEAN InitMsg)
-{
-    *ppResource = ExAllocatePoolWithTag(
-        NonPagedPool, sizeof(ERESOURCE), 'tk');
-    if (*ppResource) {
-        ExInitializeResourceLite(*ppResource);
-        return TRUE;
-    }
-    else {
-        return FALSE;
-    }
-}
-VOID Process_NotifyProcessEx(
-    _Inout_ PEPROCESS Process,
-    _In_ HANDLE ProcessId,
-    _Inout_opt_ PPS_CREATE_NOTIFY_INFO CreateInfo)
-{
-    UNREFERENCED_PARAMETER(ProcessId);
-    UNREFERENCED_PARAMETER(Process);
-
-    // 关闭监控
-    if (FALSE == g_proc_monitorprocess && FALSE == g_proc_ips_monitorprocess)
-    {
-        return;
-    }
-
-    PWCHAR pSub = NULL;
-    NTSTATUS status = STATUS_SUCCESS;
-    KLOCK_QUEUE_HANDLE lh;
-    PROCESSINFO processinfo;
-    RtlZeroMemory(&processinfo, sizeof(PROCESSINFO));
-
-    // 父进程pid -- BUG
-    WCHAR path[260] = { 0 };
-    BOOLEAN QueryPathStatus = FALSE;
-    if (QueryProcessNamePath((DWORD)ProcessId, path, sizeof(path))) {
-        // _wcsupr(path);
-        RtlCopyMemory(processinfo.queryprocesspath, path, sizeof(WCHAR) * 260);
-        QueryPathStatus = TRUE;
-    }
-
-    if (g_proc_ips_monitorprocess && CreateInfo && QueryPathStatus && g_proc_ipsList && Process_IsIpsProcessNameInList(processinfo.queryprocesspath))
-    {// Ips
-        PHADES_NOTIFICATION  notification = NULL;
-        do {
-            int replaybuflen = sizeof(HADES_REPLY);
-            int sendbuflen = sizeof(HADES_NOTIFICATION);
-            notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSP');
-            if (!notification)
-                break;
-            RtlZeroMemory(notification, sendbuflen);
-            notification->CommandId = 1; // IPS_PROCESSSTART
-            RtlCopyMemory(&notification->Contents, &processinfo, sizeof(PROCESSINFO));
-            // 等待用户操作
-            NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
-            // 返回Error: 数据缓冲区不够,其实已经有数据
-            const DWORD  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
-            // 禁止
-            if ((1 == ReSafeToOpen) || (3 == ReSafeToOpen))
-                CreateInfo->CreationStatus = STATUS_UNSUCCESSFUL;
-        } while (FALSE);
-        if (notification)
-        {
-            ExFreePoolWithTag(notification, 'IPSP');
-            notification = NULL;
-        }
-    }
-    if (FALSE == g_proc_monitorprocess)
-        return;
-
-
-    PROCESSBUFFER* pinfo = (PROCESSBUFFER*)Process_PacketAllocate(sizeof(PROCESSINFO));
-    if (!pinfo)
-        return;
-
-    processinfo.pid = (DWORD)ProcessId;
-    if (NULL == CreateInfo)
-    {
-        processinfo.endprocess = 0;
-        pinfo->dataLength = sizeof(PROCESSINFO);
-        memcpy(pinfo->dataBuffer, &processinfo, sizeof(PROCESSINFO));
-        sl_lock(&g_processQueryhead.process_lock, &lh);
-        InsertHeadList(&g_processQueryhead.process_pending, &pinfo->pEntry);
-        sl_unlock(&lh);
-        return;
-    }
-    else
-        processinfo.endprocess = 1;
-    if (CreateInfo->ImageFileName->Length < 260 * 2)
-        RtlCopyMemory(processinfo.processpath, CreateInfo->ImageFileName->Buffer, CreateInfo->ImageFileName->Length);
-    if(CreateInfo->CommandLine->Length < 260*2)
-        RtlCopyMemory(processinfo.commandLine, CreateInfo->CommandLine->Buffer, CreateInfo->CommandLine->Length);
-    processinfo.parentprocessid = CreateInfo->ParentProcessId;
-
-    pinfo->dataLength = sizeof(PROCESSINFO);
-    memcpy(pinfo->dataBuffer, &processinfo, sizeof(PROCESSINFO));
-
-    sl_lock(&g_processQueryhead.process_lock, &lh);
-    InsertHeadList(&g_processQueryhead.process_pending, &pinfo->pEntry);
-    sl_unlock(&lh);
-    // push_devctrl
-    devctrl_pushinfo(NF_PROCESS_INFO);
-    return;
-}
-BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWORD pathlen)
-{
-    BOOLEAN bRet = FALSE;
-    CLIENT_ID cid;
-    OBJECT_ATTRIBUTES obj;
-    HANDLE hProc = NULL;
-    NTSTATUS status;
-
-    InitializeObjectAttributes(&obj, NULL, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
-    cid.UniqueProcess = (HANDLE)pid;
-    cid.UniqueThread = NULL;
-    status = ZwOpenProcess(&hProc, GENERIC_ALL, &obj, &cid);
-    if (NT_SUCCESS(status))
-    {
-        DWORD dw;
-        WCHAR ProcessPath[MAX_PROCESS_PATH_LEN + sizeof(UNICODE_STRING)] = { 0 };
-        status = ZwQueryInformationProcess(hProc, ProcessImageFileName, ProcessPath, sizeof(ProcessPath), &dw);
-        if (NT_SUCCESS(status))
-        {
-            PUNICODE_STRING dststring = (PUNICODE_STRING)ProcessPath;
-            // 7/29 可能会遇到length为空，导致拷贝蓝屏 - 已修复
-            if ((pathlen > (DWORD)dststring->Length + sizeof(WCHAR)) && dststring->Length)
-            {
-                RtlMoveMemory(path, dststring->Buffer, dststring->Length + sizeof(WCHAR));
-                bRet = TRUE;
-            }
-        }
-        ZwClose(hProc);
-    }
-    return bRet;
-}
 void Process_Clean(void)
 {
     KLOCK_QUEUE_HANDLE lh;
@@ -244,11 +160,14 @@ void Process_Clean(void)
     int lock_status = 0;
 
     // Ips Rule Name
+    sl_lock(&g_proc_ipsListlock, &lh);
     if (g_proc_ipsList)
     {
         ExFreePool(g_proc_ipsList);
         g_proc_ipsList = NULL;
     }
+    sl_unlock(&lh);
+
 
     try
     {
@@ -275,71 +194,100 @@ void Process_Clean(void)
     }
 
 }
-PROCESSBUFFER* Process_PacketAllocate(int lens)
+
+void Process_SetMonitor(BOOLEAN code)
+{// 采集开关
+    KLOCK_QUEUE_HANDLE lh;
+
+    sl_lock(&g_proc_monitorlock, &lh);
+    g_proc_monitorprocess = code;
+    sl_unlock(&lh);
+}
+void Process_SetIpsMonitor(BOOLEAN code)
+{// IPS开关
+    KLOCK_QUEUE_HANDLE lh;
+
+    sl_lock(&g_proc_ips_monitorlock, &lh);
+    g_proc_ips_monitorprocess = code;
+    sl_unlock(&lh);
+}
+void Process_SetIpsModEx(const int mods)
+{// 模式规则
+    KLOCK_QUEUE_HANDLE lh;
+    sl_lock(&g_proc_ipslock, &lh);
+    g_proc_ipsmod = mods;
+    sl_unlock(&lh);
+}
+void Process_ClrIpsProcess()
 {
-    PROCESSBUFFER* processbuf = NULL;
-    processbuf = (PROCESSBUFFER*)ExAllocateFromNPagedLookasideList(&g_processList);
-    if (!processbuf)
-        return NULL;
-
-    memset(processbuf, 0, sizeof(PROCESSBUFFER));
-
-    if (lens > 0)
+    Process_SetIpsMonitor(FALSE);
+    Process_SetIpsModEx(0);
+    utiltools_sleep(1000);
+    KLOCK_QUEUE_HANDLE lh;
+    sl_lock(&g_proc_ipsListlock, &lh);
+    if (g_proc_ipsList)
     {
-        processbuf->dataBuffer = (char*)ExAllocatePoolWithTag(NonPagedPool, lens, 'PRMM');
-        if (!processbuf->dataBuffer)
+        ExFreePool(g_proc_ipsList);
+        g_proc_ipsList = NULL;
+    }
+    sl_unlock(&lh);
+}
+NTSTATUS Process_SetIpsMod(PIRP irp, PIO_STACK_LOCATION irpSp)
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    do {
+        PVOID inputBuffer = irp->AssociatedIrp.SystemBuffer;
+        ULONG inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
+        ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+        if (NULL == inputBuffer || inputBufferLength < sizeof(DWORD32))
         {
-            ExFreeToNPagedLookasideList(&g_processList, processbuf);
-            return FALSE;
+            status = STATUS_INVALID_PARAMETER;
+            break;
         }
-    }
-    return processbuf;
-}
-void Process_PacketFree(PROCESSBUFFER* packet)
-{
-    if (packet->dataBuffer)
-    {
-        free_np(packet->dataBuffer);
-        packet->dataBuffer = NULL;
-    }
-    ExFreeToNPagedLookasideList(&g_processList, packet);
-}
+        const DWORD32 mods = *(PDWORD32)inputBuffer;
+        Process_SetIpsModEx(mods);
+    } while (FALSE);
 
-BOOLEAN Process_IsIpsProcessPidInList(HANDLE ProcessId)
-{
-
+    irp->IoStatus.Status = status;
+    irp->IoStatus.Information = 0;
+    IoCompleteRequest(irp, IO_NO_INCREMENT);
+    return status;
 }
-BOOLEAN Process_IsIpsProcessNameInList(PWCHAR path)
+BOOLEAN Process_IsIpsProcessNameInList(const PWCHAR path)
 {
     BOOLEAN bRet = FALSE;
 
+    KLOCK_QUEUE_HANDLE lh;
+    sl_lock(&g_proc_ipsListlock, &lh);
     if (g_proc_ipsList)
     {
         PWCHAR pName = wcsrchr(path, L'\\');
         if (pName)
         {
-            PWCHAR pGame = g_proc_ipsList;
+            PWCHAR pIpsName = g_proc_ipsList;
             pName++;
-            while (*pGame)
+            while (*pIpsName)
             {
-                if (wcscmp(pGame, pName) == 0)
+                if (wcscmp(pIpsName, pName) == 0)
                 {
                     bRet = TRUE;
                     break;
                 }
-                while (*pGame++);
+                while (*pIpsName++);
             }
         }
     }
+    sl_unlock(&lh);
     return bRet;
 }
-BOOLEAN Process_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
+NTSTATUS Process_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
-    PVOID inputBuffer = irp->AssociatedIrp.SystemBuffer;
+    const PVOID inputBuffer = irp->AssociatedIrp.SystemBuffer;
     ULONG inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
-    ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
     NTSTATUS status = STATUS_SUCCESS;
 
+    // 如果应用层先调用devctrl_SetIpsFilterMods - Process_ClrIpsProcess函数放在Process_SetIpsMod中
+    Process_ClrIpsProcess();
     do
     {
         PWCHAR p1, p2;
@@ -376,19 +324,41 @@ BOOLEAN Process_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
     IoCompleteRequest(irp, IO_NO_INCREMENT);
     return status;
 }
-void Process_ClrProcessFilterOption()
-{
 
-}
-ULONG Process_SetProcessFilterOption()
-{
 
-}
-DWORD Process_GetProcessFilterOption(UINT64 ProcessId)
+PROCESSDATA* processctx_get()
 {
+    return &g_processQueryhead;
 }
-void Process_DelProcessFilterOption(UINT64 ProcessId)
+PROCESSBUFFER* Process_PacketAllocate(const int lens)
 {
+    PROCESSBUFFER* processbuf = NULL;
+    processbuf = (PROCESSBUFFER*)ExAllocateFromNPagedLookasideList(&g_processList);
+    if (!processbuf)
+        return NULL;
 
+    memset(processbuf, 0, sizeof(PROCESSBUFFER));
+
+    if (lens > 0)
+    {
+        processbuf->dataBuffer = (char*)ExAllocatePoolWithTag(NonPagedPool, lens, 'PRMM');
+        if (!processbuf->dataBuffer)
+        {
+            ExFreeToNPagedLookasideList(&g_processList, processbuf);
+            return FALSE;
+        }
+    }
+    return processbuf;
 }
+void Process_PacketFree(PROCESSBUFFER* packet)
+{
+    if (packet->dataBuffer)
+    {
+        free_np(packet->dataBuffer);
+        packet->dataBuffer = NULL;
+    }
+    ExFreeToNPagedLookasideList(&g_processList, packet);
+}
+
+
 

@@ -20,7 +20,7 @@ BOOLEAN get_KiWait(PULONG64 never, PULONG64 always) {
 	UNICODE_STRING	uc_KeSetTimer = { 0 };
 	RtlInitUnicodeString(&uc_KeSetTimer, L"KeSetTimer");
 	ul_KeSetTimer = (ULONG64)MmGetSystemRoutineAddress(&uc_KeSetTimer);
-	if (ul_KeSetTimer == NULL) {
+	if (!ul_KeSetTimer) {
 		return FALSE;
 	}
 

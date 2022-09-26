@@ -323,11 +323,12 @@ NTSTATUS FsMini_Clean()
         FltUnregisterFilter(g_FltServerPortEvnet);
         g_FltServerPortEvnet = NULL;
     }
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS FsMini_Free()
 {
-    FsMini_Clean();
+    return FsMini_Clean();
 }
 
 NTSTATUS Mini_StartFilter()

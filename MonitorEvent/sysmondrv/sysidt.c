@@ -26,7 +26,7 @@ int nf_IdtInit()
     // KeSetSystemAffinityThread(1);
 	// KeRevertToUserAffinityThread();
     __sidt(&g_idtr);
-	if (MmIsAddressValid(g_idtr.Base) == TRUE)
+	if (MmIsAddressValid((PVOID)g_idtr.Base) == TRUE)
 	{
 		g_idtInitflag = TRUE;
 		return 1;
@@ -58,7 +58,7 @@ int nf_GetIdtTableInfo(IDTINFO* MemBuffer)
     {
 		idtinfo->idt_id = i;
 		uaddress = Idt_GetAddr(g_pIdtEntry, i);
-		if (MmIsAddressValid(uaddress) == FALSE)
+		if (MmIsAddressValid((PVOID)uaddress) == FALSE)
 			break;
 
 		idtinfo->idt_isrmemaddr = uaddress;

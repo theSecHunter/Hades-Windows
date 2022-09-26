@@ -719,10 +719,25 @@ void kMsgInterface::DriverInit(const int flag)
 
         // Set Ips Process
         WCHAR IpsProcessNameTest[] = L"powershell.exe|cmd.exe||";
-        status = g_kernel_Ioct.devctrl_SetIpsProcess(IpsProcessNameTest);
+        status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessNameTest);
         if (0 > status)
         {
-            OutputDebugString(L"devctrl_workthread error: main.c --> lines: 712");
+            OutputDebugString(L"[HadesSvc] Process devctrl_SetIpsProcessNameList");
+            break;
+        }
+        status = g_kernel_Ioct.devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, 2);
+        if (0 > status)
+        {
+            OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
+            break;
+        }
+        
+        // Set Ips Register
+        WCHAR IpsRegisterProcessNameTest[] = L"AddRegister.exe|cmd.exe||";
+        status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterProcessNameTest);
+        if (0 > status)
+        {
+            OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList");
             break;
         }
 

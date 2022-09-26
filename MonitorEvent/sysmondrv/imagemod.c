@@ -4,11 +4,12 @@
 #include "devctrl.h"
 
 static  BOOLEAN g_imagemod_monitor = FALSE;
-static  KSPIN_LOCK g_imagemod_monitorlock = NULL;
-static  BOOLEAN g_imagemod_ips_monitor = FALSE;
-static  KSPIN_LOCK g_imagemod_ips_monitorlock = NULL;
+static  KSPIN_LOCK g_imagemod_monitorlock = 0;
 
-static KSPIN_LOCK               g_imagemodlock = NULL;
+static  BOOLEAN g_imagemod_ips_monitor = FALSE;
+static  KSPIN_LOCK g_imagemod_ips_monitorlock = 0;
+
+static KSPIN_LOCK               g_imagemodlock = 0;
 static NPAGED_LOOKASIDE_LIST    g_imagemodList;
 static IMAGEMODDATA             g_imagemodQueryhead;
 
@@ -198,7 +199,7 @@ void Imagemod_Clean(void)
 		lock_status = 1;
 		while (!IsListEmpty(&g_imagemodQueryhead.imagemod_pending))
 		{
-			pData = RemoveHeadList(&g_imagemodQueryhead.imagemod_pending);
+			pData = (IMAGEMODBUFFER*)RemoveHeadList(&g_imagemodQueryhead.imagemod_pending);
 			sl_unlock(&lh);
 			lock_status = 0;
 			Imagemod_PacketFree(pData);

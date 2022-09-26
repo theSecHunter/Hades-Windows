@@ -170,6 +170,7 @@ std::string String_ToUtf8(const std::string& str)
     catch (const std::exception&)
     {
     }
+    return "";
 }
 std::string UTF8_ToString(const std::string& str)
 {

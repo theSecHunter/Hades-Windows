@@ -241,7 +241,7 @@ ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer)
 
 	InitGloableFunction_Process1();
 	if (!ZwQueryInformationProcess)
-		return;
+		return Count;
 	Buffer = malloc_np(BufferSize);
 	memset(Buffer, 0, BufferSize);
 	Status = ZwQuerySystemInformation(16, Buffer, BufferSize, 0);	//SystemHandleInformation=16
@@ -360,7 +360,7 @@ ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer)
 }
 VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer)
 {
-	SIZE_T Peb = 0, Ldr = 0, tmp = 0;
+	PPEB Peb = NULL, Ldr = 0, tmp = 0;
 	PLIST_ENTRY ModListHead = 0;
 	PLIST_ENTRY Module = 0;
 	KAPC_STATE ks = { 0 };
@@ -377,13 +377,16 @@ VOID nf_EnumModuleByPid(ULONG pid, PPROCESS_MOD ModBuffer)
 
 	PEPROCESS eprocess = NULL;
 	if (!NT_SUCCESS(PsLookupProcessByProcessId((HANDLE)pid, &eprocess)))
-		return NULL;
+		return;
 
 	Peb = PsGetProcessPeb(eprocess);
+	if (!Peb)
+		return;
+
 	KeStackAttachProcess(eprocess, &ks);
 	__try
 	{
-		Ldr = Peb + (SIZE_T)LdrInPebOffset;
+		Ldr = (SIZE_T)Peb + (SIZE_T)LdrInPebOffset;
 		ProbeForRead((CONST PVOID)Ldr, sizeof(void*), sizeof(void*));
 		ModListHead = (PLIST_ENTRY)(*(PULONG64)Ldr + ModListInPebOffset);
 		ProbeForRead((CONST PVOID)ModListHead, sizeof(void*), sizeof(void*));
@@ -457,21 +460,21 @@ int nf_DumpProcess(PKERNEL_COPY_MEMORY_OPERATION request)
 {
 	PEPROCESS targetProcess;
 
-	if (NT_SUCCESS(PsLookupProcessByProcessId(request->targetProcessId, &targetProcess)))
+	if (NT_SUCCESS(PsLookupProcessByProcessId((HANDLE)request->targetProcessId, &targetProcess)))
 	{
-		PSIZE_T readBytes;
+		SIZE_T readBytes = 0;
 		MmCopyVirtualMemory(targetProcess, request->bufferAddress, PsGetCurrentProcess(), request->targetAddress, request->bufferSize, UserMode, &readBytes);
 		ObDereferenceObject(targetProcess);
 	}
 	return 1;
 }
-int nf_KillProcess(ULONG hProcessId)
+NTSTATUS nf_KillProcess(ULONG hProcessId)
 {
 	PVOID pPspTerminateThreadByPointerAddress = NULL;
 	PEPROCESS pEProcess = NULL;
 	PETHREAD pEThread = NULL;
 	PEPROCESS pThreadEProcess = NULL;
-	NTSTATUS status = STATUS_SUCCESS;
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	ULONG i = 0;
 #ifdef _WIN64
 	// 64 位
@@ -483,8 +486,8 @@ int nf_KillProcess(ULONG hProcessId)
 	// 获取 PspTerminateThreadByPointer 函数地址
 	pPspTerminateThreadByPointerAddress = GetPspLoadImageNotifyRoutine();
 	if (FALSE == MmIsAddressValid(pPspTerminateThreadByPointerAddress))
-		return FALSE;
-	status = PsLookupProcessByProcessId(hProcessId, &pEProcess);
+		return status;
+	status = PsLookupProcessByProcessId((HANDLE)hProcessId, &pEProcess);
 	if (!NT_SUCCESS(status))
 	{
 		return status;

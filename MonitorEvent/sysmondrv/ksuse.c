@@ -329,7 +329,7 @@ int closesocket(int sockfd)
 }
 
 
-void kinit_socket()
+NTSTATUS kinit_socket()
 {
     NTSTATUS Status;
 
@@ -344,9 +344,7 @@ void kinit_socket()
     Status = WskRegister(&WskClient, &WskRegistration);
 
     if (!NT_SUCCESS(Status))
-    {
         return Status;
-    }
 
     //
     // Capture the provider NPI.

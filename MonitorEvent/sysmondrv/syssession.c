@@ -5,13 +5,13 @@
 
 
 static  BOOLEAN					g_ses_monitor = FALSE;
-static  KSPIN_LOCK				g_ses_monitorlock = NULL;
+static  KSPIN_LOCK				g_ses_monitorlock = 0;
+
 static  BOOLEAN					g_ses_ips_monitor = FALSE;
-static  KSPIN_LOCK				g_ses_ips_monitorlock = NULL;
+static  KSPIN_LOCK				g_ses_ips_monitorlock = 0;
 
-
-static	KSPIN_LOCK              g_sessionlock = NULL;
 static	NPAGED_LOOKASIDE_LIST	g_sessionlist;
+static	KSPIN_LOCK              g_sessionlock = 0;
 
 static	SESSIONDATA				g_sessiondata;
 
@@ -43,7 +43,7 @@ Pio_NotifySession(
 		{
 		}
 		if (!g_ses_monitor)
-			return;
+			return STATUS_SUCCESS;
 			
 
 		IO_SESSION_STATE_INFORMATION iosession_info;

@@ -32,7 +32,7 @@ VOID Enum_ProcessNotify(PNOTIFY_INFO pNotify)
 			PspCreateProcessNotifyRoutine = OffsetAddr + 7 + i;
 		}
 	}
-	if (FALSE == MmIsAddressValid(PspCreateProcessNotifyRoutine))
+	if (FALSE == MmIsAddressValid((PVOID)PspCreateProcessNotifyRoutine))
 		return;
 
 	ULONG count = 0;
@@ -74,7 +74,7 @@ VOID Enum_ThreadNotify(PNOTIFY_INFO pNotify)
 		}
 	}
 
-	if (FALSE == MmIsAddressValid(PspLoadImageNotifyRoutine))
+	if (FALSE == MmIsAddressValid((PVOID)PspLoadImageNotifyRoutine))
 		return;
 
 	ULONG count = 0;
@@ -84,10 +84,10 @@ VOID Enum_ThreadNotify(PNOTIFY_INFO pNotify)
 	pNotify = ExAllocatePool(NonPagedPool, sizeof(NOTIFY_INFO) * 100);
 
 	if (pNotify == NULL)
-		return NULL;
+		return;
 
 	if (!PspLoadImageNotifyRoutine)
-		return NULL;
+		return;
 
 	for (i = 0; i < 8; i++)
 	{
@@ -131,7 +131,7 @@ VOID Enum_ImageModNotify(PNOTIFY_INFO pNotify)
 		}
 	}
 
-	if (FALSE == MmIsAddressValid(PspLoadImageNotifyRoutine))
+	if (FALSE == MmIsAddressValid((PVOID)PspLoadImageNotifyRoutine))
 		return;
 
 	ULONG count = 0;
@@ -303,6 +303,4 @@ VOID Enum_MinifilterNotify(PMINIFILTER_INFO pFltInfo)
 		ExFreePool(pBuffer);
 		ntStatus = STATUS_SUCCESS;
 	}
-
-	return pFltInfo;
 }

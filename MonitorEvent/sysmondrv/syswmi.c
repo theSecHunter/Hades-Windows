@@ -8,13 +8,13 @@
 #include <wmiguid.h>
 
 static  BOOLEAN					g_wmi_monitor = FALSE;
-static  KSPIN_LOCK				g_wmi_monitorlock = NULL;
+static  KSPIN_LOCK				g_wmi_monitorlock = 0;
 
 static  BOOLEAN					g_wmi_ips_monitor = FALSE;
-static  KSPIN_LOCK				g_wmi_ips_monitorlock = NULL;
+static  KSPIN_LOCK				g_wmi_ips_monitorlock = 0;
 
-static	KSPIN_LOCK              g_wmilock = NULL;
 static	NPAGED_LOOKASIDE_LIST	g_wmilist;
+static	KSPIN_LOCK              g_wmilock = 0;
 
 static	WMIDATA					g_wmidata;
 

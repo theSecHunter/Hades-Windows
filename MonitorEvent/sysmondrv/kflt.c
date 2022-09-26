@@ -87,6 +87,7 @@ NTSTATUS Fsflt_SendMsg(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID Reply
 // Asynchronous
 NTSTATUS Fsflt_SendToMsg(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID ReplyBuffer, PULONG ReplyLength)
 {
+	return STATUS_SUCCESS;
 }
 
 void Fsflt_ClosePort()

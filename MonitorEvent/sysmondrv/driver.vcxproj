@@ -389,7 +389,7 @@
     <ClInclude Include="sysworkthreadinfo.h" />
     <ClInclude Include="thread.h" />
     <ClInclude Include="uefi.h" />
-    <ClInclude Include="util.h" />
+    <ClInclude Include="utiltools.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SysMonDrv.rc" />

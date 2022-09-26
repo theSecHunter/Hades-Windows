@@ -19,10 +19,11 @@
 #include "sysdriverinfo.h"
 
 #include "kflt.h"
+#include "utiltools.h"
 
 #include <ntddk.h>
 #include <stdlib.h>
-#include <ndis.h>
+
 
 #define NF_TCP_PACKET_BUF_SIZE 8192
 #define NF_UDP_PACKET_BUF_SIZE 2 * 65536
@@ -749,12 +750,6 @@ NTSTATUS devctrl_openMem(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATI
 }
 
 // ¡î IOCTL
-void devctrl_sleep(UINT ttw)
-{
-	NDIS_EVENT  _SleepEvent;
-	NdisInitializeEvent(&_SleepEvent);
-	NdisWaitEvent(&_SleepEvent, ttw);
-}
 NTSTATUS devctrl_create(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -887,7 +882,7 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	UNREFERENCED_PARAMETER(irpSp);
 	devctrl_setMonitor(FALSE);
 	devctrl_setIpsMonitor(FALSE);
-	devctrl_sleep(1000);
+	utiltools_sleep(1000);
 	Process_Clean();
 	Thread_Clean();
 	Imagemod_Clean();
@@ -957,7 +952,7 @@ void devctrl_cancelPendingReads()
 			//  we might end up examining the same (cancelled) IRP over
 			//  and over again.
 			//
-			devctrl_sleep(1000);
+			utiltools_sleep(1000);
 
 			sl_lock(&g_IoQueryLock, &lh);
 		}
@@ -1104,6 +1099,11 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 
 		case CTL_DEVCTRL_IPS_SETPROCESSNAME:
 			return Process_SetIpsProcessName(irp, irpSp);
+		case CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD:
+			return Process_SetIpsMod(irp, irpSp);
+
+		case CTL_DEVCTRL_IPS_SETREGISTERNAME:
+			return Register_SetIpsProcessName(irp, irpSp);
 
 		case CTL_DEVCTRL_ARK_INITSSDT:
 			return devctrl_InitSsdtBase(DeviceObject, irp, irpSp);
@@ -1251,8 +1251,6 @@ void devctrl_ioThreadFree() {
 		ObDereferenceObject(g_ioThreadObject);
 		g_ioThreadObject = NULL;
 	}
-
-	return STATUS_SUCCESS;
 }
 
 // ¡î System Active Monitor
@@ -1832,5 +1830,4 @@ void devctrl_pushinfo(int code)
 	}
 	// keSetEvent
 	KeSetEvent(&g_ioThreadEvent, IO_NO_INCREMENT, FALSE);
-	return status;
 }

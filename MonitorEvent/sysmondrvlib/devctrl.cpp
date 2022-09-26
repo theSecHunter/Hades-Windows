@@ -13,21 +13,7 @@
 using namespace std;
 
 #define TCP_TIMEOUT_CHECK_PERIOD	5 * 1000
-
 #define FSCTL_DEVCTRL_BASE      FILE_DEVICE_NETWORK
-
-#define CTL_DEVCTRL_ENABLE_MONITOR \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x801, METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define CTL_DEVCTRL_OPEN_SHAREMEM \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define CTL_DEVCTRL_DISENTABLE_MONITOR \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x804, METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define CTL_DEVCTRL_IPS_SETPROCESSNAME \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x805, METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define CTL_DEVCTRL_ENABLE_IPS_MONITOR \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x806, METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define CTL_DEVCTRL_DISENTABLE_IPS_MONITOR \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x807, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 
 static NF_BUFFERS			g_nfBuffers;
@@ -228,7 +214,7 @@ int DevctrlIoct::devctrl_OffIpsMonitor()
 	DWORD dwSize = 0;
 	return devctrl_sendioct(CTL_DEVCTRL_DISENTABLE_IPS_MONITOR, NULL, InSize, NULL, OutSize, dwSize);
 }
-int DevctrlIoct::devctrl_SetIpsProcess(wchar_t* buf)
+int DevctrlIoct::devctrl_SetIpsProcessNameList(const DWORD code, const wchar_t* buf)
 {
 	DWORD dwBytesReturned;
 	AutoLock lock(g_cs);
@@ -242,8 +228,31 @@ int DevctrlIoct::devctrl_SetIpsProcess(wchar_t* buf)
 		return FALSE;
 	}
 	if (DeviceIoControl(g_hDevice,
-		CTL_DEVCTRL_IPS_SETPROCESSNAME,
+		code,
 		(LPVOID)buf, (lstrlenW(buf) + 1) * sizeof(WCHAR),
+		NULL, 0,
+		&dwBytesReturned, NULL))
+	{
+		return TRUE;
+	}
+	return FALSE;
+}
+int DevctrlIoct::devctrl_SetIpsFilterMods(const DWORD32 code, const int mods)
+{
+	DWORD dwBytesReturned;
+	AutoLock lock(g_cs);
+	if (g_hDevice == INVALID_HANDLE_VALUE)
+	{
+		return FALSE;
+	}
+	if (mods <= 0)
+	{
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return FALSE;
+	}
+	if (DeviceIoControl(g_hDevice,
+		code,
+		(LPVOID)&mods, sizeof(DWORD32),
 		NULL, 0,
 		&dwBytesReturned, NULL))
 	{

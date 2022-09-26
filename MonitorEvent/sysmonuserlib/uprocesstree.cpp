@@ -207,14 +207,14 @@ void GetQueryViryualMemoryStatue(HANDLE hProccess)
 	VMINFO						statue = { 0 };
 	DWORD						dwAddress = 0;
 	DWORD						dwSize = 0;
-	BOOL						bRet = FALSE;
+	SIZE_T						bRet = 0;
 	while (1) {
 
 		bRet = VirtualQueryEx(hProccess,
 			(LPCVOID)dwAddress,
 			&mbi,
 			sizeof(MEMORY_BASIC_INFORMATION));
-		if (bRet == FALSE)
+		if (!bRet)
 			break;
 
 		statue.address = dwAddress;
@@ -243,15 +243,15 @@ void GetQueryViryualMemoryStatue(HANDLE hProccess)
 		if (statue.state == e_stat_commit) {
 
 			dwSize = 0;
-			LPVOID	dwAllocationBase = mbi.AllocationBase;
-			DWORD	dwBlockAddress = (DWORD)dwAddress;
+			PVOID	dwAllocationBase = mbi.AllocationBase;
+			DWORD64	dwBlockAddress = (DWORD64)dwAddress;
 			while (1) {
 
 				bRet = VirtualQueryEx(hProccess,
 					(LPCVOID)dwBlockAddress,
 					&mbi,
 					sizeof(MEMORY_BASIC_INFORMATION));
-				if (bRet == FALSE) {
+				if (!bRet) {
 					break;
 				}
 

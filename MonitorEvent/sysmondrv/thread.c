@@ -5,13 +5,13 @@
 #define DebugPrint(...) DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, __VA_ARGS__)
 
 static  BOOLEAN					g_thr_monitor = FALSE;
-static  KSPIN_LOCK				g_thr_monitorlock = NULL;
+static  KSPIN_LOCK				g_thr_monitorlock = 0;
 
 static  BOOLEAN					g_thr_ips_monitor = FALSE;
-static  KSPIN_LOCK				g_thr_ips_monitorlock = NULL;
+static  KSPIN_LOCK				g_thr_ips_monitorlock = 0;
 
-static KSPIN_LOCK               g_threadlock = NULL;
 NPAGED_LOOKASIDE_LIST			g_threadlist;
+static KSPIN_LOCK               g_threadlock = 0;
 
 static THREADDATA				g_threadQueryhead;
 
@@ -66,7 +66,7 @@ BOOLEAN CheckIsRemoteThread(HANDLE ProcessId)
 			if (!BufferLen) 
 				break;
 
-			pInfo = (PSYSTEM_PROCESS_INFORMATION)ExAllocatePool(NonPagedPool, BufferLen);
+			pInfo = (PSYSTEM_PROCESS_INFORMATION)ExAllocatePoolWithTag(NonPagedPool, BufferLen, 'THMM');
 			if (!pInfo) 
 				break;
 			pMemAddr = pInfo;
@@ -108,7 +108,7 @@ VOID Process_NotifyThread(
 	PTHREADBUFFER threadbuf = NULL;
 
 	// Alter Check CraeteRemoteThread
-	const int CurrentId = PsGetCurrentProcessId();
+	const int CurrentId = (int)PsGetCurrentProcessId();
 	if (g_thr_ips_monitor && Create && (CurrentId != (HANDLE)4) && (ProcessId != (HANDLE)4) && (CurrentId != ProcessId) && CheckIsRemoteThread(ProcessId))
 	{
 		//UCHAR* SrcPsName, DstPsName;
@@ -186,7 +186,7 @@ void Thread_Clean()
 		lock_status = 1;
 		while (!IsListEmpty(&g_threadQueryhead.thread_pending))
 		{
-			pData = RemoveHeadList(&g_threadQueryhead.thread_pending);
+			pData = (THREADBUFFER*)RemoveHeadList(&g_threadQueryhead.thread_pending);
 			sl_unlock(&lh);
 			lock_status = 0;
 			Thread_PacketFree(pData);

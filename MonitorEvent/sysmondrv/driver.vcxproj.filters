@@ -122,7 +122,7 @@
     <ClInclude Include="sysenumnotify.h">
       <Filter>sysrootkit</Filter>
     </ClInclude>
-    <ClInclude Include="util.h" />
+    <ClInclude Include="utiltools.h" />
     <ClInclude Include="sysprocessinfo.h">
       <Filter>sysrootkit</Filter>
     </ClInclude>

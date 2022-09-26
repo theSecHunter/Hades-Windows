@@ -147,8 +147,9 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 ```
 {
 
-	// 1白名单,2黑名单 只能开启一种模式
-	"processRuleMod": 1
+	// 1白名单,2黑名单
+	"processRuleMod": 2
+	// 一般配置黑名单，白名单如果配置不全可能会存在问题
 	// 如果白名单，规则生效后只允许执行cmd.exe|powershell.exe等进程
 	// 如果黑名单，规则生效后不允许执行cmd.exe|powershell.exe等进程
 	"processName": "cmd.exe|powershell.exe|vbs.exe|wscript.exe"
