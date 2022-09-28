@@ -67,6 +67,111 @@ HlprMiniPortIpc::~HlprMiniPortIpc()
 	g_comPletion = nullptr;
 }
 
+// TestOutpuDebug
+void RegisterOutPut(const REGISTERINFO* const registerinfo)
+{
+	try
+	{
+		std::wstring OutPut;
+		switch (registerinfo->opeararg)
+		{// 默认Ex解析结构是>=Win7
+			// 创建Key - 打开Key
+		case RegNtPreCreateKey:
+		case RegNtPreOpenKey:
+		{
+			OutPut = L"[HadesSvc] RegNtPreCreateKey/RegNtPreOpenKey CompleteName: ";
+			OutPut.append(registerinfo->CompleteName);
+			OutputDebugString(OutPut.c_str());
+		}
+		break;
+
+		case RegNtPreCreateKeyEx:
+		case RegNtPreOpenKeyEx:
+		{
+			OutPut = L"[HadesSvc] RegNtPreCreateKeyEx/RegNtPreOpenKeyEx CompleteName: ";
+			OutPut.append(registerinfo->CompleteName);
+			OutputDebugString(OutPut.c_str());
+		}
+		break;
+
+		case RegNtPostCreateKeyEx:
+		case RegNtPostOpenKeyEx:
+		{
+			OutPut = L"[HadesSvc] RegNtPostCreateKeyEx/RegNtPostOpenKeyEx Object: ";
+			OutPut.append(std::to_wstring((long)registerinfo->Object));
+			OutPut.append(L" CompleteName: ");
+			OutPut.append(registerinfo->CompleteName);
+			OutputDebugString(OutPut.c_str());
+		}
+		break;
+
+		case RegNtPostCreateKey:
+		case RegNtPostOpenKey:
+		{
+			OutPut = L"[HadesSvc] RegNtPostCreateKey/RegNtPostOpenKey CompleteName: ";
+			OutPut.append(std::to_wstring((long)registerinfo->Object));
+			OutPut.append(L" CompleteName: ");
+			OutPut.append(registerinfo->CompleteName);
+			OutputDebugString(OutPut.c_str());
+		}
+		break;
+
+		// 修改Key
+		case RegNtSetValueKey:
+		{
+			OutPut = L"[HadesSvc] RegNtSetValueKey CompleteName: ";
+			OutPut.append(std::to_wstring((long)registerinfo->Object));
+			OutPut.append(L" CompleteName: ");
+			OutPut.append(registerinfo->CompleteName);
+			OutputDebugString(OutPut.c_str());
+		}
+		break;
+
+		// 删除Key
+		case RegNtPreDeleteKey:
+		{
+
+		}
+		break;
+
+		// 枚举Key
+		case RegNtEnumerateKey:
+		{
+		}
+		break;
+
+		// 重命名注册表
+		case RegNtRenameKey:
+		//case RegNtPostRenameKey:
+		{
+			OutPut = L"[HadesSvc] RegNtRenameKey CompleteName: ";
+			OutPut.append(std::to_wstring((long)registerinfo->Object));
+			OutPut.append(L" CompleteName(NewName): ");
+			OutPut.append(registerinfo->CompleteName);
+			
+			OutputDebugString(OutPut.c_str());
+		}
+		break;
+
+		// 查询
+		case RegNtQueryValueKey:
+		{			
+			OutPut = L"[HadesSvc] RegNtQueryValueKey CompleteName: ";
+			OutPut.append(std::to_wstring((long)registerinfo->Object));
+			OutPut.append(L" CompleteName: ");
+			OutPut.append(registerinfo->CompleteName);
+			OutputDebugString(OutPut.c_str());
+		}
+		break;
+		}
+	}
+	catch (const std::exception&)
+	{
+
+	}
+
+}
+
 bool HlprMiniPortIpc::SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, unsigned int processnamelen) {
 	if (FALSE == g_InitPortStatus)
 		return false;
@@ -208,7 +313,7 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		{
 		case MIN_COMMAND::IPS_PROCESSSTART:
 		{
-			PROCESSINFO* processinfo = (PROCESSINFO*)notification->Contents;
+			const PROCESSINFO* const processinfo = (PROCESSINFO*)notification->Contents;
 			OutputDebugString(processinfo->commandLine);
 			// 启动界面情况发送到界面等待用户操作
 			socketMsg socketPip;
@@ -220,7 +325,10 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		case MIN_COMMAND::IPS_REGISTERTAB: 
 		{
 			// 测试默认
-			replyMessage.Reply.SafeToOpen = 1;
+			const REGISTERINFO* const registerinfo = (REGISTERINFO*)notification->Contents;
+			if (registerinfo)
+				RegisterOutPut(registerinfo);
+			replyMessage.Reply.SafeToOpen = 2;
 		}
 		break;
 		case MIN_COMMAND::IPS_IMAGEDLL: break;

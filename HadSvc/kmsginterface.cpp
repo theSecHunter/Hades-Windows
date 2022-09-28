@@ -11,6 +11,9 @@
 #include "AkrSysDriverDevInfo.h"
 #include "drvlib.h"
 
+#include <ProcessRuleAssist.h>
+#include <RegisterRuleAssist.h>
+
 //rapidjson
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
@@ -718,27 +721,37 @@ void kMsgInterface::DriverInit(const int flag)
         }
 
         // Set Ips Process
-        WCHAR IpsProcessNameTest[] = L"powershell.exe|cmd.exe||";
-        status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessNameTest);
-        if (0 > status)
+        unsigned int dwMods = 0; std::string strProcessName;
+        if (ConfigProcessJsonRuleParsing(dwMods, strProcessName) && !strProcessName.empty())
         {
-            OutputDebugString(L"[HadesSvc] Process devctrl_SetIpsProcessNameList");
-            break;
+            strProcessName.append("||");
+            const std::wstring IpsProcessName = Str2WStr(strProcessName);
+            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessName.c_str());
+            if (0 > status)
+            {
+                OutputDebugString(L"[HadesSvc] Process devctrl_SetIpsProcessNameList");
+                break;
+            }
+            status = g_kernel_Ioct.devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, dwMods);
+            if (0 > status)
+            {
+                OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
+                break;
+            }
         }
-        status = g_kernel_Ioct.devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, 2);
-        if (0 > status)
-        {
-            OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
-            break;
-        }
-        
+
         // Set Ips Register
-        WCHAR IpsRegisterProcessNameTest[] = L"AddRegister.exe|cmd.exe||";
-        status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterProcessNameTest);
-        if (0 > status)
+        std::string registerProcName;
+        if (ConfigRegisterJsonRuleParsing(registerProcName))
         {
-            OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList");
-            break;
+            registerProcName.append("|");
+            const std::wstring IpsRegisterName = Str2WStr(registerProcName);
+            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterName.c_str());
+            if (0 > status)
+            {
+                OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList");
+                break;
+            }
         }
 
         // Enable Event --> 内核提取出来数据以后处理类
@@ -825,6 +838,45 @@ bool kMsgInterface::GetKerInitStatus()
 bool kMsgInterface::GetKerBeSnipingStatus()
 {
     return kBesnipingStatus;
+}
+bool kMsgInterface::ReLoadProcessRuleConfig()
+{
+    int status = 0;
+    unsigned int dwMods = 0; std::string strProcessName;
+    if (ConfigProcessJsonRuleParsing(dwMods, strProcessName) && !strProcessName.empty())
+    {
+        strProcessName.append("||");
+        const std::wstring IpsProcessName = Str2WStr(strProcessName);
+        status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessName.c_str());
+        if (0 > status)
+        {
+            OutputDebugString(L"[HadesSvc] Process devctrl_SetIpsProcessNameList");
+            return false;
+        }
+        status = g_kernel_Ioct.devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, dwMods);
+        if (0 > status)
+        {
+            OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
+            return false;
+        }
+    }
+    return true;
+}
+bool kMsgInterface::ReLoadRegisterRuleConfig()
+{
+    std::string registerProcName;
+    if (ConfigRegisterJsonRuleParsing(registerProcName))
+    {
+        registerProcName.append("|");
+        const std::wstring IpsRegisterName = Str2WStr(registerProcName);
+        const int status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterName.c_str());
+        if (0 > status)
+        {
+            OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList");
+            return false;
+        }
+    }
+    return true;
 }
 
 void kMsgInterface::kMsg_Init() {

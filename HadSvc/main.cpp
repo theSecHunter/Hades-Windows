@@ -14,6 +14,7 @@
 #include "msgloop.h"
 #include "HlprMiniCom.h"
 #include <usysinfo.h>
+#include <RegisterRuleAssist.h>
 
 static kMsgInterface	g_mainMsgKlib;
 static uMsgInterface	g_mainMsgUlib;

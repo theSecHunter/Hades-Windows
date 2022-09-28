@@ -33,6 +33,8 @@ public:
 	bool GetKerMonStatus();
 	bool GetKerInitStatus();
 	bool GetKerBeSnipingStatus();
+	bool ReLoadProcessRuleConfig();
+	bool ReLoadRegisterRuleConfig();
 
 private:
 	void kMsg_SetTopicQueuePtr();

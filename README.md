@@ -55,7 +55,6 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 | 注册表 | 删除 -  修改 - 枚举 - 重命名等 | 完成 |
 | 模块 | DLL -  驱动 |完成 |
 | 会话 | 用户登录/退出/Session切换 |完成 |
-| WMI    | 待定(应用层etw实现) |ETW实现 |
 | 文件 | 文件读写访问  OS <= Windows7  (Windows10 对象回调(文件对象)会有几率触发PG) |完成 |
 
 ### 内核接口采集事件 v2.0
@@ -146,60 +145,70 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 #### 进程黑/白名单模式(内核规则匹配)
 ```
 {
-
 	// 1白名单,2黑名单
-	"processRuleMod": 2
+	"processRuleMod": 2,
 	// 一般配置黑名单，白名单如果配置不全可能会存在问题
 	// 如果白名单，规则生效后只允许执行cmd.exe|powershell.exe等进程
 	// 如果黑名单，规则生效后不允许执行cmd.exe|powershell.exe等进程
 	"processName": "cmd.exe|powershell.exe|vbs.exe|wscript.exe"
 }
 ```
+**See Rule: config/processRuleConfig.json**
 
 #### 注册表黑/白名单模式(应用规则匹配)
+**引擎工作方式：匹配processName和registerValuse二元组，成功不继续匹配当前规则为准。**
+
+**举例1) 2) cmd.exe配置冲突，1) 允许cmd.exe访问Run, 2) 不允许cmd.exe规则访问 Run，配置冲突，冲突时顺序靠前为准(1为准)。**
+
+**举列2) 3) cmd.exe既可以是白名单-又可以是黑名单，比如Run注册表不允许cmd.exe访问(黑名单)，Settings允许cmd.exe访问(白名单),registerValuse键值不冲突即可。**
+
+**白名单情况下：100000打开是删除-创建-设置-查询-重命名操作的前提，比如修改，必须配置成打开修改(100100)，删除则是打开删除(110000)**
+
 ```
 {
-	{
-		// 只允许cmd.exe|powershell.exe对regusterValuse进行修改操作
+
+	{ 1) 
+		// 仅允许cmd.exe|powershell.exe对regusterValuse打开和修改.
 		// 1白名单,2黑名单
-		"registerRuleMod": 1
-		"processName": "cmd.exe|powershell.exe"
-		"registerValuse": "xx\\xx|xx\\xx"
-		// 1读，2修改，3读改
-		"permissions": 2
+		"registerRuleMod": 1,
+		"processName": "cmd.exe|powershell.exe",
+		"registerValuse": "\REGISTRY\MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run|\REGISTRY\MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOne",
+		// 100000打开(Create/Open) 10000删除(Delete)，1000创建(CreteNew), 100设置(SetValue)，10查询(QueryValue)，1重命名(Rename)
+		"permissions": 100100(打开和修改),
 	}
-	{
-		// 不允许cmd.exe|vbs.exe|wscript.exe对regusterValuse进行读操作
-		"registerRuleMod": 2
-		"processName": "cmd.exe|vbs.exe|wscript.exe"
-		"registerValuse": "xx\\xx|xx\\xx"
-		"permissions": 1
+	{ 2)
+		// 不允许cmd.exe|vbs.exe|wscript.exe对regusterValuse进行全部操作, 也可以只配禁止打开，因为打不开 - 修改 删除 查询都不可用.
+		"registerRuleMod": 2,
+		"processName": "cmd.exe|vbs.exe|wscript.exe",
+		"registerValuse": "\REGISTRY\MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run|\REGISTRY\MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOne",
+		"permissions": 111111 or 100000,
 	}
-	// cmd.exe既可以是白名单-又可以是黑名单，比如Run注册表不允许cmd.exe访问，CurrentRun允许cmd.exe访问，不冲突。
-	{
-		// 不允许svhost.exe.exe对regusterValuse进行读写操作
-		"registerRuleMod": 2
-		"processName": "svhost.exe.exe"
-		"registerValuse": "xx\\xx|xx\\xx"
-		"permissions": 3
+
+	{  3)
+		// 仅允许svhost.exe|cmd.exe对regusterValuse修改重命名操作
+		"registerRuleMod": 1,
+		"processName": "cmd.exe|svhost.exe.exe",
+		"registerValuse": "\Registry\Machine\Software\WOW6432Node\Policies\Microsoft\MUI\Settings",
+		"permissions": 100110(打开修改重命名操作),
 	}
 }
 ```
+**See Rule: config/registerRuleConfig.json**
 
 #### 目录访问/文件rwx进程黑白名单模式(应用规则匹配)
 ```
 {
 	{
-		// 仅允许word.exe|wps.exe对规则的目录/文件/后缀规则进行写操作
+		// 仅允许word.exe|wps.exe对规则的目录/文件/后缀规则进行读写执行操作
 		// 如果文件规则包含在某目录下，以目录规则为准。
 		// 1白名单,2黑名单
-		"FileIORuleMod": 1
-		"processName": "word.exe|wps.exe"
-		"Directory": "|"
-		"FileName": "|"
-		"FileSuffixName": "|"
-		// 1读，2写，3执行，4读写，5读执行，6写执行，7读写执行
-		"permissions": 2
+		"FileIORuleMod": 1,
+		"processName": "word.exe|wps.exe",
+		"Directory": "|",
+		"FileName": "|",
+		"FileSuffixName": "|",
+		// 1000读，100写，10执行
+		"permissions": 1110(ALL),
 	}
 	{
 	}
@@ -208,7 +217,7 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 }
 ```
 
-**应用规则匹配：内核先会根据模式对进程过滤，过滤后上抛至应用层规则逻辑处理，根据规则返回引擎处理结果内核做出拦截或放行。这种处理方式会牺牲性能，对于系统来说可以忽略不计。**
+**应用规则匹配：内核先会根据模式对进程过滤，过滤后上抛至应用层规则逻辑处理，根据引擎结果内核做出拦截或放行。处理方式会牺牲性能，不过对于系统来说可以忽略不计。**
 
 ### GRPC/Protobuf v2.0
 

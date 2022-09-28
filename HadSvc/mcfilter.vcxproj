@@ -107,16 +107,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x86\Debug</OutDir>
-    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);..\HadesSdk\sysmondrv\lib</LibraryPath>
+    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);..\HadesSdk\sysmondrv\lib;..\HadesSdk\ruleEngine\lib</LibraryPath>
     <TargetName>$(ProjectName)_d</TargetName>
-    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\sysmonuser\include;..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;$(IncludePath);..\HadesSdk\include</IncludePath>
+    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\sysmonuser\include;..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;$(IncludePath);..\HadesSdk\include;..\HadesSdk\ruleEngine\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\x86\Release</OutDir>
-    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);..\HadesSdk\ruleEngine\lib</LibraryPath>
     <TargetName>$(ProjectName)</TargetName>
-    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\include</IncludePath>
+    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\include;..\HadesSdk\ruleEngine\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -130,16 +130,16 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x64\Debug</OutDir>
     <IntDir>$(Configuration)\</IntDir>
-    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\HadesSdk\ruleEngine\lib</LibraryPath>
     <TargetName>$(ProjectName)_d64</TargetName>
-    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann</IncludePath>
+    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann</IncludePath>
+    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include</IncludePath>
     <ReferencePath>$(VC_ReferencesPath_x64);</ReferencePath>
     <OutDir>..\bin\x64\Release</OutDir>
-    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\HadesSdk\ruleEngine\lib</LibraryPath>
     <TargetName>$(ProjectName)64</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
@@ -173,7 +173,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libprotobufd.lib;libprotocd.lib;SysMonUserlib_d.lib;SysMonDrvlib_d.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RuleEngineSvc_d.lib;libprotobufd.lib;libprotocd.lib;SysMonUserlib_d.lib;SysMonDrvlib_d.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -193,7 +193,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>libprotobuf.lib;libprotoc.lib;SysMonUserlib.lib;SysMonDrvlib.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RuleEngineSvc.lib;libprotobuf.lib;libprotoc.lib;SysMonUserlib.lib;SysMonDrvlib.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/SAFESEH:NO %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -227,7 +227,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libprotocd64.lib;libprotobufd64.lib;SysMonUserlib_d64.lib;SysMonDrvlib_d64.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RuleEngineSvc_d64.lib;libprotocd64.lib;libprotobufd64.lib;SysMonUserlib_d64.lib;SysMonDrvlib_d64.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
@@ -249,7 +249,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libprotobuf64.lib;libprotoc64.lib;SysMonDrvlib64.lib;SysMonUserlib64.lib;Tdh.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RuleEngineSvc64.lib;libprotobuf64.lib;libprotoc64.lib;SysMonDrvlib64.lib;SysMonUserlib64.lib;Tdh.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">

@@ -173,9 +173,24 @@ typedef enum _USER_REG_NOTIFY_CLASS {
 } USER_REG_NOTIFY_CLASS;
 typedef struct _REGISTERINFO
 {
-	int processid;
-    int threadid;
-	int opeararg;
+    ULONG			processid;
+    ULONG			threadid;
+    ULONG			opeararg;
+    PVOID			RootObject;
+    PVOID           Object;
+    ULONG			Type;
+    ULONG			Attributes;
+    ULONG			DesiredAccess;
+    PULONG			Disposition;
+    ULONG			GrantedAccess;
+    ULONG           Options;
+    ULONG           Wow64Flags;
+    ULONG			KeyInformationClass;
+    ULONG			Index;
+    wchar_t			ProcessPath[260 * 2];
+    wchar_t			CompleteName[260 * 2];
+    char			SetData[260 * 2];
+    ULONG			DataSize;
 }REGISTERINFO, * PREGISTERINFO;
 // NF_FILE_INFO
 typedef struct _FILEINFO

@@ -194,4 +194,15 @@ std::string UTF8_ToString(const std::string& str)
     catch (const std::exception&)
     {
     }
+    return "";
+}
+std::wstring Str2WStr(const std::string& str)
+{
+    USES_CONVERSION;
+    return A2W(str.c_str());
+} 
+std::string WStr2Str(const std::wstring& wstr)
+{
+    USES_CONVERSION;
+    return W2A(wstr.c_str());
 }

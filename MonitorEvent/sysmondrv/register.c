@@ -10,9 +10,6 @@ static  KSPIN_LOCK				g_reg_monitorlock = 0;
 static  BOOLEAN					g_reg_ips_monitorprocess = FALSE;
 static  KSPIN_LOCK				g_reg_ips_monitorlock = 0;
 
-//static  int						g_reg_ipsmod = 0;
-//static	KSPIN_LOCK				g_reg_ipsmodlock = 0;
-
 static	PWCHAR					g_reg_ipsNameList = NULL;
 static	KSPIN_LOCK				g_reg_ipsNameListlock = 0;
 
@@ -31,36 +28,45 @@ static NTSTATUS Process_NotifyRegister(
 )
 {
 	UNREFERENCED_PARAMETER(CallbackContext);
-	if ((FALSE == g_reg_monitorprocess) && (FALSE == g_reg_ips_monitorprocess) && !Argument1 && !Argument2)
+	if (((FALSE == g_reg_monitorprocess) && (FALSE == g_reg_ips_monitorprocess)) || !Argument1 || !Argument2)
+		return STATUS_SUCCESS;
+
+	NTSTATUS status = STATUS_SUCCESS;
+	WCHAR path[260 * 2] = { 0 };
+	
+	const ULONG processid = (int)PsGetCurrentProcessId();
+	const ULONG threadid = (int)PsGetCurrentThreadId();
+
+	BOOLEAN QueryPathStatus = FALSE;
+	if (QueryProcessNamePath((DWORD)processid, path, sizeof(path)))
+		QueryPathStatus = TRUE;
+	if (!g_reg_monitorprocess && g_reg_ips_monitorprocess && !QueryPathStatus)
+		return STATUS_SUCCESS;
+
+	BOOLEAN bProcFlt = FALSE;
+	if (QueryPathStatus)
+		bProcFlt = Register_IsIpsProcessNameInList(path);
+	if (!g_reg_monitorprocess && g_reg_ips_monitorprocess && !bProcFlt)
 		return STATUS_SUCCESS;
 
 	REGISTERINFO registerinfo;
 	RtlSecureZeroMemory(&registerinfo, sizeof(REGISTERINFO));
-	NTSTATUS status = STATUS_SUCCESS;
-	const int processid = (int)PsGetCurrentProcessId();
-	const int threadid = (int)PsGetCurrentThreadId();
-	WCHAR path[260 * 2] = { 0 };
-	BOOLEAN QueryPathStatus = FALSE;
-	if (QueryProcessNamePath((DWORD)processid, path, sizeof(path))) {
-		RtlCopyMemory(registerinfo.ProcessPath, path, sizeof(WCHAR) * 260);
-		QueryPathStatus = TRUE;
-	}
-
-	// Argument1 = _REG_NOTIFY_CLASS 
-	const LONG lOperateType = (REG_NOTIFY_CLASS)Argument1;
-
 	registerinfo.processid = processid;
 	registerinfo.threadid = threadid;
+	if (QueryPathStatus)
+		RtlCopyMemory(registerinfo.ProcessPath, path, sizeof(WCHAR) * 260);
+
+	// Argument1 = _REG_NOTIFY_CLASS 
+	const ULONG lOperateType = (REG_NOTIFY_CLASS)Argument1;
 	registerinfo.opeararg = lOperateType;
 
 	// Argument2 = Argument1.Struct
 	switch (lOperateType)
-	{// 默认Ex解析结构是>=Win7
-		// 创建Key - 打开Key
+	{// 默认Ex解析结构是 >= Win7
+		// 创建成功前
 		case RegNtPreCreateKey:
 		case RegNtPreOpenKey:
 		{
-			//DbgBreakPoint();
 			PREG_PRE_CREATE_KEY_INFORMATION RegCreateOpeninfo = (PREG_PRE_CREATE_KEY_INFORMATION)Argument2;
 			if (!RegCreateOpeninfo)
 				break;
@@ -75,57 +81,103 @@ static NTSTATUS Process_NotifyRegister(
 			PREG_CREATE_KEY_INFORMATION_V1 RegCreateOpenExinfo = (PREG_CREATE_KEY_INFORMATION_V1)Argument2;
 			if (!RegCreateOpenExinfo)
 				break;
-			RegCreateOpenExinfo->CompleteName;
-			RegCreateOpenExinfo->Attributes;
+			if (RegCreateOpenExinfo->CompleteName->Length && RegCreateOpenExinfo->CompleteName->Length <= 260)
+				RtlCopyMemory(registerinfo.CompleteName, RegCreateOpenExinfo->CompleteName->Buffer, RegCreateOpenExinfo->CompleteName->Length);
+			registerinfo.Attributes = RegCreateOpenExinfo->Attributes;
 			// DesiredAccess - KEY_READ KEY_ALL_ACCESS
-			RegCreateOpenExinfo->DesiredAccess;
+			registerinfo.DesiredAccess = RegCreateOpenExinfo->DesiredAccess;
 			// REG_CREATED_NEW_KEY|REG_OPENED_EXISTING_KEY
-			RegCreateOpenExinfo->Disposition;
+			registerinfo.Disposition = RegCreateOpenExinfo->Disposition;
 			// 
-			RegCreateOpenExinfo->GrantedAccess;
+			registerinfo.GrantedAccess = RegCreateOpenExinfo->GrantedAccess;
 			// Root
-			RegCreateOpenExinfo->RootObject;
+			registerinfo.RootObject = RegCreateOpenExinfo->RootObject;
 			// CreateOptions
-			RegCreateOpenExinfo->Options;
+			registerinfo.Options = RegCreateOpenExinfo->Options;
 			// Wow64
-			RegCreateOpenExinfo->Wow64Flags;
+			registerinfo.Wow64Flags = RegCreateOpenExinfo->Wow64Flags;
 		}
 		break;
 
-		// 修改Key
+		// 创建成功后
+		case RegNtPostCreateKey:
+		case RegNtPostOpenKey:
+		{
+			PREG_POST_CREATE_KEY_INFORMATION RegCreateOpenPostinfo = (PREG_POST_CREATE_KEY_INFORMATION)Argument2;
+			if (!RegCreateOpenPostinfo)
+				break;
+			if (STATUS_SUCCESS == RegCreateOpenPostinfo->Status)
+				registerinfo.Object = RegCreateOpenPostinfo->Object;
+			if (RegCreateOpenPostinfo->CompleteName->Length && RegCreateOpenPostinfo->CompleteName->Length <= 260)
+				RtlCopyMemory(registerinfo.CompleteName, RegCreateOpenPostinfo->CompleteName->Buffer, RegCreateOpenPostinfo->CompleteName->Length);
+		}
+		break;
+
+		case RegNtPostCreateKeyEx:
+		case RegNtPostOpenKeyEx:
+		{
+			PREG_POST_OPERATION_INFORMATION RegCreateOpenPostExinfo = (PREG_POST_OPERATION_INFORMATION)Argument2;
+			if (STATUS_SUCCESS == RegCreateOpenPostExinfo->Status)
+				registerinfo.Object = RegCreateOpenPostExinfo->Object;
+			// _REG_CREATE_KEY_INFORMATION_V1
+			if (RegCreateOpenPostExinfo->PreInformation)
+			{
+				PREG_CREATE_KEY_INFORMATION_V1 PerInfo = (PREG_CREATE_KEY_INFORMATION_V1)RegCreateOpenPostExinfo->PreInformation;
+				if (!PerInfo)
+					break;
+				if (PerInfo->CompleteName->Length && PerInfo->CompleteName->Length <= 260)
+					RtlCopyMemory(registerinfo.CompleteName, PerInfo->CompleteName->Buffer, PerInfo->CompleteName->Length);
+			}
+		}
+		break;
+
+		// 查询
+		case RegNtQueryValueKey:
+		{
+			PREG_QUERY_VALUE_KEY_INFORMATION RegQueryValueinfo = (PREG_QUERY_VALUE_KEY_INFORMATION)Argument2;
+			if (!RegQueryValueinfo)
+				break;
+			registerinfo.Object = RegQueryValueinfo->Object;
+			registerinfo.KeyInformationClass = RegQueryValueinfo->KeyValueInformationClass;
+			if (RegQueryValueinfo->ValueName->Buffer && (260 >= RegQueryValueinfo->ValueName->Length))
+				RtlCopyMemory(registerinfo.CompleteName, RegQueryValueinfo->ValueName->Buffer, RegQueryValueinfo->ValueName->Length);
+		}
+		break;
+
+		// 修改
 		case RegNtSetValueKey:
 		{
 			PREG_SET_VALUE_KEY_INFORMATION RegSetValueinfo = (PREG_CREATE_KEY_INFORMATION_V1)Argument2;
 			if (!RegSetValueinfo)
 				break;
-			RegSetValueinfo->Object;
-			RegSetValueinfo->ValueName;
-			RegSetValueinfo->Type;
-			RegSetValueinfo->Data;
-			RegSetValueinfo->DataSize;
+			registerinfo.Object = RegSetValueinfo->Object;
+			if (RegSetValueinfo->ValueName->Buffer && (260 >= RegSetValueinfo->ValueName->Length))
+				RtlCopyMemory(registerinfo.CompleteName, RegSetValueinfo->ValueName->Buffer, RegSetValueinfo->ValueName->Length);
+			registerinfo.Type = RegSetValueinfo->Type;
+			if (RegSetValueinfo->Data && (RegSetValueinfo->DataSize < 260))
+				RtlCopyMemory(registerinfo.SetData, RegSetValueinfo->Data, RegSetValueinfo->DataSize);
 		}
 		break;
 
-		// 删除Key
+		// 删除
 		case RegNtPreDeleteKey:
 		{
 			PREG_DELETE_KEY_INFORMATION RegDeleteValueinfo = (PREG_DELETE_KEY_INFORMATION)Argument2;
 			if (!RegDeleteValueinfo)
 				break;
-			RegDeleteValueinfo->Object;
-
+			registerinfo.Object = RegDeleteValueinfo->Object;
 		}
 		break;
 
-		// 枚举Key
+		// 枚举
 		case RegNtEnumerateKey:
 		{
 			PREG_ENUMERATE_KEY_INFORMATION RegEmumeratinfo = (PREG_ENUMERATE_KEY_INFORMATION)Argument2;
 			if (!RegEmumeratinfo)
 				break;
-			RegEmumeratinfo->Object;
-			RegEmumeratinfo->Index;
-			RegEmumeratinfo->KeyInformationClass;
+			registerinfo.Object = RegEmumeratinfo->Object;
+			registerinfo.Index = RegEmumeratinfo->Index;
+			registerinfo.KeyInformationClass = RegEmumeratinfo->KeyInformationClass;
 		}
 		break;
 
@@ -136,17 +188,23 @@ static NTSTATUS Process_NotifyRegister(
 			PREG_RENAME_KEY_INFORMATION RegRenameinfo = (PREG_RENAME_KEY_INFORMATION)Argument2;
 			if (!RegRenameinfo)
 				break;
-			RegRenameinfo->Object;
-			RegRenameinfo->NewName;
+			registerinfo.Object = RegRenameinfo->Object;
+			if (RegRenameinfo->NewName->Buffer && (RegRenameinfo->NewName->Length <= 260))
+				RtlCopyMemory(registerinfo.CompleteName, RegRenameinfo->NewName->Buffer, RegRenameinfo->NewName->Length);
 		}
 		break;
 
 		default:
-			return STATUS_SUCCESS;
+		{
+			if (!g_reg_monitorprocess)
+				return STATUS_SUCCESS;
+		}
+		break;
 	}
 
-	if (g_reg_ips_monitorprocess && g_reg_ipsNameList && QueryPathStatus && Register_IsIpsProcessNameInList(path))
+	if (g_reg_ips_monitorprocess && g_reg_ipsNameList && bProcFlt)
 	{
+		//DbgBreakPoint();
 		PHADES_NOTIFICATION  notification = NULL;
 		do {
 		    int replaybuflen = sizeof(HADES_REPLY);
@@ -170,7 +228,7 @@ static NTSTATUS Process_NotifyRegister(
 		} 
 	}
 	if (FALSE == g_reg_monitorprocess)
-		return status;
+		return STATUS_SUCCESS;
 
 	KLOCK_QUEUE_HANDLE lh;
 	REGISTERBUFFER* regbuf = (REGISTERBUFFER*)Register_PacketAllocate(sizeof(REGISTERINFO));
