@@ -28,6 +28,9 @@ static NTSTATUS Process_NotifyRegister(
 )
 {
 	UNREFERENCED_PARAMETER(CallbackContext);
+	if (KeGetCurrentIrql() >= DISPATCH_LEVEL)
+		return STATUS_SUCCESS;
+
 	if (((FALSE == g_reg_monitorprocess) && (FALSE == g_reg_ips_monitorprocess)) || !Argument1 || !Argument2)
 		return STATUS_SUCCESS;
 
@@ -204,28 +207,22 @@ static NTSTATUS Process_NotifyRegister(
 
 	if (g_reg_ips_monitorprocess && bProcFlt)
 	{
-		//DbgBreakPoint();
-		PHADES_NOTIFICATION  notification = NULL;
-		do {
-		    int replaybuflen = sizeof(HADES_REPLY);
-		    int sendbuflen = sizeof(HADES_NOTIFICATION);
-		    notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSR');
-		    if (!notification)
-		        break;
-		    RtlZeroMemory(notification, sendbuflen);
-		    notification->CommandId = 2; // MINIPORT_IPS_REGISTER
-			RtlCopyMemory(&notification->Contents, &registerinfo, sizeof(REGISTERINFO));
-		    NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
-		    const DWORD  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
-		    // À¹½Ø
-			if (1 == ReSafeToOpen)
-				status = STATUS_ACCESS_DENIED;
-		} while (FALSE);
+		int replaybuflen = sizeof(HADES_REPLY);
+		int sendbuflen = sizeof(HADES_NOTIFICATION);
+		PHADES_NOTIFICATION const notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSR');
 		if (notification)
 		{
-		    ExFreePoolWithTag(notification, 'IPSR');
-		    notification = NULL;
-		} 
+			RtlZeroMemory(notification, sendbuflen);
+			notification->CommandId = 2; // MINIPORT_IPS_REGISTER
+			RtlCopyMemory(&notification->Contents, &registerinfo, sizeof(REGISTERINFO));
+			NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
+			const DWORD  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
+			// À¹½Ø
+			if (1 == ReSafeToOpen)
+				status = STATUS_ACCESS_DENIED;
+			if (notification)
+				ExFreePoolWithTag(notification, 'IPSR');
+		}
 	}
 	if (FALSE == g_reg_monitorprocess)
 		return STATUS_SUCCESS;
@@ -251,7 +248,6 @@ NTSTATUS Register_Init(PDRIVER_OBJECT pDriverObject)
 	sl_init(&g_registelock);
 	sl_init(&g_reg_monitorlock);
 	sl_init(&g_reg_ips_monitorlock);
-	//KeInitializeSpinLock(&g_reg_ipsmodlock);
 	KeInitializeSpinLock(&g_reg_ipsNameListlock);
 
 	sl_init(&g_regdata.register_lock);

@@ -9,6 +9,7 @@
 extern PFLT_FILTER g_FltServerPortEvnet;
 static PFLT_PORT   g_FltServerPortEvnetPort = NULL;
 static PFLT_PORT   g_FltClientPortEvnetPort = NULL;
+//static KSPIN_LOCK  g_FltSendMsgLock = 0;
 
 NTSTATUS
 CommunicateConnect(
@@ -46,6 +47,8 @@ NTSTATUS Fsflt_initPort()
 	PSECURITY_DESCRIPTOR sd;
 	UNICODE_STRING EventPortName;
 
+	//sl_init(&g_FltSendMsgLock);
+
 	if (g_FltServerPortEvnet == NULL)
 		return STATUS_INSUFFICIENT_RESOURCES;
 
@@ -81,7 +84,16 @@ NTSTATUS Fsflt_initPort()
 NTSTATUS Fsflt_SendMsg(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID ReplyBuffer, PULONG ReplyLength)
 {
 	if (g_FltServerPortEvnet && g_FltClientPortEvnetPort)
-		return FltSendMessage(g_FltServerPortEvnet, &g_FltClientPortEvnetPort, SenderBuffer, SenderBufferLength, ReplyBuffer, ReplyLength, NULL);
+	{
+		static LARGE_INTEGER liTimeOut;
+		liTimeOut.QuadPart = -30 * 1000000;
+		const NTSTATUS nRet = FltSendMessage(g_FltServerPortEvnet, &g_FltClientPortEvnetPort, SenderBuffer, SenderBufferLength, ReplyBuffer, ReplyLength, &liTimeOut);
+		if ((STATUS_PORT_DISCONNECTED == nRet) && g_FltServerPortEvnet)
+		{
+			FltCloseClientPort(g_FltServerPortEvnet, &g_FltClientPortEvnetPort);
+			g_FltClientPortEvnetPort = NULL;
+		}
+	}
 	return STATUS_UNSUCCESSFUL;
 }
 // Asynchronous
