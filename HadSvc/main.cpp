@@ -14,7 +14,6 @@
 #include "msgloop.h"
 #include "HlprMiniCom.h"
 #include <usysinfo.h>
-#include <RegisterRuleAssist.h>
 
 static kMsgInterface	g_mainMsgKlib;
 static uMsgInterface	g_mainMsgUlib;
@@ -176,10 +175,10 @@ int main(int argc, char* argv[])
 	
 	if (g_mainMsgUlib.GetEtwMonStatus())
 		g_mainMsgUlib.uMsg_EtwClose();
-	if (g_mainMsgKlib.GetKerMonStatus())
-		g_mainMsgKlib.OffMonitor();
 	if (g_mainMsgKlib.GetKerBeSnipingStatus())
 		g_mainMsgKlib.OffBeSnipingMonitor();
+	if (g_mainMsgKlib.GetKerMonStatus())
+		g_mainMsgKlib.OffMonitor();
 	Sleep(1000);
 	if (g_mainMsgKlib.GetKerInitStatus())
 		g_mainMsgKlib.DriverFree();

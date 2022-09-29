@@ -279,7 +279,6 @@ bool DevctrlIoct::devctrl_sendioct(
 	memset(&ol, 0, sizeof(ol));
 	ol.hEvent = hEvent;
 
-	OutputDebugString(L"devctrl_sendioct entablMonitor");
 	BOOL status = DeviceIoControl(
 		g_hDevice,
 		ioctcode,

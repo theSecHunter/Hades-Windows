@@ -38,7 +38,6 @@ static VOID Process_NotifyProcessEx(
     }
 
     NTSTATUS status = STATUS_SUCCESS;
-    // ¸¸½ø³ÌPid -- BUG
     WCHAR path[260 * 2] = { 0 };
     BOOLEAN QueryPathStatus = FALSE;
     if (QueryProcessNamePath((DWORD)ProcessId, path, sizeof(path)))

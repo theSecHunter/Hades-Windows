@@ -437,8 +437,11 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
         ((kMsgInterface*)g_kern_interface)->kMsg_taskPush(taskid, task_array_data);
     else if ((taskid >= 200) && (taskid < 300))
         ((uMsgInterface*)g_user_interface)->uMsg_taskPush(taskid, task_array_data);
-    else if (401 == taskid)
-    {//用户态开关
+
+    switch (taskid)
+    {
+    case 401:
+    {// Etw采集开启
         const auto g_ulib = ((uMsgInterface*)g_user_interface);
         if (!g_ulib)
             return 0;
@@ -447,12 +450,12 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
         if (false == uStatus)
         {
             g_ulib->uMsg_EtwInit();
-            task_array_data.push_back("User_Etw MonitorControl Enable");
+            task_array_data.push_back("Success");
         }
-        else
-            task_array_data.push_back("User_Etw MonitorControl Runing");
     }
-    else if (402 == taskid) {
+    break;
+    case 402:
+    {// Etw采集关闭
         const auto g_ulib = ((uMsgInterface*)g_user_interface);
         if (!g_ulib)
             return 0;
@@ -460,85 +463,94 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
         const auto uStatus = g_ulib->GetEtwMonStatus();
         if (true == uStatus)
         {
-            task_array_data.push_back("User_Etw MonitorControl Disable");
             g_ulib->uMsg_EtwClose();
+            task_array_data.push_back("Success");
         }
-        else
-            task_array_data.push_back("User_Etw MonitorControl NotActivated");
     }
-    else if (403 == taskid) {
+    break;
+    case 403:
+    {// 内核态采集开启
         const auto g_klib = ((kMsgInterface*)g_kern_interface);
         if (!g_klib)
             return 0;
         task_array_data.clear();
-        const bool kStatus = g_klib->GetKerMonStatus();
         if (false == g_klib->GetKerInitStatus())
+        {
             g_klib->DriverInit(false); // 初始化启动read i/o线程
-        else
-        {
-            if (false == kStatus)
-                g_klib->StartReadFileThread();//如果不需要初始化，行为拦截正在工作 - 只启动线程
+            if (false == g_klib->GetKerInitStatus())
+            {
+                OutputDebugString(L"GetKerInitStatus false");
+                return 0;
+            }
         }
+        const bool kStatus = g_klib->GetKerMonStatus();
         if (false == kStatus)
-        {
+        {  
             OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Enable KernelMonitor Command");
             g_klib->OnMonitor();
-            task_array_data.push_back("Kernel MonitorControl Enable");
+            OutputDebugString(L"[HadesSvc] GetKerMonStatus Enable KernelMonitor Success");
+            // 开启Read IO Thread
+            g_klib->StartReadFileThread();
+            task_array_data.push_back("Success");
         }
-        else
-            task_array_data.push_back("Kernel MonitorControl Runing");
     }
-    else if (404 == taskid)
-    {//内核态开关
+    break;
+    case 404:
+    {// 内核态采集关闭
         const auto g_klib = ((kMsgInterface*)g_kern_interface);
         if (!g_klib)
             return 0;
         task_array_data.clear();
-        const bool kStatus = g_klib->GetKerMonStatus();
-        
         if (false == g_klib->GetKerInitStatus())
-            g_klib->DriverInit(false); // 初始化启动read i/o线程
-        else
-        {
-            if (false == kStatus)
-                g_klib->StartReadFileThread();//如果不需要初始化，行为拦截正在工作 - 只启动线程
-        }
-
+            return 0;
+        const bool kStatus = g_klib->GetKerMonStatus();
         if (true == kStatus)
         {
             OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Disable KernelMonitor Command");
             g_klib->OffMonitor();
             OutputDebugString(L"[HadesSvc] GetKerMonStatus Disable KernelMonitor Success");
+            // 行为拦截没开启，关闭驱动句柄
             if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerBeSnipingStatus()))
                 g_klib->DriverFree();
             else
                 g_klib->StopReadFileThread(); // 开启行为拦截状态下，关闭线程 - 防止下发I/O
+            task_array_data.push_back("Success");
         }
     }
-    else if (405 == taskid)
-    {
+    break;
+    case 405:
+    {// 行为监控开启
         const auto g_klib = ((kMsgInterface*)g_kern_interface);
         if (!g_klib)
             return 0;
         task_array_data.clear();
         if (false == g_klib->GetKerInitStatus())
-            g_klib->DriverInit(true);// 初始化不启动read i/o线程
+        {
+            g_klib->DriverInit(true);
+            if (false == g_klib->GetKerInitStatus())
+            {
+                OutputDebugString(L"GetKerInitStatus false");
+                return 0;
+            }
+        }
         const bool kStatus = g_klib->GetKerBeSnipingStatus();
         if (false == kStatus)
         {
             OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Send Enable KernelMonitor Command");
             g_klib->OnBeSnipingMonitor();
             OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Enable KernelMonitor Success");
+            task_array_data.push_back("Success");
         }
     }
-    else if (406 == taskid)
-    {
+    break;
+    case 406:
+    {// 行为监控关闭
         const auto g_klib = ((kMsgInterface*)g_kern_interface);
         if (!g_klib)
             return 0;
         task_array_data.clear();
         if (false == g_klib->GetKerInitStatus())
-            g_klib->DriverInit(true);// 初始化不启动read i/o线程
+            return 0;
         const bool kStatus = g_klib->GetKerBeSnipingStatus();
         if (true == kStatus)
         {
@@ -547,10 +559,51 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
             OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Disable KernelMonitor Success");
             if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerMonStatus()))
                 g_klib->DriverFree();
+            task_array_data.push_back("Success");
         }
     }
-    else
+    break;
+    case 407:
+    {// 进程规则重载
+        const auto g_klib = ((kMsgInterface*)g_kern_interface);
+        if (!g_klib)
+            return 0;
+        task_array_data.clear();
+        // 驱动未启动
+        if (false == g_klib->GetKerInitStatus())
+            return 0;
+        const int ioldStatus = g_klib->GetKerBeSnipingStatus();
+        OutputDebugString(L"[HadesSvc] ReLoadProcessRuleConfig Send Enable KernelMonitor Command");
+        g_klib->ReLoadProcessRuleConfig();
+        OutputDebugString(L"[HadesSvc] ReLoadProcessRuleConfig Enable KernelMonitor Success");
+        // 规则重载内核会关闭行为监控 - 如果之前开启这里要重新开启
+        if (ioldStatus)
+            g_klib->OnBeSnipingMonitor();
+        task_array_data.push_back("Success");
+    }
+    break;
+    case 408:
+    {// 注册表规则重载
+        const auto g_klib = ((kMsgInterface*)g_kern_interface);
+        if (!g_klib)
+            return 0;
+        task_array_data.clear();
+        // 驱动未启动
+        if (false == g_klib->GetKerInitStatus())
+            return 0;
+        const int ioldStatus = g_klib->GetKerBeSnipingStatus();
+        OutputDebugString(L"[HadesSvc] ReLoadRegisterRuleConfig Send Enable KernelMonitor Command");
+        g_klib->ReLoadRegisterRuleConfig();
+        OutputDebugString(L"[HadesSvc] ReLoadRegisterRuleConfig Enable KernelMonitor Success");
+        // 规则重载内核会关闭行为监控 - 如果之前开启这里要重新开启
+        if (ioldStatus)
+            g_klib->OnBeSnipingMonitor();
+        task_array_data.push_back("Success");
+    }
+    break;
+    default:
         return 0;
+    }
 
     // Write Pip
     {

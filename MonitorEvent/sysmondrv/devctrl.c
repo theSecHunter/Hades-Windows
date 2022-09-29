@@ -1031,8 +1031,11 @@ VOID devctrl_setMonitor(BOOLEAN code)
 	File_SetMonitor(code);
 	Session_SetMonitor(code);
 	sl_unlock(&lh);
-
+	
 	// clearn pennding read i/o
+	if (FALSE == code)
+		utiltools_sleep(2000);
+
 	devctrl_cancelPendingReads();
 }
 VOID devctrl_setIpsMonitor(BOOLEAN code)
@@ -1049,7 +1052,6 @@ VOID devctrl_setIpsMonitor(BOOLEAN code)
 	Session_SetIpsMonitor(code);
 	sl_unlock(&lh);
 
-	// clearn pennding read i/o
 	devctrl_cancelPendingReads();
 }
 NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)

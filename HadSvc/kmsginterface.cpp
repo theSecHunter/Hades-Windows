@@ -89,44 +89,78 @@ void Choose_register(string& opearestring, const int code)
 {
     switch (code)
     {
-        // 创建Key
     case RegNtPreCreateKey:
     {
-        opearestring = "Register - RegNtPreCreateKey";
+        opearestring = "RegNtPreCreateKey";
     }
     break;
-    // 打开Key
     case RegNtPreOpenKey:
     {
-        opearestring = "Register - RegNtPreOpenKey";
+        opearestring = "RegNtPreOpenKey";
     }
     break;
-
+    case RegNtPreCreateKeyEx:
+    {
+        opearestring = "RegNtPreCreateKeyEx";
+    }
+    break;
+    case RegNtPreOpenKeyEx:
+    {
+        opearestring = "RegNtPreOpenKeyEx";
+    }
+    break;
+    case RegNtPostCreateKey:
+    {
+        opearestring = "RegNtPostCreateKey";
+    }
+    break;
+    case RegNtPostOpenKey:
+    {
+        opearestring = "RegNtPostOpenKey";
+    }
+    break;
+    case RegNtPostCreateKeyEx:
+    {
+        opearestring = "RegNtPostCreateKeyEx";
+    }
+    break;
+    case RegNtPostOpenKeyEx:
+    {
+        opearestring = "RegNtPostOpenKeyEx";
+    }
+    break;
+    case RegNtQueryValueKey:
+    {
+        opearestring = "RegNtQueryValueKey";
+    }
+    break;
     // 修改Key
     case RegNtSetValueKey:
     {
-        opearestring = "Register - RegNtSetValueKey";
+        opearestring = "RegNtSetValueKey";
     }
     // 删除Key
     case RegNtPreDeleteKey:
     {
-        opearestring = "Register - RegNtPreDeleteKey";
+        opearestring = "RegNtPreDeleteKey";
     }
     break;
-
     // 枚举Key
     case RegNtEnumerateKey:
     {
-        opearestring = "Register - RegNtEnumerateKey";
+        opearestring = "RegNtEnumerateKey";
     }
     break;
 
     // 重命名注册表
     case RegNtPostRenameKey:
     {
-        opearestring = "Register - RegNtPostRenameKey";
+        opearestring = "RegNtPostRenameKey";
     }
     break;
+    default:
+        opearestring = "";
+        break;
     }
 }
 void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
@@ -216,12 +250,45 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
                     j["win_sysmonitor_regtab_pid"] = to_string(registerinfo->processid);
                     j["win_sysmonitor_regtab_tpid"] = to_string(registerinfo->threadid);
                     j["win_sysmonitor_regtab_opeares"] = tmpstr.c_str();
+                    const std::wstring processPath = registerinfo->ProcessPath;
+                    if (!processPath.empty())
+                    {
+                        tmpstr.clear();
+                        Wchar_tToString(tmpstr, processPath.c_str());
+                        if (!tmpstr.empty())
+                            tmpstr = String_ToUtf8(tmpstr);
+                        if (!tmpstr.empty())
+                            j["win_sysmonitor_regtab_processPath"] = tmpstr.c_str();
+                    }
                 }
                 else
                 {
-                    // server 会丢弃该包 - 不关心的操作
-                    j["win_sysmonitor_regtab_pid"] = to_string(2);
-                    j["win_sysmonitor_regtab_pid"] = to_string(2);
+                    // server 丢弃该包 - 不关心的操作
+                    j["win_sysmonitor_regtab_pid"] = to_string(registerinfo->processid);
+                    j["win_sysmonitor_regtab_tpid"] = to_string(registerinfo->threadid);
+                    j["win_sysmonitor_regtab_opeares"] = to_string(0);
+                    break;
+                }
+                j["win_sysmonitor_regtab_rootobject"] = to_string((DWORD64)registerinfo->RootObject);
+                j["win_sysmonitor_regtab_object"] = to_string((DWORD64)registerinfo->Object);
+                j["win_sysmonitor_regtab_type"] = to_string(registerinfo->Type);
+                j["win_sysmonitor_regtab_attributes"] = to_string(registerinfo->Attributes);
+                j["win_sysmonitor_regtab_desiredAccess"] = to_string(registerinfo->DesiredAccess);
+                j["win_sysmonitor_regtab_disposition"] = to_string((DWORD64)registerinfo->Disposition);
+                j["win_sysmonitor_regtab_grantedAccess"] = to_string(registerinfo->GrantedAccess);
+                j["win_sysmonitor_regtab_options"] = to_string(registerinfo->Options);
+                j["win_sysmonitor_regtab_wow64Flags"] = to_string(registerinfo->Wow64Flags);
+                j["win_sysmonitor_regtab_keyInformationClass"] = to_string(registerinfo->KeyInformationClass);
+                j["win_sysmonitor_regtab_index"] = to_string(registerinfo->Index);
+                const std::wstring CompleteName = registerinfo->CompleteName;
+                if (!CompleteName.empty())
+                {
+                    tmpstr.clear();
+                    Wchar_tToString(tmpstr, CompleteName.c_str());
+                    if(!tmpstr.empty())
+                        tmpstr = String_ToUtf8(tmpstr);
+                    if (!tmpstr.empty())
+                        j["win_sysmonitor_regtab_completeName"] = tmpstr.c_str();
                 }
             }
             break;
@@ -287,7 +354,10 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             if (j.size())
                 data = std::make_shared<std::string>(j.dump());
             else
+            {
+                j.clear();
                 continue;
+            }
 
             if (!g_SendQueueData_Ptr && !g_SendQueueCs_Ptr && !g_SendQueue_Event)
             {
@@ -698,7 +768,7 @@ void kMsgInterface::DriverInit(const int flag)
     {
         // Open driver
         status = g_kernel_Ioct.devctrl_opendeviceSylink(devSyLinkName);
-        if (0 > status)
+        if (0 >= status)
         {
             OutputDebugString(L"devctrl_opendeviceSylink error: main.c --> lines: 688");
             break;
@@ -706,17 +776,9 @@ void kMsgInterface::DriverInit(const int flag)
 
         // Init share Mem
         status = g_kernel_Ioct.devctrl_InitshareMem();
-        if (0 > status)
+        if (0 >= status)
         {
             OutputDebugString(L"devctrl_InitshareMem error: main.c --> lines: 690");
-            break;
-        }
-
-        // ReadFile I/O Thread
-        status = g_kernel_Ioct.devctrl_workthread(NULL, flag);
-        if (0 > status)
-        {
-            OutputDebugString(L"devctrl_workthread error: main.c --> lines: 704");
             break;
         }
 
@@ -726,14 +788,16 @@ void kMsgInterface::DriverInit(const int flag)
         {
             strProcessName.append("||");
             const std::wstring IpsProcessName = Str2WStr(strProcessName);
+            OutputDebugString((L"[HadesSvc] devctrl_SetIpsProcessNameList: " + IpsProcessName).c_str());
             status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessName.c_str());
-            if (0 > status)
+            OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
+            if (0 >= status)
             {
                 OutputDebugString(L"[HadesSvc] Process devctrl_SetIpsProcessNameList");
                 break;
             }
             status = g_kernel_Ioct.devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, dwMods);
-            if (0 > status)
+            if (0 >= status)
             {
                 OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
                 break;
@@ -746,8 +810,10 @@ void kMsgInterface::DriverInit(const int flag)
         {
             registerProcName.append("|");
             const std::wstring IpsRegisterName = Str2WStr(registerProcName);
+            OutputDebugString((L"[HadesSvc] devctrl_SetIpsProcessNameList: " + IpsRegisterName).c_str());
             status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterName.c_str());
-            if (0 > status)
+            OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
+            if (0 >= status)
             {
                 OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList");
                 break;
@@ -847,14 +913,16 @@ bool kMsgInterface::ReLoadProcessRuleConfig()
     {
         strProcessName.append("||");
         const std::wstring IpsProcessName = Str2WStr(strProcessName);
-        status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessName.c_str());
-        if (0 > status)
+        if (!IpsProcessName.empty())
+            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessName.c_str());
+        if (0 >= status)
         {
             OutputDebugString(L"[HadesSvc] Process devctrl_SetIpsProcessNameList");
             return false;
         }
-        status = g_kernel_Ioct.devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, dwMods);
-        if (0 > status)
+        if (dwMods)
+            status = g_kernel_Ioct.devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, dwMods);
+        if (0 >= status)
         {
             OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
             return false;
@@ -869,8 +937,10 @@ bool kMsgInterface::ReLoadRegisterRuleConfig()
     {
         registerProcName.append("|");
         const std::wstring IpsRegisterName = Str2WStr(registerProcName);
-        const int status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterName.c_str());
-        if (0 > status)
+        int status = 0;
+        if (!IpsRegisterName.empty())
+            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterName.c_str());
+        if (0 >= status)
         {
             OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList");
             return false;

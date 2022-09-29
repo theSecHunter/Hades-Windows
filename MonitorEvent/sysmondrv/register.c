@@ -40,13 +40,13 @@ static NTSTATUS Process_NotifyRegister(
 	BOOLEAN QueryPathStatus = FALSE;
 	if (QueryProcessNamePath((DWORD)processid, path, sizeof(path)))
 		QueryPathStatus = TRUE;
-	if (!g_reg_monitorprocess && g_reg_ips_monitorprocess && !QueryPathStatus)
+	if (!g_reg_monitorprocess && !QueryPathStatus)
 		return STATUS_SUCCESS;
 
 	BOOLEAN bProcFlt = FALSE;
-	if (QueryPathStatus)
+	if (g_reg_ips_monitorprocess && QueryPathStatus && g_reg_ipsNameList)
 		bProcFlt = Register_IsIpsProcessNameInList(path);
-	if (!g_reg_monitorprocess && g_reg_ips_monitorprocess && !bProcFlt)
+	if (!g_reg_monitorprocess && !bProcFlt)
 		return STATUS_SUCCESS;
 
 	REGISTERINFO registerinfo;
@@ -202,7 +202,7 @@ static NTSTATUS Process_NotifyRegister(
 		break;
 	}
 
-	if (g_reg_ips_monitorprocess && g_reg_ipsNameList && bProcFlt)
+	if (g_reg_ips_monitorprocess && bProcFlt)
 	{
 		//DbgBreakPoint();
 		PHADES_NOTIFICATION  notification = NULL;

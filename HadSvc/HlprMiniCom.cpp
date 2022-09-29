@@ -356,7 +356,7 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		);
 		if (result != HRESULT_FROM_WIN32(ERROR_IO_PENDING))
 			break;
-		OutputDebugString(L"FilterReplyMessage Message & FilterGetMessage");
+		//OutputDebugString(L"FilterReplyMessage Message & FilterGetMessage");
 #pragma warning(push)
 #pragma warning(disable:4127)
 	} while (TRUE);

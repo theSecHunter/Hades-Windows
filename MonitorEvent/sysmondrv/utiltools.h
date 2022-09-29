@@ -49,7 +49,7 @@ static BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWOR
         {
             PUNICODE_STRING dststring = (PUNICODE_STRING)ProcessPath;
             // 7/29 可能会遇到length为空，导致拷贝蓝屏 - 已修复
-            if ((pathlen > (DWORD)dststring->Length + sizeof(WCHAR)) && dststring->Length)
+            if (dststring->Length && (pathlen > (DWORD)dststring->Length + sizeof(WCHAR)))
             {
                 RtlMoveMemory(path, dststring->Buffer, dststring->Length + sizeof(WCHAR));
                 bRet = TRUE;
