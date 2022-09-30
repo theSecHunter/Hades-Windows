@@ -16,6 +16,8 @@ static	KSPIN_LOCK				g_reg_ipsNameListlock = 0;
 static	NPAGED_LOOKASIDE_LIST	g_registerlist;
 static	KSPIN_LOCK              g_registelock = 0;
 
+static  ERESOURCE				g_resourcelock;
+
 static	REGISTERDATA			g_regdata;
 
 static 	LARGE_INTEGER			g_plareg;
@@ -28,7 +30,7 @@ static NTSTATUS Process_NotifyRegister(
 )
 {
 	UNREFERENCED_PARAMETER(CallbackContext);
-	if (KeGetCurrentIrql() >= DISPATCH_LEVEL)
+	if (KeGetCurrentIrql() > APC_LEVEL)
 		return STATUS_SUCCESS;
 
 	if (((FALSE == g_reg_monitorprocess) && (FALSE == g_reg_ips_monitorprocess)) || !Argument1 || !Argument2)
@@ -207,6 +209,7 @@ static NTSTATUS Process_NotifyRegister(
 
 	if (g_reg_ips_monitorprocess && bProcFlt)
 	{
+		ExAcquireResourceExclusiveLite(&g_resourcelock, TRUE);
 		int replaybuflen = sizeof(HADES_REPLY);
 		int sendbuflen = sizeof(HADES_NOTIFICATION);
 		PHADES_NOTIFICATION const notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSR');
@@ -223,6 +226,7 @@ static NTSTATUS Process_NotifyRegister(
 			if (notification)
 				ExFreePoolWithTag(notification, 'IPSR');
 		}
+		ExReleaseResourceLite(&g_resourcelock);
 	}
 	if (FALSE == g_reg_monitorprocess)
 		return STATUS_SUCCESS;
@@ -249,7 +253,8 @@ NTSTATUS Register_Init(PDRIVER_OBJECT pDriverObject)
 	sl_init(&g_reg_monitorlock);
 	sl_init(&g_reg_ips_monitorlock);
 	KeInitializeSpinLock(&g_reg_ipsNameListlock);
-
+	ExInitializeResource(&g_resourcelock);
+	
 	sl_init(&g_regdata.register_lock);
 	InitializeListHead(&g_regdata.register_pending);
 

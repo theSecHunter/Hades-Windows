@@ -30,8 +30,8 @@ static VOID Process_NotifyProcessEx(
 {
     UNREFERENCED_PARAMETER(ProcessId);
     UNREFERENCED_PARAMETER(Process);
-    if (KeGetCurrentIrql() >= DISPATCH_LEVEL)
-        return;
+    if (KeGetCurrentIrql() > APC_LEVEL)
+        return STATUS_SUCCESS;
 
     // ¹Ø±Õ¼à¿Ø
     if (FALSE == g_proc_monitorprocess && FALSE == g_proc_ips_monitorprocess)

@@ -791,17 +791,16 @@ void kMsgInterface::DriverInit(const int flag)
             OutputDebugString((L"[HadesSvc] devctrl_SetIpsProcessNameList: " + IpsProcessName).c_str());
             status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessName.c_str());
             OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
-            if (0 >= status)
+            if (status)
             {
+                status = g_kernel_Ioct.devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, dwMods);
+                if(status)
+                    OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
+                else
+                    OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
+            }
+            else
                 OutputDebugString(L"[HadesSvc] Process devctrl_SetIpsProcessNameList");
-                break;
-            }
-            status = g_kernel_Ioct.devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, dwMods);
-            if (0 >= status)
-            {
-                OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
-                break;
-            }
         }
 
         // Set Ips Register
@@ -813,11 +812,10 @@ void kMsgInterface::DriverInit(const int flag)
             OutputDebugString((L"[HadesSvc] devctrl_SetIpsProcessNameList: " + IpsRegisterName).c_str());
             status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterName.c_str());
             OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
-            if (0 >= status)
-            {
-                OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList");
-                break;
-            }
+            if (status)
+                OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList Success");
+            else
+                OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList Fauiler");
         }
 
         // Enable Event --> 内核提取出来数据以后处理类
