@@ -173,15 +173,15 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 		"registerRuleMod": 1,
 		"processName": "cmd.exe|powershell.exe",
 		"registerValuse": "\REGISTRY\MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run|\REGISTRY\MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOne",
-		// 100000打开(Create/Open) 10000删除(Delete)，1000创建(CreteNew), 100设置(SetValue)，10查询(QueryValue)，1重命名(Rename)
-		"permissions": 100100(打开和修改),
+		// 1000000打开(Create/Open)，100000关闭(Close)，10000删除(Delete)，1000创建(CreteNew), 100设置(SetValue)，10查询(QueryValue)，1重命名(Rename)
+		"permissions": 1000100(打开和修改)
 	}
 	{ 2)
-		// 不允许cmd.exe|vbs.exe|wscript.exe对regusterValuse进行全部操作, 也可以只配禁止打开，因为打不开 - 修改 删除 查询都不可用.
+		// 不允许cmd.exe|vbs.exe|wscript.exe对regusterValuse进行全部操作, 也可以只配禁止打开,这样修改 删除 查询都不可用.
 		"registerRuleMod": 2,
 		"processName": "cmd.exe|vbs.exe|wscript.exe",
 		"registerValuse": "\REGISTRY\MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run|\REGISTRY\MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOne",
-		"permissions": 111111 or 100000,
+		"permissions": 1111111(判定KEY_ALL_ACCESS)
 	}
 
 	{  3)
@@ -189,7 +189,7 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 		"registerRuleMod": 1,
 		"processName": "cmd.exe|svhost.exe.exe",
 		"registerValuse": "\Registry\Machine\Software\WOW6432Node\Policies\Microsoft\MUI\Settings",
-		"permissions": 100110(打开修改重命名操作),
+		"permissions": 1000101(打开修改重命名操作)
 	}
 }
 ```

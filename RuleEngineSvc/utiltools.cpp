@@ -6,7 +6,7 @@
 #include <atlconv.h>
 #pragma comment(lib ,"Shlwapi.lib")
 
-bool GetCurrentExePath(std::string& Path)
+bool RuleEngineToos::GetCurrentExePath(std::string& Path)
 {
 	char czFileName[1024] = { 0 };
 	GetModuleFileNameA(NULL, czFileName, _countof(czFileName) - 1);
@@ -16,8 +16,7 @@ bool GetCurrentExePath(std::string& Path)
 		return false;
 	return true;
 }
-
-bool IsFile(const std::string& fileName)
+bool RuleEngineToos::IsFile(const std::string& fileName)
 {
 	std::string strRet;
 	if (!GetCurrentExePath(strRet))
@@ -41,8 +40,7 @@ bool IsFile(const std::string& fileName)
 	}
 	return false;
 }
-
-void SplitiStr(std::set<std::string>& vecProcesName, const std::string& sData)
+void RuleEngineToos::SplitiStr(std::set<std::string>& vecProcesName, const std::string& sData)
 {
 	try
 	{
@@ -60,8 +58,7 @@ void SplitiStr(std::set<std::string>& vecProcesName, const std::string& sData)
 	{
 	}
 }
-
-std::string String_ToUtf8(const std::string& str)
+std::string RuleEngineToos::String_ToUtf8(const std::string& str)
 {
     try
     {
@@ -85,7 +82,7 @@ std::string String_ToUtf8(const std::string& str)
     }
     return "";
 }
-std::string UTF8_ToString(const std::string& str)
+std::string RuleEngineToos::UTF8_ToString(const std::string& str)
 {
     try
     {
@@ -109,12 +106,12 @@ std::string UTF8_ToString(const std::string& str)
     }
     return "";
 }
-std::wstring Str2WStr(const std::string& str)
+std::wstring RuleEngineToos::Str2WStr(const std::string& str)
 {
     USES_CONVERSION;
     return A2W(str.c_str());
 }
-std::string WStr2Str(const std::wstring& wstr)
+std::string RuleEngineToos::WStr2Str(const std::wstring& wstr)
 {
     USES_CONVERSION;
     return W2A(wstr.c_str());

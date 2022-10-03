@@ -111,6 +111,7 @@ static NTSTATUS Process_NotifyRegister(
 			PREG_POST_CREATE_KEY_INFORMATION RegCreateOpenPostinfo = (PREG_POST_CREATE_KEY_INFORMATION)Argument2;
 			if (!RegCreateOpenPostinfo)
 				break;
+			registerinfo.Status = RegCreateOpenPostinfo->Status;
 			if (STATUS_SUCCESS == RegCreateOpenPostinfo->Status)
 				registerinfo.Object = RegCreateOpenPostinfo->Object;
 			if (RegCreateOpenPostinfo->CompleteName->Length && RegCreateOpenPostinfo->CompleteName->Length <= 260)
@@ -122,6 +123,7 @@ static NTSTATUS Process_NotifyRegister(
 		case RegNtPostOpenKeyEx:
 		{
 			PREG_POST_OPERATION_INFORMATION RegCreateOpenPostExinfo = (PREG_POST_OPERATION_INFORMATION)Argument2;
+			registerinfo.Status = RegCreateOpenPostExinfo->Status;
 			if (STATUS_SUCCESS == RegCreateOpenPostExinfo->Status)
 				registerinfo.Object = RegCreateOpenPostExinfo->Object;
 			// _REG_CREATE_KEY_INFORMATION_V1
@@ -196,6 +198,18 @@ static NTSTATUS Process_NotifyRegister(
 			registerinfo.Object = RegRenameinfo->Object;
 			if (RegRenameinfo->NewName->Buffer && (RegRenameinfo->NewName->Length <= 260))
 				RtlCopyMemory(registerinfo.CompleteName, RegRenameinfo->NewName->Buffer, RegRenameinfo->NewName->Length);
+		}
+		break;
+
+		case RegNtPreKeyHandleClose:
+		{// Close
+		
+		}
+		break;
+
+		case RegNtPostKeyHandleClose:
+		{// Close
+
 		}
 		break;
 
