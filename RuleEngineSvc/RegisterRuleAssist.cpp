@@ -3,6 +3,7 @@
 #include "RegisterRuleAssist.h"
 #include "utiltools.h"
 #include <map>
+#include <mutex>
 
 const static std::string g_RegConfigName = "registerRuleConfig.json";
 typedef struct _RegRuleNode
@@ -14,7 +15,8 @@ typedef struct _RegRuleNode
 }RegRuleNode, * PRegRuleNode;
 static std::vector<RegRuleNode> g_vecRegRuleList;
 
-static std::map<const unsigned long, std::wstring> g_objRegPathMap;
+static std::mutex			g_objmaplock;
+static std::map<const PVOID, std::wstring> g_objRegPathMap;
 
 void GetProcessName(const std::wstring& ProcessPath, std::wstring& ProcessPathName)
 {
@@ -23,17 +25,41 @@ void GetProcessName(const std::wstring& ProcessPath, std::wstring& ProcessPathNa
 	if (ProcessPath.empty())
 		return;
 	const int iLast = wsProcPath.find_last_of(L"//");
-	if (!iLast)
+	if (iLast < 0)
 		return;
 	ProcessPathName = wsProcPath.substr(iLast + 1);
 }
 
+inline void InsertRuleMapObjToPathHplr(const PVOID object, const std::wstring& RegisterPath)
+{
+	g_objmaplock.lock();
+	g_objRegPathMap[object] = RegisterPath;
+	g_objmaplock.unlock();
+}
+inline void DeleteRuleMapObjtoPathHplr(const PVOID object)
+{
+	g_objmaplock.lock();
+	const auto iters = g_objRegPathMap.find(object);
+	if (iters != g_objRegPathMap.end())
+		g_objRegPathMap.erase(iters);
+	g_objmaplock.unlock();
+}
+inline void FindObjectRegisterPath(const PVOID object, std::wstring& RegisterPath)
+{
+	g_objmaplock.lock();
+	const auto iters = g_objRegPathMap.find(object);
+	if (iters != g_objRegPathMap.end())
+		RegisterPath = iters->second;
+	g_objmaplock.unlock();
+}
+
+
 bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 {
-	if (!IsFile(g_RegConfigName))
+	if (!RuleEngineToos::IsFile(g_RegConfigName))
 		return false;
 	std::string strRet;
-	if (!GetCurrentExePath(strRet))
+	if (!RuleEngineToos::GetCurrentExePath(strRet))
 		return false;
 	strRet.append("\\config\\");
 	strRet.append(g_RegConfigName.c_str());
@@ -72,6 +98,7 @@ bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 		document.Parse<0>(data);
 		if (document.HasParseError())
 			break;
+		g_vecRegRuleList.clear();
 		RegRuleNode ruleNode;
 		const auto rArray = document.GetArray();
 		for (int idx = 0 ;  idx < rArray.Size(); ++idx)
@@ -82,10 +109,10 @@ bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 					continue;
 				ruleNode.registerRuleMod = rArray[idx]["registerRuleMod"].GetInt();
 				strStrings = rArray[idx]["processName"].GetString();
-				SplitiStr(setAllProcessName, strStrings);
-				ruleNode.processName = Str2WStr(strStrings);
+				RuleEngineToos::SplitiStr(setAllProcessName, strStrings);
+				ruleNode.processName = RuleEngineToos::Str2WStr(strStrings);
 				strStrings = rArray[idx]["registerValuse"].GetString();
-				ruleNode.registerValuse = Str2WStr(strStrings);
+				ruleNode.registerValuse = RuleEngineToos::Str2WStr(strStrings);
 				ruleNode.permissions = rArray[idx]["permissions"].GetInt();
 				g_vecRegRuleList.push_back(ruleNode);
 			}
@@ -111,73 +138,106 @@ bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 	return nRet;
 }
 
-bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int Rulepermissions)
+bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int Rulepermissions, const LONG status, const PVOID object, const std::wstring& registerPath)
 {
 	try
 	{
 		bool nRet = false;
+
+		// 解析规则权限
 		// Open
-		const int _open = Rulepermissions;
+		const int _open = Rulepermissions & 0x1000000;
+		// Close
+		const int _close = Rulepermissions & 0x0100000;
 		// Delete
-		const int _delete = Rulepermissions;
+		const int _delete = Rulepermissions & 0x0010000;
 		// Create
-		const int _create = Rulepermissions;
-		// Modify
-		const int _modify = Rulepermissions;
+		const int _create = Rulepermissions & 0x0001000;
 		// SetValuse
-		const int _setvaluse = Rulepermissions;
+		const int _setvaluse = Rulepermissions & 0x0000100;
 		// Query
-		const int _query = Rulepermissions;
+		const int _query = Rulepermissions & 0x0000010;
 		// ReName
-		const int _rename = Rulepermissions;
+		const int _rename = Rulepermissions & 0x0000001;
 
-		// 默认Ex解析结构是>=Win7
-		if (RegNtPreCreateKey)
-		{// 非Ex版本，Create如果存在则打开
-
-		}
-		else if (RegNtPreOpenKey)
+		// 根据opearType 对权限做出解释
+		switch (opearType)
 		{
-
-		}
-		else if (RegNtPostCreateKey)
-		{
-		}
-		else if (RegNtPostOpenKey)
-		{
-		}
-		else if (RegNtPreCreateKeyEx)
-		{
-		}
-		else if (RegNtPreOpenKeyEx)
-		{
-		}
-		else if (RegNtPostCreateKeyEx)
-		{
-		}
-		else if (RegNtPostOpenKeyEx)
-		{
-		}
-		else if (RegNtSetValueKey)
-		{// 修改Key
-		}
-		else if (RegNtPreDeleteKey)
-		{// 删除Key
-		}
-		else if (RegNtEnumerateKey)
-		{// 枚举Key
-		}
-		else if (RegNtRenameKey)
-		{// 重命名注册表
-		}
-		else if (RegNtQueryValueKey)
-		{// 查询
-		}
-		else if (RegNtKeyHandleClose)
-		{// 关闭
-		}
-		else if (RegNtPostKeyHandleClose)
-		{// 关闭
+			case RegNtPreCreateKey:
+			{// CreateKey - 创建 打开 
+				if (_create || _open)
+					nRet = true;
+			}
+			break;
+			case RegNtPreOpenKey:
+			{
+				if (_open)
+					nRet = true;
+			}
+			break;
+			case RegNtPostOpenKey:
+			case RegNtPostCreateKey:
+			case RegNtPostOpenKeyEx:
+			case RegNtPostCreateKeyEx:
+			{// 后操作默认true
+				if (status)
+				{
+					InsertRuleMapObjToPathHplr(object, registerPath);
+					nRet = true;
+				}
+			}
+			break;
+			case RegNtPreOpenKeyEx:
+			case RegNtPreCreateKeyEx:
+			{
+				if ((permissions == KEY_READ) && _open)
+					nRet = true;
+				else if ((permissions == KEY_WRITE) && _open && _setvaluse)
+					nRet = true;
+				else if ((permissions == KEY_ALL_ACCESS) && _open && _setvaluse && _create && _delete && _query && _rename && _close)
+					nRet = true;
+			}
+			break;
+			case RegNtSetValueKey:
+			{// 修改Key
+				if (_setvaluse)
+					nRet = true;
+			}
+			break;
+			case RegNtPreDeleteKey:
+			{// 删除Key
+				if (_delete)
+					nRet = true;
+			}
+			break;
+			case RegNtEnumerateKey:
+			case RegNtQueryValueKey:
+			{// 枚举- 查询
+				if (_query)
+					nRet = true;
+			}
+			break;
+			case RegNtRenameKey:
+			{// 重命名注册表
+				if (_rename)
+					nRet = true;
+			}
+			break;
+			case RegNtKeyHandleClose:
+			{// 关闭
+				if (_close)
+					nRet = true;
+			}
+			break;
+			case RegNtPostKeyHandleClose:
+			{// 关闭完成后 - 删除映射
+				if (0 == status)
+				{
+					DeleteRuleMapObjtoPathHplr(object);
+					nRet = true;
+				}
+			}
+			break;
 		}
 
 		return nRet;
@@ -194,10 +254,17 @@ bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 		return true;
 	
 	// Get ComplteName
-	const std::wstring wsCompleteName = registerinfo->CompleteName;
-	if (wsCompleteName.empty())
+	std::wstring wsCompleteName = registerinfo->CompleteName;
+	if (wsCompleteName.empty() && registerinfo->Object)
+	{// Find Table
+		FindObjectRegisterPath(registerinfo->Object, wsCompleteName);
+		if (wsCompleteName.empty())
+			return true;
+	}
+	else
 		return true;
 
+	// Get ProcessFullPath
 	const std::wstring wsProcessPath = registerinfo->ProcessPath;
 	if (wsProcessPath.empty())
 		return true;
@@ -219,18 +286,19 @@ bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 		if (idx < 0)
 			continue;
 
-		const bool bOperate = FindRegisterRuleHitEx(registerinfo->opeararg, registerinfo->DesiredAccess, rule.permissions);
-		// 进程名 - 注册表 - 操作匹配完成,bOperate不为真,没命中操作,未知操作放行
-		if (!bOperate)
-			return true;
+		// bOperate规则权限判定
+		const bool bOperate = FindRegisterRuleHitEx(registerinfo->opeararg, registerinfo->DesiredAccess, rule.permissions, registerinfo->Status, registerinfo->Object, wsCompleteName);
 		const int mods = rule.registerRuleMod; 
-		if (1 == mods && bOperate)
-			return true;
-		else if (2 == mods && bOperate)
-			return false;
-		else // 为真但Mods不是黑白名单放行
-			return true;
+		bool nRet = true;
+		// 白名单权限符合放行反之
+		if (1 == mods)
+			bOperate ? nRet = true : nRet = false;
+		// 黑名单权限符合拦截反之
+		else if (2 == mods)
+			bOperate ? nRet = false : nRet = true;
+		else
+			nRet = true; // 未知情况一律放行
+		return nRet;
 	}
-
 	return true;
 }

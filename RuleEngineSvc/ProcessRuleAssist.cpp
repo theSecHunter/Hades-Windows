@@ -8,10 +8,10 @@ const static std::string g_ProcConfigName = "processRuleConfig.json";
 
 bool ConfigProcessJsonRuleParsing(unsigned int& imods, std::string& strProcessNameList)
 {
-	if (!IsFile(g_ProcConfigName))
+	if (!RuleEngineToos::IsFile(g_ProcConfigName))
 		return false;
 	std::string strRet;
-	if (!GetCurrentExePath(strRet))
+	if (!RuleEngineToos::GetCurrentExePath(strRet))
 		return false;
 	strRet.append("\\config\\");
 	strRet.append(g_ProcConfigName.c_str());
