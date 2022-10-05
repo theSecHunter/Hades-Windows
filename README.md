@@ -8,7 +8,7 @@
 单独引擎版本.
 
 ### v2.0： 
-v1.0引擎重构，采集器分离用户态和内核态lib，HadesSvc数据引擎消费lib生产数据，组织格式(json和protobuf)。Duilib界面完善，Win7/Win8/WIn10系统兼容性完善。
+v1.0引擎重构，采集器分离用户态和内核态lib，HadesSvc数据引擎消费lib生产数据，组织格式(json和protobuf)。Duilib界面完善，WWin7/Win11系统兼容性完善。
 
 Hboat支持Windows插件上报数据解析，GoAgent统一管理和上报(部分数据未清洗)，可作为插件下发。
 

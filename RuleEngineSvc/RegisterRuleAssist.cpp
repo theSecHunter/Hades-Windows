@@ -21,10 +21,10 @@ static std::map<const PVOID, std::wstring> g_objRegPathMap;
 void GetProcessName(const std::wstring& ProcessPath, std::wstring& ProcessPathName)
 {
 	// Get ProcessName
-	std::wstring wsProcPath = ProcessPath;
 	if (ProcessPath.empty())
 		return;
-	const int iLast = wsProcPath.find_last_of(L"//");
+	const std::wstring wsProcPath = ProcessPath;
+	const int iLast = wsProcPath.find_last_of(L"\\");
 	if (iLast < 0)
 		return;
 	ProcessPathName = wsProcPath.substr(iLast + 1);
@@ -101,6 +101,7 @@ bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 		g_vecRegRuleList.clear();
 		RegRuleNode ruleNode;
 		const auto rArray = document.GetArray();
+		std::string strstrHex;
 		for (int idx = 0 ;  idx < rArray.Size(); ++idx)
 		{
 			try
@@ -113,7 +114,9 @@ bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 				ruleNode.processName = RuleEngineToos::Str2WStr(strStrings);
 				strStrings = rArray[idx]["registerValuse"].GetString();
 				ruleNode.registerValuse = RuleEngineToos::Str2WStr(strStrings);
-				ruleNode.permissions = rArray[idx]["permissions"].GetInt();
+				// string --> hex
+				strstrHex = rArray[idx]["permissions"].GetString();
+				ruleNode.permissions = strtoll(strstrHex.c_str(), NULL, 16);
 				g_vecRegRuleList.push_back(ruleNode);
 			}
 			catch (const std::exception&)
@@ -180,21 +183,28 @@ bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int
 			case RegNtPostOpenKeyEx:
 			case RegNtPostCreateKeyEx:
 			{// 后操作默认true
-				if (status)
+				if (0 == status)
 				{
 					InsertRuleMapObjToPathHplr(object, registerPath);
 					nRet = true;
+					OutputDebugString((L"[Hades] InsertRuleMapObjToPathHplr: " + to_wstring((ULONG)object) + L" " + registerPath).c_str());
 				}
 			}
 			break;
 			case RegNtPreOpenKeyEx:
 			case RegNtPreCreateKeyEx:
 			{
-				if ((permissions == KEY_READ) && _open)
+				if (!_open)
+					break;
+				if ((permissions == KEY_QUERY_VALUE) && _query)
 					nRet = true;
-				else if ((permissions == KEY_WRITE) && _open && _setvaluse)
+				else if (permissions == (KEY_ENUMERATE_SUB_KEYS || KEY_READ))
 					nRet = true;
-				else if ((permissions == KEY_ALL_ACCESS) && _open && _setvaluse && _create && _delete && _query && _rename && _close)
+				else if ((permissions == (KEY_CREATE_SUB_KEY || KEY_CREATE_LINK)) && _create)
+					nRet = true;
+				else if ((permissions == (KEY_SET_VALUE || KEY_WRITE)) && _setvaluse)
+					nRet = true;
+				else if ((permissions == KEY_ALL_ACCESS) && _setvaluse && _create && _delete && _query && _rename && _close)
 					nRet = true;
 			}
 			break;
@@ -202,6 +212,7 @@ bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int
 			{// 修改Key
 				if (_setvaluse)
 					nRet = true;
+				OutputDebugString((L"[Hades] RegNtSetValueKey Object:" + to_wstring((ULONG)object)).c_str());
 			}
 			break;
 			case RegNtPreDeleteKey:
@@ -235,6 +246,7 @@ bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int
 				{
 					DeleteRuleMapObjtoPathHplr(object);
 					nRet = true;
+					OutputDebugString((L"[Hades] DeleteRuleMapObjtoPathHplr Object:" + to_wstring((ULONG)object)).c_str());
 				}
 			}
 			break;
@@ -255,13 +267,14 @@ bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 	
 	// Get ComplteName
 	std::wstring wsCompleteName = registerinfo->CompleteName;
-	if (wsCompleteName.empty() && registerinfo->Object)
+	if (wsCompleteName.empty())
 	{// Find Table
-		FindObjectRegisterPath(registerinfo->Object, wsCompleteName);
+		if (registerinfo->Object)
+			FindObjectRegisterPath(registerinfo->Object, wsCompleteName);
 		if (wsCompleteName.empty())
 			return true;
 	}
-	else
+	else if (wsCompleteName.size() <= 25)
 		return true;
 
 	// Get ProcessFullPath
@@ -273,17 +286,17 @@ bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 	std::wstring wsProcessName;
 	for (const auto& rule : g_vecRegRuleList)
 	{
-		const int idx_ = rule.registerValuse.find(wsCompleteName.c_str());
-		if (idx_ < 0)
+		const size_t idx = rule.registerValuse.find(wsCompleteName.c_str());
+		if (idx < 0)
 			continue;
-
+		
 		wsProcessName.clear();
 		GetProcessName(wsProcessPath, wsProcessName);
 		if (wsProcessName.empty())
 			continue;
-
-		const int idx = rule.processName.find(wsProcessName.c_str());
-		if (idx < 0)
+		
+		const size_t idx_ = rule.processName.find(wsProcessName.c_str());
+		if (idx_ < 0)
 			continue;
 
 		// bOperate规则权限判定
