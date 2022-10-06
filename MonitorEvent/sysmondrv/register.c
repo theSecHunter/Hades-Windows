@@ -104,7 +104,7 @@ static NTSTATUS Process_NotifyRegister(
 		}
 		break;
 
-		// 创建成功后
+		// 打开/创建后回调
 		case RegNtPostCreateKey:
 		case RegNtPostOpenKey:
 		{
@@ -121,6 +121,7 @@ static NTSTATUS Process_NotifyRegister(
 
 		case RegNtPostCreateKeyEx:
 		case RegNtPostOpenKeyEx:
+		//case RegNtPostKeyHandleClose:
 		{
 			PREG_POST_OPERATION_INFORMATION RegCreateOpenPostExinfo = (PREG_POST_OPERATION_INFORMATION)Argument2;
 			registerinfo.Status = RegCreateOpenPostExinfo->Status;
@@ -152,7 +153,7 @@ static NTSTATUS Process_NotifyRegister(
 		break;
 
 		// 修改
-		case RegNtSetValueKey:
+		case RegNtPreSetValueKey:
 		{
 			PREG_SET_VALUE_KEY_INFORMATION RegSetValueinfo = (PREG_CREATE_KEY_INFORMATION_V1)Argument2;
 			if (!RegSetValueinfo)
@@ -165,6 +166,24 @@ static NTSTATUS Process_NotifyRegister(
 				RtlCopyMemory(registerinfo.SetData, RegSetValueinfo->Data, RegSetValueinfo->DataSize);
 		}
 		break;
+
+		//case RegNtPostSetValueKey:
+		//{
+		//	PREG_POST_OPERATION_INFORMATION RegPostSetValueinfo = (PREG_POST_OPERATION_INFORMATION)Argument2;
+		//	if (!RegPostSetValueinfo)
+		//		break;
+		//	registerinfo.Status = RegPostSetValueinfo->Status;
+		//	registerinfo.Object = RegPostSetValueinfo->Object;
+		//	if (RegPostSetValueinfo->PreInformation)
+		//	{
+		//		PREG_CREATE_KEY_INFORMATION_V1 PerInfo = (PREG_CREATE_KEY_INFORMATION_V1)RegPostSetValueinfo->PreInformation;
+		//		if (!PerInfo)
+		//			break;
+		//		if (PerInfo->CompleteName->Length && PerInfo->CompleteName->Length <= 260)
+		//			RtlCopyMemory(registerinfo.CompleteName, PerInfo->CompleteName->Buffer, PerInfo->CompleteName->Length);
+		//	} 
+		//}
+		//break;
 
 		// 删除
 		case RegNtPreDeleteKey:
@@ -203,13 +222,10 @@ static NTSTATUS Process_NotifyRegister(
 
 		case RegNtPreKeyHandleClose:
 		{// Close
-		
-		}
-		break;
-
-		case RegNtPostKeyHandleClose:
-		{// Close
-
+			PREG_KEY_HANDLE_CLOSE_INFORMATION RegCloseinfo = (PREG_KEY_HANDLE_CLOSE_INFORMATION)Argument2;
+			if (!RegCloseinfo)
+				break;
+			registerinfo.Object = RegCloseinfo->Object;
 		}
 		break;
 

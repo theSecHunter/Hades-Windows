@@ -15,8 +15,8 @@ typedef struct _RegRuleNode
 }RegRuleNode, * PRegRuleNode;
 static std::vector<RegRuleNode> g_vecRegRuleList;
 
-static std::mutex			g_objmaplock;
-static std::map<const PVOID, std::wstring> g_objRegPathMap;
+static std::mutex							g_objmaplock;
+static std::map<const PVOID, std::wstring>	g_objRegPathMap;
 
 void GetProcessName(const std::wstring& ProcessPath, std::wstring& ProcessPathName)
 {
@@ -52,7 +52,6 @@ inline void FindObjectRegisterPath(const PVOID object, std::wstring& RegisterPat
 		RegisterPath = iters->second;
 	g_objmaplock.unlock();
 }
-
 
 bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 {
@@ -141,7 +140,7 @@ bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 	return nRet;
 }
 
-bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int Rulepermissions, const LONG status, const PVOID object, const std::wstring& registerPath)
+bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int Rulepermissions, const ULONG status, const PVOID object, const std::wstring& registerPath)
 {
 	try
 	{
@@ -187,7 +186,8 @@ bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int
 				{
 					InsertRuleMapObjToPathHplr(object, registerPath);
 					nRet = true;
-					OutputDebugString((L"[Hades] InsertRuleMapObjToPathHplr: " + to_wstring((ULONG)object) + L" " + registerPath).c_str());
+					const std::wstring output = L"[HadesSvc] InsertRuleMapObjToPathHplr: " + to_wstring((ULONG64)object) + L" " + registerPath;
+					OutputDebugString(output.c_str());
 				}
 			}
 			break;
@@ -206,13 +206,16 @@ bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int
 					nRet = true;
 				else if ((permissions == KEY_ALL_ACCESS) && _setvaluse && _create && _delete && _query && _rename && _close)
 					nRet = true;
+				wchar_t Output[250] = { 0, };
+				wsprintf(Output, L"[HadesSvc] RegNtPreOpenKeyEx|RegNtPreCreateKeyEx Permissions: 0x%x query: %d create: %d setvlu: %d delete %d close %d rename %d", permissions, _query, _create, _setvaluse, _delete, _close, _rename);
+				OutputDebugString(Output);
 			}
 			break;
-			case RegNtSetValueKey:
+			case RegNtPreSetValueKey:
 			{// 修改Key
 				if (_setvaluse)
 					nRet = true;
-				OutputDebugString((L"[Hades] RegNtSetValueKey Object:" + to_wstring((ULONG)object)).c_str());
+				OutputDebugString((L"[HadesSvc] RegNtSetValueKey Object 2:" + to_wstring((ULONG64)object)).c_str());
 			}
 			break;
 			case RegNtPreDeleteKey:
@@ -237,16 +240,18 @@ bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int
 			case RegNtKeyHandleClose:
 			{// 关闭
 				if (_close)
-					nRet = true;
-			}
-			break;
-			case RegNtPostKeyHandleClose:
-			{// 关闭完成后 - 删除映射
-				if (0 == status)
 				{
 					DeleteRuleMapObjtoPathHplr(object);
 					nRet = true;
-					OutputDebugString((L"[Hades] DeleteRuleMapObjtoPathHplr Object:" + to_wstring((ULONG)object)).c_str());
+					OutputDebugString((L"[HadesSvc] DeleteRuleMapObjtoPathHplr Object: " + to_wstring((ULONG64)object)).c_str());
+				}
+			}
+			break;
+			case RegNtPostKeyHandleClose:
+			{// 关闭完成后
+				if (0 == status)
+				{
+
 				}
 			}
 			break;
@@ -267,13 +272,18 @@ bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 	
 	// Get ComplteName
 	std::wstring wsCompleteName = registerinfo->CompleteName;
-	if (wsCompleteName.empty())
+	if (wsCompleteName.empty() || (RegNtPreSetValueKey == registerinfo->opeararg))
 	{// Find Table
+		//if (RegNtPreSetValueKey == registerinfo->opeararg)
+		//{// RegNtPreSetValueKey的时候CompleteName是键值 - 有需要先保存
+		//	OutputDebugString((L"[HadesSvc] RegNtSetValueKey Object: " + wsCompleteName + to_wstring((ULONG64)registerinfo->Object)).c_str());
+		//}
 		if (registerinfo->Object)
 			FindObjectRegisterPath(registerinfo->Object, wsCompleteName);
 		if (wsCompleteName.empty())
 			return true;
 	}
+	// Register Min Lens
 	else if (wsCompleteName.size() <= 25)
 		return true;
 
@@ -286,16 +296,16 @@ bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 	std::wstring wsProcessName;
 	for (const auto& rule : g_vecRegRuleList)
 	{
-		const size_t idx = rule.registerValuse.find(wsCompleteName.c_str());
+		const int idx = rule.registerValuse.find(wsCompleteName.c_str());
 		if (idx < 0)
 			continue;
-		
+
 		wsProcessName.clear();
 		GetProcessName(wsProcessPath, wsProcessName);
 		if (wsProcessName.empty())
 			continue;
 		
-		const size_t idx_ = rule.processName.find(wsProcessName.c_str());
+		const int idx_ = rule.processName.find(wsProcessName.c_str());
 		if (idx_ < 0)
 			continue;
 

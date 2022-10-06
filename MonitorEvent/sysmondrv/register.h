@@ -17,7 +17,7 @@ typedef struct _REGISTERINFO
 	ULONG           Wow64Flags;
 	ULONG			KeyInformationClass;
 	ULONG			Index;
-	LONG			Status;
+	ULONG			Status;
 	wchar_t			ProcessPath[260 * 2];
 	wchar_t			CompleteName[260 * 2];
 	char			SetData[260 * 2];
