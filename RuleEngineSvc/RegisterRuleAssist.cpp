@@ -215,7 +215,7 @@ bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int
 			{// ÐÞ¸ÄKey
 				if (_setvaluse)
 					nRet = true;
-				OutputDebugString((L"[HadesSvc] RegNtSetValueKey Object 2:" + to_wstring((ULONG64)object)).c_str());
+				OutputDebugString((L"[HadesSvc] RegNtSetValueKey Object :" + to_wstring((ULONG64)object)).c_str());
 			}
 			break;
 			case RegNtPreDeleteKey:

@@ -240,8 +240,8 @@ static NTSTATUS Process_NotifyRegister(
 	if (g_reg_ips_monitorprocess && bProcFlt)
 	{
 		ExAcquireResourceExclusiveLite(&g_resourcelock, TRUE);
-		int replaybuflen = sizeof(HADES_REPLY);
-		int sendbuflen = sizeof(HADES_NOTIFICATION);
+		const int replaybuflen = sizeof(HADES_REPLY);
+		const int sendbuflen = sizeof(HADES_NOTIFICATION);
 		PHADES_NOTIFICATION const notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSR');
 		if (notification)
 		{

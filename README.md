@@ -7,10 +7,10 @@
 
 单独引擎版本.
 
-### v2.0： 
+### v2.x： 
 v1.0引擎重构，采集器分离用户态和内核态lib，HadesSvc数据引擎消费lib生产数据，组织格式(json和protobuf)。Duilib界面完善，WWin7/Win11系统兼容性完善。
 
-Hboat支持Windows插件上报数据解析，GoAgent统一管理和上报(部分数据未清洗)，可作为插件下发。
+Hboat支持Windows插件上报数据解析，GoAgent统一管理和上报，可作为插件下发。
 
 GoAgent负责GRPC和WIN下插件管理(跨平台)：https://github.com/theSecHunter/Hades-Linux/tree/main
 
@@ -133,43 +133,44 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 | -------- | ------------------------------- |-------- | -------- |-------- |
 | 进程拦截|  自定义进程 |完成| 基于回调过滤| |
 | 注册表拦截|  自定义注册表 |完成| 基于回调过滤 | |
-| 远程注入检测 |  远程线程注入 |完成| 基于回调过滤 | https://bbs.pediy.com/thread-193437.htm |
-| 非远程线程注入检测 |  映射内存或非CreteRemote方式执行 |开发中| 回调中VAD | https://github.com/huoji120/CobaltStrikeDetected/ |
+| 远程注入检测 |  远程线程注入 |完成(未启动)| 基于回调过滤 | https://bbs.pediy.com/thread-193437.htm |
+| 非远程线程注入检测 |  映射内存或非CreteRemote方式执行 |完成(未启动)| 基于回调VAD | https://github.com/huoji120/CobaltStrikeDetected/ |
 
 
-**基于回调行为拦截,服务端管理配置随着插件下发，HadesSvc.exe解析下发规则写入内核,支持规则热更新。**
+### HIPS
 
-**白名单模式：启动规则后(不包含已存在进程)，只允许白名单定义的规则操作。黑名单模式：启动规则后(不包含已存在进程)，不允许黑名单定义的规则操作。**
+**服务端管理规则随着插件下发,HadesSvc.exe解析规则写入内核. 支持规则热更新,Hboat下发407/408热更新规则指令. 开发中预计v2.4之前全部完成。**
 
-**开发中，预计v2.4 release版本完成**
+**白名单模式：启动规则后(不包含已存在进程)，只允许白名单定义的规则操作。**
+
+**黑名单模式：启动规则后(不包含已存在进程)，不允许黑名单定义的规则操作。**
+
 #### 进程黑/白名单模式(内核规则匹配)
 ```
 {
 	// 1白名单,2黑名单
 	"processRuleMod": 2,
-	// 一般配置黑名单，白名单如果配置不全可能会存在问题
-	// 如果白名单，规则生效后只允许执行cmd.exe|powershell.exe等进程
-	// 如果黑名单，规则生效后不允许执行cmd.exe|powershell.exe等进程
+	// 白名单: 生效后只允许执行cmd.exe|powershell.exe等进程
+	// 黑名单: 生效后不允许执行cmd.exe|powershell.exe等进程
 	"processName": "cmd.exe|powershell.exe|vbs.exe|wscript.exe"
 }
 ```
 **See Rule: config/processRuleConfig.json**
 
 #### 注册表黑/白名单模式(应用规则匹配)
-**引擎工作方式：匹配processName和registerValuse二元组，成功不继续匹配当前规则为准。**
+**引擎工作方式：匹配processName和registerValuse二元组,多组规则情况下,命中某条成功后不继续匹配,命中规则为准。**
 
-**举例1) 2) cmd.exe配置冲突，1) 允许cmd.exe访问Run, 2) 不允许cmd.exe规则访问 Run，配置冲突，冲突时顺序靠前为准(1为准)。**
+ - 举例1) 2) cmd.exe配置冲突，1) 允许cmd.exe访问Run, 2) 不允许cmd.exe规则访问 Run，配置冲突，冲突时顺序靠前为准(1为准)。
 
-**举列2) 3) cmd.exe既可以是白名单-又可以是黑名单，比如Run注册表不允许cmd.exe访问(黑名单)，Settings允许cmd.exe访问(白名单),registerValuse键值不冲突即可。**
+ - 举列2) 3) cmd.exe既可以是白名单-又可以是黑名单，比如Run注册表不允许cmd.exe访问(黑名单)，Settings允许cmd.exe访问(白名单),registerValuse键值不冲突即可。
 
-**白名单情况下：100000打开是删除-创建-设置-查询-重命名操作的前提，比如修改，必须配置成打开修改(100100)，删除则是打开删除(110000)**
+ - 注：打开是 "删除-创建-设置-查询-重命名操作" 前提，比如修改，必须配置成打开修改(1000100)，删除则是打开删除(1010000),如果open为0意味着这个过程中有key_access or key_read标志都会失败。
 
 ```
 {
 
 	{ 1) 
 		// 仅允许cmd.exe|powershell.exe对regusterValuse打开和修改.
-		// 1白名单,2黑名单
 		"registerRuleMod": 1,
 		"processName": "cmd.exe|powershell.exe",
 		"registerValuse": "\REGISTRY\MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run|\REGISTRY\MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOne",
@@ -199,9 +200,7 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 ```
 {
 	{
-		// 仅允许word.exe|wps.exe对规则的目录/文件/后缀规则进行读写执行操作
-		// 如果文件规则包含在某目录下，以目录规则为准。
-		// 1白名单,2黑名单
+		// 仅允许word.exe|wps.exe对规则的目录/文件/后缀规则进行读写执行操作,如果文件规则包含在某目录下，以目录规则为准。
 		"FileIORuleMod": 1,
 		"processName": "word.exe|wps.exe",
 		"Directory": "|",
@@ -211,8 +210,10 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 		"permissions": 1110(ALL),
 	}
 	{
+
 	}
 	{
+
 	}
 }
 ```
@@ -247,23 +248,23 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 |v2.0~v2.3| ETW和内核态回调监控兼容Win7/Win11 x32/x64版本，稳定性测试|高|完成 |
 |v2.0~v2.3| 采集Lib接口更改为订阅-发布者模式 | 中     |完成|
 |v2.0~v2.3| 插件模式改造 | 高     |完成|
-|v2.4| 数据采集粒度完善 | 高     |完成|
-|v2.4| HIPS规则配置，进程(黑名单) - 注册表(特殊键值保护_进程白名单) - 进程目录访问保护(进程白名单) | 高 |进行中|
+|v2.3.2| 数据采集粒度完善 | 高     |完成|
+|v2.3.4| 进程(黑名单) - 注册表(特殊键值保护_进程白名单) | 高 |完成|
+|v2.3.6| 进程目录访问保护(进程白名单)|高 |进行中|
 |v2.5| ETW GUID LOG方式注册，非"NT KERNEL LOG"，很多环境下容易冲突，注册被覆盖 | 中     |待定|
 
-#### v3.x
 
 **从v3.0开始，流量和文件不局限于监控分析，有更多的玩法扩展。**
 
+#### Minifilter v3.x
+
 | 任务                                                         | 优先级 |状态|
 | ------------------------------------------------------------ | ------ |------|
-| 流量隔离：基于WFP对进程/IP:PORT重定向和bypass.               | 高     |未开始|
-| 文件备份：基于Minfilter对进程文件rwx隔离，对脚本命令和IE下载文件备份.<br>命令不局限于curl/cmd/powershell/vbs/js等形式. | 高     |未开始|
-| 指定进程授权非隔离分析 - 类沙箱做inlinehook来监控运行周期(待定) | 中 |未开发 |
+| 文件备份：基于Minfilter对进程文件rwx隔离，对脚本命令和IE下载文件备份.<br>命令不局限于curl/cmd/powershell/vbs/js等形式. | 高  |未开始|
 | Rootkit优化/完善| 中|进行中 |
-| 勒索病毒行为检测 |  minifilter监控,设置诱饵文件来判定 |待定|
+| 勒索病毒行为检测：minifilter监控,设置诱饵文件 + v2.3.6 进程访问控制 + 行为判定 |  高 |未开始|
 
-#### WFP v3.0
+#### WFP v3.x
 
 | 网络层        | 描述            |
 | :------------ | :-------------- |
@@ -273,6 +274,10 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 | 数据链路层    | OS >= Windows10 |
 
 **v3.0引入WFP流量隔离**
+| 任务                                                         | 优先级 |状态|
+| ------------------------------------------------------------ | ------ |------|
+| 流量隔离：基于WFP对进程/IP:PORT重定向和bypass.               | 高     |未开始|
+
 
 Json配置流量规则(未生效):
 
