@@ -109,12 +109,12 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\..\HadesSdk\sysmondrv\lib</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
-    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\HadesSdk\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\..\HadesSdk\sysmondrv\lib</OutDir>
-    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\HadesSdk\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -126,13 +126,13 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\..\HadesSdk\sysmondrv\lib</OutDir>
     <TargetName>$(ProjectName)_d64</TargetName>
-    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>..\..\HadesSdk\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\..\HadesSdk\sysmondrv\lib</OutDir>
     <TargetName>$(ProjectName)64</TargetName>
-    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>..\..\HadesSdk\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
     <LinkIncremental>false</LinkIncremental>
