@@ -42,8 +42,6 @@ void Register_Free(void);
 void Register_Clean(void);
 void Register_SetMonitor(BOOLEAN code);
 void Register_SetIpsMonitor(BOOLEAN code);
-BOOLEAN Register_IsIpsProcessNameInList(const PWCHAR path);
-NTSTATUS Register_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp);
 
 REGISTERBUFFER* Register_PacketAllocate(int lens);
 void Register_PacketFree(REGISTERBUFFER* packet);

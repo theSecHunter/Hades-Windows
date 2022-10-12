@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\Hades\Hades-Windows\bin\HadesSvc64.exe</FullPath>
+      <FullPath>D:\Hades\Hades-Windows\bin\x64\Release\HadesSvc64.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

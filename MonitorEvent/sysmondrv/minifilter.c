@@ -1,9 +1,15 @@
-#include "public.h"
+﻿#include "public.h"
 #include "minifilter.h"
 #include <fltKernel.h>
+#include "rDirectory.h"
+#include "utiltools.h"
 
-PFLT_FILTER g_FltServerPortEvnet = NULL;
-ULONG       g_fltregstatus = FALSE;
+// extern count +1 kflt.c
+PFLT_FILTER         g_FltServerPortEvnet = NULL;
+static ULONG        g_fltregstatus = FALSE;
+
+static  BOOLEAN		    g_fsflt_ips_monitorprocess = FALSE;
+static  KSPIN_LOCK		g_fsflt_ips_monitorlock = 0;
 
 #define PTDBG_TRACE_ROUTINES            0x00000001
 #define PTDBG_TRACE_OPERATION_STATUS    0x00000002
@@ -72,15 +78,51 @@ FsFilter1PostOperation(
     _In_ FLT_POST_OPERATION_FLAGS Flags
 );
 
+FLT_PREOP_CALLBACK_STATUS
+FsFilterAntsDrvPreExe(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _Flt_CompletionContext_Outptr_ PVOID* CompletionContext
+);
+
+FLT_POSTOP_CALLBACK_STATUS
+FsFilterAntsDrPostFileHide(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _In_opt_ PVOID CompletionContext,
+    _In_ FLT_POST_OPERATION_FLAGS Flags
+);
+
 //
 //  operation registration
 //
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
+      // file create
       { IRP_MJ_CREATE,
-      0,
-      FsFilter1PreOperation,
-      FsFilter1PostOperation },
+        0,
+        FsFilter1PreOperation,
+        NULL/*FsFilter1PostOperation*/},
+
+      //// hide file
+      //{ IRP_MJ_DIRECTORY_CONTROL,
+      //  0,
+      //  FsFilterAntsDrPostFileHide,
+      //  NULL },
+
+      //// disable exe execute
+      //{ IRP_MJ_ACQUIRE_FOR_SECTION_SYNCHRONIZATION,
+      //  0,
+      //  FsFilterAntsDrvPreExe,
+      //  NULL },
+
+      //// delete rename
+      //{ IRP_MJ_SET_INFORMATION,
+      //  0,
+      //  FsFilter1PreOperation,
+      //  NULL },
+
+
 #if 0 // TODO - List all of the requests to filter.
     { IRP_MJ_CREATE,
       0,
@@ -308,16 +350,35 @@ CONST FLT_REGISTRATION FilterRegistration = {
 
 };
 
+void FsFlt_SetDirectoryIpsMonitor(code)
+{
+    KLOCK_QUEUE_HANDLE lh;
+    KeAcquireInStackQueuedSpinLock(&g_fsflt_ips_monitorlock, &lh);
+    g_fsflt_ips_monitorprocess = code;
+    KeReleaseInStackQueuedSpinLock(&lh);
+
+    if (FALSE == code)
+        utiltools_sleep(500);
+}
+
 NTSTATUS FsMini_Init(PDRIVER_OBJECT DriverObject)
 {
     NTSTATUS nStatus = FltRegisterFilter(DriverObject, &FilterRegistration, &g_FltServerPortEvnet);
     if (NT_SUCCESS(nStatus))
+    {
         g_fltregstatus = TRUE;
+        // Init Rule
+        rDirectory_IpsInit();
+    }
+
+    KeInitializeSpinLock(&g_fsflt_ips_monitorlock);
+
     return nStatus;
 }
 
 NTSTATUS FsMini_Clean()
 {
+    rDirectory_IpsClean();
     if ((TRUE == g_fltregstatus) && g_FltServerPortEvnet)
     {
         FltUnregisterFilter(g_FltServerPortEvnet);
@@ -336,7 +397,7 @@ NTSTATUS Mini_StartFilter()
     //
     //  Start filtering i/o
     //
-    if (g_FltServerPortEvnet == NULL)
+    if ((g_FltServerPortEvnet == NULL) || !g_fltregstatus)
         return STATUS_UNSUCCESSFUL;
 
     NTSTATUS status = FltStartFiltering(g_FltServerPortEvnet);
@@ -442,39 +503,75 @@ FsFilter1PreOperation(
     _Flt_CompletionContext_Outptr_ PVOID* CompletionContext
 )
 {
-    NTSTATUS status;
-
+    UNREFERENCED_PARAMETER(Data);
     UNREFERENCED_PARAMETER(FltObjects);
     UNREFERENCED_PARAMETER(CompletionContext);
 
-    PT_DBG_PRINT(PTDBG_TRACE_ROUTINES,
-        ("FsFilter1!FsFilter1PreOperation: Entered\n"));
+    if (!g_fsflt_ips_monitorprocess)
+        return FLT_PREOP_SUCCESS_WITH_CALLBACK;
 
-    //
-    //  See if this is an operation we would like the operation status
-    //  for.  If so request it.
-    //
-    //  NOTE: most filters do NOT need to do this.  You only need to make
-    //        this call if, for example, you need to know if the oplock was
-    //        actually granted.
-    //
+    const KIRQL irql = KeGetCurrentIrql();
+    if (irql <= APC_LEVEL)
+    {
+        DbgBreakPoint();
+        // 1. find Rule Mods directoryPath 
+        PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
+        NTSTATUS status = FltGetFileNameInformation(Data, FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT, &nameInfo);
+        if (!NT_SUCCESS(status))
+            return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+        FltReleaseFileNameInformation(Data);
+        
+        // 2. query processid to processpath
+        BOOLEAN QueryPathStatus = FALSE;
+        WCHAR path[260 * 2] = { 0 };
+        const ULONG pid = FltGetRequestorProcessId(Data);
+        const ULONG processid = (int)PsGetCurrentProcessId();
+        if (!QueryProcessNamePath((DWORD)processid, path, sizeof(path)))
+            return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+            
+        // 3. find processpath to ruleName
+        int iRuleMods = 0;
+        QueryPathStatus = rDirectory_IsIpsProcessNameInList(path, &iRuleMods);
+        if (!QueryPathStatus || !iRuleMods)
+            return FLT_PREOP_SUCCESS_WITH_CALLBACK;
 
-    //if (FsFilter1DoRequestOperationStatus(Data)) {
+        do {
+            const unsigned char IRP_MJ_CODE = Data->Iopb->MajorFunction;
+            if (IRP_MJ_CODE == IRP_MJ_CREATE)
+            {
+                BOOLEAN bhitOpear = FALSE;
+                // create file
+                if (((Data->Iopb->Parameters.Create.Options >> 24) & 0x000000ff) == FILE_CREATE ||
+                    ((Data->Iopb->Parameters.Create.Options >> 24) & 0x000000ff) == FILE_OPEN_IF ||
+                    ((Data->Iopb->Parameters.Create.Options >> 24) & 0x000000ff) == FILE_OVERWRITE_IF)
+                {
+                    bhitOpear = TRUE;
+                }
+                // move into folder
+                //if (Data->Iopb->OperationFlags == '\x05')
+                //  bhitOpear = TRUE;
 
-    //    status = FltRequestOperationStatusCallback(Data,
-    //        FsFilter1OperationStatusCallback,
-    //        (PVOID)(++OperationStatusCtx));
-    //    if (!NT_SUCCESS(status)) {
+                // block rule
+                if (bhitOpear && (iRuleMods == 2))
+                    break;
+            }
+            else if (IRP_MJ_CODE == IRP_MJ_SET_INFORMATION)
+            {
+                // delete file
+                if (iRuleMods == 2 && Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformation)
+                    break;
 
-    //        PT_DBG_PRINT(PTDBG_TRACE_OPERATION_STATUS,
-    //            ("FsFilter1!FsFilter1PreOperation: FltRequestOperationStatusCallback Failed, status=%08x\n",
-    //                status));
-    //    }
-    //}
+                // rename file
+                if (iRuleMods == 2 && Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileRenameInformation)
+                    break;
+            }
+            return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+        } while (FALSE);
 
-    // This template code does not do anything with the callbackData, but
-    // rather returns FLT_PREOP_SUCCESS_WITH_CALLBACK.
-    // This passes the request down to the next miniFilter in the chain.
+        Data->IoStatus.Status = STATUS_ACCESS_DENIED;
+        Data->IoStatus.Information = 0;
+        return FLT_PREOP_COMPLETE;
+    }
 
     return FLT_PREOP_SUCCESS_WITH_CALLBACK;
 }
@@ -496,4 +593,132 @@ FsFilter1PostOperation(
         ("FsFilter1!FsFilter1PostOperation: Entered\n"));
 
     return FLT_POSTOP_FINISHED_PROCESSING;
+}
+
+FLT_POSTOP_CALLBACK_STATUS
+FsFilterAntsDrPostFileHide(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _In_opt_ PVOID CompletionContext,
+    _In_ FLT_POST_OPERATION_FLAGS Flags
+)
+{
+    PWCHAR HideFileName = L"HideTest";
+
+    DbgPrint("Entry function hide\n");
+    UNREFERENCED_PARAMETER(Data);
+    UNREFERENCED_PARAMETER(FltObjects);
+    UNREFERENCED_PARAMETER(CompletionContext);
+    UNREFERENCED_PARAMETER(Flags);
+
+    PVOID Bufferptr = NULL;
+
+    if (FlagOn(Flags, FLTFL_POST_OPERATION_DRAINING))
+    {
+        return FLT_POSTOP_FINISHED_PROCESSING;
+    }
+
+    if (Data->Iopb->MinorFunction == IRP_MN_QUERY_DIRECTORY &&
+        (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.FileInformationClass == FileBothDirectoryInformation) &&
+        Data->Iopb->Parameters.DirectoryControl.QueryDirectory.Length > 0 &&
+        NT_SUCCESS(Data->IoStatus.Status))
+    {
+        if (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress != NULL)
+        {
+
+            Bufferptr = MmGetSystemAddressForMdl(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress,
+                NormalPagePriority);
+        }
+        else
+        {
+            Bufferptr = Data->Iopb->Parameters.DirectoryControl.QueryDirectory.DirectoryBuffer;
+        }
+
+        if (Bufferptr == NULL)
+            return FLT_POSTOP_FINISHED_PROCESSING;
+
+        PFILE_BOTH_DIR_INFORMATION Currentfileptr = (PFILE_BOTH_DIR_INFORMATION)Bufferptr;
+        PFILE_BOTH_DIR_INFORMATION prefileptr = Currentfileptr;
+        PFILE_BOTH_DIR_INFORMATION nextfileptr = 0;
+        ULONG nextOffset = 0;
+        if (Currentfileptr == NULL)
+            return FLT_POSTOP_FINISHED_PROCESSING;
+
+        int nModifyflag = 0;
+        int removedAllEntries = 1;
+        do {
+            nextOffset = Currentfileptr->NextEntryOffset;
+
+            nextfileptr = (PFILE_BOTH_DIR_INFORMATION)((PCHAR)(Currentfileptr)+nextOffset);
+
+            if ((prefileptr == Currentfileptr) &&
+                (_wcsnicmp(Currentfileptr->FileName, HideFileName, wcslen(HideFileName)) == 0) &&
+                (Currentfileptr->FileNameLength == 2)
+                )
+            {
+                RtlCopyMemory(Currentfileptr->FileName, L".", 2);
+                Currentfileptr->FileNameLength = 0;
+                FltSetCallbackDataDirty(Data);
+                return FLT_POSTOP_FINISHED_PROCESSING;
+            }
+
+            if (_wcsnicmp(Currentfileptr->FileName, HideFileName, wcslen(HideFileName)) == 0 &&
+                (Currentfileptr->FileNameLength == 2)
+                )
+            {
+                if (nextOffset == 0)
+                    prefileptr->NextEntryOffset = 0;
+                else
+                    prefileptr->NextEntryOffset = (ULONG)((PCHAR)Currentfileptr - (PCHAR)prefileptr + nextOffset);
+                nModifyflag = 1;
+            }
+            else
+            {
+                removedAllEntries = 0;
+                prefileptr = Currentfileptr;
+            }
+            Currentfileptr = nextfileptr;
+
+        } while (nextOffset != 0);
+
+        if (nModifyflag)
+        {
+            if (removedAllEntries)
+                Data->IoStatus.Status = STATUS_NO_MORE_ENTRIES;
+            else
+                FltSetCallbackDataDirty(Data);
+        }
+    }
+    return FLT_POSTOP_FINISHED_PROCESSING;
+}
+
+FLT_PREOP_CALLBACK_STATUS
+FsFilterAntsDrvPreExe(
+    _Inout_ PFLT_CALLBACK_DATA Data,
+    _In_ PCFLT_RELATED_OBJECTS FltObjects,
+    _Flt_CompletionContext_Outptr_ PVOID* CompletionContext
+)
+{
+    DbgPrint("[MiniFilter]: Read\n");
+    UNREFERENCED_PARAMETER(FltObjects);
+    UNREFERENCED_PARAMETER(CompletionContext);
+    PAGED_CODE();
+    __try {
+        if (Data->Iopb->Parameters.AcquireForSectionSynchronization.PageProtection == PAGE_EXECUTE)
+        {
+            return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        }
+        /*
+            DbPrint("access denied");
+            Data->IoStatus.Status = STATUS_ACCESS_DENIED
+            Data->Iostatus.information = 0;
+            return FLT_PREOP_COMPLETE;
+        */
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        DbgPrint("NPPreRead EXCEPTION_EXECUTE_HANDLER\n");
+    }
+
+    return FLT_PREOP_SUCCESS_NO_CALLBACK;
 }

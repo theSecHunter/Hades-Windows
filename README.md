@@ -145,7 +145,7 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 
 **黑名单模式：启动规则后(不包含已存在进程)，不允许黑名单定义的规则操作。**
 
-#### 进程黑/白名单模式(内核规则匹配)
+#### 进程黑白名单模式(内核规则匹配)
 ```
 {
 	// 1白名单,2黑名单
@@ -157,7 +157,7 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 ```
 **See Rule: config/processRuleConfig.json**
 
-#### 注册表黑/白名单模式(应用规则匹配)
+#### 注册表黑白名单模式(应用规则匹配)
 **引擎工作方式：匹配processName和registerValuse二元组,多组规则情况下,命中某条成功后不继续匹配,命中规则为准。**
 
  - 举例1) 2) cmd.exe配置冲突，1) 允许cmd.exe访问Run, 2) 不允许cmd.exe规则访问 Run，配置冲突，冲突时顺序靠前为准(1为准)。
@@ -196,27 +196,25 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 ```
 **See Rule: config/registerRuleConfig.json**
 
-#### 目录访问/文件rwx进程黑白名单模式(应用规则匹配)
+#### 目录访问黑白名单模式(内核规则匹配)
 ```
 {
 	{
-		// 仅允许word.exe|wps.exe对规则的目录/文件/后缀规则进行读写执行操作,如果文件规则包含在某目录下，以目录规则为准。
+		// 仅允许word.exe|wps.exe访问Directory
 		"FileIORuleMod": 1,
 		"processName": "word.exe|wps.exe",
-		"Directory": "|",
-		"FileName": "|",
-		"FileSuffixName": "|",
-		// 1000读，100写，10执行
-		"permissions": 1110(ALL),
+		"Directory": "D:\\Document|C:\\System\\AppData",
 	}
 	{
-
-	}
-	{
-
+		// 不允许word.exe|wps.exe访问Directory
+		"FileIORuleMod": 2,
+		"processName": "word.exe|wps.exe",
+		"Directory": "D:\\Document1|C:\\System\\AppData1",
 	}
 }
 ```
+**See Rule: config/DirectoryRuleConfig.json**
+
 
 **应用规则匹配：内核先会根据模式对进程过滤，过滤后上抛至应用层规则逻辑处理，根据引擎结果内核做出拦截或放行。处理方式会牺牲性能，不过对于系统来说可以忽略不计。**
 
@@ -249,9 +247,9 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 |v2.0~v2.3| 采集Lib接口更改为订阅-发布者模式 | 中     |完成|
 |v2.0~v2.3| 插件模式改造 | 高     |完成|
 |v2.3.2| 数据采集粒度完善 | 高     |完成|
-|v2.3.4| 进程(黑名单) - 注册表(特殊键值保护_进程白名单) | 高 |完成|
-|v2.3.6| 进程目录访问保护(进程白名单)|高 |进行中|
-|v2.5| ETW GUID LOG方式注册，非"NT KERNEL LOG"，很多环境下容易冲突，注册被覆盖 | 中     |待定|
+|v2.3.4| 进程保护 - 注册表键值保护 | 高 |完成|
+|v2.3.5| 目录访问保护|高 |进行中|
+|v2.5| ETW GUID LOG方式注册，非"NT KERNEL LOG"，很多环境容易冲突注册全局内核被覆盖 | 中     |待定|
 
 
 **从v3.0开始，流量和文件不局限于监控分析，有更多的玩法扩展。**
@@ -260,9 +258,13 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 
 | 任务                                                         | 优先级 |状态|
 | ------------------------------------------------------------ | ------ |------|
-| 文件备份：基于Minfilter对进程文件rwx隔离，对脚本命令和IE下载文件备份.<br>命令不局限于curl/cmd/powershell/vbs/js等形式. | 高  |未开始|
-| Rootkit优化/完善| 中|进行中 |
-| 勒索病毒行为检测：minifilter监控,设置诱饵文件 + v2.3.6 进程访问控制 + 行为判定 |  高 |未开始|
+| 文件备份： 进程文件落地隔离，脚本命令和IE下载文件备份.<br>不局限于curl/cmd/powershell/vbs/js等形式. | 中  |待定|
+| 勒索病毒行为检测：minifilter监控, 诱饵 + 访问控制 + 行为判定 |  高 |待定|
+
+#### Rootkit
+| 任务                                                         | 优先级 |状态|
+| ------------------------------------------------------------ | ------ |------|
+| Rootkit应用层原始数据采集(源数据)| 中| 待定 |
 
 #### WFP v3.x
 
@@ -276,8 +278,8 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 **v3.0引入WFP流量隔离**
 | 任务                                                         | 优先级 |状态|
 | ------------------------------------------------------------ | ------ |------|
-| 流量隔离：基于WFP对进程/IP:PORT重定向和bypass.               | 高     |未开始|
-
+| 进程/IP:PORT重定向和bypass,win自带防火墙也可以 |  中  |待定|
+| DNS访问控制               | 高     |待定|
 
 Json配置流量规则(未生效):
 

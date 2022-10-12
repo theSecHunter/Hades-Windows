@@ -50,8 +50,8 @@ END
 // Version
 //
 
-VS_VERSION_INFO VERSIONINFO
- FILEVERSION 22,8,5,1
+ VERSIONINFO
+ FILEVERSION 22,10,12,1
  PRODUCTVERSION 0,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -68,8 +68,8 @@ BEGIN
         BLOCK "080404b0"
         BEGIN
             VALUE "CompanyName", "Hades"
-            VALUE "FileDescription", "Hades For Windows DrvKernelSys"
-            VALUE "FileVersion", "22.8.5.1"
+            VALUE "FileDescription", "Hades For Windows HIDS/HIPS DrvKernelSys"
+            VALUE "FileVersion", "22.10.12.1"
             VALUE "LegalCopyright", "Copyright (C) 2022"
             VALUE "ProductVersion", "0.0.0.0"
         END

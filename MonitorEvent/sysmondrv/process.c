@@ -1,6 +1,7 @@
 #include "public.h"
 #include "process.h"
 #include "devctrl.h"
+#include "rProcess.h"
 #include "kflt.h"
 #include "utiltools.h"
 
@@ -15,9 +16,6 @@ static  KSPIN_LOCK  g_proc_ips_monitorlock = 0;
 
 static  int         g_proc_ipsmod = 0;
 static  KSPIN_LOCK  g_proc_ipslock = 0;
-
-static  PWCHAR	    g_proc_ipsList = NULL;
-static  KSPIN_LOCK  g_proc_ipsListlock = 0;
 
 static KSPIN_LOCK               g_processlock = 0;
 static NPAGED_LOOKASIDE_LIST    g_processList;
@@ -44,9 +42,9 @@ static VOID Process_NotifyProcessEx(
     BOOLEAN QueryPathStatus = FALSE;
     if (QueryProcessNamePath((DWORD)ProcessId, path, sizeof(path)))
         QueryPathStatus = TRUE;
-    if (g_proc_ips_monitorprocess && g_proc_ipsmod && CreateInfo && QueryPathStatus && g_proc_ipsList)
+    if (g_proc_ips_monitorprocess && g_proc_ipsmod && CreateInfo && QueryPathStatus)
     {// Ips
-        const BOOLEAN nRet = Process_IsIpsProcessNameInList(path);
+        const BOOLEAN nRet = rProcess_IsIpsProcessNameInList(path);
         //PHADES_NOTIFICATION  notification = NULL;
         //do {
         //    int replaybuflen = sizeof(HADES_REPLY);
@@ -123,7 +121,8 @@ NTSTATUS Process_Init(void) {
     sl_init(&g_proc_monitorlock);
     sl_init(&g_proc_ipslock);
     sl_init(&g_proc_ips_monitorlock);
-    sl_init(&g_proc_ipsListlock);
+
+    rProcess_IpsInit();
 
     ExInitializeNPagedLookasideList(
         &g_processList,
@@ -161,14 +160,7 @@ void Process_Clean(void)
     int lock_status = 0;
 
     // Ips Rule Name
-    sl_lock(&g_proc_ipsListlock, &lh);
-    if (g_proc_ipsList)
-    {
-        ExFreePool(g_proc_ipsList);
-        g_proc_ipsList = NULL;
-    }
-    sl_unlock(&lh);
-
+    rProcess_IpsClean();
 
     try
     {
@@ -211,26 +203,16 @@ void Process_SetIpsMonitor(BOOLEAN code)
     sl_lock(&g_proc_ips_monitorlock, &lh);
     g_proc_ips_monitorprocess = code;
     sl_unlock(&lh);
+
+    if (FALSE == code)
+        utiltools_sleep(500);
 }
 void Process_SetIpsModEx(const int mods)
 {// 模式规则
     KLOCK_QUEUE_HANDLE lh;
+
     sl_lock(&g_proc_ipslock, &lh);
     g_proc_ipsmod = mods;
-    sl_unlock(&lh);
-}
-void Process_ClrIpsProcess()
-{
-    Process_SetIpsMonitor(FALSE);
-    Process_SetIpsModEx(0);
-    utiltools_sleep(1000);
-    KLOCK_QUEUE_HANDLE lh;
-    sl_lock(&g_proc_ipsListlock, &lh);
-    if (g_proc_ipsList)
-    {
-        ExFreePool(g_proc_ipsList);
-        g_proc_ipsList = NULL;
-    }
     sl_unlock(&lh);
 }
 NTSTATUS Process_SetIpsMod(PIRP irp, PIO_STACK_LOCATION irpSp)
@@ -254,78 +236,6 @@ NTSTATUS Process_SetIpsMod(PIRP irp, PIO_STACK_LOCATION irpSp)
     IoCompleteRequest(irp, IO_NO_INCREMENT);
     return status;
 }
-BOOLEAN Process_IsIpsProcessNameInList(const PWCHAR path)
-{
-    BOOLEAN bRet = FALSE;
-
-    KLOCK_QUEUE_HANDLE lh;
-    sl_lock(&g_proc_ipsListlock, &lh);
-    if (g_proc_ipsList)
-    {
-        PWCHAR pName = wcsrchr(path, L'\\');
-        if (pName)
-        {
-            PWCHAR pIpsName = g_proc_ipsList;
-            pName++;
-            while (*pIpsName)
-            {
-                if (wcscmp(pIpsName, pName) == 0)
-                {
-                    bRet = TRUE;
-                    break;
-                }
-                while (*pIpsName++);
-            }
-        }
-    }
-    sl_unlock(&lh);
-    return bRet;
-}
-NTSTATUS Process_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
-{
-    const PVOID inputBuffer = irp->AssociatedIrp.SystemBuffer;
-    ULONG inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
-    NTSTATUS status = STATUS_SUCCESS;
-
-    // 如果应用层先调用devctrl_SetIpsFilterMods - Process_ClrIpsProcess函数放在Process_SetIpsMod中
-    Process_ClrIpsProcess();
-    do
-    {
-        PWCHAR p1, p2;
-        ULONG i;
-        if (NULL == inputBuffer || inputBufferLength < sizeof(WCHAR))
-        {
-            status = STATUS_INVALID_PARAMETER;
-            break;
-        }
-        p1 = (PWCHAR)inputBuffer;
-        p2 = ExAllocatePoolWithTag(NonPagedPool, inputBufferLength, MEM_TAG_DK);
-        if (NULL == p2)
-        {
-            status = STATUS_INSUFFICIENT_RESOURCES;
-            break;
-        }
-        RtlCopyMemory(p2, p1, inputBufferLength);
-        inputBufferLength >>= 1;
-        for (i = 0; i < inputBufferLength; i++)
-        {
-            if (p2[i] == L'|')
-                p2[i] = 0;
-        }
-        p1 = g_proc_ipsList;
-        g_proc_ipsList = p2;
-        if (p1)
-        {
-            ExFreePool(p1);
-        }
-    } while (FALSE);
-
-    irp->IoStatus.Status = status;
-    irp->IoStatus.Information = 0;
-    IoCompleteRequest(irp, IO_NO_INCREMENT);
-    return status;
-}
-
 
 PROCESSDATA* processctx_get()
 {

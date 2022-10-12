@@ -80,6 +80,15 @@
     <ClCompile Include="minifilter.c">
       <Filter>fsminifilter</Filter>
     </ClCompile>
+    <ClCompile Include="rDirectory.c">
+      <Filter>kruleEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="rRegister.c">
+      <Filter>kruleEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="rProcess.c">
+      <Filter>kruleEngine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="driver.h" />
@@ -167,6 +176,15 @@
     </ClInclude>
     <ClInclude Include="resource.h" />
     <ClInclude Include="resource1.h" />
+    <ClInclude Include="rDirectory.h">
+      <Filter>kruleEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="rRegister.h">
+      <Filter>kruleEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="rProcess.h">
+      <Filter>kruleEngine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Inf Include="sysmondriver.inf" />
@@ -192,6 +210,9 @@
     </Filter>
     <Filter Include="fsminifilter">
       <UniqueIdentifier>{0d98a94e-6ced-42e1-ac43-0c4eeceb3907}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kruleEngine">
+      <UniqueIdentifier>{33e75b82-2479-4a2f-9425-a6a35b6536c4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

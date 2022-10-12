@@ -3,7 +3,6 @@
 */
 #include "public.h"
 #include <fltKernel.h>
-
 #include "kflt.h"
 
 extern PFLT_FILTER g_FltServerPortEvnet;

@@ -60,7 +60,10 @@
     <ClCompile Include="mbr.c" />
     <ClCompile Include="minifilter.c" />
     <ClCompile Include="process.c" />
+    <ClCompile Include="rDirectory.c" />
     <ClCompile Include="register.c" />
+    <ClCompile Include="rProcess.c" />
+    <ClCompile Include="rRegister.c" />
     <ClCompile Include="sysdpctimer.c" />
     <ClCompile Include="sysdriverinfo.c" />
     <ClCompile Include="sysenumnotify.c" />
@@ -263,7 +266,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
-      <AdditionalDependencies>NtosKrnl.lib;FltMgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FltMgr.lib;NtosKrnl.lib;FltMgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
@@ -274,7 +277,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
-      <AdditionalDependencies>NtosKrnl.lib;FltMgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FltMgr.lib;NtosKrnl.lib;FltMgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
@@ -291,7 +294,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
-      <AdditionalDependencies>NtosKrnl.lib;fltmgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FltMgr.lib;NtosKrnl.lib;fltmgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/INTEGRITYCHECK %(AdditionalOptions)</AdditionalOptions>
       <TreatLinkerWarningAsErrors>false</TreatLinkerWarningAsErrors>
     </Link>
@@ -303,7 +306,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
-      <AdditionalDependencies>NtosKrnl.lib;fltmgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>FltMgr.lib;NtosKrnl.lib;fltmgr.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/INTEGRITYCHECK %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <ClCompile>
@@ -370,9 +373,12 @@
     <ClInclude Include="object.h" />
     <ClInclude Include="process.h" />
     <ClInclude Include="public.h" />
+    <ClInclude Include="rDirectory.h" />
     <ClInclude Include="register.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="resource1.h" />
+    <ClInclude Include="rProcess.h" />
+    <ClInclude Include="rRegister.h" />
     <ClInclude Include="sysdpctimer.h" />
     <ClInclude Include="sysdriverinfo.h" />
     <ClInclude Include="sysenumnotify.h" />

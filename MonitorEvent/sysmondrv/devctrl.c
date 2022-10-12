@@ -18,6 +18,11 @@
 #include "sysprocessinfo.h"
 #include "sysdriverinfo.h"
 
+#include "rProcess.h"
+#include "rRegister.h"
+#include "rDirectory.h"
+
+#include "minifilter.h"
 #include "kflt.h"
 #include "utiltools.h"
 
@@ -1034,7 +1039,7 @@ VOID devctrl_setMonitor(BOOLEAN code)
 	
 	// clearn pennding read i/o
 	if (FALSE == code)
-		utiltools_sleep(2000);
+		utiltools_sleep(1000);
 
 	devctrl_cancelPendingReads();
 }
@@ -1050,6 +1055,8 @@ VOID devctrl_setIpsMonitor(BOOLEAN code)
 	Register_SetIpsMonitor(code);
 	Wmi_SetIpsMonitor(code);
 	Session_SetIpsMonitor(code);
+	// minifilter Ips monitor
+	FsFlt_SetDirectoryIpsMonitor(code);
 	sl_unlock(&lh);
 
 	devctrl_cancelPendingReads();
@@ -1082,31 +1089,48 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 	case IRP_MJ_DEVICE_CONTROL:
 		switch (irpSp->Parameters.DeviceIoControl.IoControlCode)
 		{
+		// 共享内存
 		case CTL_DEVCTRL_OPEN_SHAREMEM:
 			return devctrl_openMem(DeviceObject, irp, irpSp);
-
+		// 内核监控开
 		case CTL_DEVCTRL_ENABLE_MONITOR:
 			devctrl_setMonitor(TRUE);
 			break;
+		// 内核监控关
 		case CTL_DEVCTRL_DISENTABLE_MONITOR:
 			devctrl_setMonitor(FALSE);
 			break;
-
+		// Ips内核监控开
 		case CTL_DEVCTRL_ENABLE_IPS_MONITOR:
 			devctrl_setIpsMonitor(TRUE);
 			break;
+		// Ips内核监控开
 		case CTL_DEVCTRL_DISENTABLE_IPS_MONITOR:
 			devctrl_setIpsMonitor(FALSE);
 			break;
-
+		// Process Ips: 进程名列表
 		case CTL_DEVCTRL_IPS_SETPROCESSNAME:
-			return Process_SetIpsProcessName(irp, irpSp);
+		{
+			Process_SetIpsMonitor(FALSE);
+			Process_SetIpsModEx(0);
+			return rProcess_SetIpsProcessName(irp, irpSp);
+		}
+		// Process Ips: 模式
 		case CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD:
 			return Process_SetIpsMod(irp, irpSp);
-
+		// Register Ips: 进程名列表
 		case CTL_DEVCTRL_IPS_SETREGISTERNAME:
-			return Register_SetIpsProcessName(irp, irpSp);
-
+		{
+			Register_SetIpsMonitor(FALSE);
+			return rRegister_SetIpsProcessName(irp, irpSp);
+		}
+		// Directory Ips: 进程名/目录列表
+		case CTL_DEVCTRL_IPS_SETDIRECTORYMODANDNAME:
+		{
+			FsFlt_SetDirectoryIpsMonitor(FALSE);
+			return rDirectory_SetIpsProcessName(irp, irpSp);
+		}
+		// Rootkit Data
 		case CTL_DEVCTRL_ARK_INITSSDT:
 			return devctrl_InitSsdtBase(DeviceObject, irp, irpSp);
 		case CTL_DEVCTRL_ARK_GETSSDTDATA:
@@ -1144,8 +1168,6 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 		case CTL_DEVCTRL_ARK_DRIVERDEVENUM:
 			return devctrl_DrDevEnum(DeviceObject, irp, irpSp);
 		}
-		break;
-	default:
 		break;
 	}
 

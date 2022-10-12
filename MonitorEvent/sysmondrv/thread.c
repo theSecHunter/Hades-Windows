@@ -108,7 +108,7 @@ VOID Process_NotifyThread(
 	PTHREADBUFFER threadbuf = NULL;
 
 	// Alter Check CraeteRemoteThread
-	const int CurrentId = (int)PsGetCurrentProcessId();
+	const HANDLE CurrentId = PsGetCurrentProcessId();
 	if (g_thr_ips_monitor && Create && (CurrentId != (HANDLE)4) && (ProcessId != (HANDLE)4) && (CurrentId != ProcessId) && CheckIsRemoteThread(ProcessId))
 	{
 		//UCHAR* SrcPsName, DstPsName;

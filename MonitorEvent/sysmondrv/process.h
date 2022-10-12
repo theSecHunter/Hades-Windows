@@ -24,14 +24,11 @@ typedef struct _PROCESSDATA
 	LIST_ENTRY process_pending;
 }PROCESSDATA,*PPROCESSDATA;
 
-void Process_ClrIpsProcess();
-BOOLEAN Process_IsIpsProcessNameInList(const PWCHAR path);
-NTSTATUS Process_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp);
-
 NTSTATUS Process_Init(void);
 void Process_Free(void);
 void Process_Clean(void);
 void Process_SetMonitor(BOOLEAN code);
+void Process_SetIpsModEx(const int mods);
 void Process_SetIpsMonitor(BOOLEAN code);
 NTSTATUS Process_SetIpsMod(PIRP irp, PIO_STACK_LOCATION irpSp);
 PROCESSBUFFER* Process_PacketAllocate(const int lens);
