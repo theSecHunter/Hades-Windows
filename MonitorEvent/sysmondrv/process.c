@@ -203,9 +203,6 @@ void Process_SetIpsMonitor(BOOLEAN code)
     sl_lock(&g_proc_ips_monitorlock, &lh);
     g_proc_ips_monitorprocess = code;
     sl_unlock(&lh);
-
-    if (FALSE == code)
-        utiltools_sleep(500);
 }
 void Process_SetIpsModEx(const int mods)
 {// 模式规则

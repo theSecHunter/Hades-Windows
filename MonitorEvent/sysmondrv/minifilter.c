@@ -99,10 +99,10 @@ FsFilterAntsDrPostFileHide(
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
       // file create
-      { IRP_MJ_CREATE,
-        0,
-        FsFilter1PreOperation,
-        NULL/*FsFilter1PostOperation*/},
+      //{ IRP_MJ_CREATE,
+      //  0,
+      //  FsFilter1PreOperation,
+      //  NULL/*FsFilter1PostOperation*/},
 
       //// hide file
       //{ IRP_MJ_DIRECTORY_CONTROL,
@@ -353,12 +353,10 @@ CONST FLT_REGISTRATION FilterRegistration = {
 void FsFlt_SetDirectoryIpsMonitor(code)
 {
     KLOCK_QUEUE_HANDLE lh;
+
     KeAcquireInStackQueuedSpinLock(&g_fsflt_ips_monitorlock, &lh);
     g_fsflt_ips_monitorprocess = code;
     KeReleaseInStackQueuedSpinLock(&lh);
-
-    if (FALSE == code)
-        utiltools_sleep(500);
 }
 
 NTSTATUS FsMini_Init(PDRIVER_OBJECT DriverObject)
@@ -379,17 +377,19 @@ NTSTATUS FsMini_Init(PDRIVER_OBJECT DriverObject)
 NTSTATUS FsMini_Clean()
 {
     rDirectory_IpsClean();
-    if ((TRUE == g_fltregstatus) && g_FltServerPortEvnet)
-    {
-        FltUnregisterFilter(g_FltServerPortEvnet);
-        g_FltServerPortEvnet = NULL;
-    }
     return STATUS_SUCCESS;
 }
 
 NTSTATUS FsMini_Free()
 {
-    return FsMini_Clean();
+    FsMini_Clean();
+    if ((TRUE == g_fltregstatus) && g_FltServerPortEvnet)
+    {
+        FltUnregisterFilter(g_FltServerPortEvnet);
+        g_FltServerPortEvnet = NULL;
+        g_fltregstatus = FALSE;
+    }
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS Mini_StartFilter()
@@ -511,6 +511,7 @@ FsFilter1PreOperation(
         return FLT_PREOP_SUCCESS_WITH_CALLBACK;
 
     const KIRQL irql = KeGetCurrentIrql();
+    KdPrint(("[HadesDrv] IRQL: %d", irql));
     if (irql <= APC_LEVEL)
     {
         DbgBreakPoint();

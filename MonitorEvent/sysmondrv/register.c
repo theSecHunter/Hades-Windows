@@ -364,9 +364,6 @@ void Register_SetIpsMonitor(BOOLEAN code)
 	sl_lock(&g_reg_ips_monitorlock, &lh);
 	g_reg_ips_monitorprocess = code;
 	sl_unlock(&lh);
-
-	if (FALSE == code)
-		utiltools_sleep(500);
 }
 
 REGISTERBUFFER* Register_PacketAllocate(int lens)

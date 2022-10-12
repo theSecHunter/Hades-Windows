@@ -1113,6 +1113,7 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 		{
 			Process_SetIpsMonitor(FALSE);
 			Process_SetIpsModEx(0);
+			utiltools_sleep(500);
 			return rProcess_SetIpsProcessName(irp, irpSp);
 		}
 		// Process Ips: 模式
@@ -1122,12 +1123,14 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 		case CTL_DEVCTRL_IPS_SETREGISTERNAME:
 		{
 			Register_SetIpsMonitor(FALSE);
+			utiltools_sleep(500);
 			return rRegister_SetIpsProcessName(irp, irpSp);
 		}
 		// Directory Ips: 进程名/目录列表
 		case CTL_DEVCTRL_IPS_SETDIRECTORYMODANDNAME:
 		{
 			FsFlt_SetDirectoryIpsMonitor(FALSE);
+			utiltools_sleep(500);
 			return rDirectory_SetIpsProcessName(irp, irpSp);
 		}
 		// Rootkit Data

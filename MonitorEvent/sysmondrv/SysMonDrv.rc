@@ -1,6 +1,6 @@
 // Microsoft Visual C++ generated resource script.
 //
-#include "resource1.h"
+#include "resource2.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -27,7 +27,7 @@ LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
 
 1 TEXTINCLUDE 
 BEGIN
-    "resource1.h\0"
+    "resource2.h\0"
 END
 
 2 TEXTINCLUDE 
@@ -50,9 +50,9 @@ END
 // Version
 //
 
- VERSIONINFO
+VS_VERSION_INFO VERSIONINFO
  FILEVERSION 22,10,12,1
- PRODUCTVERSION 0,0,0,0
+ PRODUCTVERSION 2,3,6,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -60,18 +60,18 @@ END
  FILEFLAGS 0x0L
 #endif
  FILEOS 0x40004L
- FILETYPE 0x200020L
+ FILETYPE 0x490054L
  FILESUBTYPE 0x0L
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "080404b0"
         BEGIN
-            VALUE "CompanyName", "Hades"
-            VALUE "FileDescription", "Hades For Windows HIDS/HIPS DrvKernelSys"
+            VALUE "CompanyName", "theSecHunter"
+            VALUE "FileDescription", "Hades For Windows HIDS/HIPS Drivers"
             VALUE "FileVersion", "22.10.12.1"
             VALUE "LegalCopyright", "Copyright (C) 2022"
-            VALUE "ProductVersion", "0.0.0.0"
+            VALUE "ProductVersion", "2.3.6.0"
         END
     END
     BLOCK "VarFileInfo"

@@ -111,7 +111,7 @@ NTSTATUS
     status = Fsflt_initPort();
     if (!NT_SUCCESS(status))
     {
-        FsMini_Clean();
+        FsMini_Free();
         return status;
     }
     

@@ -4,9 +4,12 @@
 
 static void utiltools_sleep(const unsigned int ttw)
 {
-	NDIS_EVENT  _SleepEvent;
-	NdisInitializeEvent(&_SleepEvent);
-	NdisWaitEvent(&_SleepEvent, ttw);
+    if (PASSIVE_LEVEL == KeGetCurrentIrql())
+    {
+        NDIS_EVENT  _SleepEvent;
+        NdisInitializeEvent(&_SleepEvent);
+        NdisWaitEvent(&_SleepEvent, ttw);
+    }
 }
 
 typedef NTSTATUS(*PfnNtQueryInformationProcess) (
