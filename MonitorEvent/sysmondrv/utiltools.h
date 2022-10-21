@@ -1,6 +1,7 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 #include <ndis.h>
+#define MAX_PATH 260
 
 static void utiltools_sleep(const unsigned int ttw)
 {
@@ -61,6 +62,18 @@ static BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWOR
         ZwClose(hProc);
     }
     return bRet;
+}
+
+static BOOLEAN DeviceDosPathToNtPath(wchar_t* pszDosPath, wchar_t* pszNtPath)
+{
+    static TCHAR    szDriveStr[MAX_PATH] = { 0 };
+    static TCHAR    szDevName[MAX_PATH] = { 0 };
+    TCHAR            szDrive[3];
+    INT             cchDevName;
+    INT             i;
+
+
+    return FALSE;
 }
 
 #endif // !_UTIL_H

@@ -3,6 +3,7 @@
 #include <fltKernel.h>
 #include "rDirectory.h"
 #include "utiltools.h"
+#include <tchar.h>
 
 // extern count +1 kflt.c
 PFLT_FILTER         g_FltServerPortEvnet = NULL;
@@ -99,10 +100,10 @@ FsFilterAntsDrPostFileHide(
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
       // file create
-      //{ IRP_MJ_CREATE,
-      //  0,
-      //  FsFilter1PreOperation,
-      //  NULL/*FsFilter1PostOperation*/},
+      { IRP_MJ_CREATE,
+        0,
+        FsFilter1PreOperation,
+        NULL/*FsFilter1PostOperation*/},
 
       //// hide file
       //{ IRP_MJ_DIRECTORY_CONTROL,
@@ -496,6 +497,206 @@ FsFilter1InstanceTeardownComplete(
 }
 
 
+// Volum to Guid
+//void GetFileGuid(_In_ PCFLT_RELATED_OBJECTS FltObjects)
+//{
+//    NTSTATUS status = STATUS_SUCCESS;
+//    UNICODE_STRING VolumeGuidString, volumeGuidName;
+//    ULONG bytesRequired = 0; GUID VolumeGuid;
+//    //
+//    // We use a while loop for cleanup
+//    //
+//    while (STATUS_SUCCESS == status) {
+//
+//        //
+//        // First call is to get the correct size
+//        // 
+//        VolumeGuidString.Buffer = NULL;
+//        VolumeGuidString.Length = 0;
+//        VolumeGuidString.MaximumLength = 0;
+//
+//        (void)FltGetVolumeGuidName(FltObjects->Volume, &VolumeGuidString, &bytesRequired);
+//
+//        //
+//        // Let's allocate space
+//        //
+//        VolumeGuidString.Buffer = (PWCHAR)ExAllocatePoolWithTag(PagedPool, bytesRequired, 'GUMM');
+//        VolumeGuidString.Length = 0;
+//        ASSERT(bytesRequired <= UNICODE_STRING_MAX_BYTES);
+//        VolumeGuidString.MaximumLength = (USHORT)bytesRequired;
+//
+//        if (NULL == VolumeGuidString.Buffer) {
+//            status = STATUS_INSUFFICIENT_RESOURCES;
+//            break;
+//        }
+//
+//        //
+//        // Lets call it again
+//        // 
+//        status = FltGetVolumeGuidName(FltObjects->Volume, &VolumeGuidString, &bytesRequired);
+//
+//        if (!NT_SUCCESS(status)) {
+//            break;
+//        }
+//
+//        //
+//        // The format is \??\Volume{GUID}
+//        //
+//        int index = 0;
+//        for (index = 0; (L'{' != VolumeGuidString.Buffer[index] && index < (VolumeGuidString.Length / sizeof(WCHAR))); index++)
+//            /* nothing */;
+//
+//        volumeGuidName.Buffer = &VolumeGuidString.Buffer[index];
+//        volumeGuidName.Length = (USHORT)(VolumeGuidString.Length - sizeof(WCHAR) * index);
+//        status = RtlGUIDFromString(&volumeGuidName, &VolumeGuid);
+//
+//        if (!NT_SUCCESS(status)) {
+//            break;
+//        }
+//        //
+//        // Success or failure, we're done
+//        //
+//        break;
+//    }
+//}
+//_Success_(return) BOOLEAN GetVolumeGuid(_In_z_ TCHAR * OriginalFilePathName, __out GUID * Guid)
+//{
+//    TCHAR* filePathName;
+//    ULONG filePathNameSize = UNICODE_STRING_MAX_BYTES;
+//    TCHAR guidVolumeName[64]; // these names are fixed size and much smaller than this
+//    USHORT index;
+//    TCHAR* fileNamePart;
+//
+//
+//    filePathName = (TCHAR*)ExAllocatePoolWithTag(PagedPool, filePathNameSize, 'GUMM');
+//
+//    if (NULL == filePathName) {
+//        return FALSE;
+//    }
+//
+//    filePathNameSize /= sizeof(TCHAR);
+//
+//    GetFullPathName(OriginalFilePathName, filePathNameSize, filePathName, &fileNamePart);
+//
+//    //
+//    // We now have a path name, let's see if we can trim it until we find a valid path
+//    //
+//    index = (USHORT)_tcslen(filePathName);
+//
+//    if (0 == index) {
+//
+//        //
+//        // This is a very strange case - why would we get a zero length path name?
+//        //
+//        _tprintf(TEXT("GetVolumeGuid: Original Name is %s, GetFullPathName returned a zero length.  filePathName 0x%p, fileNamePart 0x%p\n"),
+//            OriginalFilePathName,
+//            filePathName,
+//            fileNamePart);
+//
+//        return FALSE;
+//    }
+//
+//    //
+//    // We need to point to the last character
+//    //
+//    index--;
+//
+//
+//    //
+//    // volume mount points require a trailing backslash
+//    //
+//    if (TEXT('\\') != filePathName[index]) {
+//
+//        if (index == UNICODE_STRING_MAX_CHARS) {
+//            //
+//            // We can't deal with this case - but it won't really happen (32K long path name?)
+//            //
+//            ExFreePoolWithTag(filePathName, 'GUMM');
+//            return FALSE;
+//        }
+//
+//        //
+//        // Add the trailing backslash
+//        //
+//        filePathName[++index] = TEXT('\\');
+//        filePathName[++index] = TEXT('\0');
+//
+//    }
+//
+//    while (!GetVolumeNameForVolumeMountPoint(filePathName, guidVolumeName, sizeof(guidVolumeName) / sizeof(TCHAR))) {
+//
+//        while (--index) {
+//
+//            if (filePathName[index] == TEXT('\\')) {
+//                filePathName[index + 1] = TEXT('\0');
+//                break;
+//            }
+//
+//            //
+//            // Otherwise we just keep seeking back in the string
+//        }
+//
+//        if (0 == index) {
+//            //
+//            // We don't have any string left to check, this is an error condition
+//            //
+//            break;
+//        }
+//    }
+//
+//    //
+//    // At this point we are done with the buffer
+//    //
+//    ExFreePoolWithTag(filePathName, 'GUMM');
+//    filePathName = NULL;
+//
+//    //
+//    // If the index is zero, we terminated the loop without finding the mount point
+//    //
+//    if (0 == index) {
+//        return FALSE;
+//    }
+//
+//    //
+//    // Look for the trailing closing brace }
+//    //
+//    for (index = 0; index < sizeof(guidVolumeName) / sizeof(TCHAR); index++) {
+//        if (L'}' == guidVolumeName[index]) break;
+//    }
+//
+//    if (index >= sizeof(guidVolumeName) / sizeof(TCHAR)) {
+//        return FALSE;
+//    }
+//
+//    //
+//    // Set it as null
+//    //
+//    guidVolumeName[index++] = L'\0';
+//
+//    //
+//    // Look for the leading opening brace {
+//    //
+//    for (index = 0; index < sizeof(guidVolumeName) / sizeof(TCHAR); index++) {
+//        if (L'{' == guidVolumeName[index]) break;
+//    }
+//
+//    if (index >= sizeof(guidVolumeName) / sizeof(TCHAR)) {
+//        return FALSE;
+//    }
+//
+//    //
+//    // Skip over the leading {
+//    //
+//    index++;
+//
+//    //rstatus = UuidFromString((RPC_WSTR)&guidVolumeName[index], (UUID*)Guid);
+//    //if (RPC_S_OK != rstatus) {
+//    //    return FALSE;
+//    //}
+//
+//    return TRUE;
+//}
+
 FLT_PREOP_CALLBACK_STATUS
 FsFilter1PreOperation(
     _Inout_ PFLT_CALLBACK_DATA Data,
@@ -508,35 +709,39 @@ FsFilter1PreOperation(
     UNREFERENCED_PARAMETER(CompletionContext);
 
     if (!g_fsflt_ips_monitorprocess)
-        return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+        return FLT_PREOP_SUCCESS_NO_CALLBACK;
 
     const KIRQL irql = KeGetCurrentIrql();
-    KdPrint(("[HadesDrv] IRQL: %d", irql));
-    if (irql <= APC_LEVEL)
+    if (irql == PASSIVE_LEVEL)
     {
-        DbgBreakPoint();
         // 1. find Rule Mods directoryPath 
         PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
         NTSTATUS status = FltGetFileNameInformation(Data, FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT, &nameInfo);
         if (!NT_SUCCESS(status))
-            return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+            return FLT_PREOP_SUCCESS_NO_CALLBACK;
         FltReleaseFileNameInformation(Data);
+        DbgBreakPoint();
+        // Format FileInfo
+        // FltParseFileNameInformation(nameInfo);
+        WCHAR swDirectPath[MAX_PATH] = { 0, };
+        RtlCopyMemory(swDirectPath, nameInfo->Name.Buffer, nameInfo->Name.Length);
+        if (!wcslen(swDirectPath))
+            return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        int iRuleMods = 0;
+        const BOOLEAN bStatus = rDirectory_IsIpsDirectNameInList(swDirectPath, &iRuleMods);
+        if (!iRuleMods || !bStatus)
+            return FLT_PREOP_SUCCESS_NO_CALLBACK;
         
         // 2. query processid to processpath
-        BOOLEAN QueryPathStatus = FALSE;
         WCHAR path[260 * 2] = { 0 };
-        const ULONG pid = FltGetRequestorProcessId(Data);
+        //const ULONG pid = FltGetRequestorProcessId(Data);
         const ULONG processid = (int)PsGetCurrentProcessId();
         if (!QueryProcessNamePath((DWORD)processid, path, sizeof(path)))
-            return FLT_PREOP_SUCCESS_WITH_CALLBACK;
-            
-        // 3. find processpath to ruleName
-        int iRuleMods = 0;
-        QueryPathStatus = rDirectory_IsIpsProcessNameInList(path, &iRuleMods);
-        if (!QueryPathStatus || !iRuleMods)
-            return FLT_PREOP_SUCCESS_WITH_CALLBACK;
-
+            return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        
         do {
+            // 3. find processpath to ruleName
+            const BOOLEAN QueryIpsProcessStatus = rDirectory_IsIpsProcessNameInList(path, iRuleMods);
             const unsigned char IRP_MJ_CODE = Data->Iopb->MajorFunction;
             if (IRP_MJ_CODE == IRP_MJ_CREATE)
             {
@@ -548,12 +753,16 @@ FsFilter1PreOperation(
                 {
                     bhitOpear = TRUE;
                 }
-                // move into folder
-                //if (Data->Iopb->OperationFlags == '\x05')
-                //  bhitOpear = TRUE;
 
-                // block rule
-                if (bhitOpear && (iRuleMods == 2))
+                // move into folder
+                if (Data->Iopb->OperationFlags == '\x05')
+                    bhitOpear = TRUE;
+
+                // 白名单模式: 进程不在白名单 - 不允许访问
+                if (bhitOpear && (iRuleMods == 1) && !QueryIpsProcessStatus)
+                    break;
+                // 黑名单模式: 进程在黑名单 - 不允许访问
+                else if (bhitOpear && (iRuleMods == 2) && QueryIpsProcessStatus)
                     break;
             }
             else if (IRP_MJ_CODE == IRP_MJ_SET_INFORMATION)
@@ -566,15 +775,15 @@ FsFilter1PreOperation(
                 if (iRuleMods == 2 && Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileRenameInformation)
                     break;
             }
-            return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+            return FLT_PREOP_SUCCESS_NO_CALLBACK;
         } while (FALSE);
 
+        // ACTION BLOCK
         Data->IoStatus.Status = STATUS_ACCESS_DENIED;
         Data->IoStatus.Information = 0;
         return FLT_PREOP_COMPLETE;
     }
-
-    return FLT_PREOP_SUCCESS_WITH_CALLBACK;
+    return FLT_PREOP_SUCCESS_NO_CALLBACK;
 }
 
 FLT_POSTOP_CALLBACK_STATUS

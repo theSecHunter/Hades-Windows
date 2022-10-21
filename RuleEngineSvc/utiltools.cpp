@@ -1,10 +1,14 @@
 #include "pch.h"
 #include "utiltools.h"
+#include <map>
+#include <set>
 #include <string>
 #include <direct.h>
 #include <shlwapi.h>
 #include <atlconv.h>
 #pragma comment(lib ,"Shlwapi.lib")
+
+static std::map<const std::string, std::string> g_DevDosMap;
 
 bool RuleEngineToos::GetCurrentExePath(std::string& Path)
 {
@@ -51,6 +55,24 @@ void RuleEngineToos::SplitiStr(std::set<std::string>& vecProcesName, const std::
 			strSp = vector_routeip;
 			strSp.append("|");
 			vecProcesName.insert(strSp);
+			vector_routeip = strtok(NULL, "|");
+		}
+	}
+	catch (const std::exception&)
+	{
+	}
+}
+void RuleEngineToos::SplitiStr(std::vector<std::string>& vecProcesName, const std::string& sData)
+{
+	try
+	{
+		static std::string strSp;
+		char* vector_routeip = strtok((char*)sData.data(), "|");
+		while (vector_routeip != NULL)
+		{
+			strSp = vector_routeip;
+			strSp.append("|");
+			vecProcesName.emplace_back(strSp);
 			vector_routeip = strtok(NULL, "|");
 		}
 	}
@@ -115,4 +137,64 @@ std::string RuleEngineToos::WStr2Str(const std::wstring& wstr)
 {
     USES_CONVERSION;
     return W2A(wstr.c_str());
+}
+const bool RuleEngineToos::InitDeviceDosPathToNtPath()
+{
+	try
+	{
+		static TCHAR    szDriveStr[MAX_PATH] = { 0 };
+		static TCHAR    szDevName[MAX_PATH] = { 0 };
+		TCHAR            szDrive[3];
+		INT             cchDevName;
+		INT             i;
+		//获取本地磁盘字符串  
+		ZeroMemory(szDriveStr, ARRAYSIZE(szDriveStr));
+		ZeroMemory(szDevName, ARRAYSIZE(szDevName));
+		if (GetLogicalDriveStrings(sizeof(szDriveStr), szDriveStr))
+		{
+			for (i = 0; szDriveStr[i]; i += 4)
+			{
+				if (!lstrcmpi(&(szDriveStr[i]), L"A:\\") || !lstrcmpi(&(szDriveStr[i]), L"B:\\"))
+					continue;
+				szDrive[0] = szDriveStr[i];
+				szDrive[1] = szDriveStr[i + 1];
+				szDrive[2] = '\0';
+				if (!QueryDosDevice(szDrive, szDevName, MAX_PATH))//查询 Dos 设备名  
+					return false;
+				//cchDevName = lstrlen(szDevName);
+				g_DevDosMap[WStr2Str(szDrive)] = WStr2Str(szDevName);
+			}
+			return true;
+		}
+		return false;
+	}
+	catch (...)
+	{
+		return false;
+	}
+
+}
+void RuleEngineToos::ReplayDeviceDosPathToNtPath(_In_ const std::string& paths, _Out_ std::string& newpaths)
+{
+	// 切割
+	std::vector<std::string> setDirPath;
+	SplitiStr(setDirPath, paths);
+	if (setDirPath.empty())
+		return;
+	int iIdex = 0; std::string strDevName;
+	for (auto& vIter : setDirPath)
+	{
+		iIdex = vIter.find("\\");
+		if (iIdex == std::string::npos)
+			continue;
+		strDevName = vIter.substr(0, iIdex);
+		if (strDevName.empty())
+			continue;
+		const auto& iters = g_DevDosMap.find(strDevName);
+		if (g_DevDosMap.end() == iters)
+			continue;
+		// 这里一定是开头0_否则规则配置错误
+		vIter.replace(0, strDevName.size(), iters->second);
+		newpaths.append(vIter.c_str());
+	}
 }

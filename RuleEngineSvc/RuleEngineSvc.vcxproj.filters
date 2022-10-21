@@ -22,6 +22,9 @@
     <Filter Include="file">
       <UniqueIdentifier>{41573c0c-fa23-4c05-8ea5-e314d0cecbd4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="directory">
+      <UniqueIdentifier>{3a028e27-9451-4bce-93df-e7d8d5e7543b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -39,6 +42,9 @@
     <ClInclude Include="RegisterRuleAssist.h">
       <Filter>register</Filter>
     </ClInclude>
+    <ClInclude Include="DirectoryRuleAssist.h">
+      <Filter>directory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RuleEngineSvc.cpp">
@@ -55,6 +61,9 @@
     </ClCompile>
     <ClCompile Include="RegisterRuleAssist.cpp">
       <Filter>register</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectoryRuleAssist.cpp">
+      <Filter>directory</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

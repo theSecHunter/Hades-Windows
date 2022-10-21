@@ -82,18 +82,23 @@ BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, const int mods)
 	sl_unlock(&lh);
 	return bRet;
 }
-BOOLEAN rDirectory_IsIpsDirectNameInList(const PWCHAR path, int* mods)
+BOOLEAN rDirectory_IsIpsDirectNameInList(_In_ const PWCHAR FileDirectPath, _Out_ int* mods)
 {
+	if (!mods)
+		return FALSE;
+
+	// Directory
 	BOOLEAN bRet = FALSE;
 	KLOCK_QUEUE_HANDLE lh;
 	sl_lock(&g_reg_ipsNameListlock, &lh);
 	if (g_reg_ipsDirectNameBlackList)
 	{
-		PWCHAR pName = wcsrchr(path, L'\\');
+		PWCHAR pName = wcsrchr(FileDirectPath, L'\\');
+		pName[0] = '\x0';
+		pName[1] = '\x0';
 		if (pName)
 		{
 			PWCHAR pIpsName = g_reg_ipsDirectNameBlackList;
-			pName++;
 			while (*pIpsName)
 			{
 				if (wcscmp(pIpsName, pName) == 0)
@@ -106,13 +111,14 @@ BOOLEAN rDirectory_IsIpsDirectNameInList(const PWCHAR path, int* mods)
 			}
 		}
 	}
-	if (g_reg_ipsDirectNameWhiteList)
+	if (!bRet && g_reg_ipsDirectNameWhiteList)
 	{
-		PWCHAR pName = wcsrchr(path, L'\\');
+		PWCHAR pName = wcsrchr(FileDirectPath, L'\\');
+		pName[0] = '\x0';
+		pName[1] = '\x0';
 		if (pName)
 		{
 			PWCHAR pIpsName = g_reg_ipsDirectNameWhiteList;
-			pName++;
 			while (*pIpsName)
 			{
 				if (wcscmp(pIpsName, pName) == 0)

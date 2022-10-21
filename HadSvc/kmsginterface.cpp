@@ -13,6 +13,7 @@
 
 #include <ProcessRuleAssist.h>
 #include <RegisterRuleAssist.h>
+#include <DirectoryRuleAssist.h>
 
 //rapidjson
 #include <rapidjson/rapidjson.h>
@@ -816,6 +817,13 @@ void kMsgInterface::DriverInit(const int flag)
                 OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList Success");
             else
                 OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList Fauiler");
+        }
+
+        // Set Ips Directory
+        std::string whiteName, blackName, whiteDirectory, blackDirectory;
+        if (ConfigDirectoryJsonRuleParsing(whiteName, blackName, whiteDirectory, blackDirectory))
+        {
+
         }
 
         // Enable Event --> 内核提取出来数据以后处理类

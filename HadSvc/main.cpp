@@ -15,6 +15,8 @@
 #include "HlprMiniCom.h"
 #include <usysinfo.h>
 
+#include <DirectoryRuleAssist.h>
+
 static kMsgInterface	g_mainMsgKlib;
 static uMsgInterface	g_mainMsgUlib;
 static WinMsgLoop		g_MsgControl;
