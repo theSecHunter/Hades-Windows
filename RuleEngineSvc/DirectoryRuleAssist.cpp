@@ -51,6 +51,11 @@ const bool ConfigDirectoryJsonRuleParsing(std::string& strNameWhitelis, std::str
 			break;
 		const auto rArray = document.GetArray();
 		std::string strstrHex;
+		// Add Flag
+		strNameWhitelis.append("1");
+		strDirPathWhitelis.append("2");
+		strNameBlacklis.append("3");
+		strDirPathBlacklis.append("4");
 		for (int idx = 0; idx < rArray.Size(); ++idx)
 		{
 			try
@@ -60,12 +65,12 @@ const bool ConfigDirectoryJsonRuleParsing(std::string& strNameWhitelis, std::str
 				const int Mods= rArray[idx]["FileIORuleMod"].GetInt();
 				if (Mods == 1)
 				{
-					strNameWhitelis = rArray[idx]["processName"].GetString();
+					strNameWhitelis.append(rArray[idx]["processName"].GetString());
 					RuleEngineToos::ReplayDeviceDosPathToNtPath(rArray[idx]["Directory"].GetString(), strDirPathWhitelis);
 				}
 				else if (Mods == 2)
 				{
-					strNameBlacklis = rArray[idx]["processName"].GetString();
+					strNameBlacklis.append(rArray[idx]["processName"].GetString());
 					RuleEngineToos::ReplayDeviceDosPathToNtPath(rArray[idx]["Directory"].GetString(), strDirPathBlacklis);
 				}
 			}

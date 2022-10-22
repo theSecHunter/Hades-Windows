@@ -35,6 +35,7 @@ public:
 	bool GetKerBeSnipingStatus();
 	bool ReLoadProcessRuleConfig();
 	bool ReLoadRegisterRuleConfig();
+	bool ReLoadDirectoryRuleConfig();
 
 private:
 	void kMsg_SetTopicQueuePtr();

@@ -1127,11 +1127,11 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 			return rRegister_SetIpsProcessName(irp, irpSp);
 		}
 		// Directory Ips: 进程名/目录列表
-		case CTL_DEVCTRL_IPS_SETDIRECTORYMODANDNAME:
+		case CTL_DEVCTRL_IPS_SETDIRECTORYRULE:
 		{
 			FsFlt_SetDirectoryIpsMonitor(FALSE);
 			utiltools_sleep(500);
-			return rDirectory_SetIpsProcessName(irp, irpSp);
+			return rDirectory_SetIpsDirectRule(irp, irpSp);
 		}
 		// Rootkit Data
 		case CTL_DEVCTRL_ARK_INITSSDT:

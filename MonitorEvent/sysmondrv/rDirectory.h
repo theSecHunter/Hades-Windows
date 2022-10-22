@@ -3,8 +3,9 @@
 
 void rDirectory_IpsInit();
 void rDirectory_IpsClean();
-BOOLEAN rDirectory_IsIpsDirectNameInList(_In_ const PWCHAR FileDirectPath, _Out_ int* mods);
+void rDirectory_IpsCleanEx(const int flag);
 BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, const int mods);
-NTSTATUS rDirectory_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp);
+BOOLEAN rDirectory_IsIpsDirectNameInList(_In_ const PWCHAR FileDirectPath, _Out_ int* mods);
+NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp);
 
 #endif

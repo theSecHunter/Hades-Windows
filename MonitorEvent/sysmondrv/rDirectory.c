@@ -1,6 +1,7 @@
 #include "public.h"
 #include "rDirectory.h"
 #include "utiltools.h"
+#include <stdlib.h>
 
 static	PWCHAR					g_reg_ipsProcNameBlackList = NULL;
 static	PWCHAR					g_reg_ipsProcNameWhiteList = NULL;
@@ -12,31 +13,38 @@ void rDirectory_IpsInit()
 {
 	KeInitializeSpinLock(&g_reg_ipsNameListlock);
 }
-void rDirectory_IpsClean()
+void rDirectory_IpsCleanEx(const int flag)
 {
 	KLOCK_QUEUE_HANDLE lh;
 	KeAcquireInStackQueuedSpinLock(&g_reg_ipsNameListlock, &lh);
-	if (g_reg_ipsDirectNameBlackList)
+	if ((flag == 1) && g_reg_ipsDirectNameBlackList)
 	{
 		ExFreePool(g_reg_ipsDirectNameBlackList);
 		g_reg_ipsDirectNameBlackList = NULL;
 	}
-	if (g_reg_ipsDirectNameWhiteList)
+	else if ((flag == 2) && g_reg_ipsDirectNameWhiteList)
 	{
 		ExFreePool(g_reg_ipsDirectNameWhiteList);
 		g_reg_ipsDirectNameWhiteList = NULL;
 	}
-	if (g_reg_ipsProcNameBlackList)
+	else if ((flag == 3) && g_reg_ipsProcNameBlackList)
 	{
 		ExFreePool(g_reg_ipsProcNameBlackList);
 		g_reg_ipsProcNameBlackList = NULL;
 	}
-	if (g_reg_ipsProcNameWhiteList)
+	else if ((flag == 4) && g_reg_ipsProcNameWhiteList)
 	{
 		ExFreePool(g_reg_ipsProcNameWhiteList);
 		g_reg_ipsProcNameWhiteList = NULL;
 	}
 	KeReleaseInStackQueuedSpinLock(&lh);
+}
+void rDirectory_IpsClean() 
+{
+	rDirectory_IpsCleanEx(1);
+	rDirectory_IpsCleanEx(2);
+	rDirectory_IpsCleanEx(3);
+	rDirectory_IpsCleanEx(4);
 }
 BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, const int mods)
 {
@@ -85,7 +93,7 @@ BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, const int mods)
 BOOLEAN rDirectory_IsIpsDirectNameInList(_In_ const PWCHAR FileDirectPath, _Out_ int* mods)
 {
 	if (!mods)
-		return FALSE;
+		return _Success_(FALSE);
 
 	// Directory
 	BOOLEAN bRet = FALSE;
@@ -132,20 +140,72 @@ BOOLEAN rDirectory_IsIpsDirectNameInList(_In_ const PWCHAR FileDirectPath, _Out_
 		}
 	}
 	sl_unlock(&lh);
-	return bRet;
+	return _Success_(bRet);
 }
-NTSTATUS rDirectory_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
+NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
 	PVOID inputBuffer = irp->AssociatedIrp.SystemBuffer;
 	ULONG inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
-	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
 	NTSTATUS status = STATUS_SUCCESS;
-
-	rDirectory_IpsClean();
+	do 
 	{
-	
-	
-	}
+		if (NULL == inputBuffer || inputBufferLength < sizeof(WCHAR))
+		{
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		}
+		PWCHAR p1, p2; ULONG i;
+		p1 = (PWCHAR)inputBuffer;
+		const CHAR chrflag = p1[0];
+		const int dwflag = atoi(&chrflag);
+		rDirectory_IpsCleanEx(dwflag);
+		p2 = ExAllocatePoolWithTag(NonPagedPool, inputBufferLength, MEM_TAG_DK);
+		if (NULL == p2)
+		{
+			status = STATUS_INSUFFICIENT_RESOURCES;
+			break;
+		}
+		const PWCHAR pwPtr = p1 + 1;
+		RtlCopyMemory(p2, pwPtr, inputBufferLength);
+		inputBufferLength >>= 1;
+		for (i = 0; i < inputBufferLength; i++)
+		{
+			if (p2[i] == L'|')
+				p2[i] = 0;
+		}
+		switch (dwflag)
+		{
+			case 1:
+			{
+				p1 = g_reg_ipsProcNameWhiteList;
+				g_reg_ipsProcNameWhiteList = p2;
+			}
+			break;
+			case 2:
+			{
+				p1 = g_reg_ipsProcNameBlackList;
+				g_reg_ipsProcNameBlackList = p2;
+			}
+			break;
+			case 3:
+			{
+				p1 = g_reg_ipsDirectNameWhiteList;
+				g_reg_ipsDirectNameWhiteList = p2;
+			}
+			break;
+			case 4:
+			{
+				p1 = g_reg_ipsDirectNameBlackList;
+				g_reg_ipsDirectNameBlackList = p2;
+			}
+			break;
+		}
+		if (p1)
+		{
+			ExFreePool(p1);
+		}
+	} while (FALSE);
+
 	irp->IoStatus.Status = status;
 	irp->IoStatus.Information = 0;
 	IoCompleteRequest(irp, IO_NO_INCREMENT);

@@ -100,10 +100,10 @@ FsFilterAntsDrPostFileHide(
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
       // file create
-      { IRP_MJ_CREATE,
-        0,
-        FsFilter1PreOperation,
-        NULL/*FsFilter1PostOperation*/},
+      //{ IRP_MJ_CREATE,
+      //  0,
+      //  FsFilter1PreOperation,
+      //  NULL/*FsFilter1PostOperation*/},
 
       //// hide file
       //{ IRP_MJ_DIRECTORY_CONTROL,

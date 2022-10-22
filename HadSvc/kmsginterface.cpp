@@ -823,7 +823,38 @@ void kMsgInterface::DriverInit(const int flag)
         std::string whiteName, blackName, whiteDirectory, blackDirectory;
         if (ConfigDirectoryJsonRuleParsing(whiteName, blackName, whiteDirectory, blackDirectory))
         {
+            whiteName.append("|"); blackName.append("|"); whiteDirectory.append("|"); blackDirectory.append("|");
+            const std::wstring IpsDirWhiterName = Str2WStr(whiteName);
+            const std::wstring IpsDirBlackName = Str2WStr(blackName);
+            const std::wstring IpsDirWhiteDirPath = Str2WStr(whiteDirectory);
+            const std::wstring IpsDirBlackDirPat = Str2WStr(blackDirectory);
 
+            if (!IpsDirWhiterName.empty() && !IpsDirWhiteDirPath.empty())
+            {
+                OutputDebugString((L"[HadesSvc] devctrl_SetIpswhiteNameList: " + IpsDirWhiterName).c_str());
+                status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiterName.c_str());
+                OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
+
+                OutputDebugString((L"[HadesSvc] devctrl_SetIpswhiteDirectoryList: " + IpsDirWhiteDirPath).c_str());
+                status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiteDirPath.c_str());
+                OutputDebugString(L"[HadesSvc] devctrl_SetIpswhiteDirectoryList Success");
+
+            }
+            if (!IpsDirBlackName.empty() && !IpsDirBlackDirPat.empty())
+            {
+                OutputDebugString((L"[HadesSvc] devctrl_SetIpsblackNameList: " + IpsDirBlackName).c_str());
+                status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackName.c_str());
+                OutputDebugString(L"[HadesSvc] devctrl_SetIpsblackNameList Success");
+
+                OutputDebugString((L"[HadesSvc] devctrl_SetIpsblackDirectoryList: " + IpsDirBlackDirPat).c_str());
+                status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackDirPat.c_str());
+                OutputDebugString(L"[HadesSvc] devctrl_SetIpsblackDirectoryList Success");
+            }
+
+            if (status)
+                OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsDirectpry Success");
+            else
+                OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsDirectpry Fauiler");
         }
 
         // Enable Event --> 内核提取出来数据以后处理类
@@ -953,6 +984,46 @@ bool kMsgInterface::ReLoadRegisterRuleConfig()
         }
     }
     return true;
+}
+bool kMsgInterface::ReLoadDirectoryRuleConfig()
+{
+    std::string whiteName, blackName, whiteDirectory, blackDirectory;
+    if (ConfigDirectoryJsonRuleParsing(whiteName, blackName, whiteDirectory, blackDirectory))
+    {
+        whiteName.append("|"); blackName.append("|"); whiteDirectory.append("|"); blackDirectory.append("|");
+        const std::wstring IpsDirWhiterName = Str2WStr(whiteName);
+        const std::wstring IpsDirBlackName = Str2WStr(blackName);
+        const std::wstring IpsDirWhiteDirPath = Str2WStr(whiteDirectory);
+        const std::wstring IpsDirBlackDirPat = Str2WStr(blackDirectory);
+
+        int status = 0;
+        if (!IpsDirWhiterName.empty() && !IpsDirWhiteDirPath.empty())
+        {
+            OutputDebugString((L"[HadesSvc] devctrl_SetIpswhiteNameList: " + IpsDirWhiterName).c_str());
+            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiterName.c_str());
+            OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
+
+            OutputDebugString((L"[HadesSvc] devctrl_SetIpswhiteDirectoryList: " + IpsDirWhiteDirPath).c_str());
+            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiteDirPath.c_str());
+            OutputDebugString(L"[HadesSvc] devctrl_SetIpswhiteDirectoryList Success");
+
+        }
+        if (!IpsDirBlackName.empty() && !IpsDirBlackDirPat.empty())
+        {
+            OutputDebugString((L"[HadesSvc] devctrl_SetIpsblackNameList: " + IpsDirBlackName).c_str());
+            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackName.c_str());
+            OutputDebugString(L"[HadesSvc] devctrl_SetIpsblackNameList Success");
+
+            OutputDebugString((L"[HadesSvc] devctrl_SetIpsblackDirectoryList: " + IpsDirBlackDirPat).c_str());
+            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackDirPat.c_str());
+            OutputDebugString(L"[HadesSvc] devctrl_SetIpsblackDirectoryList Success");
+        }
+
+        if (status)
+            OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsDirectpry Success");
+        else
+            OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsDirectpry Fauiler");
+    }
 }
 
 void kMsgInterface::kMsg_Init() {

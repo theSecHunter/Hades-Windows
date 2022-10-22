@@ -55,17 +55,15 @@ NTSTATUS rRegister_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
 	ULONG inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
 	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
 	NTSTATUS status = STATUS_SUCCESS;
-
-	rRegister_IpsClean();
 	do
 	{
-		PWCHAR p1, p2;
-		ULONG i;
 		if (NULL == inputBuffer || inputBufferLength < sizeof(WCHAR))
 		{
 			status = STATUS_INVALID_PARAMETER;
 			break;
 		}
+		rRegister_IpsClean();
+		PWCHAR p1, p2; ULONG i;
 		p1 = (PWCHAR)inputBuffer;
 		p2 = ExAllocatePoolWithTag(NonPagedPool, inputBufferLength, MEM_TAG_DK);
 		if (NULL == p2)
