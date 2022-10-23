@@ -17,10 +17,10 @@ void rDirectory_IpsCleanEx(const int flag)
 {
 	KLOCK_QUEUE_HANDLE lh;
 	KeAcquireInStackQueuedSpinLock(&g_reg_ipsNameListlock, &lh);
-	if ((flag == 1) && g_reg_ipsDirectNameBlackList)
+	if ((flag == 1) && g_reg_ipsProcNameWhiteList )
 	{
-		ExFreePool(g_reg_ipsDirectNameBlackList);
-		g_reg_ipsDirectNameBlackList = NULL;
+		ExFreePool(g_reg_ipsProcNameWhiteList);
+		g_reg_ipsProcNameWhiteList = NULL;
 	}
 	else if ((flag == 2) && g_reg_ipsDirectNameWhiteList)
 	{
@@ -32,10 +32,10 @@ void rDirectory_IpsCleanEx(const int flag)
 		ExFreePool(g_reg_ipsProcNameBlackList);
 		g_reg_ipsProcNameBlackList = NULL;
 	}
-	else if ((flag == 4) && g_reg_ipsProcNameWhiteList)
+	else if ((flag == 4) && g_reg_ipsDirectNameBlackList)
 	{
-		ExFreePool(g_reg_ipsProcNameWhiteList);
-		g_reg_ipsProcNameWhiteList = NULL;
+		ExFreePool(g_reg_ipsDirectNameBlackList);
+		g_reg_ipsDirectNameBlackList = NULL;
 	}
 	KeReleaseInStackQueuedSpinLock(&lh);
 }
@@ -46,12 +46,16 @@ void rDirectory_IpsClean()
 	rDirectory_IpsCleanEx(3);
 	rDirectory_IpsCleanEx(4);
 }
-BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, const int mods)
+BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, _In_ const BOOLEAN bModswhite, _In_ const BOOLEAN bModsblack, _Out_ BOOLEAN* bDProNameModsWhite, _Out_ BOOLEAN* bProNameModsBlack)
 {
+	if (!bModswhite && !bModsblack)
+		return FALSE;
+	// bModswhite && bModsblack都为真的情况下，意味着黑白名单配置了目录相同，但进程名可能不同。
+	// 进程名匹配环节只可能白或者黑，进程名又白又黑规则配置冲突，以白为准。
 	BOOLEAN bRet = FALSE;
 	KLOCK_QUEUE_HANDLE lh;
 	sl_lock(&g_reg_ipsNameListlock, &lh);
-	if ((mods == 1) && g_reg_ipsProcNameWhiteList)
+	if (bModswhite && g_reg_ipsProcNameWhiteList)
 	{
 		PWCHAR pName = wcsrchr(path, L'\\');
 		if (pName)
@@ -62,6 +66,7 @@ BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, const int mods)
 			{
 				if (wcscmp(pIpsName, pName) == 0)
 				{
+					bDProNameModsWhite = TRUE;
 					bRet = TRUE;
 					break;
 				}
@@ -69,7 +74,7 @@ BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, const int mods)
 			}
 		}
 	}
-	if ((mods == 2) && g_reg_ipsProcNameBlackList)
+	if (!bDProNameModsWhite && bModsblack && g_reg_ipsProcNameBlackList)
 	{
 		PWCHAR pName = wcsrchr(path, L'\\');
 		if (pName)
@@ -80,6 +85,7 @@ BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, const int mods)
 			{
 				if (wcscmp(pIpsName, pName) == 0)
 				{
+					bProNameModsBlack = TRUE;
 					bRet = TRUE;
 					break;
 				}
@@ -90,28 +96,25 @@ BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, const int mods)
 	sl_unlock(&lh);
 	return bRet;
 }
-BOOLEAN rDirectory_IsIpsDirectNameInList(_In_ const PWCHAR FileDirectPath, _Out_ int* mods)
+BOOLEAN rDirectory_IsIpsDirectNameInList(_In_ const PWCHAR FileDirectPath, BOOLEAN* bModswhite, BOOLEAN* bModsblack)
 {
-	if (!mods)
-		return _Success_(FALSE);
+	if (!bModswhite || !bModsblack)
+		return FALSE;
 
 	// Directory
-	BOOLEAN bRet = FALSE;
-	KLOCK_QUEUE_HANDLE lh;
+	BOOLEAN bRet = FALSE; KLOCK_QUEUE_HANDLE lh;
 	sl_lock(&g_reg_ipsNameListlock, &lh);
-	if (g_reg_ipsDirectNameBlackList)
+	if (g_reg_ipsDirectNameWhiteList)
 	{
-		PWCHAR pName = wcsrchr(FileDirectPath, L'\\');
-		pName[0] = '\x0';
-		pName[1] = '\x0';
-		if (pName)
+		if (FileDirectPath)
 		{
-			PWCHAR pIpsName = g_reg_ipsDirectNameBlackList;
+			PWCHAR pIpsName = g_reg_ipsDirectNameWhiteList;
 			while (*pIpsName)
 			{
-				if (wcscmp(pIpsName, pName) == 0)
+				if (wcscmp(pIpsName, FileDirectPath) == 0)
 				{
-					*mods = 2;
+					//DbgPrint("[Hades] MinifilterIps WhiteMods Hit Success: %ws \n", FileDirectPath);
+					*bModswhite = TRUE;
 					bRet = TRUE;
 					break;
 				}
@@ -119,19 +122,17 @@ BOOLEAN rDirectory_IsIpsDirectNameInList(_In_ const PWCHAR FileDirectPath, _Out_
 			}
 		}
 	}
-	if (!bRet && g_reg_ipsDirectNameWhiteList)
+	if (g_reg_ipsDirectNameBlackList)
 	{
-		PWCHAR pName = wcsrchr(FileDirectPath, L'\\');
-		pName[0] = '\x0';
-		pName[1] = '\x0';
-		if (pName)
+		if (FileDirectPath)
 		{
-			PWCHAR pIpsName = g_reg_ipsDirectNameWhiteList;
+			PWCHAR pIpsName = g_reg_ipsDirectNameBlackList;
 			while (*pIpsName)
 			{
-				if (wcscmp(pIpsName, pName) == 0)
+				if (wcscmp(pIpsName, FileDirectPath) == 0)
 				{
-					*mods = 1;
+					//DbgPrint("[Hades] MinifilterIps BlackMods Hit Success: %ws \n", FileDirectPath);
+					*bModsblack = TRUE;
 					bRet = TRUE;
 					break;
 				}
@@ -140,7 +141,7 @@ BOOLEAN rDirectory_IsIpsDirectNameInList(_In_ const PWCHAR FileDirectPath, _Out_
 		}
 	}
 	sl_unlock(&lh);
-	return _Success_(bRet);
+	return bRet;
 }
 NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
@@ -183,14 +184,15 @@ NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 			break;
 			case 2:
 			{
-				p1 = g_reg_ipsProcNameBlackList;
-				g_reg_ipsProcNameBlackList = p2;
+				p1 = g_reg_ipsDirectNameWhiteList;
+				g_reg_ipsDirectNameWhiteList = p2;
+
 			}
 			break;
 			case 3:
 			{
-				p1 = g_reg_ipsDirectNameWhiteList;
-				g_reg_ipsDirectNameWhiteList = p2;
+				p1 = g_reg_ipsProcNameBlackList;
+				g_reg_ipsProcNameBlackList = p2;
 			}
 			break;
 			case 4:

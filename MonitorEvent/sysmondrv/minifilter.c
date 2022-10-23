@@ -100,12 +100,12 @@ FsFilterAntsDrPostFileHide(
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
       // file create
-      //{ IRP_MJ_CREATE,
-      //  0,
-      //  FsFilter1PreOperation,
-      //  NULL/*FsFilter1PostOperation*/},
+      { IRP_MJ_CREATE,
+        0,
+        FsFilter1PreOperation,
+        NULL/*FsFilter1PostOperation*/},
 
-      //// hide file
+      // hide file
       //{ IRP_MJ_DIRECTORY_CONTROL,
       //  0,
       //  FsFilterAntsDrPostFileHide,
@@ -720,59 +720,68 @@ FsFilter1PreOperation(
         if (!NT_SUCCESS(status))
             return FLT_PREOP_SUCCESS_NO_CALLBACK;
         FltReleaseFileNameInformation(Data);
-        DbgBreakPoint();
         // Format FileInfo
-        // FltParseFileNameInformation(nameInfo);
+        FltParseFileNameInformation(nameInfo);
+        if (!nameInfo->Volume.Length || (nameInfo->ParentDir.Length <= 2))
+            return FLT_PREOP_SUCCESS_NO_CALLBACK;
+
+        // 2. find directory to rulePath
+        UNICODE_STRING swUnicodeDirectPath; WCHAR swUnDirectPath[MAX_PATH];
+        RtlInitEmptyUnicodeString(&swUnicodeDirectPath, swUnDirectPath, MAX_PATH * sizeof(WCHAR));
+        RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->Volume);
+        RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->ParentDir);
+        if (swUnicodeDirectPath.Length > MAX_PATH)
+            return FLT_PREOP_SUCCESS_NO_CALLBACK;
         WCHAR swDirectPath[MAX_PATH] = { 0, };
-        RtlCopyMemory(swDirectPath, nameInfo->Name.Buffer, nameInfo->Name.Length);
-        if (!wcslen(swDirectPath))
+        RtlCopyMemory(swDirectPath, swUnicodeDirectPath.Buffer, swUnicodeDirectPath.Length);
+        BOOLEAN bWhiteMod = FALSE; BOOLEAN bBlackMod = FALSE;
+        const BOOLEAN bStatus = rDirectory_IsIpsDirectNameInList(swDirectPath, &bWhiteMod, &bBlackMod);
+        if (bStatus == FALSE || (!bWhiteMod && !bBlackMod))
             return FLT_PREOP_SUCCESS_NO_CALLBACK;
-        int iRuleMods = 0;
-        const BOOLEAN bStatus = rDirectory_IsIpsDirectNameInList(swDirectPath, &iRuleMods);
-        if (!iRuleMods || !bStatus)
-            return FLT_PREOP_SUCCESS_NO_CALLBACK;
-        
-        // 2. query processid to processpath
+
+        // 3. query processid to processpath
         WCHAR path[260 * 2] = { 0 };
         //const ULONG pid = FltGetRequestorProcessId(Data);
         const ULONG processid = (int)PsGetCurrentProcessId();
         if (!QueryProcessNamePath((DWORD)processid, path, sizeof(path)))
             return FLT_PREOP_SUCCESS_NO_CALLBACK;
-        
         do {
-            // 3. find processpath to ruleName
-            const BOOLEAN QueryIpsProcessStatus = rDirectory_IsIpsProcessNameInList(path, iRuleMods);
+            // 4. find processpath to ruleName
+            BOOLEAN bProNameWhiteMod = FALSE; BOOLEAN bProNameBlackMod = FALSE;
+            const BOOLEAN QueryIpsProcessStatus = rDirectory_IsIpsProcessNameInList(path, bWhiteMod, bBlackMod, &bProNameWhiteMod, &bProNameBlackMod);
             const unsigned char IRP_MJ_CODE = Data->Iopb->MajorFunction;
+            //DbgPrint("[Hades] Minifilter IRP_MJ_CODE: %d bWhite: %d bBlack: %d bDirWhite: %d bDirBlack: %d QuInfo: %d\n", IRP_MJ_CODE, bWhiteMod, bBlackMod, bProNameWhiteMod, bProNameBlackMod, QueryIpsProcessStatus);
             if (IRP_MJ_CODE == IRP_MJ_CREATE)
             {
-                BOOLEAN bhitOpear = FALSE;
+                //BOOLEAN bhitOpear = FALSE;
                 // create file
-                if (((Data->Iopb->Parameters.Create.Options >> 24) & 0x000000ff) == FILE_CREATE ||
-                    ((Data->Iopb->Parameters.Create.Options >> 24) & 0x000000ff) == FILE_OPEN_IF ||
-                    ((Data->Iopb->Parameters.Create.Options >> 24) & 0x000000ff) == FILE_OVERWRITE_IF)
-                {
-                    bhitOpear = TRUE;
-                }
+                //if (((Data->Iopb->Parameters.Create.Options >> 24) & 0x000000ff) == FILE_CREATE ||
+                //    ((Data->Iopb->Parameters.Create.Options >> 24) & 0x000000ff) == FILE_OPEN_IF ||
+                //    ((Data->Iopb->Parameters.Create.Options >> 24) & 0x000000ff) == FILE_OVERWRITE_IF)
+                //{
+                //    bhitOpear = TRUE;
+                //}
 
                 // move into folder
-                if (Data->Iopb->OperationFlags == '\x05')
-                    bhitOpear = TRUE;
+                //if (Data->Iopb->OperationFlags == '\x05')
+                //    bhitOpear = TRUE;
 
+                // bProNameWhiteMod为TURE，bProNameBlackMod一定FALSE，反之。
                 // 白名单模式: 进程不在白名单 - 不允许访问
-                if (bhitOpear && (iRuleMods == 1) && !QueryIpsProcessStatus)
+                if (bWhiteMod && !bProNameWhiteMod)
                     break;
                 // 黑名单模式: 进程在黑名单 - 不允许访问
-                else if (bhitOpear && (iRuleMods == 2) && QueryIpsProcessStatus)
+                else if (bBlackMod && bProNameBlackMod) 
                     break;
             }
             else if (IRP_MJ_CODE == IRP_MJ_SET_INFORMATION)
             {
                 // delete file
-                if (iRuleMods == 2 && Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformation)
+                if (bBlackMod && Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformation)
                     break;
 
                 // rename file
-                if (iRuleMods == 2 && Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileRenameInformation)
+                if (bBlackMod && Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileRenameInformation)
                     break;
             }
             return FLT_PREOP_SUCCESS_NO_CALLBACK;

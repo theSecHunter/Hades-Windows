@@ -823,7 +823,7 @@ void kMsgInterface::DriverInit(const int flag)
         std::string whiteName, blackName, whiteDirectory, blackDirectory;
         if (ConfigDirectoryJsonRuleParsing(whiteName, blackName, whiteDirectory, blackDirectory))
         {
-            whiteName.append("|"); blackName.append("|"); whiteDirectory.append("|"); blackDirectory.append("|");
+            whiteName.append("||"); blackName.append("||"); whiteDirectory.append("|"); blackDirectory.append("|");
             const std::wstring IpsDirWhiterName = Str2WStr(whiteName);
             const std::wstring IpsDirBlackName = Str2WStr(blackName);
             const std::wstring IpsDirWhiteDirPath = Str2WStr(whiteDirectory);
