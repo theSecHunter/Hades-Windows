@@ -838,7 +838,6 @@ void kMsgInterface::DriverInit(const int flag)
                 OutputDebugString((L"[HadesSvc] devctrl_SetIpswhiteDirectoryList: " + IpsDirWhiteDirPath).c_str());
                 status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiteDirPath.c_str());
                 OutputDebugString(L"[HadesSvc] devctrl_SetIpswhiteDirectoryList Success");
-
             }
             if (!IpsDirBlackName.empty() && !IpsDirBlackDirPat.empty())
             {
@@ -852,9 +851,9 @@ void kMsgInterface::DriverInit(const int flag)
             }
 
             if (status)
-                OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsDirectpry Success");
+                OutputDebugString(L"[HadesSvc] Directory devctrl_SetIpsDirectpry Success");
             else
-                OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsDirectpry Fauiler");
+                OutputDebugString(L"[HadesSvc] Directory devctrl_SetIpsDirectpry Fauiler");
         }
 
         // Enable Event --> 内核提取出来数据以后处理类
@@ -1024,6 +1023,7 @@ bool kMsgInterface::ReLoadDirectoryRuleConfig()
         else
             OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsDirectpry Fauiler");
     }
+    return true;
 }
 
 void kMsgInterface::kMsg_Init() {

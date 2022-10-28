@@ -118,10 +118,10 @@ CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
       //  NULL },
 
       //// delete rename
-      //{ IRP_MJ_SET_INFORMATION,
-      //  0,
-      //  FsFilter1PreOperation,
-      //  NULL },
+      { IRP_MJ_SET_INFORMATION,
+        0,
+        FsFilter1PreOperation,
+        NULL },
 
 
 #if 0 // TODO - List all of the requests to filter.
@@ -714,6 +714,7 @@ FsFilter1PreOperation(
     const KIRQL irql = KeGetCurrentIrql();
     if (irql == PASSIVE_LEVEL)
     {
+        const int iRenameInfotamtion = Data->Iopb->Parameters.SetFileInformation.FileInformationClass;
         // 1. find Rule Mods directoryPath 
         PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
         NTSTATUS status = FltGetFileNameInformation(Data, FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT, &nameInfo);
@@ -722,14 +723,26 @@ FsFilter1PreOperation(
         FltReleaseFileNameInformation(Data);
         // Format FileInfo
         FltParseFileNameInformation(nameInfo);
-        if (!nameInfo->Volume.Length || (nameInfo->ParentDir.Length <= 2))
-            return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        if (iRenameInfotamtion != FileRenameInformation)
+        {// 修改目录操作放行
+            if (!nameInfo->Volume.Length || (nameInfo->ParentDir.Length <= 2))
+                return FLT_PREOP_SUCCESS_NO_CALLBACK;
+        }
 
         // 2. find directory to rulePath
         UNICODE_STRING swUnicodeDirectPath; WCHAR swUnDirectPath[MAX_PATH];
         RtlInitEmptyUnicodeString(&swUnicodeDirectPath, swUnDirectPath, MAX_PATH * sizeof(WCHAR));
-        RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->Volume);
-        RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->ParentDir);
+        if (iRenameInfotamtion != FileRenameInformation)
+        {
+            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->Volume);
+            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->ParentDir);
+        }
+        else
+        {
+            // 目录字节拷贝Name
+            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->Name);
+            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->ParentDir);
+        }
         if (swUnicodeDirectPath.Length > MAX_PATH)
             return FLT_PREOP_SUCCESS_NO_CALLBACK;
         WCHAR swDirectPath[MAX_PATH] = { 0, };
@@ -761,7 +774,8 @@ FsFilter1PreOperation(
                 //{
                 //    bhitOpear = TRUE;
                 //}
-
+                // FILE_DELETE_ON_CLOSE
+                
                 // move into folder
                 //if (Data->Iopb->OperationFlags == '\x05')
                 //    bhitOpear = TRUE;
@@ -776,12 +790,23 @@ FsFilter1PreOperation(
             }
             else if (IRP_MJ_CODE == IRP_MJ_SET_INFORMATION)
             {
-                // delete file
-                if (bBlackMod && Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileDispositionInformation)
-                    break;
-
-                // rename file
-                if (bBlackMod && Data->Iopb->Parameters.SetFileInformation.FileInformationClass == FileRenameInformation)
+                // 这里就变了 FileRenameInformation --> FileNameInformation
+                const auto Infotamtions = Data->Iopb->Parameters.SetFileInformation.FileInformationClass;
+                BOOLEAN bTure = FALSE;
+                switch (Infotamtions)
+                {
+                case FileRenameInformation:
+                case FileNameInformation:   // IRP_MJ_SET_INFORMATION rename触发NameInfo
+                case FileDispositionInformation:
+                {
+                    if (bWhiteMod && !bProNameWhiteMod)
+                        bTure = TRUE;
+                    else if (bBlackMod && bProNameBlackMod)
+                        bTure = TRUE;
+                }
+                break;
+                }
+                if (bTure)
                     break;
             }
             return FLT_PREOP_SUCCESS_NO_CALLBACK;
@@ -822,92 +847,212 @@ FsFilterAntsDrPostFileHide(
     _In_ FLT_POST_OPERATION_FLAGS Flags
 )
 {
-    PWCHAR HideFileName = L"HideTest";
 
-    DbgPrint("Entry function hide\n");
+    DbgPrint("Entry function Hide\n");
     UNREFERENCED_PARAMETER(Data);
     UNREFERENCED_PARAMETER(FltObjects);
     UNREFERENCED_PARAMETER(CompletionContext);
     UNREFERENCED_PARAMETER(Flags);
 
-    PVOID Bufferptr = NULL;
+    if (!NT_SUCCESS(Data->IoStatus.Status) || (STATUS_REPARSE == Data->IoStatus.Status))
+        return FLT_POSTOP_FINISHED_PROCESSING;
 
     if (FlagOn(Flags, FLTFL_POST_OPERATION_DRAINING))
-    {
         return FLT_POSTOP_FINISHED_PROCESSING;
-    }
+
+    if (!g_fsflt_ips_monitorprocess)
+        return FLT_POSTOP_FINISHED_PROCESSING;
 
     if (Data->Iopb->MinorFunction == IRP_MN_QUERY_DIRECTORY &&
-        (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.FileInformationClass == FileBothDirectoryInformation) &&
+        (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.FileInformationClass == FileRenameInformation) &&
         Data->Iopb->Parameters.DirectoryControl.QueryDirectory.Length > 0 &&
         NT_SUCCESS(Data->IoStatus.Status))
     {
-        if (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress != NULL)
+        const KIRQL irql = KeGetCurrentIrql();
+        if (irql == PASSIVE_LEVEL)
         {
-
-            Bufferptr = MmGetSystemAddressForMdl(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress,
-                NormalPagePriority);
-        }
-        else
-        {
-            Bufferptr = Data->Iopb->Parameters.DirectoryControl.QueryDirectory.DirectoryBuffer;
-        }
-
-        if (Bufferptr == NULL)
-            return FLT_POSTOP_FINISHED_PROCESSING;
-
-        PFILE_BOTH_DIR_INFORMATION Currentfileptr = (PFILE_BOTH_DIR_INFORMATION)Bufferptr;
-        PFILE_BOTH_DIR_INFORMATION prefileptr = Currentfileptr;
-        PFILE_BOTH_DIR_INFORMATION nextfileptr = 0;
-        ULONG nextOffset = 0;
-        if (Currentfileptr == NULL)
-            return FLT_POSTOP_FINISHED_PROCESSING;
-
-        int nModifyflag = 0;
-        int removedAllEntries = 1;
-        do {
-            nextOffset = Currentfileptr->NextEntryOffset;
-
-            nextfileptr = (PFILE_BOTH_DIR_INFORMATION)((PCHAR)(Currentfileptr)+nextOffset);
-
-            if ((prefileptr == Currentfileptr) &&
-                (_wcsnicmp(Currentfileptr->FileName, HideFileName, wcslen(HideFileName)) == 0) &&
-                (Currentfileptr->FileNameLength == 2)
-                )
+            DbgBreakPoint();
+            PVOID Bufferptr = NULL;
+            if (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress != NULL)
             {
-                RtlCopyMemory(Currentfileptr->FileName, L".", 2);
-                Currentfileptr->FileNameLength = 0;
-                FltSetCallbackDataDirty(Data);
+
+                Bufferptr = MmGetSystemAddressForMdl(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress, NormalPagePriority);
+            }
+            else
+            {
+                Bufferptr = Data->Iopb->Parameters.DirectoryControl.QueryDirectory.DirectoryBuffer;
+            }
+
+            if (Bufferptr == NULL)
                 return FLT_POSTOP_FINISHED_PROCESSING;
-            }
 
-            if (_wcsnicmp(Currentfileptr->FileName, HideFileName, wcslen(HideFileName)) == 0 &&
-                (Currentfileptr->FileNameLength == 2)
-                )
-            {
-                if (nextOffset == 0)
-                    prefileptr->NextEntryOffset = 0;
-                else
-                    prefileptr->NextEntryOffset = (ULONG)((PCHAR)Currentfileptr - (PCHAR)prefileptr + nextOffset);
-                nModifyflag = 1;
-            }
-            else
-            {
-                removedAllEntries = 0;
-                prefileptr = Currentfileptr;
-            }
-            Currentfileptr = nextfileptr;
+            PFILE_BOTH_DIR_INFORMATION Currentfileptr = (PFILE_BOTH_DIR_INFORMATION)Bufferptr;
+            PFILE_BOTH_DIR_INFORMATION prefileptr = Currentfileptr;
+            PFILE_BOTH_DIR_INFORMATION nextfileptr = 0;
+            ULONG nextOffset = 0;
+            if (Currentfileptr == NULL)
+                return FLT_POSTOP_FINISHED_PROCESSING;
 
-        } while (nextOffset != 0);
+            int nModifyflag = 0;
+            int removedAllEntries = 1;
+            //do {
+            //    nextOffset = Currentfileptr->NextEntryOffset;
 
-        if (nModifyflag)
-        {
-            if (removedAllEntries)
-                Data->IoStatus.Status = STATUS_NO_MORE_ENTRIES;
-            else
-                FltSetCallbackDataDirty(Data);
+            //    nextfileptr = (PFILE_BOTH_DIR_INFORMATION)((PCHAR)(Currentfileptr)+nextOffset);
+
+            //    if ((prefileptr == Currentfileptr) &&
+            //        (_wcsnicmp(Currentfileptr->FileName, HideFileName, wcslen(HideFileName)) == 0) &&
+            //        (Currentfileptr->FileNameLength == 2)
+            //        )
+            //    {
+            //        RtlCopyMemory(Currentfileptr->FileName, L".", 2);
+            //        Currentfileptr->FileNameLength = 0;
+            //        FltSetCallbackDataDirty(Data);
+            //        return FLT_POSTOP_FINISHED_PROCESSING;
+            //    }
+
+            //    if (_wcsnicmp(Currentfileptr->FileName, HideFileName, wcslen(HideFileName)) == 0 &&
+            //        (Currentfileptr->FileNameLength == 2)
+            //        )
+            //    {
+            //        if (nextOffset == 0)
+            //            prefileptr->NextEntryOffset = 0;
+            //        else
+            //            prefileptr->NextEntryOffset = (ULONG)((PCHAR)Currentfileptr - (PCHAR)prefileptr + nextOffset);
+            //        nModifyflag = 1;
+            //    }
+            //    else
+            //    {
+            //        removedAllEntries = 0;
+            //        prefileptr = Currentfileptr;
+            //    }
+            //    Currentfileptr = nextfileptr;
+
+            //} while (nextOffset != 0);
+
+            // 2. find directory to rulePath
+            UNICODE_STRING swUnicodeDirectPath; WCHAR swUnDirectPath[MAX_PATH];
+            RtlInitEmptyUnicodeString(&swUnicodeDirectPath, swUnDirectPath, MAX_PATH * sizeof(WCHAR));
+            //RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->Volume);
+            //RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->ParentDir);
+            if (swUnicodeDirectPath.Length > MAX_PATH)
+                return FLT_POSTOP_FINISHED_PROCESSING;
+            WCHAR swDirectPath[MAX_PATH] = { 0, };
+            RtlCopyMemory(swDirectPath, swUnicodeDirectPath.Buffer, swUnicodeDirectPath.Length);
+            BOOLEAN bWhiteMod = FALSE; BOOLEAN bBlackMod = FALSE;
+            const BOOLEAN bStatus = rDirectory_IsIpsDirectNameInList(swDirectPath, &bWhiteMod, &bBlackMod);
+            if (bStatus == FALSE || (!bWhiteMod && !bBlackMod))
+                return FLT_POSTOP_FINISHED_PROCESSING;
+
+            // 3. query processid to processpath
+            WCHAR path[260 * 2] = { 0 };
+            //const ULONG pid = FltGetRequestorProcessId(Data);
+            const ULONG processid = (int)PsGetCurrentProcessId();
+            if (!QueryProcessNamePath((DWORD)processid, path, sizeof(path)))
+                return FLT_POSTOP_FINISHED_PROCESSING;
+            do {
+                // 4. find processpath to ruleName
+                BOOLEAN bProNameWhiteMod = FALSE; BOOLEAN bProNameBlackMod = FALSE;
+                const BOOLEAN QueryIpsProcessStatus = rDirectory_IsIpsProcessNameInList(path, bWhiteMod, bBlackMod, &bProNameWhiteMod, &bProNameBlackMod);
+                const unsigned char IRP_MJ_CODE = Data->Iopb->MajorFunction;
+                const auto Infotamtions = Data->Iopb->Parameters.SetFileInformation.FileInformationClass;
+                BOOLEAN bTure = FALSE;
+                switch (Infotamtions)
+                {
+                case FileDispositionInformation:
+                case FileRenameInformation:
+                {
+                    if (bWhiteMod && !bProNameWhiteMod)
+                        bTure = TRUE;
+                    else if (bBlackMod && bProNameBlackMod)
+                        bTure = TRUE;
+                }
+                break;
+                }
+                if (bTure)
+                    break;
+                return FLT_POSTOP_FINISHED_PROCESSING;
+            } while (FALSE);
+
+            FltSetCallbackDataDirty(Data);
+            return FLT_POSTOP_FINISHED_PROCESSING;
         }
     }
+
+    //PVOID Bufferptr = NULL;
+    //PWCHAR HideFileName = L"HideTest";
+    //if (Data->Iopb->MinorFunction == IRP_MN_QUERY_DIRECTORY &&
+    //    (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.FileInformationClass == FileBothDirectoryInformation) &&
+    //    Data->Iopb->Parameters.DirectoryControl.QueryDirectory.Length > 0 &&
+    //    NT_SUCCESS(Data->IoStatus.Status))
+    //{
+    //    if (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress != NULL)
+    //    {
+
+    //        Bufferptr = MmGetSystemAddressForMdl(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress,
+    //            NormalPagePriority);
+    //    }
+    //    else
+    //    {
+    //        Bufferptr = Data->Iopb->Parameters.DirectoryControl.QueryDirectory.DirectoryBuffer;
+    //    }
+
+    //    if (Bufferptr == NULL)
+    //        return FLT_POSTOP_FINISHED_PROCESSING;
+
+    //    PFILE_BOTH_DIR_INFORMATION Currentfileptr = (PFILE_BOTH_DIR_INFORMATION)Bufferptr;
+    //    PFILE_BOTH_DIR_INFORMATION prefileptr = Currentfileptr;
+    //    PFILE_BOTH_DIR_INFORMATION nextfileptr = 0;
+    //    ULONG nextOffset = 0;
+    //    if (Currentfileptr == NULL)
+    //        return FLT_POSTOP_FINISHED_PROCESSING;
+
+    //    int nModifyflag = 0;
+    //    int removedAllEntries = 1;
+    //    do {
+    //        nextOffset = Currentfileptr->NextEntryOffset;
+
+    //        nextfileptr = (PFILE_BOTH_DIR_INFORMATION)((PCHAR)(Currentfileptr)+nextOffset);
+
+    //        if ((prefileptr == Currentfileptr) &&
+    //            (_wcsnicmp(Currentfileptr->FileName, HideFileName, wcslen(HideFileName)) == 0) &&
+    //            (Currentfileptr->FileNameLength == 2)
+    //            )
+    //        {
+    //            RtlCopyMemory(Currentfileptr->FileName, L".", 2);
+    //            Currentfileptr->FileNameLength = 0;
+    //            FltSetCallbackDataDirty(Data);
+    //            return FLT_POSTOP_FINISHED_PROCESSING;
+    //        }
+
+    //        if (_wcsnicmp(Currentfileptr->FileName, HideFileName, wcslen(HideFileName)) == 0 &&
+    //            (Currentfileptr->FileNameLength == 2)
+    //            )
+    //        {
+    //            if (nextOffset == 0)
+    //                prefileptr->NextEntryOffset = 0;
+    //            else
+    //                prefileptr->NextEntryOffset = (ULONG)((PCHAR)Currentfileptr - (PCHAR)prefileptr + nextOffset);
+    //            nModifyflag = 1;
+    //        }
+    //        else
+    //        {
+    //            removedAllEntries = 0;
+    //            prefileptr = Currentfileptr;
+    //        }
+    //        Currentfileptr = nextfileptr;
+
+    //    } while (nextOffset != 0);
+
+    //    if (nModifyflag)
+    //    {
+    //        if (removedAllEntries)
+    //            Data->IoStatus.Status = STATUS_NO_MORE_ENTRIES;
+    //        else
+    //            FltSetCallbackDataDirty(Data);
+    //    }
+    //}
+
     return FLT_POSTOP_FINISHED_PROCESSING;
 }
 
