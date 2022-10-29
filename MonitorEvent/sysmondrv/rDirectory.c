@@ -46,7 +46,7 @@ void rDirectory_IpsClean()
 	rDirectory_IpsCleanEx(3);
 	rDirectory_IpsCleanEx(4);
 }
-BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, _In_ const BOOLEAN bModswhite, _In_ const BOOLEAN bModsblack, _Out_ BOOLEAN* bDProNameModsWhite, _Out_ BOOLEAN* bProNameModsBlack)
+BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, _In_ const BOOLEAN bModswhite, _In_ const BOOLEAN bModsblack, BOOLEAN* const bDProNameModsWhite, BOOLEAN* const bProNameModsBlack)
 {
 	if (!bModswhite && !bModsblack)
 		return FALSE;
@@ -66,7 +66,7 @@ BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, _In_ const BOOLEAN 
 			{
 				if (wcscmp(pIpsName, pName) == 0)
 				{
-					bDProNameModsWhite = TRUE;
+					*bDProNameModsWhite = TRUE;
 					bRet = TRUE;
 					break;
 				}
@@ -74,7 +74,7 @@ BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, _In_ const BOOLEAN 
 			}
 		}
 	}
-	if (!bDProNameModsWhite && bModsblack && g_reg_ipsProcNameBlackList)
+	if ((*bDProNameModsWhite == FALSE) && bModsblack && g_reg_ipsProcNameBlackList)
 	{
 		PWCHAR pName = wcsrchr(path, L'\\');
 		if (pName)
@@ -85,7 +85,7 @@ BOOLEAN rDirectory_IsIpsProcessNameInList(const PWCHAR path, _In_ const BOOLEAN 
 			{
 				if (wcscmp(pIpsName, pName) == 0)
 				{
-					bProNameModsBlack = TRUE;
+					*bProNameModsBlack = TRUE;
 					bRet = TRUE;
 					break;
 				}
