@@ -52,7 +52,7 @@ typedef struct _SYSTEM_PROCESS_INFORMATION {
 	SYSTEM_THREAD_INFORMATION           Threads[0];
 } SYSTEM_PROCESS_INFORMATION, * PSYSTEM_PROCESS_INFORMATION;
 
-BOOLEAN CheckIsRemoteThread(HANDLE ProcessId)
+BOOLEAN CheckIsRemoteThread(const HANDLE ProcessId)
 {
 	PSYSTEM_PROCESS_INFORMATION pInfo = NULL, pMemAddr = NULL;
 	ULONG						BufferLen = 0;
@@ -78,7 +78,7 @@ BOOLEAN CheckIsRemoteThread(HANDLE ProcessId)
 			{
 				if (pInfo->ProcessId == ProcessId)
 				{
-					//线程数如果等于1 是进程刚启动的主线程 不是"远程线程"
+					// 线程数如果等于1 是进程刚启动的主线程 不是"远程线程"
 					bRet = (pInfo->NumberOfThreads > 1);
 					break;
 				}
@@ -108,20 +108,20 @@ VOID Process_NotifyThread(
 	PTHREADBUFFER threadbuf = NULL;
 
 	// Alter Check CraeteRemoteThread
-	const HANDLE CurrentId = PsGetCurrentProcessId();
-	if (g_thr_ips_monitor && Create && (CurrentId != (HANDLE)4) && (ProcessId != (HANDLE)4) && (CurrentId != ProcessId) && CheckIsRemoteThread(ProcessId))
+	const HANDLE CurrentProcId = PsGetCurrentProcessId();
+	if (g_thr_ips_monitor && Create && (CurrentProcId != (HANDLE)4) && (ProcessId != (HANDLE)4) && (CurrentProcId != ProcessId) && CheckIsRemoteThread(ProcessId))
 	{
-		//UCHAR* SrcPsName, DstPsName;
-		//PEPROCESS p = NULL;
-		//p = PsGetCurrentProcess();
-		//PsLookupProcessByProcessId(ProcessId, &p);
-		//if (p)
-		//{
-		//	SrcPsName = PsGetProcessImageFileName(p);
-		//	DstPsName = PsGetProcessImageFileName(p);
-		//	ObDereferenceObject(p);
-		//	DebugPrint("Find CraeteRemoteThread SrcPid: %08X %s DestPid: %08X %s\n", ProcessId, SrcPsName, CurrentId, DstPsName);
-		//}
+		UCHAR* SrcPsName = NULL, DstPsName = NULL;
+		PEPROCESS pDst = NULL;
+		const PEPROCESS pSrc = PsGetCurrentProcess();
+		PsLookupProcessByProcessId(ProcessId, &pDst);
+		if (pSrc && pDst)
+		{
+			SrcPsName = PsGetProcessImageFileName(pSrc);
+			DstPsName = PsGetProcessImageFileName(pDst);
+			ObDereferenceObject(pDst);
+			DebugPrint("Find CraeteRemoteThread SrcPid: %08X %s DestPid: %08X %s\n", CurrentProcId, SrcPsName, ProcessId, DstPsName);
+		}
 	}
 	if (!g_thr_monitor)
 		return;

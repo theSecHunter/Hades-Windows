@@ -989,7 +989,7 @@ bool kMsgInterface::ReLoadDirectoryRuleConfig()
     std::string whiteName, blackName, whiteDirectory, blackDirectory;
     if (ConfigDirectoryJsonRuleParsing(whiteName, blackName, whiteDirectory, blackDirectory))
     {
-        whiteName.append("|"); blackName.append("|"); whiteDirectory.append("|"); blackDirectory.append("|");
+        whiteName.append("||"); blackName.append("||"); whiteDirectory.append("|"); blackDirectory.append("|");
         const std::wstring IpsDirWhiterName = Str2WStr(whiteName);
         const std::wstring IpsDirBlackName = Str2WStr(blackName);
         const std::wstring IpsDirWhiteDirPath = Str2WStr(whiteDirectory);
@@ -1005,7 +1005,6 @@ bool kMsgInterface::ReLoadDirectoryRuleConfig()
             OutputDebugString((L"[HadesSvc] devctrl_SetIpswhiteDirectoryList: " + IpsDirWhiteDirPath).c_str());
             status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiteDirPath.c_str());
             OutputDebugString(L"[HadesSvc] devctrl_SetIpswhiteDirectoryList Success");
-
         }
         if (!IpsDirBlackName.empty() && !IpsDirBlackDirPat.empty())
         {
@@ -1019,9 +1018,9 @@ bool kMsgInterface::ReLoadDirectoryRuleConfig()
         }
 
         if (status)
-            OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsDirectpry Success");
+            OutputDebugString(L"[HadesSvc] Directory devctrl_SetIpsDirectpry Success");
         else
-            OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsDirectpry Fauiler");
+            OutputDebugString(L"[HadesSvc] Directory devctrl_SetIpsDirectpry Fauiler");
     }
     return true;
 }

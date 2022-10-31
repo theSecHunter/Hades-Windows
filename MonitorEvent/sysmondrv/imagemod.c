@@ -53,60 +53,60 @@ typedef struct _PS_PROTECTION {
 	};
 } PS_PROTECTION, * PPS_PROTECTION;
 
-//bool CheckProcessProtect() {
-//	PS_PROTECTION ProtectInfo = { 0 };
-//	NTSTATUS ntStatus = ZwQueryInformationProcess(NtCurrentProcess(), ProcessProtectionInformation, &ProtectInfo, sizeof(ProtectInfo), 0ull);
-//	bool Result1 = false;
-//	bool Result2 = false;
-//	if (NT_SUCCESS(ntStatus)) {
-//		Result1 = ProtectInfo.Type == PsProtectedTypeNone && ProtectInfo.Signer == PsProtectedSignerNone;
-//		PROCESS_EXTENDED_BASIC_INFORMATION ProcessExtenedInfo = { 0 };
-//		ntStatus = ZwQueryInformationProcess(NtCurrentProcess(), ProcessBasicInformation, &ProcessExtenedInfo, sizeof(ProcessExtenedInfo), 0ull);
-//		if (NT_SUCCESS(ntStatus)) {
-//			Result2 = ProcessExtenedInfo.IsProtectedProcess == false && ProcessExtenedInfo.IsSecureProcess == false;
-//		}
-//	}
-//	return Result2 && Result1;
-//}
+BOOLEAN CheckProcessProtect() {
+	PS_PROTECTION ProtectInfo = { 0 };
+	NTSTATUS ntStatus = ZwQueryInformationProcess(NtCurrentProcess(), ProcessProtectionInformation, &ProtectInfo, sizeof(ProtectInfo), 0ull);
+	BOOLEAN Result1 = FALSE;
+	BOOLEAN Result2 = FALSE;
+	if (NT_SUCCESS(ntStatus)) {
+		Result1 = ProtectInfo.Type == PsProtectedTypeNone && ProtectInfo.Signer == PsProtectedSignerNone;
+		PROCESS_EXTENDED_BASIC_INFORMATION ProcessExtenedInfo = { 0 };
+		ntStatus = ZwQueryInformationProcess(NtCurrentProcess(), ProcessBasicInformation, &ProcessExtenedInfo, sizeof(ProcessExtenedInfo), 0ull);
+		if (NT_SUCCESS(ntStatus)) {
+			Result2 = ProcessExtenedInfo.IsProtectedProcess == FALSE && ProcessExtenedInfo.IsSecureProcess == FALSE;
+		}
+	}
+	return Result2 && Result1;
+}
 //
-//bool CheckStackVAD(PVOID pAddress) {
-//	bool bResult = false;
-//	size_t iReturnlength;
-//	MEMORY_BASIC_INFORMATION MemoryInfomation[sizeof(MEMORY_BASIC_INFORMATION)] = { 0 };
-//	if (MemoryInfomation) {
-//		NTSTATUS nt_status = ZwQueryVirtualMemory(NtCurrentProcess(), (PVOID)pAddress, MemoryBasicInformation, MemoryInfomation, sizeof(MEMORY_BASIC_INFORMATION), &iReturnlength);
-//		if (NT_SUCCESS(nt_status)) {
-//			bool is_map_memory = (MemoryInfomation->Type == MEM_PRIVATE || MemoryInfomation->Type == MEM_MAPPED) && MemoryInfomation->State == MEM_COMMIT;
-//			bResult = is_map_memory &&
-//				(MemoryInfomation->Protect == PAGE_EXECUTE || MemoryInfomation->Protect == PAGE_EXECUTE_READWRITE ||
-//					MemoryInfomation->Protect == PAGE_EXECUTE_READ || MemoryInfomation->Protect == PAGE_EXECUTE_WRITECOPY);
-//			if (bResult) {
-//				DebugPrint("MemoryInfomation->Protect %08X MemoryInfomation->Type %08X \n", MemoryInfomation->Protect, MemoryInfomation->Type);
-//			}
-//		}
-//	}
-//	return bResult;
-//}
+BOOLEAN CheckStackVAD(PVOID pAddress) {
+	BOOLEAN bResult = FALSE;
+	size_t iReturnlength;
+	MEMORY_BASIC_INFORMATION MemoryInfomation[sizeof(MEMORY_BASIC_INFORMATION)] = { 0 };
+	if (MemoryInfomation) {
+		NTSTATUS nt_status = ZwQueryVirtualMemory(NtCurrentProcess(), (PVOID)pAddress, MemoryBasicInformation, MemoryInfomation, sizeof(MEMORY_BASIC_INFORMATION), &iReturnlength);
+		if (NT_SUCCESS(nt_status)) {
+			BOOLEAN is_map_memory = (MemoryInfomation->Type == MEM_PRIVATE || MemoryInfomation->Type == MEM_MAPPED) && MemoryInfomation->State == MEM_COMMIT;
+			bResult = is_map_memory &&
+				(MemoryInfomation->Protect == PAGE_EXECUTE || MemoryInfomation->Protect == PAGE_EXECUTE_READWRITE ||
+					MemoryInfomation->Protect == PAGE_EXECUTE_READ || MemoryInfomation->Protect == PAGE_EXECUTE_WRITECOPY);
+			if (bResult) {
+				//DebugPrint("MemoryInfomation->Protect %08X MemoryInfomation->Type %08X \n", MemoryInfomation->Protect, MemoryInfomation->Type);
+			}
+		}
+	}
+	return bResult;
+}
 //
-//bool WalkStack(int pHeight)
-//{
-//	bool bResult = true;
-//	PVOID dwStackWalkAddress[STACK_WALK_WEIGHT] = { 0 };
-//	unsigned __int64  iWalkChainCount = RtlWalkFrameChain(dwStackWalkAddress, STACK_WALK_WEIGHT, 1);
-//	int iWalkLimit = 0;
-//	for (unsigned __int64 i = iWalkChainCount; i > 0; i--)
-//	{
-//		if (iWalkLimit > pHeight)
-//			break;
-//		iWalkLimit++;
-//		if (CheckStackVAD((PVOID)dwStackWalkAddress[i])) {
-//			DebugPrint("height: %d address %p \n", i, dwStackWalkAddress[i]);
-//			bResult = false;
-//			break;
-//		}
-//	}
-//	return bResult;
-//}
+BOOLEAN WalkStack(int pHeight)
+{
+	BOOLEAN bResult = TRUE;
+	PVOID dwStackWalkAddress[STACK_WALK_WEIGHT] = { 0 };
+	unsigned __int64  iWalkChainCount = RtlWalkFrameChain(dwStackWalkAddress, STACK_WALK_WEIGHT, 1);
+	int iWalkLimit = 0;
+	for (unsigned __int64 i = iWalkChainCount; i > 0; i--)
+	{
+		if (iWalkLimit > pHeight)
+			break;
+		iWalkLimit++;
+		if (CheckStackVAD((PVOID)dwStackWalkAddress[i])) {
+			//DebugPrint("height: %d address %p \n", i, dwStackWalkAddress[i]);
+			bResult = FALSE;
+			break;
+		}
+	}
+	return bResult;
+}
 
 void Process_NotifyImage(
 	const UNICODE_STRING* FullImageName,
@@ -121,7 +121,6 @@ void Process_NotifyImage(
 
 	if (g_imagemod_ips_monitor && PsGetCurrentProcessId() != (HANDLE)4 && PsGetCurrentProcessId() != (HANDLE)0) {
 		//if (WalkStack(10) == false) {
-
 		//	DebugPrint("[!!!] CobaltStrike Shellcode Detected Process Name: %s\n", PsGetProcessImageFileName(PsGetCurrentProcess()));
 		//	//ZwTerminateProcess(NtCurrentProcess(), 0);
 		//}
