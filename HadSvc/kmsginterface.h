@@ -36,6 +36,7 @@ public:
 	bool ReLoadProcessRuleConfig();
 	bool ReLoadRegisterRuleConfig();
 	bool ReLoadDirectoryRuleConfig();
+	bool ReLoadThreadInjectRuleConfig();
 
 private:
 	void kMsg_SetTopicQueuePtr();

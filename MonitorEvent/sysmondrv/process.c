@@ -137,10 +137,6 @@ NTSTATUS Process_Init(void) {
     sl_init(&g_processQueryhead.process_lock);
     InitializeListHead(&g_processQueryhead.process_pending);
 
-    InitGloableFunction_Process();
-    if (!ZwQueryInformationProcess)
-        return FALSE;
-
     // See: Available starting with Windows Vista with SP1 and Windows Server 2008.
     // Msdn: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/nf-ntddk-pssetcreateprocessnotifyroutineex
 	PsSetCreateProcessNotifyRoutineEx((PCREATE_PROCESS_NOTIFY_ROUTINE_EX)Process_NotifyProcessEx, FALSE);

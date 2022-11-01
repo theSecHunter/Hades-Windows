@@ -21,6 +21,7 @@ typedef NTSTATUS(*PfnNtQueryInformationProcess) (
     __out_opt PULONG ReturnLength
     );
 static PfnNtQueryInformationProcess ZwQueryInformationProcess = NULL;
+
 static void InitGloableFunction_Process()
 {
     if (!ZwQueryInformationProcess)
@@ -31,6 +32,7 @@ static void InitGloableFunction_Process()
             (PfnNtQueryInformationProcess)MmGetSystemRoutineAddress(&UtrZwQueryInformationProcessName);
     }
 }
+
 static BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWORD pathlen)
 {
     BOOLEAN bRet = FALSE;

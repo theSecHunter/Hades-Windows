@@ -1,22 +1,8 @@
 [
 	{
-		"registerRuleMod": 2,
-		"processName": "cmd.exe|powershell.exe",
-		"registerValuse": "\\REGISTRY\\MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run|\\REGISTRY\\MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
-		"permissions": "0000000"
-	},
-
-	{
 		"registerRuleMod": 1,
 		"processName": "AddRegister.exe|cmd.exe",
 		"registerValuse": "\\REGISTRY\\MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run|\\REGISTRY\\MACHINE\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
 		"permissions": "1111111"
-	},
-
-	{ 
-		"registerRuleMod": 1,
-		"processName": "cmd.exe|svhost.exe.exe",
-		"registerValuse": "\\Registry\\Machine\\Software\\WOW6432Node\\Policies\\Microsoft\\MUI\\Settings",
-		"permissions": "1000110"
 	}
 ]

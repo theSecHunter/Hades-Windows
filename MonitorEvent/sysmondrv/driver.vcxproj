@@ -64,6 +64,7 @@
     <ClCompile Include="register.c" />
     <ClCompile Include="rProcess.c" />
     <ClCompile Include="rRegister.c" />
+    <ClCompile Include="rThread.c" />
     <ClCompile Include="sysdpctimer.c" />
     <ClCompile Include="sysdriverinfo.c" />
     <ClCompile Include="sysenumnotify.c" />
@@ -380,6 +381,7 @@
     <ClInclude Include="resource2.h" />
     <ClInclude Include="rProcess.h" />
     <ClInclude Include="rRegister.h" />
+    <ClInclude Include="rThread.h" />
     <ClInclude Include="sysdpctimer.h" />
     <ClInclude Include="sysdriverinfo.h" />
     <ClInclude Include="sysenumnotify.h" />

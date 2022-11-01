@@ -31,5 +31,6 @@ PTHREADBUFFER Thread_PacketAllocate(int lens);
 void Thread_PacketFree(PTHREADBUFFER packet);
 
 THREADDATA* threadctx_get();
+void thr_pushversion(const ULONG dOsver);
 
 #endif // !_THREAD_H

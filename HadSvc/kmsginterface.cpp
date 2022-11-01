@@ -14,6 +14,7 @@
 #include <ProcessRuleAssist.h>
 #include <RegisterRuleAssist.h>
 #include <DirectoryRuleAssist.h>
+#include <ThreadRuleAssist.h>
 
 //rapidjson
 #include <rapidjson/rapidjson.h>
@@ -808,7 +809,7 @@ void kMsgInterface::DriverInit(const int flag)
         std::string registerProcName;
         if (ConfigRegisterJsonRuleParsing(registerProcName))
         {
-            registerProcName.append("|");
+            registerProcName.append("||");
             const std::wstring IpsRegisterName = Str2WStr(registerProcName);
             OutputDebugString((L"[HadesSvc] devctrl_SetIpsProcessNameList: " + IpsRegisterName).c_str());
             status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterName.c_str());
@@ -823,7 +824,7 @@ void kMsgInterface::DriverInit(const int flag)
         std::string whiteName, blackName, whiteDirectory, blackDirectory;
         if (ConfigDirectoryJsonRuleParsing(whiteName, blackName, whiteDirectory, blackDirectory))
         {
-            whiteName.append("||"); blackName.append("||"); whiteDirectory.append("|"); blackDirectory.append("|");
+            whiteName.append("||"); blackName.append("||"); whiteDirectory.append("||"); blackDirectory.append("||");
             const std::wstring IpsDirWhiterName = Str2WStr(whiteName);
             const std::wstring IpsDirBlackName = Str2WStr(blackName);
             const std::wstring IpsDirWhiteDirPath = Str2WStr(whiteDirectory);
@@ -854,6 +855,21 @@ void kMsgInterface::DriverInit(const int flag)
                 OutputDebugString(L"[HadesSvc] Directory devctrl_SetIpsDirectpry Success");
             else
                 OutputDebugString(L"[HadesSvc] Directory devctrl_SetIpsDirectpry Fauiler");
+        }
+
+        // Set Ips InjectIpsProcessName
+        std::string threadInjectProcName;
+        if (ConfigThreadJsonRuleParsing(threadInjectProcName))
+        {
+            threadInjectProcName.append("||");
+            const std::wstring IpsThreadName = Str2WStr(threadInjectProcName);
+            OutputDebugString((L"[HadesSvc] devctrl_SetIpsProcessNameList: " + IpsThreadName).c_str());
+            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETTHREADINJECTNAME, IpsThreadName.c_str());
+            OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
+            if (status)
+                OutputDebugString(L"[HadesSvc] ThreadInejctProc devctrl_SetIpsProcessNameList Success");
+            else
+                OutputDebugString(L"[HadesSvc] ThreadInejctProc devctrl_SetIpsProcessNameList Fauiler");
         }
 
         // Enable Event --> 内核提取出来数据以后处理类
@@ -963,8 +979,9 @@ bool kMsgInterface::ReLoadProcessRuleConfig()
             OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
             return false;
         }
+        return true;
     }
-    return true;
+    return false;
 }
 bool kMsgInterface::ReLoadRegisterRuleConfig()
 {
@@ -981,8 +998,9 @@ bool kMsgInterface::ReLoadRegisterRuleConfig()
             OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList");
             return false;
         }
+        return true;
     }
-    return true;
+    return false;
 }
 bool kMsgInterface::ReLoadDirectoryRuleConfig()
 {
@@ -1021,10 +1039,28 @@ bool kMsgInterface::ReLoadDirectoryRuleConfig()
             OutputDebugString(L"[HadesSvc] Directory devctrl_SetIpsDirectpry Success");
         else
             OutputDebugString(L"[HadesSvc] Directory devctrl_SetIpsDirectpry Fauiler");
+        return true;
     }
-    return true;
+    return false;
 }
-
+bool kMsgInterface::ReLoadThreadInjectRuleConfig()
+{
+    std::string threadInjectProcName;
+    if (ConfigThreadJsonRuleParsing(threadInjectProcName))
+    {
+        threadInjectProcName.append("||");
+        const std::wstring IpsThreadName = Str2WStr(threadInjectProcName);
+        OutputDebugString((L"[HadesSvc] devctrl_SetIpsProcessNameList: " + IpsThreadName).c_str());
+        const int status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETTHREADINJECTNAME, IpsThreadName.c_str());
+        OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
+        if (status)
+            OutputDebugString(L"[HadesSvc] ThreadInejctProc devctrl_SetIpsProcessNameList Success");
+        else
+            OutputDebugString(L"[HadesSvc] ThreadInejctProc devctrl_SetIpsProcessNameList Fauiler");
+        return true;
+    }
+    return false;
+}
 void kMsgInterface::kMsg_Init() {
     // 初始化Topic
     g_kjobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);

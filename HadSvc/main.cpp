@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
 		g_mainMsgUlib.uMsg_EtwInit();
 	}
 
-	// 等待AgentEvent Exit 否则不退出
+	// 等待AgentEvent Exit
 	WaitForSingleObject(g_SvcExitEvent, INFINITE);
 	CloseHandle(g_SvcExitEvent);
 	g_SvcExitEvent = nullptr;

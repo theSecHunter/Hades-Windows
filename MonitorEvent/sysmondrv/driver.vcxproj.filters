@@ -89,6 +89,9 @@
     <ClCompile Include="rProcess.c">
       <Filter>kruleEngine</Filter>
     </ClCompile>
+    <ClCompile Include="rThread.c">
+      <Filter>kruleEngine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="driver.h" />
@@ -186,6 +189,9 @@
       <Filter>kruleEngine</Filter>
     </ClInclude>
     <ClInclude Include="resource2.h" />
+    <ClInclude Include="rThread.h">
+      <Filter>kruleEngine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Inf Include="sysmondriver.inf" />

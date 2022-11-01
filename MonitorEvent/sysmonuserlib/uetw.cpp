@@ -1298,14 +1298,14 @@ bool UEtw::uf_close(const bool flag)
     StopTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(g_pTraceConfig + 8));
     ControlTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(g_pTraceConfig + 8), EVENT_TRACE_CONTROL_STOP);
 
-    g_th.Lock();
+    //g_th.Lock();
     for (size_t i = 0; i < g_thrhandle.size(); ++i)
     {
         WaitForSingleObject(g_thrhandle[i], 1000);
         CloseHandle(g_thrhandle[i]);
     }
     g_thrhandle.clear();
-    g_th.Unlock();
+    //g_th.Unlock();
     return true;
 }
 

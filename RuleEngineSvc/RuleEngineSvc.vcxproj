@@ -174,6 +174,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="ProcessRuleAssist.h" />
     <ClInclude Include="RegisterRuleAssist.h" />
+    <ClInclude Include="ThreadRuleAssist.h" />
     <ClInclude Include="utiltools.h" />
   </ItemGroup>
   <ItemGroup>
@@ -187,6 +188,7 @@
     <ClCompile Include="ProcessRuleAssist.cpp" />
     <ClCompile Include="RegisterRuleAssist.cpp" />
     <ClCompile Include="RuleEngineSvc.cpp" />
+    <ClCompile Include="ThreadRuleAssist.cpp" />
     <ClCompile Include="utiltools.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

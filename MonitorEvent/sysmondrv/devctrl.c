@@ -21,6 +21,7 @@
 #include "rProcess.h"
 #include "rRegister.h"
 #include "rDirectory.h"
+#include "rThread.h"
 
 #include "minifilter.h"
 #include "kflt.h"
@@ -1132,6 +1133,13 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 			FsFlt_SetDirectoryIpsMonitor(FALSE);
 			utiltools_sleep(500);
 			return rDirectory_SetIpsDirectRule(irp, irpSp);
+		}
+		// ThreadInject Ips: ½ø³ÌÃû
+		case CTL_DEVCTRL_IPS_SETTHREADINJECTNAME:
+		{			
+			Thread_SetIpsMonitor(FALSE);
+			utiltools_sleep(500);
+			return rThrInject_SetIpsProcessName(irp, irpSp);
 		}
 		// Rootkit Data
 		case CTL_DEVCTRL_ARK_INITSSDT:

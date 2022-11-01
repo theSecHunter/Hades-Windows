@@ -49,6 +49,8 @@
 #define sl_lock(x, lh) KeAcquireInStackQueuedSpinLock(x, lh)
 #define sl_unlock(lh) KeReleaseInStackQueuedSpinLock(lh)
 
+#define DebugPrint(...) DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, __VA_ARGS__)
+
 #define htonl(x) (((((ULONG)(x))&0xffL)<<24)           | \
 	((((ULONG)(x))&0xff00L)<<8)        | \
 	((((ULONG)(x))&0xff0000L)>>8)        | \
@@ -385,4 +387,24 @@ typedef struct _HADES_NOTIFICATION {
 typedef struct _HADES_REPLY {
     DWORD SafeToOpen;
 } HADES_REPLY, * PHADES_REPLY;
+
+typedef enum _WinVer
+{
+    WINVER_7 = 0x0610,
+    WINVER_7_SP1 = 0x0611,
+    WINVER_8 = 0x0620,
+    WINVER_81 = 0x0630,
+    WINVER_10 = 0x0A00,
+    WINVER_10_TH1 = 0x0A01,
+    WINVER_10_TH2 = 0x0A02,
+    WINVER_10_RS1 = 0x0A03,     // Anniversary update
+    WINVER_10_RS2 = 0x0A04,     // Creators update
+    WINVER_10_RS3 = 0x0A05,     // Fall creators update
+    WINVER_10_RS4 = 0x0A06,     // Spring creators update
+    WINVER_10_RS5 = 0x0A07,     // October 2018 update
+    WINVER_10_19H1 = 0x0A08,    // May 2019 update 19H1
+    WINVER_10_19H2 = 0x0A09,    // November 2019 update 19H2
+    WINVER_10_20H1 = 0x0A0A,    // April 2020 update 20H1
+} WinVer;
+
 #endif

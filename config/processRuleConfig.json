@@ -1,4 +1,4 @@
 {
 	"processRuleMod": 2,
-	"processName": "powershell.exe"
+	"processName": "cmd.exe|powershell.exe"
 }

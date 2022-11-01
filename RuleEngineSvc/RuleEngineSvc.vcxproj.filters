@@ -25,6 +25,9 @@
     <Filter Include="directory">
       <UniqueIdentifier>{3a028e27-9451-4bce-93df-e7d8d5e7543b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="thread">
+      <UniqueIdentifier>{b5f23b84-23bb-4476-98fe-6a406c44548b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -45,6 +48,9 @@
     <ClInclude Include="DirectoryRuleAssist.h">
       <Filter>directory</Filter>
     </ClInclude>
+    <ClInclude Include="ThreadRuleAssist.h">
+      <Filter>thread</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RuleEngineSvc.cpp">
@@ -64,6 +70,9 @@
     </ClCompile>
     <ClCompile Include="DirectoryRuleAssist.cpp">
       <Filter>directory</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadRuleAssist.cpp">
+      <Filter>thread</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

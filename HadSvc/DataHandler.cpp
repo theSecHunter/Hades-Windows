@@ -612,8 +612,27 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
             return 0;
         const int ioldStatus = g_klib->GetKerBeSnipingStatus();
         OutputDebugString(L"[HadesSvc] ReLoadDirectoryRuleConfig Send Enable KernelMonitor Command");
-        g_klib->ReLoadRegisterRuleConfig();
+        g_klib->ReLoadDirectoryRuleConfig();
         OutputDebugString(L"[HadesSvc] ReLoadDirectpryRuleConfig Enable KernelMonitor Success");
+        // 规则重载内核会关闭行为监控 - 如果之前开启这里要重新开启
+        if (ioldStatus)
+            g_klib->OnBeSnipingMonitor();
+        task_array_data.push_back("Success");
+    }
+    break;
+    case 410:
+    {// 线程注入规则
+        const auto g_klib = ((kMsgInterface*)g_kern_interface);
+        if (!g_klib)
+            return 0;
+        task_array_data.clear();
+        // 驱动未启动
+        if (false == g_klib->GetKerInitStatus())
+            return 0;
+        const int ioldStatus = g_klib->GetKerBeSnipingStatus();
+        OutputDebugString(L"[HadesSvc] ReLoadThreadInjectRuleConfig Send Enable KernelMonitor Command");
+        g_klib->ReLoadThreadInjectRuleConfig();
+        OutputDebugString(L"[HadesSvc] ReLoadThreadInjectRuleConfig Enable KernelMonitor Success");
         // 规则重载内核会关闭行为监控 - 如果之前开启这里要重新开启
         if (ioldStatus)
             g_klib->OnBeSnipingMonitor();

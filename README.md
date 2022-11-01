@@ -131,10 +131,11 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 ### 驱动行为拦截 v2.0：
 | 事件     | 描述                            |进度  | 描述 | 引用代码 |
 | -------- | ------------------------------- |-------- | -------- |-------- |
-| 进程拦截|  自定义进程 |完成| 基于回调过滤| |
-| 注册表拦截|  自定义注册表 |完成| 基于回调过滤 | |
-| 远程注入检测 |  远程线程注入 |完成(未启动)| 基于回调过滤 | https://bbs.pediy.com/thread-193437.htm |
-| 非远程线程注入检测 |  映射内存或非CreteRemote方式执行 |完成(未启动)| 基于回调VAD | https://github.com/huoji120/CobaltStrikeDetected/ |
+| 进程拦截|  自定义进程 |完成| 基于回调 | |
+| 注册表拦截|  自定义注册表 |完成| 基于回调 | |
+| 目录保护|  目录和子目录/文件 |完成| 基于MiniFilter| |
+| 远程线程注入拦截 |  CreteRemote类型注入执行 |完成| 基于回调 | https://bbs.pediy.com/thread-193437.htm |
+| 非远程线程注入检测 |  非CreteRemote或映射内存方式注入执行 |完成(未启动)| 基于回调 | https://github.com/huoji120/CobaltStrikeDetected/ |
 
 
 ### HIPS
