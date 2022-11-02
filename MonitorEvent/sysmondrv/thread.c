@@ -1,8 +1,8 @@
 #include "public.h"
 #include "thread.h"
-
+#include "rThread.h"
+#include "utiltools.h"
 #include "devctrl.h"
-#define DebugPrint(...) DbgPrintEx(DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, __VA_ARGS__)
 
 static  BOOLEAN					g_thr_monitor = FALSE;
 static  KSPIN_LOCK				g_thr_monitorlock = 0;
@@ -15,9 +15,16 @@ static KSPIN_LOCK               g_threadlock = 0;
 
 static THREADDATA				g_threadQueryhead;
 
+static WinVer					g_thrOsver = 0;
+
 THREADDATA* threadctx_get()
 {
 	return &g_threadQueryhead;
+}
+
+void thr_pushversion(const ULONG dOsver)
+{
+	g_thrOsver = dOsver;
 }
 
 typedef struct _SYSTEM_THREAD_INFORMATION {
@@ -51,6 +58,16 @@ typedef struct _SYSTEM_PROCESS_INFORMATION {
 	IO_COUNTERS             IoCounters;
 	SYSTEM_THREAD_INFORMATION           Threads[0];
 } SYSTEM_PROCESS_INFORMATION, * PSYSTEM_PROCESS_INFORMATION;
+
+typedef struct _THREAD_BASIC_INFORMATION {
+	NTSTATUS                ExitStatus;
+	PVOID                   TebBaseAddress;
+	CLIENT_ID               ClientId;
+	KAFFINITY               AffinityMask;
+	KPRIORITY               Priority;
+	KPRIORITY               BasePriority;
+
+} THREAD_BASIC_INFORMATION, * PTHREAD_BASIC_INFORMATION;
 
 BOOLEAN CheckIsRemoteThread(const HANDLE ProcessId)
 {
@@ -94,6 +111,53 @@ BOOLEAN CheckIsRemoteThread(const HANDLE ProcessId)
 	return bRet;
 }
 
+const ULONG GetThrStartAddressOffset()
+{
+	/*
+		0x02C0 (3.10);
+		0x0230 (3.50 to 5.0);
+		0x0224 (5.1);
+		0x022C (early 5.2); XP
+		0x021C (late 5.2)
+		0x03D8 (late 5.2);
+		0x03C0 (v. late 5.2)
+	*/
+	ULONG uThrStartAddrOffset = 0;
+	switch (g_thrOsver)
+	{
+	case WINVER_7:
+	case WINVER_7_SP1:
+	{
+#ifndef _WIN32
+
+#else
+
+#endif
+	}
+	break;
+	case WINVER_8:
+	case WINVER_81:
+	{
+#ifndef _WIN32
+
+#else
+
+#endif
+	}
+	break;
+	case WINVER_10:
+	{
+#ifndef _WIN32
+
+#else
+
+#endif
+	}
+	break;
+	}
+	return uThrStartAddrOffset;
+}
+
 VOID Process_NotifyThread(
 	_In_ HANDLE ProcessId,
 	_In_ HANDLE ThreadId,
@@ -111,16 +175,56 @@ VOID Process_NotifyThread(
 	const HANDLE CurrentProcId = PsGetCurrentProcessId();
 	if (g_thr_ips_monitor && Create && (CurrentProcId != (HANDLE)4) && (ProcessId != (HANDLE)4) && (CurrentProcId != ProcessId) && CheckIsRemoteThread(ProcessId))
 	{
-		UCHAR* SrcPsName = NULL, DstPsName = NULL;
-		PEPROCESS pDst = NULL;
-		const PEPROCESS pSrc = PsGetCurrentProcess();
-		PsLookupProcessByProcessId(ProcessId, &pDst);
-		if (pSrc && pDst)
+		// Find DestPid
+		WCHAR path[260 * 2] = { 0 };
+		BOOLEAN QueryPathStatus = FALSE;
+		if (QueryProcessNamePath((DWORD)ProcessId, path, sizeof(path)))
+			QueryPathStatus = TRUE;
+		if (QueryPathStatus && rThrInject_IsIpsProcessNameInList(path))
 		{
-			SrcPsName = PsGetProcessImageFileName(pSrc);
-			DstPsName = PsGetProcessImageFileName(pDst);
-			ObDereferenceObject(pDst);
-			DebugPrint("Find CraeteRemoteThread SrcPid: %08X %s DestPid: %08X %s\n", CurrentProcId, SrcPsName, ProcessId, DstPsName);
+			UCHAR* SrcPsName = NULL, DstPsName = NULL;
+			const PEPROCESS pSrc = PsGetCurrentProcess();
+			PEPROCESS pDst = NULL;
+			PsLookupProcessByProcessId(ProcessId, &pDst);
+			if (pSrc && pDst)
+			{
+				SrcPsName = PsGetProcessImageFileName(pSrc);
+				DstPsName = PsGetProcessImageFileName(pDst);
+				ObDereferenceObject(pDst);
+				//DebugPrint("Find CraeteRemoteThread SrcPid: %08X %s DestPid: %08X %s\n", CurrentProcId, SrcPsName, ProcessId, DstPsName);
+			}
+			DbgBreakPoint();
+			// Kill pSrc Process
+			HANDLE hThreadRef = NULL;
+			PETHREAD pEth = NULL;
+			PsLookupThreadByThreadId(ThreadId, &pEth);
+			do 
+			{
+				if (!pEth)
+					break;
+				NTSTATUS rc = ObOpenObjectByPointer(pEth, OBJ_KERNEL_HANDLE, NULL, THREAD_ALL_ACCESS, *PsThreadType, KernelMode, &hThreadRef);
+				if (!NT_SUCCESS(rc) || !hThreadRef)
+					break;
+				//InitGloableFunction_Process();
+				//if (!ZwQueryInformationThread)
+				//	break;
+				//THREAD_BASIC_INFORMATION ThreadInfo; ULONG res;
+				//rc = ZwQueryInformationThread(hThreadRef, ThreadBasicInformation, &ThreadInfo, sizeof(ThreadInfo), &res);
+				//if (!NT_SUCCESS(rc))
+				//	break;
+				//PVOID pStartAddress; r3
+				//rc = ZwQueryInformationThread(hThreadRef, ThreadQuerySetWin32StartAddress, &pStartAddress, sizeof(pStartAddress), &res);
+				//if (!NT_SUCCESS(rc))
+				//	break;
+				// STATUS_INVALID_PARAMETER
+				/*rc = ZwSetInformationThread(hThreadRef, ThreadQuerySetWin32StartAddress, NULL, 0);
+				if (!NT_SUCCESS(rc))
+					break;*/
+			} while (FALSE);
+			if (hThreadRef)
+				ZwClose(hThreadRef);
+			if (pEth)
+				ObDereferenceObject(pEth);
 		}
 	}
 	if (!g_thr_monitor)
@@ -176,6 +280,9 @@ NTSTATUS Thread_Init()
 
 void Thread_Clean()
 {
+	// Ips Rule Name
+	rThrInject_IpsClean();
+
 	KLOCK_QUEUE_HANDLE lh;
 	THREADBUFFER* pData = NULL;
 	int lock_status = 0;

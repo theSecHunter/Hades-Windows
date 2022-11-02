@@ -134,8 +134,7 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 | 进程拦截|  自定义进程 |完成| 基于回调 | |
 | 注册表拦截|  自定义注册表 |完成| 基于回调 | |
 | 目录保护|  目录和子目录/文件 |完成| 基于MiniFilter| |
-| 远程线程注入拦截 |  CreteRemote类型注入执行 |完成| 基于回调 | https://bbs.pediy.com/thread-193437.htm |
-| 非远程线程注入检测 |  非CreteRemote或映射内存方式注入执行 |完成(未启动)| 基于回调 | https://github.com/huoji120/CobaltStrikeDetected/ |
+| 注入拦截 |  CreteRemote/内存 |进行中| 基于回调 | https://bbs.pediy.com/thread-193437.htm <br> https://github.com/huoji120/CobaltStrikeDetected/ |
 
 
 ### HIPS
@@ -251,7 +250,7 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 |v2.3.4| 进程保护 | 高 |完成|
 |v2.3.4| 注册表键值保护 | 高 |完成|
 |v2.3.5| 目录访问保护|高 |完成|
-|v2.3.6| 线程注入保护|高 |完成|
+|v2.3.6| 注入拦截|高 |进行中|
 |v2.5| ETW GUID LOG方式注册，非"NT KERNEL LOG"，很多环境容易冲突注册全局内核被覆盖 | 中     |待定|
 
 

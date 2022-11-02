@@ -390,6 +390,7 @@ typedef struct _HADES_REPLY {
 
 typedef enum _WinVer
 {
+    WINVER_VISTA = 0x0600,
     WINVER_7 = 0x0610,
     WINVER_7_SP1 = 0x0611,
     WINVER_8 = 0x0620,

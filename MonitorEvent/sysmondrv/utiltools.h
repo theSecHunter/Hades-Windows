@@ -22,14 +22,30 @@ typedef NTSTATUS(*PfnNtQueryInformationProcess) (
     );
 static PfnNtQueryInformationProcess ZwQueryInformationProcess = NULL;
 
+typedef  NTSTATUS(*PfnZwQueryInformationThread)(
+    _In_      HANDLE          ThreadHandle,
+    _In_      THREADINFOCLASS ThreadInformationClass,
+    _In_      PVOID           ThreadInformation,
+    _In_      ULONG           ThreadInformationLength,
+    _Out_opt_ PULONG          ReturnLength
+);
+static PfnZwQueryInformationThread ZwQueryInformationThread = NULL;
+
 static void InitGloableFunction_Process()
 {
-    if (!ZwQueryInformationProcess)
+    if (ZwQueryInformationProcess == NULL)
     {
         UNICODE_STRING UtrZwQueryInformationProcessName =
             RTL_CONSTANT_STRING(L"ZwQueryInformationProcess");
         ZwQueryInformationProcess =
             (PfnNtQueryInformationProcess)MmGetSystemRoutineAddress(&UtrZwQueryInformationProcessName);
+    }
+    else if (ZwQueryInformationThread == NULL)
+    {
+        UNICODE_STRING UtrZwQueryInformationProcessName =
+            RTL_CONSTANT_STRING(L"ZwQueryInformationThread");
+        ZwQueryInformationThread =
+            (PfnZwQueryInformationThread)MmGetSystemRoutineAddress(&UtrZwQueryInformationProcessName);
     }
 }
 
@@ -64,18 +80,6 @@ static BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWOR
         ZwClose(hProc);
     }
     return bRet;
-}
-
-static BOOLEAN DeviceDosPathToNtPath(wchar_t* pszDosPath, wchar_t* pszNtPath)
-{
-    static TCHAR    szDriveStr[MAX_PATH] = { 0 };
-    static TCHAR    szDevName[MAX_PATH] = { 0 };
-    TCHAR            szDrive[3];
-    INT             cchDevName;
-    INT             i;
-
-
-    return FALSE;
 }
 
 #endif // !_UTIL_H

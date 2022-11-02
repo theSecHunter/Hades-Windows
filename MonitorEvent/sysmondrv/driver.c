@@ -10,6 +10,7 @@
 #include "syssession.h"
 #include "minifilter.h"
 #include "kflt.h"
+#include "utiltools.h"
 
 #include <fltKernel.h>
 #include <dontuse.h>
@@ -131,10 +132,10 @@ NTSTATUS
     }
 
     // Get System Version
-    OSVERSIONINFOW osver;
+    RTL_OSVERSIONINFOEXW osver;
     RtlSecureZeroMemory(&osver, sizeof(osver));
     osver.dwOSVersionInfoSize = sizeof(osver);
-    status = RtlGetVersion(&osver);
+    status = RtlGetVersion((PRTL_OSVERSIONINFOW)&osver);
     if (!NT_SUCCESS(status))
     {
         return 0;
@@ -147,8 +148,14 @@ NTSTATUS
         g_Win10Version = TRUE;
     else
         g_Win10Version = FALSE;
-
     devctrl_pushversion(g_Win10Version);
+
+    const ULONG ver_short = (osver.dwMajorVersion << 8) | (osver.dwMinorVersion << 4) | osver.wServicePackMajor;
+    thr_pushversion(ver_short);
+
+    InitGloableFunction_Process();
+    if (!ZwQueryInformationProcess)
+        return FALSE;
 
     do {
         g_processname = (char*)ExAllocatePoolWithTag(NonPagedPool, 260 * (260 * sizeof(WCHAR)), 'CM');
