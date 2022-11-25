@@ -1,7 +1,7 @@
 #include "public.h"
 #include "sysssdt.h"
 
-ULONGLONG HelpSsdtBaseAddr64(PUCHAR StartSearchAddress)
+const ULONGLONG HelpSsdtBaseAddr64(PUCHAR StartSearchAddress)
 {
 	PUCHAR EndSearchAddress = StartSearchAddress + 0x500;
 	PUCHAR i = NULL;
@@ -25,7 +25,7 @@ ULONGLONG HelpSsdtBaseAddr64(PUCHAR StartSearchAddress)
 	return 0;
 }
 
-ULONGLONG SysGetSsdtBaseAddrto64()
+const ULONGLONG SysGetSsdtBaseAddrto64()
 {
 	PUCHAR StartSearchAddress = (PUCHAR)__readmsr(0xC0000082);
 
@@ -34,7 +34,10 @@ ULONGLONG SysGetSsdtBaseAddrto64()
 		return HelpSsdtBaseAddr64(StartSearchAddress);
 	}
 	// KiSystemCall64Shadow
-	else if(0x70 == *(StartSearchAddress + 0x9))
+	else if (
+		(0x70 == *(StartSearchAddress + 0x9)) ||
+		// 0f01f8          swapgs
+		((0x0f == *StartSearchAddress) && (0x01 == *(StartSearchAddress + 1)) && (0xf8 == *(StartSearchAddress + 2))))
 	{
 		PUCHAR EndSearchAddress = StartSearchAddress + 0x500;
 		PUCHAR i = NULL;
@@ -59,9 +62,22 @@ ULONGLONG SysGetSsdtBaseAddrto64()
 	return 0;
 }
 
+const ULONGLONG SysGetSsdtBaseAddrto32()
+{
+	// 1.1 获取当前线程
+	PETHREAD pThread = PsGetCurrentThread();
+	// 1.2 线程结构体 +0xbc 获取的是 ServiceTable 
+	// 硬编码需要维护一下版本，有缺陷x86下
+	return (*(ULONG*)((ULONG_PTR)pThread + 0xbc));
+}
+
 int Sstd_Init()
 {
+#ifdef _WIN64
 	KeServiceDescriptorTable = (PSYSTEM_SERVICE_TABLE)SysGetSsdtBaseAddrto64();
+#else
+	KeServiceDescriptorTable = (PSYSTEM_SERVICE_TABLE)SysGetSsdtBaseAddrto32();
+#endif // _WIN32
 	if (KeServiceDescriptorTable)
 		return 1;
 	else
@@ -82,30 +98,33 @@ int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 	if (0 >= ServiceTableBase)
 		return -1;
 
-	int  i = 0;
-	LONG offset = 0;
-	ULONGLONG funaddr = 0;
-	PSSDTINFO ssdtinfo = ExAllocatePoolWithTag(NonPagedPool, sizeof(SSDTINFO), 'STMM');
+	LONG		offset = 0;
+	ULONGLONG	funaddr = 0;
+	PSSDTINFO	ssdtinfo = ExAllocatePoolWithTag(NonPagedPool, sizeof(SSDTINFO), 'STMM');
 	if (!ssdtinfo)
 		return -1;
 	RtlSecureZeroMemory(ssdtinfo, sizeof(SSDTINFO));
+	int			i = 0;
 	for (i = 0; i < SsdtFunNumber; ++i)
 	{
 		ssdtinfo->ssdt_id = i;
-
 		offset = ServiceTableBase[i];
 		ssdtinfo->sstd_memoffset = offset;
 
+#ifndef _WIN64
+		// x86
+		ssdtinfo->sstd_memaddr = offset;
+#else
+		// x64
 		if (offset & 0x80000000)
 			offset = (offset >> 4) | 0xF0000000;
 		else
 			offset = offset >> 4;
 		funaddr = (ULONGLONG)ServiceTableBase + (ULONGLONG)offset;
-
 		ssdtinfo->sstd_memaddr = funaddr;
+#endif // !_WIN64
 
 		RtlCopyMemory(&MemBuffer[i], ssdtinfo, sizeof(SSDTINFO));
-
 		RtlSecureZeroMemory(ssdtinfo, sizeof(SSDTINFO));
 	}
 

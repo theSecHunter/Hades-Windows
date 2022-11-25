@@ -376,8 +376,6 @@
     <ClInclude Include="public.h" />
     <ClInclude Include="rDirectory.h" />
     <ClInclude Include="register.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="resource1.h" />
     <ClInclude Include="resource2.h" />
     <ClInclude Include="rProcess.h" />
     <ClInclude Include="rRegister.h" />

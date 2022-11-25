@@ -82,6 +82,61 @@ static BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWOR
     return bRet;
 }
 
+#ifndef _WIN64
+    static void ShudowMemoryPageProtect32()
+    {
+        __asm
+        {
+            pushad;
+            pushfd;
+
+            mov eax, cr0;
+            // 前提内存保护一定是开启的 WP = 1 否则..就给开启了
+            and eax, ~0x10000;
+            mov cr0, eax;
+
+            popfd;
+            popad;
+
+        }
+    }
+    static void StartMemoryPageProtect32()
+    {
+        __asm
+        {
+            pushad;
+            pushfd;
+
+            mov eax, cr0;
+            or eax, 0x10000;
+            mov cr0, eax;
+
+            popfd;
+            popad;
+
+        }
+    }
+#else
+// 不太推荐关闭 - 推荐MDL映射修改
+    const KIRQL ShudowMemoryPageProtect64()
+    {
+        KIRQL  irql = KeRaiseIrqlToDpcLevel();
+        UINT64  cr0 = __readcr0();
+        cr0 &= 0xfffffffffffeffff;
+        __writecr0(cr0);
+        _disable();
+        return  irql;
+    }
+    void StartMemoryPageProtect64(const KIRQL irql)
+    {
+        UINT64  cr0 = __readcr0();
+        cr0 |= 0x10000;
+        _enable();
+        __writecr0(cr0);
+        KeLowerIrql(irql);
+    }
+#endif
+
 #endif // !_UTIL_H
 
 

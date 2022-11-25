@@ -177,8 +177,6 @@
     <ClInclude Include="minifilter.h">
       <Filter>fsminifilter</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="resource1.h" />
     <ClInclude Include="rDirectory.h">
       <Filter>kruleEngine</Filter>
     </ClInclude>
