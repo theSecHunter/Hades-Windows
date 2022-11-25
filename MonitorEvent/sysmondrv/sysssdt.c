@@ -48,9 +48,7 @@ const ULONGLONG SysGetSsdtBaseAddrto64()
 			//c3            ret
 			if (MmIsAddressValid(i) && MmIsAddressValid(i + 5))
 			{
-				if ((*i == 0xe9) &&
-					(*(i + 5) == 0xc3)
-					)
+				if ((*i == 0xe9) && (*(i + 5) == 0xc3))
 				{
 					memcpy(&temp, i + 1, 4);
 					PUCHAR pKiSystemServiceUser = temp + (i + 5);
@@ -98,7 +96,7 @@ int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 	if (0 >= ServiceTableBase)
 		return -1;
 
-	LONG		offset = 0;
+	DWORD32		offset = 0;
 	ULONGLONG	funaddr = 0;
 	PSSDTINFO	ssdtinfo = ExAllocatePoolWithTag(NonPagedPool, sizeof(SSDTINFO), 'STMM');
 	if (!ssdtinfo)
@@ -108,9 +106,8 @@ int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 	for (i = 0; i < SsdtFunNumber; ++i)
 	{
 		ssdtinfo->ssdt_id = i;
-		offset = ServiceTableBase[i];
+		offset = ((PDWORD32)ServiceTableBase)[i];
 		ssdtinfo->sstd_memoffset = offset;
-
 #ifndef _WIN64
 		// x86
 		ssdtinfo->sstd_memaddr = offset;
@@ -123,7 +120,6 @@ int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 		funaddr = (ULONGLONG)ServiceTableBase + (ULONGLONG)offset;
 		ssdtinfo->sstd_memaddr = funaddr;
 #endif // !_WIN64
-
 		RtlCopyMemory(&MemBuffer[i], ssdtinfo, sizeof(SSDTINFO));
 		RtlSecureZeroMemory(ssdtinfo, sizeof(SSDTINFO));
 	}
