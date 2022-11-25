@@ -70,7 +70,7 @@ static BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWOR
         if (NT_SUCCESS(status))
         {
             PUNICODE_STRING dststring = (PUNICODE_STRING)ProcessPath;
-            // 7/29 ¿ÉÄÜ»áÓöµ½lengthÎª¿Õ£¬µ¼ÖÂ¿½±´À¶ÆÁ - ÒÑĞŞ¸´
+            // 7/29 å¯èƒ½ä¼šé‡åˆ°lengthä¸ºç©ºï¼Œå¯¼è‡´æ‹·è´è“å± - å·²ä¿®å¤
             if (dststring->Length && (pathlen > (DWORD)dststring->Length + sizeof(WCHAR)))
             {
                 RtlMoveMemory(path, dststring->Buffer, dststring->Length + sizeof(WCHAR));
@@ -91,7 +91,6 @@ static BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWOR
             pushfd;
 
             mov eax, cr0;
-            // Ç°ÌáÄÚ´æ±£»¤Ò»¶¨ÊÇ¿ªÆôµÄ WP = 1 ·ñÔò..¾Í¸ø¿ªÆôÁË
             and eax, ~0x10000;
             mov cr0, eax;
 
@@ -117,7 +116,7 @@ static BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWOR
         }
     }
 #else
-// ²»Ì«ÍÆ¼ö¹Ø±Õ - ÍÆ¼öMDLÓ³ÉäĞŞ¸Ä
+// ä¸æ¨èå…³é—­ - æ¨èMDLæ˜ å°„ä¿®æ”¹
     const KIRQL ShudowMemoryPageProtect64()
     {
         KIRQL  irql = KeRaiseIrqlToDpcLevel();
