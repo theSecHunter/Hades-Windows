@@ -116,7 +116,7 @@ static BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWOR
         }
     }
 #else
-// 不推荐关闭 - 推荐MDL映射修改
+// 不推荐 - 推荐MDL映射修改
     const KIRQL ShudowMemoryPageProtect64()
     {
         KIRQL  irql = KeRaiseIrqlToDpcLevel();

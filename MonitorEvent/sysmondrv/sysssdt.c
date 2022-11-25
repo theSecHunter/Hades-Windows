@@ -1,6 +1,8 @@
 #include "public.h"
 #include "sysssdt.h"
 
+PKSYSTEM_SERVICE_TABLE KeServiceDescriptorTable = NULL;
+
 const ULONGLONG HelpSsdtBaseAddr64(PUCHAR StartSearchAddress)
 {
 	PUCHAR EndSearchAddress = StartSearchAddress + 0x500;
@@ -65,16 +67,16 @@ const ULONGLONG SysGetSsdtBaseAddrto32()
 	// 1.1 获取当前线程
 	PETHREAD pThread = PsGetCurrentThread();
 	// 1.2 线程结构体 +0xbc 获取的是 ServiceTable 
-	// 硬编码需要维护一下版本，有缺陷x86下
+	// 注: x86系统版本 - 硬编码需要维护
 	return (*(ULONG*)((ULONG_PTR)pThread + 0xbc));
 }
 
 int Sstd_Init()
 {
 #ifdef _WIN64
-	KeServiceDescriptorTable = (PSYSTEM_SERVICE_TABLE)SysGetSsdtBaseAddrto64();
+	KeServiceDescriptorTable = (PKSYSTEM_SERVICE_TABLE)SysGetSsdtBaseAddrto64();
 #else
-	KeServiceDescriptorTable = (PSYSTEM_SERVICE_TABLE)SysGetSsdtBaseAddrto32();
+	KeServiceDescriptorTable = (PKSYSTEM_SERVICE_TABLE)SysGetSsdtBaseAddrto32();
 #endif // _WIN32
 	if (KeServiceDescriptorTable)
 		return 1;
@@ -87,13 +89,18 @@ int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 	if (!KeServiceDescriptorTable)
 		return -1;
 
-	ULONGLONG SsdtFunNumber = KeServiceDescriptorTable->NumberOfServices;
-	if (0 >= SsdtFunNumber)
+	const DWORD32 dwSsdtFunNumber = KeServiceDescriptorTable->NumberOfService;
+	if ((dwSsdtFunNumber < 0x100) || (dwSsdtFunNumber > 0x200))
 		return -1;
 
+#ifndef _WIN64
 	PULONG ServiceTableBase = NULL;
 	ServiceTableBase = (PULONG)KeServiceDescriptorTable->ServiceTableBase;
-	if (0 >= ServiceTableBase)
+#else
+	PULONG64 ServiceTableBase = NULL;
+	ServiceTableBase = (PULONG64)KeServiceDescriptorTable->ServiceTableBase;
+#endif // !_WIN64
+	if (!ServiceTableBase)
 		return -1;
 
 	DWORD32		offset = 0;
@@ -103,7 +110,7 @@ int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 		return -1;
 	RtlSecureZeroMemory(ssdtinfo, sizeof(SSDTINFO));
 	int			i = 0;
-	for (i = 0; i < SsdtFunNumber; ++i)
+	for (i = 0; i < dwSsdtFunNumber; ++i)
 	{
 		ssdtinfo->ssdt_id = i;
 		offset = ((PDWORD32)ServiceTableBase)[i];
@@ -117,9 +124,13 @@ int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 			offset = (offset >> 4) | 0xF0000000;
 		else
 			offset = offset >> 4;
-		funaddr = (ULONGLONG)ServiceTableBase + (ULONGLONG)offset;
+		funaddr = (ULONG64)ServiceTableBase + offset;
 		ssdtinfo->sstd_memaddr = funaddr;
 #endif // !_WIN64
+		if (MmIsAddressValid(ssdtinfo->sstd_memaddr))
+			ssdtinfo->ssdt_addrstatus = TRUE;
+		else
+			ssdtinfo->ssdt_addrstatus = FALSE;
 		RtlCopyMemory(&MemBuffer[i], ssdtinfo, sizeof(SSDTINFO));
 		RtlSecureZeroMemory(ssdtinfo, sizeof(SSDTINFO));
 	}
