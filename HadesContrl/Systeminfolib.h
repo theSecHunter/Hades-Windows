@@ -22,6 +22,7 @@ typedef struct _SystemAttributesNode
 	std::vector<std::string> camera;		//摄像头
 	std::vector<std::string> bluetooth;		//蓝牙
 	std::vector<std::string> voice;			//音频
+	std::vector<std::string> microphone;	//麦克风
 }SystemAttributesNode, * PSystemAttributesNode;
 // OS变动数据
 typedef struct _SystemDynamicNode

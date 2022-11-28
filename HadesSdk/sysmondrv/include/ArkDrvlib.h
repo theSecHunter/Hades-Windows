@@ -31,12 +31,6 @@
 // IPS Register Mods
 #define CTL_DEVCTRL_IPS_SETREGISTERFILTERMOD \
 	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x810, METHOD_BUFFERED, FILE_ANY_ACCESS)
-// IPS Driectory Mods/Name
-#define CTL_DEVCTRL_IPS_SETDIRECTORYRULE \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x811, METHOD_BUFFERED, FILE_ANY_ACCESS)
-// IPS ThreadInject Name  
-#define CTL_DEVCTRL_IPS_SETTHREADINJECTNAME \
-	CTL_CODE(FILE_DEVICE_UNKNOWN, 0x812, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 typedef enum _NF_DRIVER_TYPE
 {
@@ -88,7 +82,7 @@ public:
 	int devctrl_OffMonitor();
 	int devctrl_OnIpsMonitor();
 	int devctrl_OffIpsMonitor();
-	int devctrl_SetIpsProcessNameList(const DWORD code, const wchar_t* buf);
+	int devctrl_SetIpsProcessNameList(const DWORD code ,const wchar_t* buf);
 	int devctrl_SetIpsFilterMods(const DWORD32 code, const int mods);
 
 	bool devctrl_sendioct(

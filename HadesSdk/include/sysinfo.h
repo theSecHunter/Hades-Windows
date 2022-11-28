@@ -3,7 +3,6 @@
 #include <Windows.h>
 #include <string>
 #include <memory>
-#include <ntstatus.h>
 
 using namespace std;
 // kernel id

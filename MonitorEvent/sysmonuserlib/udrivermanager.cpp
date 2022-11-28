@@ -1,4 +1,4 @@
-#include "DriverManager.h"
+#include "udrivermanager.h"
 #include <Windows.h>
 #include <xstring>
 
@@ -106,9 +106,9 @@ bool InstallDriver1(const wchar_t* cszDriverName, const wchar_t* lpszDriverPath,
 	SC_HANDLE hService = NULL;
 
 	hServiceMgr = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-	if (hServiceMgr == NULL)
+	if (!hServiceMgr || (hServiceMgr == NULL))
 	{
-		CloseServiceHandle(hServiceMgr);
+		//CloseServiceHandle(hServiceMgr);
 		return FALSE;
 	}
 	hService = CreateService(hServiceMgr,
@@ -371,15 +371,13 @@ BOOL StartDriver1(const wchar_t* lpszDriverName)
 	}
 
 	schManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-	if (NULL == schManager)
+	if (!schManager || (NULL == schManager))
 	{
-		CloseServiceHandle(schManager);
 		return FALSE;
 	}
 	schService = OpenService(schManager, lpszDriverName, SERVICE_ALL_ACCESS);
-	if (NULL == schService)
+	if (!schService || (NULL == schService))
 	{
-		CloseServiceHandle(schService);
 		CloseServiceHandle(schManager);
 		return FALSE;
 	}
@@ -606,10 +604,10 @@ bool DriverManager::nf_DriverInstall_Start(const int mav, const int miv, const b
 	GetModuleFileName(NULL, szFilePath, MAX_PATH);
 	OutputDebugString(szFilePath);
 	DriverPath = szFilePath;
-	int num = DriverPath.find_last_of(L"\\");
+	const size_t num = DriverPath.find_last_of(L"\\");
 	PathAll = DriverPath.substr(0, num);
 
-	// 不够精准,先用着win7 or win10满足
+	// 不够精准
 	switch (miv)
 	{
 	case 0://Vista_Server08

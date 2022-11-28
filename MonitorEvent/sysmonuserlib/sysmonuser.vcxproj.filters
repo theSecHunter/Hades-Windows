@@ -36,9 +36,6 @@
     <ClCompile Include="uservicesoftware.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="usession.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="usysinfo.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -51,10 +48,7 @@
     <ClCompile Include="uetw.cpp">
       <Filter>etw</Filter>
     </ClCompile>
-    <ClCompile Include="uexterndevice.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="DriverManager.cpp">
+    <ClCompile Include="udrivermanager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -83,22 +77,19 @@
     <ClInclude Include="uservicesoftware.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="usession.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="usysinfo.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="usysuser.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="uexterndevice.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DriverManager.h">
+    <ClInclude Include="udrivermanager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\HadesSdk\include\sysinfo.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

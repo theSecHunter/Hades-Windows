@@ -41,7 +41,7 @@ typedef enum EVENTTYPE_UI
     UIEVENT_TIMER,
     UIEVENT_NOTIFY,
     UIEVENT_COMMAND,
-    UIEVENT__LAST,
+    UIEVENT__LAST
 };
 
 /////////////////////////////////////////////////////////////////////////////////////

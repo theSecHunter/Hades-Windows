@@ -45,12 +45,12 @@
     <ClCompile Include="ArkSysEnumNotify.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="devctrl.cpp">
+    <ClCompile Include="ArkDrvlib.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AkrSysDriverDevInfo.h">
+    <ClInclude Include="ArkSysDriverDevInfo.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ArkDpcTimer.h">
@@ -89,7 +89,7 @@
     <ClInclude Include="sync.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="drvlib.h">
+    <ClInclude Include="ArkDrvlib.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">

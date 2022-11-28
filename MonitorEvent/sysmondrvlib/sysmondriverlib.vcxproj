@@ -244,10 +244,10 @@
     <ClCompile Include="ArkProcessInfo.cpp" />
     <ClCompile Include="ArkSsdt.cpp" />
     <ClCompile Include="ArkSysEnumNotify.cpp" />
-    <ClCompile Include="devctrl.cpp" />
+    <ClCompile Include="ArkDrvlib.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AkrSysDriverDevInfo.h" />
+    <ClInclude Include="ArkSysDriverDevInfo.h" />
     <ClInclude Include="ArkDpcTimer.h" />
     <ClInclude Include="ArkFsd.h" />
     <ClInclude Include="ArkIdt.h" />
@@ -256,7 +256,7 @@
     <ClInclude Include="ArkProcessInfo.h" />
     <ClInclude Include="ArkSsdt.h" />
     <ClInclude Include="ArkSysEnumNotify.h" />
-    <ClInclude Include="drvlib.h" />
+    <ClInclude Include="ArkDrvlib.h" />
     <ClInclude Include="nfevents.h" />
     <ClInclude Include="nf_api.h" />
     <ClInclude Include="ntbasic.h" />

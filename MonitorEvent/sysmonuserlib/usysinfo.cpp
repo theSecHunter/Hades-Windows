@@ -32,17 +32,19 @@ void USysBaseInfo::GetOSVersion(std::string& strOSVersion, int& verMajorVersion,
         std::string str;
         OSVERSIONINFOEX osvi;
         SYSTEM_INFO si;
-        BOOL bOsVersionInfoEx;
-
+        
         ZeroMemory(&si, sizeof(SYSTEM_INFO));
         ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
 
         osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-        if (!(bOsVersionInfoEx = GetVersionEx((OSVERSIONINFO*)&osvi)))
+        BOOL bOsVersionInfoEx = GetVersionEx((OSVERSIONINFO*)&osvi);
+        if (!bOsVersionInfoEx)
         {
             osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-            GetVersionEx((OSVERSIONINFO*)&osvi);
+            bOsVersionInfoEx = GetVersionEx((OSVERSIONINFO*)&osvi);
         }
+        if (!bOsVersionInfoEx)
+            return;
 
         GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetNativeSystemInfo");
         GetSystemInfo(&si);
@@ -324,7 +326,7 @@ void USysBaseInfo::GetDiskInfo(std::vector<std::string>& diskinfo)
         for (int i = 0; i < DSLength / 4; ++i)
         {
             Sleep(10);
-            CStringA strdriver = DStr + i * 4;
+            CStringA strdriver = DStr + (i * 4);
             CStringA strTmp, strTotalBytes, strFreeBytes;
             DType = GetDriveTypeA(strdriver);//GetDriveType函数，可以获取驱动器类型，参数为驱动器的根目录  
             switch (DType)
@@ -434,7 +436,6 @@ void USysBaseInfo::GetDisplayCardInfo(std::vector<std::string>& Cardinfo)
                 return;
             }
 
-
             size = 512;
             //查询key下的字段为Group的子键字段名保存到name  
             lResult = RegQueryValueEx(key, TEXT("Group"), 0, &type, (LPBYTE)name, &size);
@@ -444,8 +445,6 @@ void USysBaseInfo::GetDisplayCardInfo(std::vector<std::string>& Cardinfo)
                 RegCloseKey(key);
                 continue;
             };
-
-
 
             //如果查询到的name不是Video则说明该键不是显卡驱动项  
             if (_tcscmp(TEXT("Video"), name) != 0)
@@ -468,15 +467,12 @@ void USysBaseInfo::GetDisplayCardInfo(std::vector<std::string>& Cardinfo)
                 sprintf(name, "%d", j);
                 size = sizeof(sz);
                 lResult = RegQueryValueExA(key, name, 0, &type, (LPBYTE)sz, &size);
-
-
                 lResult = RegOpenKeyExA(keyEnum, sz, 0, KEY_READ, &key2);
-                if (ERROR_SUCCESS)
+                if (lResult == ERROR_SUCCESS)
                 {
                     RegCloseKey(keyEnum);
                     return;
                 }
-
 
                 size = sizeof(sz);
                 lResult = RegQueryValueExA(key2, "FriendlyName", 0, &type, (LPBYTE)sz, &size);
@@ -497,6 +493,83 @@ void USysBaseInfo::GetDisplayCardInfo(std::vector<std::string>& Cardinfo)
     catch (const std::exception&)
     {
     }
+}
+void USysBaseInfo::GetDisplayCardInfoWmic(std::vector<std::string>& Cardinfo)
+{
+    const long MAX_COMMAND_SIZE = 1024 * 4;
+    wchar_t szFetCmd[] = L"wmic baseboard get manufacturer,product";
+    HANDLE hReadPipe = NULL;  //读取管道
+    HANDLE hWritePipe = NULL; //写入管道	
+    PROCESS_INFORMATION pi;   //进程信息	
+    STARTUPINFO			si;	  //控制命令行窗口信息
+    SECURITY_ATTRIBUTES sa;   //安全属性
+
+    char			szBuffer[MAX_COMMAND_SIZE + 1] = { 0 };
+    std::string		strBuffer;
+    unsigned long	count = 0;
+    long			ipos = 0;
+
+    memset(&pi, 0, sizeof(pi));
+    memset(&si, 0, sizeof(si));
+    memset(&sa, 0, sizeof(sa));
+
+    pi.hProcess = NULL;
+    pi.hThread = NULL;
+    si.cb = sizeof(STARTUPINFO);
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.lpSecurityDescriptor = NULL;
+    sa.bInheritHandle = TRUE;
+
+    do
+    {
+        bool bret = false;
+        bret = CreatePipe(&hReadPipe, &hWritePipe, &sa, 0);
+        if (!bret)
+            break;
+
+        GetStartupInfo(&si);
+        si.hStdError = hWritePipe;
+        si.hStdOutput = hWritePipe;
+        si.wShowWindow = SW_HIDE; //隐藏命令行窗口
+        si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+        bret = CreateProcess(NULL, szFetCmd, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
+        if (!bret)
+            break;
+
+        WaitForSingleObject(pi.hProcess, 500/*INFINITE*/);
+        bret = ReadFile(hReadPipe, szBuffer, MAX_COMMAND_SIZE, &count, 0);
+        if (!bret)
+            break;
+        bret = FALSE;
+        strBuffer = szBuffer;
+
+        //切割 \r\r\n
+        std::vector<std::string> vecArray;
+        {
+            static std::string strSp;
+            char* vector_routeip = strtok((char*)strBuffer.data(), "\r\r\n");
+            while (vector_routeip != NULL)
+            {
+                strSp = vector_routeip;
+                vecArray.push_back(strSp);
+                vector_routeip = strtok(NULL, "\r\r\n");
+            }
+        }
+
+        const int icount = vecArray.size();
+        if (icount < 2)
+            break;
+
+        Cardinfo.push_back(vecArray[1]);
+    } while (false);
+    if (hWritePipe)
+        CloseHandle(hWritePipe);
+    if (hReadPipe)
+        CloseHandle(hReadPipe);
+    if (pi.hProcess)
+        CloseHandle(pi.hProcess);
+    if (pi.hThread)
+        CloseHandle(pi.hThread);
 }
 // View: 系统CPU
 #ifdef _WIN64
@@ -649,7 +722,6 @@ void USysBaseInfo::GetGPU(std::vector<std::string>& monitor) {
 
                 //std::cout << "DisplayDevice:" << n + 1 << " Name:" << outputDesc.DeviceName << std::endl;
                 //std::cout << "DisplayDevice " << n + 1 << " Resolution ratio:" << outputDesc.DesktopCoordinates.right - outputDesc.DesktopCoordinates.left << "*" << outputDesc.DesktopCoordinates.bottom - outputDesc.DesktopCoordinates.top << std::endl;
-
                 // 所支持的分辨率信息  
                 //std::cout << "分辨率信息:" << std::endl;
                 /*for (UINT m = 0; m < uModeNum; m++)
@@ -689,128 +761,148 @@ void USysBaseInfo::GetBluetooth(std::vector<std::string>& blueinfo)
     //得到第一个被枚举的蓝牙收发器的句柄hbf可用于BluetoothFindNextRadio，hbr可用于BluetoothFindFirstDevice。
     //若没有找到本机的蓝牙收发器，则得到的句柄hbf=NULL
     //具体可参考https://msdn.microsoft.com/en-us/library/aa362786(v=vs.85).aspx 
+    // 如果失败了就是电脑没有开启蓝牙
     hbf = BluetoothFindFirstRadio(&btfrp, &hbr);
-
-    bool brfind = hbf != NULL;
-    while (brfind)
+    // MAX 10(假设最大值)
+    int icount = 10;
+    bool brfind = (hbf != NULL);
+    while (brfind && --icount)
     {
         if (BluetoothGetRadioInfo(hbr, &bri) == ERROR_SUCCESS)//获取蓝牙收发器的信息，储存在bri中  
         {
+            // 蓝牙收发器的名字
+            blueinfo.emplace_back(bri.szName);
             //std::cout << "Class of device: 0x" << uppercase << hex << bri.ulClassofDevice << endl;
             //wcout << "Name:" << bri.szName << endl;  //蓝牙收发器的名字
             //cout << "Manufacture:0x" << uppercase << hex << bri.manufacturer << endl;
             //cout << "Subversion:0x" << uppercase << hex << bri.lmpSubversion << endl;
-            //  
-            btsp.hRadio = hbr;  //设置执行搜索设备所在的句柄，应设为执行BluetoothFindFirstRadio函数所得到的句柄
-            btsp.fReturnAuthenticated = TRUE;//是否搜索已配对的设备  
-            btsp.fReturnConnected = FALSE;//是否搜索已连接的设备  
-            btsp.fReturnRemembered = TRUE;//是否搜索已记忆的设备  
-            btsp.fReturnUnknown = TRUE;//是否搜索未知设备  
-            btsp.fIssueInquiry = TRUE;//是否重新搜索，True的时候会执行新的搜索，时间较长，FALSE的时候会直接返回上次的搜索结果。
-            btsp.cTimeoutMultiplier = 30;//指示查询超时的值，以1.28秒为增量。 例如，12.8秒的查询的cTimeoutMultiplier值为10.此成员的最大值为48.当使用大于48的值时，调用函数立即失败并返回 
-            hbdf = BluetoothFindFirstDevice(&btsp, &btdi);//通过找到第一个设备得到的HBLUETOOTH_DEVICE_FIND句柄hbdf来枚举远程蓝牙设备，搜到的第一个远程蓝牙设备的信息储存在btdi对象中。若没有远程蓝牙设备，hdbf=NULL。  
-            bool bfind = hbdf != NULL;
-            while (bfind)
-            {
-                //wcout << "[Name]:" << btdi.szName;  //远程蓝牙设备的名字
-                //cout << ",[Address]:0x" << uppercase << hex << btdi.Address.ullLong << endl;
-                bfind = BluetoothFindNextDevice(hbdf, &btdi);//通过BluetoothFindFirstDevice得到的HBLUETOOTH_DEVICE_FIND句柄来枚举搜索下一个远程蓝牙设备，并将远程蓝牙设备的信息储存在btdi中  
-            }
-            BluetoothFindDeviceClose(hbdf);//使用完后记得关闭HBLUETOOTH_DEVICE_FIND句柄hbdf。  
+
+            // 搜索周围接收到的蓝牙信号
+            //btsp.hRadio = hbr;  //设置执行搜索设备所在的句柄，应设为执行BluetoothFindFirstRadio函数所得到的句柄
+            //btsp.fReturnAuthenticated = TRUE;//是否搜索已配对的设备  
+            //btsp.fReturnConnected = FALSE;//是否搜索已连接的设备  
+            //btsp.fReturnRemembered = TRUE;//是否搜索已记忆的设备  
+            //btsp.fReturnUnknown = TRUE;//是否搜索未知设备  
+            //btsp.fIssueInquiry = TRUE;//是否重新搜索，True的时候会执行新的搜索，时间较长，FALSE的时候会直接返回上次的搜索结果。
+            //btsp.cTimeoutMultiplier = 10;//指示查询超时的值，以1.28秒为增量。 例如，12.8秒的查询的cTimeoutMultiplier值为10.此成员的最大值为48.当使用大于48的值时，调用函数立即失败并返回 
+            //hbdf = BluetoothFindFirstDevice(&btsp, &btdi);//通过找到第一个设备得到的HBLUETOOTH_DEVICE_FIND句柄hbdf来枚举远程蓝牙设备，搜到的第一个远程蓝牙设备的信息储存在btdi对象中。若没有远程蓝牙设备，hdbf=NULL。  
+            //bool bfind = hbdf != NULL;
+            //while (bfind)
+            //{
+            //    //wcout << "[Name]:" << btdi.szName;  //远程蓝牙设备的名字
+            //    //cout << ",[Address]:0x" << uppercase << hex << btdi.Address.ullLong << endl;
+            //    bfind = BluetoothFindNextDevice(hbdf, &btdi);//通过BluetoothFindFirstDevice得到的HBLUETOOTH_DEVICE_FIND句柄来枚举搜索下一个远程蓝牙设备，并将远程蓝牙设备的信息储存在btdi中  
+            //}
+            //if (hbdf)
+            //    BluetoothFindDeviceClose(hbdf); //使用完后记得关闭HBLUETOOTH_DEVICE_FIND句柄hbdf。  
         }
-        CloseHandle(hbr);
-        brfind = BluetoothFindNextRadio(hbf, &hbr);//通过BluetoothFindFirstRadio得到的HBLUETOOTH_RADIO_FIND句柄hbf来枚举搜索下一个本地蓝牙收发器，得到可用于BluetoothFindFirstDevice的句柄hbr。    
+        if (hbf)
+        {
+            CloseHandle(hbr);
+            brfind = BluetoothFindNextRadio(hbf, &hbr);//通过BluetoothFindFirstRadio得到的HBLUETOOTH_RADIO_FIND句柄hbf来枚举搜索下一个本地蓝牙收发器，得到可用于BluetoothFindFirstDevice的句柄hbr。    
+        }
     }
-    BluetoothFindRadioClose(hbf);//使用完后记得关闭HBLUETOOTH_RADIO_FIND句柄hbf。  
+    if (hbf)
+        BluetoothFindRadioClose(hbf); //使用完后记得关闭HBLUETOOTH_RADIO_FIND句柄hbf。  
     return;
 }
 // Monitor/View: 系统摄像头 - 支持的分辨率
-std::vector<std::pair<int, int>> GetCameraSupportResolutions(IBaseFilter* pBaseFilter)
+const std::vector<std::pair<int, int>> GetCameraSupportResolutions(IBaseFilter* pBaseFilter)
 {
-    HRESULT hr = 0;
-    std::vector<IPin*> pins;
-    IEnumPins* EnumPins;
-    pBaseFilter->EnumPins(&EnumPins);
-    pins.clear();
-
     std::vector<std::pair<int, int>> result;
+    if (!pBaseFilter)
+        return result;
 
-    for (;;)
+    try
     {
-        IPin* pin;
-        hr = EnumPins->Next(1, &pin, NULL);
-        if (hr != S_OK)
-        {
-            break;
-        }
-        pins.push_back(pin);
-        pin->Release();
-    }
-
-    EnumPins->Release();
-
-    PIN_INFO pInfo;
-    for (int i = 0; i < pins.size(); i++)
-    {
-        if (nullptr == pins[i])
-        {
-            break;
-        }
-        pins[i]->QueryPinInfo(&pInfo);
-
-        IEnumMediaTypes* emt = NULL;
-        pins[i]->EnumMediaTypes(&emt);
-        AM_MEDIA_TYPE* pmt;
+        HRESULT hr = 0;
+        std::vector<IPin*> pins;
+        IEnumPins* EnumPins;
+        pBaseFilter->EnumPins(&EnumPins);
+        pins.clear();
 
         for (;;)
         {
-            hr = emt->Next(1, &pmt, NULL);
+            IPin* pin;
+            hr = EnumPins->Next(1, &pin, NULL);
             if (hr != S_OK)
             {
                 break;
             }
-            if ((pmt->formattype == FORMAT_VideoInfo)
-                //&& (pmt->subtype == MEDIASUBTYPE_RGB24)
-                && (pmt->cbFormat >= sizeof(VIDEOINFOHEADER))
-                && (pmt->pbFormat != NULL)) {
+            pins.push_back(pin);
+            pin->Release();
+        }
 
-                VIDEOINFOHEADER* pVIH = (VIDEOINFOHEADER*)pmt->pbFormat;
+        EnumPins->Release();
 
-                auto insertParam = std::pair<int, int>{ pVIH->bmiHeader.biWidth, pVIH->bmiHeader.biHeight };
-                bool isSet = false;
+        PIN_INFO pInfo;
+        for (int i = 0; i < pins.size(); i++)
+        {
+            if (nullptr == pins[i])
+            {
+                break;
+            }
+            pins[i]->QueryPinInfo(&pInfo);
 
-                for (auto param : result)
+            IEnumMediaTypes* emt = NULL;
+            pins[i]->EnumMediaTypes(&emt);
+            AM_MEDIA_TYPE* pmt;
+
+            for (;;)
+            {
+                hr = emt->Next(1, &pmt, NULL);
+                if (hr != S_OK)
                 {
-                    if (param.first == insertParam.first && param.second == insertParam.second)
+                    break;
+                }
+                if ((pmt->formattype == FORMAT_VideoInfo)
+                    //&& (pmt->subtype == MEDIASUBTYPE_RGB24)
+                    && (pmt->cbFormat >= sizeof(VIDEOINFOHEADER))
+                    && (pmt->pbFormat != NULL)) {
+
+                    VIDEOINFOHEADER* pVIH = (VIDEOINFOHEADER*)pmt->pbFormat;
+
+                    auto insertParam = std::pair<int, int>{ pVIH->bmiHeader.biWidth, pVIH->bmiHeader.biHeight };
+                    bool isSet = false;
+
+                    for (auto param : result)
                     {
-                        isSet = true;
-                        break;
+                        if (param.first == insertParam.first && param.second == insertParam.second)
+                        {
+                            isSet = true;
+                            break;
+                        }
+                    }
+
+                    if (!isSet)
+                    {
+                        result.push_back(insertParam);
                     }
                 }
 
-                if (!isSet)
+                if (pmt->cbFormat != 0)
                 {
-                    result.push_back(insertParam);
+                    CoTaskMemFree((PVOID)pmt->pbFormat);
+                    pmt->cbFormat = 0;
+                    pmt->pbFormat = NULL;
+                }
+                if (pmt->pUnk != NULL)
+                {
+                    // pUnk should not be used.
+                    pmt->pUnk->Release();
+                    pmt->pUnk = NULL;
                 }
             }
-
-            if (pmt->cbFormat != 0)
-            {
-                CoTaskMemFree((PVOID)pmt->pbFormat);
-                pmt->cbFormat = 0;
-                pmt->pbFormat = NULL;
-            }
-            if (pmt->pUnk != NULL)
-            {
-                // pUnk should not be used.
-                pmt->pUnk->Release();
-                pmt->pUnk = NULL;
-            }
+            break;
+            emt->Release();
         }
-        break;
-        emt->Release();
+        return result;
     }
-    return result;
+    catch (const std::exception&)
+    {
+        result.clear();
+        return result;
+    }
 }
 void USysBaseInfo::GetCameraInfoList(std::vector<std::string>& cameraInfo)
 {
@@ -820,7 +912,6 @@ void USysBaseInfo::GetCameraInfoList(std::vector<std::string>& cameraInfo)
     ICreateDevEnum* pSysDevEnum = NULL;
     hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
         IID_ICreateDevEnum, (void**)&pSysDevEnum);
-
     if (FAILED(hr))
     {
         pSysDevEnum->Release();
@@ -829,39 +920,41 @@ void USysBaseInfo::GetCameraInfoList(std::vector<std::string>& cameraInfo)
 
     IEnumMoniker* pEnumCat = NULL;
     hr = pSysDevEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory, &pEnumCat, 0);
-
     if (FAILED(hr) || !pEnumCat)
     {
         pSysDevEnum->Release();
         return;
     }
 
-    IMoniker* pMoniker = NULL;
-    ULONG cFetched;
-    auto index = 0;
-    while (pEnumCat->Next(1, &pMoniker, &cFetched) == S_OK)
+    try
     {
-        IPropertyBag* pPropBag;
-        hr = pMoniker->BindToStorage(0, 0, IID_IPropertyBag, (void**)&pPropBag);
-        if (SUCCEEDED(hr))
+        IMoniker* pMoniker = NULL;
+        ULONG cFetched;
+        while (pEnumCat->Next(1, &pMoniker, &cFetched) == S_OK)
         {
+            IPropertyBag* pPropBag;
+            hr = pMoniker->BindToStorage(0, 0, IID_IPropertyBag, (void**)&pPropBag);
+            if (!SUCCEEDED(hr))
+            {
+                pMoniker->Release();
+                continue;
+            }
             IBaseFilter* pFilter;
             hr = pMoniker->BindToObject(NULL, NULL, IID_IBaseFilter, (void**)&pFilter);
             if (!pFilter)
             {
+                pPropBag->Release();
                 pMoniker->Release();
-                break;
+                continue;
             }
-
-            VARIANT varName;
-            VariantInit(&varName);
+            VARIANT varName; VariantInit(&varName);
             hr = pPropBag->Read(L"FriendlyName", &varName, 0);
             if (SUCCEEDED(hr))
             {
                 CameraInfo info;
                 CStringA tmpstr;
                 info.resolutionList = GetCameraSupportResolutions(pFilter);
-                //tmpstr.Format("%ws", varName.bstrVal); 注释中文时候有BUG
+                //tmpstr.Format("%ws", varName.bstrVal); [孤独剑客] 注释中文时候有BUG 
                 tmpstr = varName.bstrVal;
                 info.cameraName = tmpstr.GetBuffer();
                 nameList.push_back(info);
@@ -870,24 +963,25 @@ void USysBaseInfo::GetCameraInfoList(std::vector<std::string>& cameraInfo)
             VariantClear(&varName);
             pFilter->Release();
             pPropBag->Release();
+            pMoniker->Release();
         }
-        pMoniker->Release();
+        pEnumCat->Release();
     }
-    pEnumCat->Release();
-
-    //return nameList;
+    catch (const std::exception&)
+    {
+    }
 }
 void USysBaseInfo::GetCamerStatus()
 {
-    auto nStatus = SendMessage(NULL, WM_CAP_DRIVER_CONNECT, 0, 0);
-    if (false == nStatus)
-    {
+    //const auto nStatus = SendMessage(NULL, WM_CAP_DRIVER_CONNECT, 0, 0);
+    //if (false == nStatus)
+    //{
 
-    }
-    else
-    {
+    //}
+    //else
+    //{
 
-    }
+    //}
 }
 // Monitor/View: 系统麦克风 - 型号 - 状态
 void USysBaseInfo::GetMicroPhone(std::vector<std::string>& micrphone)
@@ -925,7 +1019,8 @@ const double USysBaseInfo::GetSysDynCpuUtiliza()
     // failure 0  | sucess handle
     HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     // 等待1000毫秒，内核对象会更精确
-    WaitForSingleObject(hEvent, 1000);
+    if (hEvent)
+        WaitForSingleObject(hEvent, 1000);
     // 获取新的时间
     _FILETIME newidleTime, newkernelTime, newuserTime;
     GetSystemTimes(&newidleTime, &newkernelTime, &newuserTime);

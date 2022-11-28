@@ -1,5 +1,5 @@
 /*
-	枚举回调代码使用开源的项目：ZhuHuiBeiShaDiaoARK(github)
+	部分使用开源项目：ZhuHuiBeiShaDiaoARK(github)
 */
 
 #include "public.h"

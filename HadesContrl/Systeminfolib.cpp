@@ -17,12 +17,13 @@ Systeminfolib::Systeminfolib()
         GetComputerNameA(ComUserName, &ComUserLen);
         SYSTEMPUBLIC::sysattriinfo.currentUser = ComUserName;
         g_systmelib.GetOSVersion(SYSTEMPUBLIC::sysattriinfo.verkerlinfo, SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion, SYSTEMPUBLIC::sysattriinfo.Is64);
-        g_systmelib.GetDisplayCardInfo(SYSTEMPUBLIC::sysattriinfo.mainboard);
+        g_systmelib.GetDisplayCardInfoWmic(SYSTEMPUBLIC::sysattriinfo.mainboard);
         //g_systmelib.GetDiskInfo(SYSTEMPUBLIC::sysattriinfo.sysdisk);
         //g_systmelib.Getbattery(SYSTEMPUBLIC::sysattriinfo.battery);
         g_systmelib.GetSysCpuInfo(SYSTEMPUBLIC::sysattriinfo.cpuinfo);
-        //g_systmelib.GetBluetooth(SYSTEMPUBLIC::sysattriinfo.bluetooth);
-        //g_systmelib.GetCameraInfoList(SYSTEMPUBLIC::sysattriinfo.camera);
+        g_systmelib.GetBluetooth(SYSTEMPUBLIC::sysattriinfo.bluetooth);
+        g_systmelib.GetCameraInfoList(SYSTEMPUBLIC::sysattriinfo.camera);
+        g_systmelib.GetMicroPhone(SYSTEMPUBLIC::sysattriinfo.microphone);
         g_systmelib.GetGPU(SYSTEMPUBLIC::sysattriinfo.monitor);
     }
     catch (const std::exception&)

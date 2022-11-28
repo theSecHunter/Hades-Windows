@@ -106,7 +106,11 @@ bool DrvCheckStart()
 		si.wShowWindow = SW_HIDE;
 		// Æô¶¯ÃüÁîÐÐ
 		PROCESS_INFORMATION pi;
-		CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi);
+		if (CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
+		{
+			CloseHandle(pi.hProcess);
+			CloseHandle(pi.hThread);
+		}
 		Sleep(3000);
 		nSeriverstatus = g_DrvManager.nf_GetServicesStatus(g_drverName.c_str());
 		if (SERVICE_RUNNING == nSeriverstatus)
@@ -178,15 +182,15 @@ void killProcess(const wchar_t* const processname)
 bool StartHadesAgentProcess()
 {
 	// Æô¶¯
-	wchar_t szModule[1024] = { 0, };
-	GetModuleFileName(NULL, szModule, sizeof(szModule) / sizeof(char));
+	wchar_t szModule[4096] = { 0, };
+	GetModuleFileName(NULL, szModule, 4096 * sizeof(wchar_t));
 	std::wstring dirpath = szModule;
 	if (0 >= dirpath.size())
 		return false;
-	int offset = dirpath.rfind(L"\\");
+	const int offset = dirpath.rfind(L"\\");
 	if (0 >= offset)
 		return false;
-	dirpath = dirpath.substr(0, offset + 1);
+	dirpath = dirpath.substr(0, (offset + 1));
 
 	std::wstring cmdline;
 	cmdline += dirpath;
@@ -507,7 +511,7 @@ LRESULT MainWindow::OnTrayIcon(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
 	if (lParam == WM_LBUTTONDOWN)
 	{
 		Shell_NotifyIcon(NIM_DELETE, &m_trayInfo);
-		ShowWindow(SW_SHOWNORMAL);
+		::ShowWindow(m_hWnd, SW_SHOWNORMAL);
 	}
 	if (lParam == WM_RBUTTONDOWN)
 	{
@@ -526,7 +530,7 @@ LRESULT MainWindow::OnTrayIcon(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
 		}
 		else if (cmd == WM_ONOPEN)
 		{
-			ShowWindow(SW_SHOW);
+			::ShowWindow(m_hWnd, SW_SHOW);
 		}
 		Shell_NotifyIcon(NIM_DELETE, &m_trayInfo);
 	}

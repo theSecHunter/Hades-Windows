@@ -6,7 +6,7 @@
 #include "nfevents.h"
 #include <xstring>
 #include <vector>
-#include "drvlib.h"
+#include "ArkDrvlib.h"
 
 #pragma comment(lib,"Crypt32.lib")
 #pragma comment(lib, "Tdh.lib")
@@ -108,7 +108,7 @@ int DevctrlIoct::devctrl_workthread(LPVOID grpcobj, const bool flag)
 }
 int DevctrlIoct::devctrl_opendeviceSylink(const char* devSylinkName)
 {
-	if (!devSylinkName && (0 >= strlen(devSylinkName)))
+	if (!devSylinkName || (0 >= strlen(devSylinkName)))
 		return -1;
 	
 	// 1. Use IOCTL Driver
