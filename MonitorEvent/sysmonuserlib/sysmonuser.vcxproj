@@ -249,6 +249,7 @@
     <ClCompile Include="uservicesoftware.cpp" />
     <ClCompile Include="usysinfo.cpp" />
     <ClCompile Include="usysuser.cpp" />
+    <ClCompile Include="utilstool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\HadesSdk\include\sysinfo.h" />
@@ -264,6 +265,7 @@
     <ClInclude Include="uservicesoftware.h" />
     <ClInclude Include="usysinfo.h" />
     <ClInclude Include="usysuser.h" />
+    <ClInclude Include="utilstool.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="x32.asm">

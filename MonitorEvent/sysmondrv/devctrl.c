@@ -201,8 +201,12 @@ NTSTATUS devctrl_GetSysIdtInfo(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_
 		if (!pOutBuffer && (outputBufferLength < (sizeof(IDTINFO) * 0x100)))
 			break;
 
+#ifdef _WIN64
 		if (!nf_GetIdtTableInfo(pOutBuffer))
 			break;
+#else
+
+#endif
 
 		irp->IoStatus.Status = STATUS_SUCCESS;
 		irp->IoStatus.Information = outputBufferLength;

@@ -1,6 +1,7 @@
 #ifndef _UETW_H
 #define _UETW_H
 #include <functional>
+
 #define INITGUID
 #include <evntrace.h>
 #include <evntcons.h>

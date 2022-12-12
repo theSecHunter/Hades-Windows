@@ -2,7 +2,7 @@
 #include "ufile.h"
 #include <string>
 #include <atlstr.h>
-
+#include <vector>
 #include <sysinfo.h>
 #include "MD5.h"
 
@@ -19,6 +19,86 @@ UFile::~UFile()
 {
 }
 
+/*
+*	递归遍历控制目录层数
+	std::vector<std::string> vecHitDirectory;
+	for (const auto& vDrvIter : vecDiskH)
+	{
+		for (const auto& folderKeyIter : strDirectory)
+		{
+			CodeTool::SearchDir(vDrvIter, 4, vecHitDirectory, folderKeyIter);
+		}
+	}
+	void SearchDirEx(const std::string& strDir, int bSub, std::vector<std::string>& paths, const std::string& strFolderKey)
+{
+	int i = 0; WIN32_FIND_DATA FileData = { 0 };
+	const HANDLE hFile = FindFirstFile((strDir + "*").c_str(), &FileData);
+	// 1. 判断
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		if (bSub <= 0)
+			return;
+		// 2. 递归循环
+		do
+		{
+			if (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			{
+				const std::string strTmp = FileData.cFileName;
+				if (std::string(".") == strTmp || std::string("..") == strTmp)
+					continue;
+				const auto& iter = strTmp.find("$");
+				if (string::npos != iter)
+					continue;
+				if (strFolderKey == FileData.cFileName)
+				{
+					//OutputDebugString(("[LoadPP] EnumDirectory FolderKey Success: " + strDir + FileData.cFileName + "\\" + "\n").c_str());
+					paths.push_back(strDir + FileData.cFileName);
+					break;
+				}
+				SearchDirEx(strDir + FileData.cFileName + "\\", --bSub, paths, strFolderKey);
+			}
+		} while (FindNextFile(hFile, &FileData));
+		if (hFile)
+			FindClose(hFile);
+	}
+	return;
+}
+void SearchDir(const std::string& strDir, int bSub, std::vector<std::string>& paths, const std::string& strFolderKey)
+{
+	int i = 0;  WIN32_FIND_DATA FileData = { 0 };
+	const HANDLE hFile = FindFirstFile((strDir + "*").c_str(), &FileData);
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		std::string strTmpcFileName, strFullTmpcFileName;
+		do
+		{
+			if (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			{
+				strTmpcFileName = FileData.cFileName;
+				if ("." == strTmpcFileName || ".." == strTmpcFileName)
+					continue;
+				const auto& iter = strTmpcFileName.find("$");
+				if (string::npos != iter)
+					continue;
+				if (strFolderKey == FileData.cFileName)
+				{
+					OutputDebugString(("EnumDirectory FolderKey Success: " + strDir + FileData.cFileName + "\\" + "\n").c_str());
+					paths.push_back(strDir + FileData.cFileName);
+					break;
+				}
+				strFullTmpcFileName = strDir + FileData.cFileName + "\\";
+				if ("C:\\Windows\\" == strFullTmpcFileName)
+					continue;
+				SearchDirEx(strFullTmpcFileName, bSub, paths, strFolderKey);
+				Sleep(1);
+			}
+		} while (FindNextFile(hFile, &FileData));
+		if (hFile)
+			FindClose(hFile);
+	}
+	return;
+}
+*/
 bool EnumDriectFile(CString Path, LPVOID outbuf)
 {
 	if (!g_driectfileinfo)
@@ -26,7 +106,7 @@ bool EnumDriectFile(CString Path, LPVOID outbuf)
 
 	int i = 0;
 	WIN32_FIND_DATA FileData = { 0 };
-	HANDLE hFile = FindFirstFile(Path + L"\\*", &FileData);
+	const HANDLE hFile = FindFirstFile(Path + L"\\*", &FileData);
 	// 1. 判断
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
@@ -50,8 +130,9 @@ bool EnumDriectFile(CString Path, LPVOID outbuf)
 				// file number
 				++g_FileCount;
 			}
-
 		} while (FindNextFile(hFile, &FileData));
+		if (hFile)
+			FindClose(hFile);
 	}
 	return true;
 }
@@ -69,7 +150,7 @@ bool UFile::uf_GetFileInfo(char* filepath,LPVOID outbuf)
 	TCHAR TempBuffer[MAX_PATH] = { 0 };
 	// VS_FIXEDFILEINFO 
 	WIN32_FIND_DATA stFileData = { 0 };
-	HANDLE hFile = FindFirstFile(filestr, &stFileData);
+	const HANDLE hFile = FindFirstFile(filestr, &stFileData);
 	if (hFile == INVALID_HANDLE_VALUE)
 		return false;
 
@@ -113,20 +194,19 @@ bool UFile::uf_GetFileInfo(char* filepath,LPVOID outbuf)
 	// 判断是不是只读的
 	if (stFileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
 		_tcscat_s(TempBuffer, TEXT("只读"));
+
 	// MD5计算
 	char FileName[MAX_PATH] = { 0 };
-	char* p = FileName;
 	memset(FileName, 0, sizeof(FileName));
-	// strcpy(FileName, str.GetBuffer(str.GetLength()));
-	// sprintf 不可行
-	// p = (LPSTR)(LPCSTR)str;
-	// 转成宽字符
 	sprintf_s(FileName, "%ws", filestr.GetBuffer());
 	md5FileValue(FileName);
+
 	// 获取信息
 	//GetModuleFileNameEx(hFile, NULL, Path, MAX_PATH);
 	//SHFILEINFOW shfileinfo;
 	//SHGetFileInfo(Path, 0, &shfileinfo, sizeof(SHFILEINFOW), SHGFI_ICON);
+	if (hFile)
+		FindClose(hFile);
 	return true;
 }
 bool UFile::uf_GetDirectoryFile(char* DriPath, LPVOID outbuf)

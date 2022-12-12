@@ -133,6 +133,8 @@ void GetProcessModule(const DWORD idProcess)
 		// wmemset(Autostr->ProcMoudleInfo[i], 0, sizeof(0x1024 * MAX_PATH));
 		// 模块保存到数据中
 	}
+	if (hProcess)
+		CloseHandle(hProcess);
 }
 BOOL GetProceThread(const DWORD ProcPid)
 {
@@ -174,6 +176,9 @@ BOOL GetProceThread(const DWORD ProcPid)
 				pri = "最低(idle)";
 		}
 	} while (Thread32Next(lpthread, &t_32));
+
+	if (lpthread)
+		CloseHandle(lpthread);
 	return TRUE;
 }
 BOOL GetProcessPath(const DWORD pid, WCHAR* processpath)
@@ -196,7 +201,8 @@ BOOL GetProcessPath(const DWORD pid, WCHAR* processpath)
 			return true;
 		//ShowModule(pe.th32ProcessID,pe.szExeFile); //仅32位
 	}
-
+	if (hSnapshot)
+		CloseHandle(hSnapshot);
 	return false;
 }
 void GetQueryViryualMemoryStatue(HANDLE hProccess)
@@ -391,6 +397,9 @@ DWORD EnumProcess(LPVOID outbuf)
 	}
 	else
 		return false;
+
+	if (hprocess)
+		CloseHandle(hprocess);
 
 	return procesnumber;
 }

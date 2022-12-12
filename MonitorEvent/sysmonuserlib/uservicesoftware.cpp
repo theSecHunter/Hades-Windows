@@ -7,6 +7,8 @@ using namespace std;
 
 #define MAX_SERVICE_SIZE 1024 * 64
 #define MAX_QUERY_SIZE   1024 * 8
+static const HKEY RootKey = HKEY_LOCAL_MACHINE;
+static const LPCTSTR lpSubKey = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
 
 UServerSoftware::UServerSoftware()
 {
@@ -20,7 +22,7 @@ DWORD UServerSoftware::EnumService(LPVOID outbuf)
 	if (!outbuf)
 		return FALSE;
 
-	PUServicesNode serinfo = (PUServicesNode)outbuf;
+	PUServicesNode const serinfo = (PUServicesNode)outbuf;
 	DWORD count = 0;
 
 	do {
@@ -28,12 +30,14 @@ DWORD UServerSoftware::EnumService(LPVOID outbuf)
 		if (SCMan == NULL) {
 			break;
 		}
-		LPENUM_SERVICE_STATUS service_status;
+		LPENUM_SERVICE_STATUS service_status = nullptr;
 		DWORD cbBytesNeeded = NULL;
 		DWORD ServicesReturned = NULL;
 		DWORD ResumeHandle = NULL;
 
 		service_status = (LPENUM_SERVICE_STATUS)LocalAlloc(LPTR, MAX_SERVICE_SIZE);
+		if (!service_status)
+			break;
 
 		BOOL ESS = EnumServicesStatus(SCMan,						// 句柄
 			SERVICE_WIN32,                                          // 服务类型
@@ -104,29 +108,22 @@ DWORD UServerSoftware::EnumService(LPVOID outbuf)
 					lpqscBuf2 = NULL;
 				}
 			}
-			
 			count++;
-
 			CloseServiceHandle(service_curren);
 		}
-		
 		CloseServiceHandle(SCMan);
-
+		if (service_status)
+			LocalFree(service_status);
 	} while (0);
-
 	return count;
 }
-
-const HKEY RootKey = HKEY_LOCAL_MACHINE;
-const LPCTSTR lpSubKey = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
-HKEY hkResult = 0;
 DWORD UServerSoftware::EnumSoftware(LPVOID outbuf)
 {
 	if (!outbuf)
 		return false;
 
-	PUSOFTINFO softwareinfo = (PUSOFTINFO)outbuf;
-
+	PUSOFTINFO const softwareinfo = (PUSOFTINFO)outbuf;
+	HKEY hkResult = 0;
 	USOFTINFO SoftInfo = { 0 };
 	FILETIME ftLastWriteTimeA;					// last write time 
 	// 1. 打开一个已存在的注册表键
@@ -210,9 +207,12 @@ DWORD UServerSoftware::EnumSoftware(LPVOID outbuf)
 		if (0x1000 >= countnumber)
 			break;
 	}
+	if (hkResult)
+		RegCloseKey(hkResult);
 	return countnumber;
 }
-bool UServerSoftware::EnumAll(LPVOID outbuf)
+
+bool UServerSoftware::uf_EnumAll(LPVOID outbuf)
 {
 	if (!outbuf)
 		return false;

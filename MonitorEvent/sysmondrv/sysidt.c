@@ -8,7 +8,7 @@ static BOOLEAN		g_idtInitflag = FALSE;
 static IDTR			g_idtr;
 static PIDT_ENTRY	g_pIdtEntry = NULL;
 
-ULONG64 Idt_GetAddr(PIDT_ENTRY IdtBaseAddr, UCHAR Index)
+ULONG64 Idt_GetAddr64(PIDT_ENTRY IdtBaseAddr, UCHAR Index)
 {
 	PIDT_ENTRY pIdter = IdtBaseAddr;
 	pIdter = pIdter + Index;
@@ -23,9 +23,11 @@ ULONG64 Idt_GetAddr(PIDT_ENTRY IdtBaseAddr, UCHAR Index)
 int nf_IdtInit()
 {
 	RtlSecureZeroMemory(&g_idtr, sizeof(IDTR));
-    // KeSetSystemAffinityThread(1);
-	// KeRevertToUserAffinityThread();
+#ifdef _WIN64
     __sidt(&g_idtr);
+#else
+
+#endif
 	if (MmIsAddressValid((PVOID)g_idtr.Base) == TRUE)
 	{
 		g_idtInitflag = TRUE;
@@ -57,7 +59,7 @@ int nf_GetIdtTableInfo(IDTINFO* MemBuffer)
     for (ULONG i = 0; i < MAX_IDT; ++i)
     {
 		idtinfo->idt_id = i;
-		uaddress = Idt_GetAddr(g_pIdtEntry, i);
+		uaddress = Idt_GetAddr64(g_pIdtEntry, i);
 		if (MmIsAddressValid((PVOID)uaddress) == FALSE)
 			break;
 

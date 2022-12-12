@@ -34,6 +34,4 @@ Systeminfolib::Systeminfolib()
 
 Systeminfolib::~Systeminfolib()
 {
-    KillTimer(NULL, 1);
-    KillTimer(NULL, 2);
 }

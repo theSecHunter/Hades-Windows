@@ -6,9 +6,6 @@ public:
 	~NSysUser();
 
 	bool uf_EnumSysUser(LPVOID outbuf);
-
-private:
-
 };
 
 

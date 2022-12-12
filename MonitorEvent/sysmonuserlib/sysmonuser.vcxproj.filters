@@ -51,6 +51,9 @@
     <ClCompile Include="udrivermanager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="utilstool.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sync.h">
@@ -90,6 +93,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\HadesSdk\include\sysinfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="utilstool.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

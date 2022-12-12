@@ -6,14 +6,12 @@
 #pragma comment(lib, "taskschd.lib")
 #pragma comment(lib, "comsupp.lib")
 #include <wchar.h>
-
 #include <sysinfo.h>
 
 UAutoStart::UAutoStart()
 {
 
 }
-
 UAutoStart::~UAutoStart()
 {
 }

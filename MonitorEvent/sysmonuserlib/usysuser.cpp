@@ -11,7 +11,6 @@
 NSysUser::NSysUser()
 {
 }
-
 NSysUser::~NSysUser()
 {
 }

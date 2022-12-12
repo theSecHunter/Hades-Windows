@@ -37,21 +37,22 @@ static char TcpState[][32] =
 DWORD EnumTCPTable()
 {
 	PMIB_TCPTABLE pTcpTable = NULL;
-	DWORD dwSize = 0;
-	DWORD dwRetVal = ERROR_SUCCESS;
+	DWORD dwSize = 0; DWORD dwRetVal = 0;
 
 	struct   in_addr rip;
 	struct   in_addr lip;
 	char  szrip[32] = { 0 };
 	char  szlip[32] = { 0 };
 
-	//获得pTcpTable所需要的真实长度,dwSize
+	// 获得pTcpTable所需要的真实长度,dwSize
 	if (GetTcpTable(pTcpTable, &dwSize, TRUE) == ERROR_INSUFFICIENT_BUFFER)
 	{
 		pTcpTable = (MIB_TCPTABLE*)malloc((UINT)dwSize);
+		if (!pTcpTable)
+			return 0;
 	}
 	else
-		return dwRetVal;
+		return 0;
 
 	if ((dwRetVal = GetTcpTable(pTcpTable, &dwSize, TRUE)) == NO_ERROR)
 	{
@@ -59,7 +60,7 @@ DWORD EnumTCPTable()
 		{
 			rip.S_un.S_addr = pTcpTable->table[i].dwRemoteAddr;
 			lip.S_un.S_addr = pTcpTable->table[i].dwLocalAddr;
-			//监听端口，远程主机端口为0，但函数返回是有值的，不知道它是怎么考虑的
+			// 监听端口，远程主机端口为0，但函数返回是有值的，不知道它是怎么考虑的
 			if (pTcpTable->table[i].dwState == MIB_TCP_STATE_LISTEN)
 				pTcpTable->table[i].dwRemotePort = 0;
 
@@ -90,8 +91,8 @@ DWORD EnumTCPTable()
 		}
 		LocalFree(lpMsgBuf);
 	}
-	// GlobalFree(pTcpTable);
-	if (pTcpTable != NULL) {
+
+	if (pTcpTable) {
 		free(pTcpTable);
 		pTcpTable = NULL;
 	}
@@ -100,8 +101,7 @@ DWORD EnumTCPTable()
 DWORD EnumUDPTable()
 {
 	PMIB_UDPTABLE pUdpTable = NULL;
-	DWORD dwSize = 0;
-	DWORD dwRetVal = ERROR_SUCCESS;
+	DWORD dwSize = 0; DWORD dwRetVal = 0;
 
 	// struct   in_addr rip;
 	struct   in_addr lip;
@@ -112,6 +112,8 @@ DWORD EnumUDPTable()
 	if (GetUdpTable(pUdpTable, &dwSize, TRUE) == ERROR_INSUFFICIENT_BUFFER)
 	{
 		pUdpTable = (MIB_UDPTABLE*)malloc((UINT)dwSize);
+		if (!pUdpTable)
+			return 0;
 	}
 	else
 		return dwRetVal;
@@ -166,7 +168,7 @@ DWORD EnumUDPTable()
 
 DWORD EnumTCPTablePid(UNetTcpNode* outbuf)
 {
-	PMIB_TCPTABLE_OWNER_PID pTcpTable(NULL);
+	PMIB_TCPTABLE_OWNER_PID pTcpTable = nullptr;
 	DWORD dwSize(0);
 	struct   in_addr rip;
 	struct   in_addr lip;
@@ -174,15 +176,24 @@ DWORD EnumTCPTablePid(UNetTcpNode* outbuf)
 	char  szlip[32] = { 0 };
 	char PidString[20] = { '\0' };
 	if (GetExtendedTcpTable(pTcpTable, &dwSize, TRUE, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0) == ERROR_INSUFFICIENT_BUFFER)
-		pTcpTable = (MIB_TCPTABLE_OWNER_PID*)new char[dwSize];//重新分配缓冲区
+	{
+		//重新分配缓冲区
+		pTcpTable = (MIB_TCPTABLE_OWNER_PID*)new char[dwSize];
+		if (!pTcpTable)
+			return 0;
+	}
 
 	if (GetExtendedTcpTable(pTcpTable, &dwSize, TRUE, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0) != NO_ERROR)
 	{
-		delete pTcpTable;
+		if (pTcpTable)
+			delete[] pTcpTable;
 		return 0;
 	}
 
-	int nNum = (int)pTcpTable->dwNumEntries; //TCP连接的数目
+	//TCP连接的数目
+	DWORD nNum = 0;
+	if (pTcpTable)
+		nNum = pTcpTable->dwNumEntries; 
 
 	for (int i = 0; i < nNum; i++)
 	{
@@ -205,8 +216,9 @@ DWORD EnumTCPTablePid(UNetTcpNode* outbuf)
 		RtlCopyMemory(outbuf[i].PidString, PidString, sizeof(PidString));
 
 	}
-	delete pTcpTable;
 
+	if (pTcpTable)
+		delete[] pTcpTable;
 	return nNum;
 }
 DWORD EnumUDPTablePid(UNetUdpNode* outbuf)
@@ -218,19 +230,28 @@ DWORD EnumUDPTablePid(UNetUdpNode* outbuf)
 	char  szlip[32] = { 0 };
 	char PidString[20] = { '\0' };
 	if (GetExtendedUdpTable(pUdpTable, &dwSize, TRUE, AF_INET, UDP_TABLE_OWNER_PID, 0) == ERROR_INSUFFICIENT_BUFFER)
-		pUdpTable = (MIB_UDPTABLE_OWNER_PID*)new char[dwSize];//重新分配缓冲区
+	{
+		//重新分配缓冲区
+		pUdpTable = (MIB_UDPTABLE_OWNER_PID*)new char[dwSize];
+		if (!pUdpTable)
+			return 0;
+	}
 	if (GetExtendedUdpTable(pUdpTable, &dwSize, TRUE, AF_INET, UDP_TABLE_OWNER_PID, 0) != NO_ERROR)
 	{
-		delete pUdpTable;
+		if (pUdpTable)
+			delete[] pUdpTable;
 		return 0;
 	}
-	int nNum = (int)pUdpTable->dwNumEntries; //UDP连接的数目
+
+	//UDP连接的数目
+	DWORD nNum = 0;
+	if (pUdpTable)
+		nNum = (int)pUdpTable->dwNumEntries;
 
 	for (int i = 0; i < nNum; i++)
 	{
 
 		lip.S_un.S_addr = pUdpTable->table[i].dwLocalAddr;
-
 		//dwLocalPort，dwRemotePort 是网络字节
 		_snprintf_s(szlip, sizeof(szlip), "%s:%d", inet_ntoa(lip), htons((u_short)pUdpTable->table[i].dwLocalPort));
 		_ultoa_s(pUdpTable->table[i].dwOwningPid, PidString, 10);
@@ -239,7 +260,9 @@ DWORD EnumUDPTablePid(UNetUdpNode* outbuf)
 		RtlCopyMemory(outbuf[i].PidString, PidString, sizeof(PidString));
 
 	}
-	delete pUdpTable;
+
+	if (pUdpTable)
+		delete[] pUdpTable;
 
 	return nNum;
 }

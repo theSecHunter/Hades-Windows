@@ -1,5 +1,6 @@
 #include <Windows.h>
 #include "usysinfo.h"
+#include "utilstool.h"
 #include <sysinfo.h>
 #include <BluetoothAPIs.h>  
 #include <amvideo.h>
@@ -771,7 +772,10 @@ void USysBaseInfo::GetBluetooth(std::vector<std::string>& blueinfo)
         if (BluetoothGetRadioInfo(hbr, &bri) == ERROR_SUCCESS)//获取蓝牙收发器的信息，储存在bri中  
         {
             // 蓝牙收发器的名字
-            blueinfo.emplace_back(bri.szName);
+            const std::wstring wsName = bri.szName; std::string sName;
+            UtilsTool::WStr2Str(wsName, sName);
+            if (!sName.empty())
+                blueinfo.emplace_back();
             //std::cout << "Class of device: 0x" << uppercase << hex << bri.ulClassofDevice << endl;
             //wcout << "Name:" << bri.szName << endl;  //蓝牙收发器的名字
             //cout << "Manufacture:0x" << uppercase << hex << bri.manufacturer << endl;

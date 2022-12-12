@@ -6,7 +6,4 @@ public:
 	~UAutoStart();
 
 	bool uf_EnumAutoStartask(LPVOID outBuf, const DWORD size);
-
-private:
-
 };
