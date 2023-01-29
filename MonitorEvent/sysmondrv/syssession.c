@@ -61,7 +61,7 @@ Pio_NotifySession(
 		sessioninfo.evens = Event;
 		memcpy(sessioninfo.iosessioninfo, &iosession_info, sizeof(IO_SESSION_STATE_INFORMATION));
 
-		SESSIONBUFFER* pSeBuffer = (SESSIONBUFFER*)Session_PacketAllocate(sizeof(SESSIONINFO));
+		SESSIONBUFFER* const pSeBuffer = (SESSIONBUFFER*)Session_PacketAllocate(sizeof(SESSIONINFO));
 		if (!pSeBuffer)
 			break;
 

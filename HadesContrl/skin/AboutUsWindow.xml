@@ -6,7 +6,7 @@
 			<Button name="AboutWinCloseBtn" width="28" height="28" normalimage="file='img/normal/icon_close.png' source='0,0,28,28'" hotimage="file='img/normal/icon_close.png' source='28,0,56,28'" pushedimage="file='img/normal/icon_close.png' source='0,0,28,28'" />
 		</HorizontalLayout>
 		<VerticalLayout childalign="center" inset="0,31,0,24">
-			<Label width="100" height="91" bkimage="img/normal/hunter.png" />
+			<Label width="250" height="60" bkimage="img/normal/hunter.png" />
 			<Label height="24" padding="0,10,0,0" text="Hades Windows" align="center" font="5" />
 			<Label height="18" text="theSecHunter" align="center" font="2" />
 			<Button name="GithubLinkBtn" width="400" padding="0,23,0,0" height="18" text="github：https://github.com/theSecHunter" align="center" font="4" />

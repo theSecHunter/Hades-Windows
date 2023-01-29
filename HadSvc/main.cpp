@@ -164,7 +164,6 @@ int main(int argc, char* argv[])
 		//g_DataHandler.DebugTaskInterface(UF_SYSINFO_ID);
 		//// 数据未清理
 		//g_DataHandler.DebugTaskInterface(UF_PROCESS_PID_TREE);
-
 	}
 	if (true == gpip_send && true == etw_mon) {
 		g_mainMsgUlib.uMsg_EtwInit();

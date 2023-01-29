@@ -8,8 +8,8 @@
 #include "ArkMouseKeyBoard.h"
 #include "ArkNetwork.h"
 #include "ArkProcessInfo.h"
-#include "AkrSysDriverDevInfo.h"
-#include "drvlib.h"
+#include "ArkSysDriverDevInfo.h"
+#include <ArkDrvlib.h>
 
 #include <ProcessRuleAssist.h>
 #include <RegisterRuleAssist.h>

@@ -115,16 +115,65 @@ BOOL GetProcessFullPath(DWORD dwPID, WCHAR* processpath)
 }
 
 // ProcessInfo
+int GetProcessModules(DWORD processID)
+{
+	/*
+	* Use:
+	* 	
+	{
+		DWORD aProcesses[1024];
+		DWORD cbNeeded;
+		DWORD cProcesses;
+		unsigned int i;
+		if (!EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded))
+			return 1;
+		cProcesses = cbNeeded / sizeof(DWORD);
+		for (i = 0; i < cProcesses; i++)
+		{
+			GetProcessModules(aProcesses[i]);
+		}	
+	}
+	*/
+	HMODULE hMods[1024];
+	HANDLE hProcess = NULL;
+	DWORD cbNeeded = 0;
+	unsigned int i = 0;
+	//hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+	//	PROCESS_VM_READ,
+	//	FALSE, processID);
+	hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processID);
+	if (NULL == hProcess)
+		return 1;
+	std::wstring wszModNameEx = L"";
+	if (EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded))
+	{
+		for (i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
+		{
+			TCHAR szModName[MAX_PATH];
+			// Get the full path to the module's file.
+			if (GetModuleFileNameEx(hProcess, hMods[i], szModName,
+				sizeof(szModName) / sizeof(TCHAR)))
+			{
+				// Print the module name and handle value.
+				wszModNameEx = szModName;
+				_tprintf(TEXT("\t%s (0x%08X)\n"), szModName, hMods[i]);
+			}
+		}
+	}
+	CloseHandle(hProcess);
+	return 0;
+}
 void GetProcessModule(const DWORD idProcess)
 {
-	PBOOL Wow64Process = NULL;
 	HMODULE hMods = NULL;
-	DWORD cbNeeded = 0;
 	WCHAR szModName[MAX_PATH] = { 0, };
-	HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, idProcess);
+	// const HANDLE hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, idProcess);
+	const HANDLE hProcess = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, idProcess);
 	if (!hProcess)
 		return;
-	IsWow64Process(hProcess, Wow64Process);
+	BOOL Wow64Process = FALSE;
+	IsWow64Process(hProcess, &Wow64Process);
+	DWORD cbNeeded = 0;
 	EnumProcessModulesEx(hProcess, &hMods, sizeof(hMods), &cbNeeded, Wow64Process ? LIST_MODULES_32BIT : LIST_MODULES_64BIT);
 	for (UINT i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
 	{

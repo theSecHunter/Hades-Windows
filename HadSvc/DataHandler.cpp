@@ -17,7 +17,7 @@
 #include <atlstr.h>
 
 #include "DataHandler.h"
-#include "DriverManager.h"
+#include "udrivermanager.h"
 #include "transfer.pb.h"
 
 static bool                         g_shutdown = false;
@@ -714,7 +714,7 @@ void DataHandler::KerSublthreadProc()
     std::shared_ptr<protocol::Record> record = std::make_shared<protocol::Record>();
     if (!record)
         return;
-    static protocol::Payload* PayloadMsg = record->mutable_data();
+    static protocol::Payload* const PayloadMsg = record->mutable_data();
     if (!PayloadMsg)
         return;
     static auto MapMessage = PayloadMsg->mutable_fields();
@@ -761,7 +761,7 @@ void DataHandler::EtwSublthreadProc()
     static std::shared_ptr<protocol::Record> record = std::make_shared<protocol::Record>();
     if (!record)
         return;
-    static protocol::Payload* PayloadMsg = record->mutable_data();
+    static protocol::Payload* const PayloadMsg = record->mutable_data();
     if (!PayloadMsg)
         return;
     static auto MapMessage = PayloadMsg->mutable_fields();

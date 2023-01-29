@@ -553,7 +553,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             break;
             case UF_SYSSERVICE_SOFTWARE_ID:
             {
-                if (false == g_user_userversoftware.EnumAll(ptr_Getbuffer))
+                if (false == g_user_userversoftware.uf_EnumAll(ptr_Getbuffer))
                     break;
 
                 const PUAllServerSoftware const pNode = (PUAllServerSoftware)ptr_Getbuffer;

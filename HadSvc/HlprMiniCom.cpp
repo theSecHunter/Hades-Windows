@@ -76,6 +76,8 @@ bool HlprMiniPortIpc::SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, un
 	DWORD hResult = 0;
 	unsigned int total = sizeof(COMMAND_MESSAGE) + buflen + 1;
 	auto InputBuffer = VirtualAlloc(NULL, total, MEM_RESERVE, PAGE_READWRITE);
+	if (!InputBuffer)
+		return false;
 
 	COMMAND_MESSAGE command_message;
 	//command_message.Command = MIN_COMMAND::SET_PROCESSNAME;

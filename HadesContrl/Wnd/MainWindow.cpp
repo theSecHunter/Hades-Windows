@@ -1,6 +1,6 @@
 #include "../HpTcpSvc.h"
 #include "MainWindow.h"
-#include "DriverManager.h"
+#include "udrivermanager.h"
 #include "../Systeminfolib.h"
 #include <usysinfo.h>
 #include <TlHelp32.h>
@@ -498,7 +498,7 @@ void MainWindow::InitWindows()
 void MainWindow::AddTrayIcon() {
 	memset(&m_trayInfo, 0, sizeof(NOTIFYICONDATA));
 	m_trayInfo.cbSize = sizeof(NOTIFYICONDATA);
-	m_trayInfo.hIcon = ::LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_SMALL));
+	m_trayInfo.hIcon = ::LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_HADESCONTRL));
 	m_trayInfo.hWnd = m_hWnd;
 	lstrcpy(m_trayInfo.szTip, _T("Hades"));
 	m_trayInfo.uCallbackMessage = WM_SHOWTASK;
@@ -525,14 +525,15 @@ LRESULT MainWindow::OnTrayIcon(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
 		int cmd = TrackPopupMenu(hMenu, TPM_RETURNCMD, pt.x, pt.y, NULL, m_hWnd, NULL);
 		if (cmd == WM_ONCLOSE)
 		{
+			Shell_NotifyIcon(NIM_DELETE, &m_trayInfo);
 			m_trayInfo.hIcon = NULL;	
 			::PostQuitMessage(0);
 		}
 		else if (cmd == WM_ONOPEN)
 		{
 			::ShowWindow(m_hWnd, SW_SHOW);
+			Shell_NotifyIcon(NIM_DELETE, &m_trayInfo);
 		}
-		Shell_NotifyIcon(NIM_DELETE, &m_trayInfo);
 	}
 	bHandled = true;
 	return 0;
