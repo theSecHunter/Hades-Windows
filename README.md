@@ -1,4 +1,11 @@
-![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0_Response.jpg)
+<div align=center>
+<img width="500" height="152.5" src="https://github.com/chriskaliX/Hades/blob/main/imgs/hades-low-resolution-logo-color-on-transparent-background.png"/>
+</div>
+
+<div align=center>
+<img src="https://github.com/chriskaliX/Hades/actions/workflows/co-re.yaml/badge.svg"/>
+</div>
+
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0.jpg)
 
 **适用Win7/Win11 x32/x64用户态和内核态数据采集，XP未做兼容测试.**
@@ -161,6 +168,7 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 }
 ```
 **See Rule: config/processRuleConfig.json**
+![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0_Response.jpg)
 
 #### 注册表黑白名单模式(应用规则匹配)
 **引擎工作方式：匹配processName和registerValuse二元组,多组规则情况下,命中某条成功后不继续匹配,命中规则为准。**
@@ -309,3 +317,15 @@ Json:
 ### 参考：
 - 看雪论坛 & OpenEdr & Netfilter SDK & Sandboxie
 - 项目将零散代码组织在一起，业余投入精力有限。 部分cpp早期学习编写，也有引用代码cpp中有标注。
+
+## Contact
+
+Input `Hades` to get the QR code
+
+<img src="https://github.com/chriskaliX/Hades/blob/main/imgs/weixin.png" width="50%" style="float:left;"/>
+
+## 404Starlink
+
+<img src="https://github.com/knownsec/404StarLink-Project/raw/master/logo.png" width="30%">
+
+Hades has joined [404Starlink](https://github.com/knownsec/404StarLink)
