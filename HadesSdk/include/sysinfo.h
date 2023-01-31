@@ -13,7 +13,8 @@ enum KIoctCode
     NF_IMAGEGMOD_INFO,
     NF_REGISTERTAB_INFO,
     NF_FILE_INFO,
-    NF_SESSION_INFO
+    NF_SESSION_INFO,
+    NF_INJECT_INFO
 };
 // rootkit id
 enum KAnRootkitId
@@ -241,7 +242,13 @@ typedef struct _SESSIONINFO
     unsigned long	evens;
     char            iosessioninfo[sizeof(IO_SESSION_STATE_INFORMATION)];
 }SESSIONINFO, * PSESSIONINFO;
-
+typedef struct _INJECTINFO
+{
+    int             srcPid;
+    int             dstPid;
+    wchar_t			srcProcessPath[260 * 2];
+    wchar_t			dstProcessPath[260 * 2];
+}INJECTINFO, *PINJECTINFO;
 //=======================rootkit struct===========================================
 typedef struct _SSDTINFO
 {

@@ -31,7 +31,7 @@
 	#pragma comment(lib, "..\\HadesSdk\\hpsocket\\lib\\x64\\HPSocket_U.lib")
 #endif
 #else
-#ifdef _DEBUG
+#ifdef _DEBUG	// MTD也会进入
 #pragma comment(lib, "..\\HadesSdk\\sysmonuser\\lib\\SysMonUserlib_d.lib")
 #pragma comment(lib, "..\\HadesSdk\\hpsocket\\lib\\HPSocket_UD.lib")
 #else

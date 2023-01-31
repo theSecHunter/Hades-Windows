@@ -194,6 +194,8 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             case NF_PROCESS_INFO:
             {
                 const PROCESSINFO* const processinfo = (PROCESSINFO*)pubnode->data;
+                if (!processinfo)
+                    break;
                 j["win_sysmonitor_process_parentpid"] = to_string(processinfo->parentprocessid);
                 j["win_sysmonitor_process_pid"] = to_string(processinfo->pid);
                 j["win_sysmonitor_process_endprocess"] = to_string(processinfo->endprocess);
@@ -224,6 +226,8 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             case NF_THREAD_INFO:
             {
                 const THREADINFO* const threadinfo = (THREADINFO*)pubnode->data;
+                if (!threadinfo)
+                    break;
                 j["win_sysmonitor_thread_pid"] = to_string(threadinfo->processid);
                 j["win_sysmonitor_thread_id"] = to_string(threadinfo->threadid);
                 j["win_sysmonitor_thread_status"] = to_string(threadinfo->createid);
@@ -232,6 +236,8 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             case NF_IMAGEGMOD_INFO:
             {
                 const IMAGEMODINFO* const imageinfo = (IMAGEMODINFO*)pubnode->data;
+                if (!imageinfo)
+                    break;
                 j["win_sysmonitor_mod_pid"] = to_string(imageinfo->processid);
                 j["win_sysmonitor_mod_base"] = to_string(imageinfo->imagebase);
                 j["win_sysmonitor_mod_size"] = to_string(imageinfo->imagesize);
@@ -245,6 +251,8 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             case NF_REGISTERTAB_INFO:
             {
                 const REGISTERINFO* const registerinfo = (REGISTERINFO*)pubnode->data;
+                if (!registerinfo)
+                    break;
                 tmpstr.clear();
                 Choose_register(tmpstr, registerinfo->opeararg);
                 if (tmpstr.size())
@@ -297,6 +305,8 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             case NF_FILE_INFO:
             {
                 const FILEINFO* const fileinfo = (FILEINFO*)pubnode->data;
+                if (!fileinfo)
+                    break;
                 j["win_sysmonitor_file_pid"] = to_string(fileinfo->processid);
                 j["win_sysmonitor_file_tpid"] = to_string(fileinfo->threadid);
                 tmpstr.clear();
@@ -322,7 +332,9 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             break;
             case NF_SESSION_INFO:
             {
-                const SESSIONINFO* const sessioninfo = (SESSIONINFO*)pubnode->data;;
+                const SESSIONINFO* const sessioninfo = (SESSIONINFO*)pubnode->data;
+                if (!sessioninfo)
+                    break;
                 std::shared_ptr<IO_SESSION_STATE_INFORMATION> iosession;
                 RtlSecureZeroMemory(&iosession, sizeof(IO_SESSION_STATE_INFORMATION));
                 RtlCopyMemory(&iosession, sessioninfo->iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
@@ -340,6 +352,23 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
                 j["win_sysmonitor_session_event"] = tmpstr.c_str();
                 j["win_sysmonitor_session_sessionid"] = to_string(iosession->SessionId);
 
+            }
+            break;
+            case NF_INJECT_INFO:
+            {
+                const INJECTINFO* const pInjectinfo = (INJECTINFO*)pubnode->data;
+                if (!pInjectinfo)
+                    break;
+                j["win_sysmonitor_inject_srcpid"] = to_string(pInjectinfo->srcPid);
+                j["win_sysmonitor_inject_dstpid"] = to_string(pInjectinfo->dstPid);
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pInjectinfo->srcProcessPath);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_sysmonitor_inject_srcPath"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pInjectinfo->dstProcessPath);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_sysmonitor_inject_dstPath"] = tmpstr.c_str();
             }
             break;
             }
@@ -419,6 +448,8 @@ void kMsgInterface::kMsg_taskPopNotifyRoutineLoop()
 }
 static unsigned WINAPI kMsg_taskPopThread(void* pData)
 {
+    if (!pData)
+        return 0;
     (reinterpret_cast<kMsgInterface*>(pData))->kMsg_taskPopNotifyRoutineLoop();
     return 0;
 }

@@ -61,7 +61,7 @@ IDI_ICON1               ICON                    "firearms.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 22,10,29,1
+ FILEVERSION 23,1,31,1
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -79,7 +79,7 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "TODO: <公司名>"
             VALUE "FileDescription", "TODO: <文件说明>"
-            VALUE "FileVersion", "22.10.29.1"
+            VALUE "FileVersion", "23.1.31.1"
             VALUE "InternalName", "HadesSvc.exe"
             VALUE "LegalCopyright", "Copyright (C) 2022"
             VALUE "OriginalFilename", "HadesSvc.exe"
