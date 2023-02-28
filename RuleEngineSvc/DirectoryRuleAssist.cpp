@@ -56,7 +56,7 @@ const bool ConfigDirectoryJsonRuleParsing(std::string& strNameWhitelis, std::str
 		strDirPathWhitelis.append("2");
 		strNameBlacklis.append("3");
 		strDirPathBlacklis.append("4");
-		for (int idx = 0; idx < rArray.Size(); ++idx)
+		for (rapidjson::SizeType idx = 0; idx < rArray.Size(); ++idx)
 		{
 			try
 			{

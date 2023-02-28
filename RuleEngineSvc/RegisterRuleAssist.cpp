@@ -24,7 +24,7 @@ void GetProcessName(const std::wstring& ProcessPath, std::wstring& ProcessPathNa
 	if (ProcessPath.empty())
 		return;
 	const std::wstring wsProcPath = ProcessPath;
-	const int iLast = wsProcPath.find_last_of(L"\\");
+	const size_t iLast = wsProcPath.find_last_of(L"\\");
 	if (iLast < 0)
 		return;
 	ProcessPathName = wsProcPath.substr(iLast + 1);
@@ -101,7 +101,7 @@ bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 		RegRuleNode ruleNode;
 		const auto rArray = document.GetArray();
 		std::string strstrHex;
-		for (int idx = 0 ;  idx < rArray.Size(); ++idx)
+		for (rapidjson::SizeType idx = 0 ;  idx < rArray.Size(); ++idx)
 		{
 			try
 			{
@@ -198,11 +198,11 @@ bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int
 					break;
 				if ((permissions == KEY_QUERY_VALUE) && _query)
 					nRet = true;
-				else if (permissions == (KEY_ENUMERATE_SUB_KEYS || KEY_READ))
+				else if ((permissions == KEY_ENUMERATE_SUB_KEYS) || (permissions == KEY_READ))
 					nRet = true;
-				else if ((permissions == (KEY_CREATE_SUB_KEY || KEY_CREATE_LINK)) && _create)
+				else if (((permissions == KEY_CREATE_SUB_KEY) || (permissions == KEY_CREATE_LINK)) && _create)
 					nRet = true;
-				else if ((permissions == (KEY_SET_VALUE || KEY_WRITE)) && _setvaluse)
+				else if (((permissions == KEY_SET_VALUE) || (permissions == KEY_WRITE)) && _setvaluse)
 					nRet = true;
 				else if ((permissions == KEY_ALL_ACCESS) && _setvaluse && _create && _delete && _query && _rename && _close)
 					nRet = true;
@@ -296,7 +296,7 @@ bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 	std::wstring wsProcessName;
 	for (const auto& rule : g_vecRegRuleList)
 	{
-		const int idx = rule.registerValuse.find(wsCompleteName.c_str());
+		const size_t idx = rule.registerValuse.find(wsCompleteName.c_str());
 		if (idx < 0)
 			continue;
 
@@ -305,7 +305,7 @@ bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 		if (wsProcessName.empty())
 			continue;
 		
-		const int idx_ = rule.processName.find(wsProcessName.c_str());
+		const size_t idx_ = rule.processName.find(wsProcessName.c_str());
 		if (idx_ < 0)
 			continue;
 

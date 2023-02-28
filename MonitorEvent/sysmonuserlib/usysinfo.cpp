@@ -557,7 +557,7 @@ void USysBaseInfo::GetDisplayCardInfoWmic(std::vector<std::string>& Cardinfo)
             }
         }
 
-        const int icount = vecArray.size();
+        const size_t icount = vecArray.size();
         if (icount < 2)
             break;
 

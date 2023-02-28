@@ -597,6 +597,83 @@ finish:
 	OutputDebugString(L"ReadFile Thread Exit");
 	return 0;
 }
+static DWORD WINAPI nf_workThread_IOCP(LPVOID lpThreadParameter)
+{
+	DWORD readBytes = 0, dwRes = 0;
+	ULONG_PTR   key; ULONG numberOfBytesTransferred = 0;
+	PNF_DATA pData = nullptr; NF_READ_RESULT rr; OVERLAPPED* completedOv = nullptr;
+	HANDLE hCompletionPort = NULL;
+	do
+	{
+		if (!g_hDevice)
+			break;
+
+		hCompletionPort = CreateIoCompletionPort(g_hDevice, NULL, 1, 0);
+		if (hCompletionPort == INVALID_HANDLE_VALUE)
+			break;
+
+		// Start ReadFile
+		for (size_t icout = 0; icout < 8; ++icout)
+		{
+			ReadFile(g_hDevice, &rr, sizeof(rr), NULL, completedOv);
+		}
+
+		while (true)
+		{
+			if (g_exitthread)
+			{
+				g_exitthread = false;
+				break;
+			}
+
+			if (hCompletionPort)
+			{
+				if (GetQueuedCompletionStatus(hCompletionPort, &numberOfBytesTransferred, &key, &completedOv, INFINITE) == 0)
+				{
+					g_exitthread = false;
+					break;
+				}
+			}
+			else
+				break;
+
+			if (ReadFile(g_hDevice,
+				&rr, 
+				sizeof(rr), 
+				NULL, 
+				completedOv) == 0) {
+				if (GetLastError() != ERROR_IO_PENDING) {
+					break;
+				}
+			}
+
+			readBytes = (DWORD)rr.length;
+			if (readBytes > g_nfBuffers.inBufLen)
+				readBytes = (DWORD)g_nfBuffers.inBufLen;
+			pData = (PNF_DATA)g_nfBuffers.inBuf;
+			while (readBytes >= (sizeof(NF_DATA) - 1))
+			{
+				//handleEventDispath(pData);
+				handleEventDispath_(pData);
+				if (g_exitthread)
+				{
+					g_exitthread = false;
+					break;
+				}
+				if (readBytes < (sizeof(NF_DATA) - 1 + pData->bufferSize))
+					break;
+				readBytes -= sizeof(NF_DATA) - 1 + pData->bufferSize;
+				pData = (PNF_DATA)(pData->buffer + pData->bufferSize);
+			}
+		}
+	} while (false);
+
+	if (g_hDevice)
+		CancelIo(g_hDevice);
+	if (hCompletionPort)
+		CloseHandle(hCompletionPort);
+	return 0;
+}
 void DevctrlIoct::nf_setEventHandler(PVOID64 pHandler)
 {
 	g_pEventHandler = (NF_EventHandler*)pHandler;

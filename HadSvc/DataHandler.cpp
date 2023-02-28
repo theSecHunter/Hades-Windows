@@ -678,7 +678,7 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
                 (*MapMessage)["udata"] = "error";
 
             serializbuf = record->SerializeAsString();
-            const int datasize = serializbuf.size();
+            const size_t datasize = serializbuf.size();
             PipWriteAnonymous(serializbuf, datasize);
             MapMessage->clear();
         }
@@ -752,7 +752,7 @@ void DataHandler::KerSublthreadProc()
                 (*MapMessage)["data_type"] = to_string(subwrite->taskid);
                 (*MapMessage)["udata"] = subwrite->data->c_str(); // json
                 serializbuf = record->SerializeAsString();
-                const int datasize = serializbuf.size();
+                const size_t datasize = serializbuf.size();
                 PipWriteAnonymous(serializbuf, datasize);
                 krecord_mutex.unlock();
             }
@@ -800,7 +800,7 @@ void DataHandler::EtwSublthreadProc()
                 (*MapMessage)["data_type"] = to_string(subwrite->taskid);
                 (*MapMessage)["udata"] = subwrite->data->c_str(); // json
                 serializbuf = record->SerializeAsString();
-                const int datasize = serializbuf.size();
+                const size_t datasize = serializbuf.size();
                 PipWriteAnonymous(serializbuf, datasize);
                 urecord_mutex.unlock();
             }
@@ -881,7 +881,7 @@ bool DataHandler::ThreadPool_Init()
     ((kMsgInterface*)g_kern_interface)->kMsg_SetSubQueueLockPtr(g_Ker_QueueCs_Ptr);
     ((kMsgInterface*)g_kern_interface)->kMsg_SetSubQueuePtr(g_Ker_SubQueue_Ptr);
 
-    int i = 0;
+    size_t i = 0;
     HANDLE hThread;
     unsigned threadId;
 

@@ -195,7 +195,7 @@ DWORD EnumTCPTablePid(UNetTcpNode* outbuf)
 	if (pTcpTable)
 		nNum = pTcpTable->dwNumEntries; 
 
-	for (int i = 0; i < nNum; i++)
+	for (size_t i = 0; i < nNum; i++)
 	{
 
 		rip.S_un.S_addr = pTcpTable->table[i].dwRemoteAddr;
@@ -248,7 +248,7 @@ DWORD EnumUDPTablePid(UNetUdpNode* outbuf)
 	if (pUdpTable)
 		nNum = (int)pUdpTable->dwNumEntries;
 
-	for (int i = 0; i < nNum; i++)
+	for (size_t i = 0; i < nNum; i++)
 	{
 
 		lip.S_un.S_addr = pUdpTable->table[i].dwLocalAddr;

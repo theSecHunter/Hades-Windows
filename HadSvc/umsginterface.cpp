@@ -305,7 +305,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 return;
             }
 
-            const std::shared_ptr<USubNode> const sub = std::make_shared<USubNode>();
+            const std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
             if (!sub || !data)
             {
                 g_RecvQueueCs.unlock();
@@ -361,7 +361,7 @@ static unsigned WINAPI uMsg_taskPopThread(void* pData)
 }
 void uMsgInterface::uMsg_taskPopInit()
 {
-    int i = 0;
+    size_t i = 0;
     HANDLE hThread;
     unsigned threadId;
 
@@ -386,7 +386,7 @@ void uMsgInterface::uMsg_taskPopInit()
 void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& vec_task_string)
 {
     std::string tmpstr; wstring catstr;
-    int i = 0, index = 0;
+    size_t i = 0, index = 0;
     DWORD dwAllocateMemSize = 0;
     char* ptr_Getbuffer = nullptr;
     bool nstatus = Choose_mem(ptr_Getbuffer, dwAllocateMemSize, taskcode);
@@ -404,7 +404,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             {
                 if (false == g_user_uprocesstree.uf_EnumProcess(ptr_Getbuffer))
                     break;
-                const PUProcessNode const procesNode = (PUProcessNode)ptr_Getbuffer;
+                const PUProcessNode procesNode = (PUProcessNode)ptr_Getbuffer;
                 if (!procesNode)
                     break;
 
@@ -443,7 +443,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 if (false == g_user_uautostrobj.uf_EnumAutoStartask(ptr_Getbuffer, dwAllocateMemSize))
                     break;
 
-                const PUAutoStartNode const autorunnode = (PUAutoStartNode)ptr_Getbuffer;
+                const PUAutoStartNode autorunnode = (PUAutoStartNode)ptr_Getbuffer;
                 if (!autorunnode)
                     break;
 
@@ -486,7 +486,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 if (false == g_user_unetobj.uf_EnumNetwork(ptr_Getbuffer))
                     break;
 
-                const PUNetNode const netnode = (PUNetNode)ptr_Getbuffer;
+                const PUNetNode netnode = (PUNetNode)ptr_Getbuffer;
                 if (!netnode)
                     break;
                 j["win_user_net_flag"] = "1";
@@ -529,7 +529,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 if (false == g_user_usysuser.uf_EnumSysUser(ptr_Getbuffer))
                     break;
 
-                const PUUserNode const pusernode = (PUUserNode)ptr_Getbuffer;
+                const PUUserNode pusernode = (PUUserNode)ptr_Getbuffer;
                 if (!pusernode)
                     break;
 
@@ -556,7 +556,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 if (false == g_user_userversoftware.uf_EnumAll(ptr_Getbuffer))
                     break;
 
-                const PUAllServerSoftware const pNode = (PUAllServerSoftware)ptr_Getbuffer;
+                const PUAllServerSoftware pNode = (PUAllServerSoftware)ptr_Getbuffer;
                 if (!pNode)
                     break;
 
@@ -628,7 +628,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 if (false == g_user_ufile.uf_GetDirectoryFile((char*)"D:\\bin", ptr_Getbuffer))
                     break;
 
-                const PUDriectInfo const directinfo = (PUDriectInfo)ptr_Getbuffer;
+                const PUDriectInfo directinfo = (PUDriectInfo)ptr_Getbuffer;
                 if (!directinfo)
                     break;
 
@@ -665,7 +665,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 if (false == g_user_ufile.uf_GetFileInfo((char*)"d:\\bin\\1.txt", ptr_Getbuffer))
                     break;
 
-                const PUFileInfo const fileinfo = (PUFileInfo)ptr_Getbuffer;
+                const PUFileInfo fileinfo = (PUFileInfo)ptr_Getbuffer;
                 if (!fileinfo)
                     break;
 

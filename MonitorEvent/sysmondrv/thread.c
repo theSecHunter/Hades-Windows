@@ -170,10 +170,11 @@ VOID Process_NotifyThread(
 	// Create: delete (FLASE)
 	KLOCK_QUEUE_HANDLE lh;
 	PTHREADBUFFER threadbuf = NULL;
+	BOOLEAN bIsInject = FALSE;
 
 	// Alter Check CraeteRemoteThread
 	const HANDLE CurrentProcId = PsGetCurrentProcessId();
-	if (g_thr_ips_monitor && Create && (CurrentProcId != (HANDLE)4) && (ProcessId != (HANDLE)4) && (CurrentProcId != ProcessId) && CheckIsRemoteThread(ProcessId))
+	if (Create && (CurrentProcId != (HANDLE)4) && (ProcessId != (HANDLE)4) && (CurrentProcId != ProcessId) && CheckIsRemoteThread(ProcessId))
 	{
 		// Find DestPid
 		WCHAR path[260 * 2] = { 0 };
@@ -186,50 +187,62 @@ VOID Process_NotifyThread(
 			const PEPROCESS pSrc = PsGetCurrentProcess();
 			PEPROCESS pDst = NULL;
 			PsLookupProcessByProcessId(ProcessId, &pDst);
-			if (pSrc && pDst)
+			// ips之前,暂时先这样
+			if (g_thr_monitor && pSrc && pDst)
 			{
 				SrcPsName = PsGetProcessImageFileName(pSrc);
 				DstPsName = PsGetProcessImageFileName(pDst);
 				ObDereferenceObject(pDst);
-				//DebugPrint("Find CraeteRemoteThread SrcPid: %08X %s DestPid: %08X %s\n", CurrentProcId, SrcPsName, ProcessId, DstPsName);
+				DebugPrint("Find CraeteRemoteThread SrcPid: %08X %s DestPid: %08X %s\n", CurrentProcId, SrcPsName, ProcessId, DstPsName);
+				// Report
+				
+				// Remote Inject Process Report
+				devctrl_pushinfo(NF_INJECT_INFO);
+				bIsInject = TRUE;
 			}
-			DbgBreakPoint();
-			// Kill pSrc Process
-			HANDLE hThreadRef = NULL;
-			PETHREAD pEth = NULL;
-			PsLookupThreadByThreadId(ThreadId, &pEth);
-			do 
-			{
-				if (!pEth)
-					break;
-				NTSTATUS rc = ObOpenObjectByPointer(pEth, OBJ_KERNEL_HANDLE, NULL, THREAD_ALL_ACCESS, *PsThreadType, KernelMode, &hThreadRef);
-				if (!NT_SUCCESS(rc) || !hThreadRef)
-					break;
-				//InitGloableFunction_Process();
-				//if (!ZwQueryInformationThread)
-				//	break;
-				//THREAD_BASIC_INFORMATION ThreadInfo; ULONG res;
-				//rc = ZwQueryInformationThread(hThreadRef, ThreadBasicInformation, &ThreadInfo, sizeof(ThreadInfo), &res);
-				//if (!NT_SUCCESS(rc))
-				//	break;
-				//PVOID pStartAddress; r3
-				//rc = ZwQueryInformationThread(hThreadRef, ThreadQuerySetWin32StartAddress, &pStartAddress, sizeof(pStartAddress), &res);
-				//if (!NT_SUCCESS(rc))
-				//	break;
-				// STATUS_INVALID_PARAMETER
-				/*rc = ZwSetInformationThread(hThreadRef, ThreadQuerySetWin32StartAddress, NULL, 0);
-				if (!NT_SUCCESS(rc))
-					break;*/
-			} while (FALSE);
-			if (hThreadRef)
-				ZwClose(hThreadRef);
-			if (pEth)
-				ObDereferenceObject(pEth);
 		}
+		if (g_thr_ips_monitor)
+		{
+			// IPS
+			//HANDLE hThreadRef = NULL;
+			//PETHREAD pEth = NULL;
+			//PsLookupThreadByThreadId(ThreadId, &pEth);
+			//do 
+			//{
+			//	if (!pEth)
+			//		break;
+			//	NTSTATUS rc = ObOpenObjectByPointer(pEth, OBJ_KERNEL_HANDLE, NULL, THREAD_ALL_ACCESS, *PsThreadType, KernelMode, &hThreadRef);
+			//	if (!NT_SUCCESS(rc) || !hThreadRef)
+			//		break;
+			//	//InitGloableFunction_Process();
+			//	//if (!ZwQueryInformationThread)
+			//	//	break;
+			//	//THREAD_BASIC_INFORMATION ThreadInfo; ULONG res;
+			//	//rc = ZwQueryInformationThread(hThreadRef, ThreadBasicInformation, &ThreadInfo, sizeof(ThreadInfo), &res);
+			//	//if (!NT_SUCCESS(rc))
+			//	//	break;
+			//	//PVOID pStartAddress; r3
+			//	//rc = ZwQueryInformationThread(hThreadRef, ThreadQuerySetWin32StartAddress, &pStartAddress, sizeof(pStartAddress), &res);
+			//	//if (!NT_SUCCESS(rc))
+			//	//	break;
+			//	// STATUS_INVALID_PARAMETER
+			//	/*rc = ZwSetInformationThread(hThreadRef, ThreadQuerySetWin32StartAddress, NULL, 0);
+			//	if (!NT_SUCCESS(rc))
+			//		break;*/
+			//} while (FALSE);
+			//if (hThreadRef)
+			//	ZwClose(hThreadRef);
+			//if (pEth)
+			//	ObDereferenceObject(pEth);
+		}
+		// 上报注入事件 - 非线程事件
+		if (bIsInject)
+			return;
 	}
 	if (!g_thr_monitor)
 		return;
 
+	// 线程事件上报
 	THREADINFO threadinfo;
 	RtlSecureZeroMemory(&threadinfo, sizeof(THREADINFO));
 

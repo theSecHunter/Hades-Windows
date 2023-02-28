@@ -397,7 +397,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
                 return;
             }
 
-            const std::shared_ptr<USubNode> const sub = std::make_shared<USubNode>();
+            const std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
             if (!sub || !data)
             {
                 g_RecvDataQueueCs.unlock();
@@ -455,7 +455,7 @@ static unsigned WINAPI kMsg_taskPopThread(void* pData)
 }
 void kMsgInterface::kMsg_taskPopInit()
 {
-    int i = 0;
+    size_t i = 0;
     HANDLE hThread;
     unsigned threadId;
 
@@ -481,7 +481,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     map<int, wstring>::iterator iter;
     map<int, wstring> Process_list;
     std::string tmpstr; wstring catstr;
-    int i = 0, index = 0;
+    size_t i = 0, index = 0;
     DWORD dwAllocateMemSize = 0;
     char* ptr_Getbuffer = nullptr;
     bool nstatus = Choose_mem(ptr_Getbuffer, dwAllocateMemSize, taskcode);
@@ -639,7 +639,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_networkobj.nf_GetNteworkProcessInfo(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        const PSYSNETWORKINFONODE const networkinfo = (PSYSNETWORKINFONODE)ptr_Getbuffer;
+        const PSYSNETWORKINFONODE networkinfo = (PSYSNETWORKINFONODE)ptr_Getbuffer;
         if (!networkinfo)
             break;
 
@@ -673,7 +673,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_processinfo.nf_EnumProcess(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        const PHANDLE_INFO const phandleinfo = (PHANDLE_INFO)ptr_Getbuffer;
+        const PHANDLE_INFO phandleinfo = (PHANDLE_INFO)ptr_Getbuffer;
         if (phandleinfo && phandleinfo[0].CountNum)
         {
 
@@ -712,7 +712,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_processinfo.nf_GetProcessMod(Process_Pid, ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        const PPROCESS_MOD const modptr = (PPROCESS_MOD)ptr_Getbuffer;
+        const PPROCESS_MOD modptr = (PPROCESS_MOD)ptr_Getbuffer;
         if (modptr)
         {
             j["win_rootkit_processmod_pid"] = to_string(Process_Pid).c_str();
@@ -748,7 +748,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             break;
 
 
-        const PPROCESS_MOD const modptr = (PPROCESS_MOD)ptr_Getbuffer;
+        const PPROCESS_MOD modptr = (PPROCESS_MOD)ptr_Getbuffer;
         if (modptr)
         {
             for (i = 0; i < 1024 * 2; ++i)
