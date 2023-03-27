@@ -1,5 +1,6 @@
 #include "msgassist.h"
 
+// 全部替换成STL or 智能指针
 bool Choose_mem(char*& ptr, DWORD& dwAllocateMemSize, const int code)
 {
     dwAllocateMemSize = 0;

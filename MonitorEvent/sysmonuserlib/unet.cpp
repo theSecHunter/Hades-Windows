@@ -168,6 +168,9 @@ DWORD EnumUDPTable()
 
 DWORD EnumTCPTablePid(UNetTcpNode* outbuf)
 {
+	if (!outbuf)
+		return 0;
+
 	PMIB_TCPTABLE_OWNER_PID pTcpTable = nullptr;
 	DWORD dwSize(0);
 	struct   in_addr rip;

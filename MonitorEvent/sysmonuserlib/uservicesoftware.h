@@ -6,7 +6,9 @@ public:
 	~UServerSoftware();
 	bool uf_EnumAll(LPVOID outbuf);
 private:
-	DWORD EnumService(LPVOID outbuf);
-	DWORD EnumSoftware(LPVOID outbuf);
+	const DWORD EnumService(LPVOID outbuf);
+	const DWORD EnumSoftware(LPVOID outbuf);
+	const DWORD EnumSoftwareWo64(LPVOID outbuf, const int icount);
+	const UINT DetermineContextForAllProducts();
 };
 

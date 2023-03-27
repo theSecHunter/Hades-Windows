@@ -443,6 +443,17 @@ typedef struct _USOFTINFO
     WCHAR strSoftUniPath[MAX_PATH];		// 软件卸载路径
     WCHAR strSoftVenRel[50];			// 软件发布厂商
     WCHAR strSoftIco[MAX_PATH];			// 软件图标路径
+    void clear()
+    {
+        RtlZeroMemory(szSoftName,50);
+        RtlZeroMemory(szSoftVer, 50);
+        RtlZeroMemory(szSoftDate, 20);
+        RtlZeroMemory(szSoftSize, MAX_PATH);
+        RtlZeroMemory(strSoftInsPath, MAX_PATH);
+        RtlZeroMemory(strSoftUniPath, MAX_PATH);
+        RtlZeroMemory(strSoftVenRel, 50);
+        RtlZeroMemory(strSoftIco, MAX_PATH);
+    }
 }USOFTINFO, * PUSOFTINFO;
 typedef struct _UServicesNode
 {
@@ -475,12 +486,23 @@ typedef struct _UDriectFile
     ULONG filesize;
     wchar_t filename[MAX_PATH];
     wchar_t filepath[MAX_PATH * 2];
+    void clear()
+    {
+        filesize = 0;
+        RtlSecureZeroMemory(filename, MAX_PATH);
+        RtlSecureZeroMemory(filepath, MAX_PATH * 2);
+    }
 }UDriectFile, * PUDriectFile;
 typedef struct _UDriectInfo
 {
     DWORD   DriectAllSize;
     DWORD   FileNumber;
-    UDriectFile fileEntry[0xffff];
+    UDriectFile fileEntry[0x4096];
+    void clear()
+    {
+        DriectAllSize = 0;
+        FileNumber = 0;
+    }
 }UDriectInfo, *PUDriectInfo;
 
 // ===================Topic============================

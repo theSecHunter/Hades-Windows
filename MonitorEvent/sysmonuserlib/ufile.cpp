@@ -101,6 +101,10 @@ void SearchDir(const std::string& strDir, int bSub, std::vector<std::string>& pa
 */
 bool EnumDriectFile(CString Path, LPVOID outbuf)
 {
+	// MAX 0x4096
+	if (g_FileCount >= 0x4090)
+		return true;
+
 	if (!g_driectfileinfo)
 		g_driectfileinfo = (PUDriectFile)outbuf;
 
@@ -213,14 +217,15 @@ bool UFile::uf_GetDirectoryFile(char* DriPath, LPVOID outbuf)
 {
 	g_driectfileinfo = NULL;
 	g_FileCount = 0, dwAllSize = 0;
-	PUDriectInfo dirinfo = (PUDriectInfo)outbuf;
-	if (!dirinfo)
+	PUDriectInfo const pDirinfo = (PUDriectInfo)outbuf;
+	if (!pDirinfo)
 		return false;
-	EnumDriectFile(DriPath, dirinfo->fileEntry);
-	dirinfo->DriectAllSize = dwAllSize;
-	dirinfo->FileNumber = g_FileCount;
+	EnumDriectFile(DriPath, pDirinfo->fileEntry);
+	pDirinfo->DriectAllSize = dwAllSize;
+	pDirinfo->FileNumber = g_FileCount;
 
-	if (g_FileCount)
+	g_FileCount = 0; dwAllSize = 0;
+	if (pDirinfo->FileNumber)
 		return true;
 	else
 		return false;
