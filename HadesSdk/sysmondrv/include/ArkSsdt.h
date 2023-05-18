@@ -6,6 +6,6 @@ public:
 	~ArkSsdt();
 
 	bool nf_init();
-	bool nf_GetSysCurrentSsdtData(LPVOID outBuf, const DWORD ssdtinfosize);
+	bool nf_GetSysCurrentSsdtData(LPVOID pData, const DWORD SSdtinfoSize);
 };
 

@@ -52,11 +52,11 @@ bool ArkSsdt::nf_init()
 
 }
 
-bool ArkSsdt::nf_GetSysCurrentSsdtData(LPVOID outBuf, const DWORD ssdtinfosize)
+bool ArkSsdt::nf_GetSysCurrentSsdtData(LPVOID pData, const DWORD SSdtinfoSize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	if (!outBuf || !ssdtinfosize)
+	if (!pData || !SSdtinfoSize)
 		return false;
 	do {
 
@@ -64,8 +64,8 @@ bool ArkSsdt::nf_GetSysCurrentSsdtData(LPVOID outBuf, const DWORD ssdtinfosize)
 			CTL_DEVCTRL_ARK_GETSSDTDATA,
 			NULL,
 			inSize,
-			outBuf,
-			ssdtinfosize,
+			pData,
+			SSdtinfoSize,
 			dwSize)
 			)
 		{

@@ -20,11 +20,11 @@ ArkFsd::~ArkFsd()
 
 }
 
-bool ArkFsd::nf_GetFsdInfo(LPVOID outBuf, const DWORD Fsdinfosize)
+bool ArkFsd::nf_GetFsdInfo(LPVOID pData, const DWORD FsdinfoSize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	if (!outBuf)
+	if (!pData)
 		return false;
 
 	do {
@@ -33,8 +33,8 @@ bool ArkFsd::nf_GetFsdInfo(LPVOID outBuf, const DWORD Fsdinfosize)
 			CTL_DEVCTRL_ARK_GETSYSFSDDATA,
 			NULL,
 			inSize,
-			outBuf,
-			Fsdinfosize,
+			pData,
+			FsdinfoSize,
 			dwSize)
 			)
 		{

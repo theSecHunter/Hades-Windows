@@ -7,6 +7,6 @@ public:
 	~ArkIdt();
 
 	bool nf_init();
-	bool nf_GetIdtData(LPVOID outBuf, const DWORD idtinfosize);
+	bool nf_GetIdtData(LPVOID pData, const DWORD IdtinfoSize);
 };
 

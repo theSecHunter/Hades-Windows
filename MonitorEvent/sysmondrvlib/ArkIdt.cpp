@@ -50,11 +50,11 @@ bool ArkIdt::nf_init()
 	return false;
 }
 
-bool ArkIdt::nf_GetIdtData(LPVOID outBuf, const DWORD idtinfosize)
+bool ArkIdt::nf_GetIdtData(LPVOID pData, const DWORD IdtinfoSize)
 {
 	DWORD inSize = 0;
 	DWORD dwSize = 0;
-	if (!outBuf)
+	if (!pData)
 		return false;
 
 	do {
@@ -63,8 +63,8 @@ bool ArkIdt::nf_GetIdtData(LPVOID outBuf, const DWORD idtinfosize)
 			CTL_DEVCTRL_ARK_GETIDTDATA,
 			NULL,
 			inSize,
-			outBuf,
-			idtinfosize,
+			pData,
+			IdtinfoSize,
 			dwSize)
 			)
 		{

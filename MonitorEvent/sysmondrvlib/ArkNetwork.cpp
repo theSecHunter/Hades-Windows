@@ -24,11 +24,11 @@ ArkNetwork::~ArkNetwork()
 
 }
 
-int ArkNetwork::nf_GetNteworkProcessInfo(LPVOID outBuf, const DWORD64 Networkinfosize)
+int ArkNetwork::nf_GetNteworkProcessInfo(LPVOID pData, const DWORD64 NetworkinfoSize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	if (!outBuf)
+	if (!pData)
 		return false;
 	do {
 
@@ -36,8 +36,8 @@ int ArkNetwork::nf_GetNteworkProcessInfo(LPVOID outBuf, const DWORD64 Networkinf
 			CTL_DEVCTRL_ARK_GETSYNETWORKDDATA,
 			NULL,
 			inSize,
-			outBuf,
-			Networkinfosize,
+			pData,
+			NetworkinfoSize,
 			dwSize)
 			)
 		{

@@ -21,11 +21,11 @@ AkrSysDriverDevInfo::~AkrSysDriverDevInfo()
 
 }
 
-bool AkrSysDriverDevInfo::nf_EnumSysMod(LPVOID outBuf, const DWORD proessinfosize)
+bool AkrSysDriverDevInfo::nf_EnumSysMod(LPVOID pData, const DWORD proessinfoSize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	if (!outBuf)
+	if (!pData)
 		return false;
 	do {
 
@@ -33,8 +33,8 @@ bool AkrSysDriverDevInfo::nf_EnumSysMod(LPVOID outBuf, const DWORD proessinfosiz
 			CTL_DEVCTRL_ARK_DRIVERDEVENUM,
 			NULL,
 			inSize,
-			outBuf,
-			proessinfosize,
+			pData,
+			proessinfoSize,
 			dwSize)
 			)
 		{

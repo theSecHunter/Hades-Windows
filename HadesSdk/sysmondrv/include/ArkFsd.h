@@ -5,6 +5,6 @@ public:
 	ArkFsd();
 	~ArkFsd();
 
-	bool nf_GetFsdInfo(LPVOID outBuf, const DWORD Fsdinfosize);
+	bool nf_GetFsdInfo(LPVOID pData, const DWORD FsdinfoSize);
 };
 

@@ -20,11 +20,11 @@ ArkMouseKeyBoard::~ArkMouseKeyBoard()
 
 }
 
-int ArkMouseKeyBoard::nf_GetMouseKeyInfoData(LPVOID outBuf,const DWORD MouseKeyboardinfosize)
+int ArkMouseKeyBoard::nf_GetMouseKeyInfoData(LPVOID pData, const DWORD MouseKeyboardinfoSize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	if (!outBuf)
+	if (!pData)
 		return false;
 	do {
 
@@ -32,8 +32,8 @@ int ArkMouseKeyBoard::nf_GetMouseKeyInfoData(LPVOID outBuf,const DWORD MouseKeyb
 			CTL_DEVCTRL_ARK_GETSYSMOUSEKEYBOARDDATA,
 			NULL,
 			inSize,
-			outBuf,
-			MouseKeyboardinfosize,
+			pData,
+			MouseKeyboardinfoSize,
 			dwSize)
 			)
 		{

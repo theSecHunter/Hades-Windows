@@ -39,21 +39,21 @@ bool ArkProcessInfo::nf_GetProcessInfo()
 	return true;
 }
 
-bool ArkProcessInfo::nf_GetProcessMod(DWORD Pid, LPVOID outBuf, const DWORD proessinfosize)
+bool ArkProcessInfo::nf_GetProcessMod(DWORD dwPiD, LPVOID pData, const DWORD proessinfoSize)
 {
 	DWORD	inSize = sizeof(DWORD);
 	DWORD	dwSize = 0;
-	if (!outBuf)
+	if (!pData)
 		return false;
 
 	do {
 
 		if (false == devobj.devctrl_sendioct(
 			CTL_DEVCTRL_ARK_PROCESSMOD,
-			&Pid,
+			&dwPiD,
 			inSize,
-			outBuf,
-			proessinfosize,
+			pData,
+			proessinfoSize,
 			dwSize)
 			)
 		{
@@ -99,11 +99,11 @@ bool ArkProcessInfo::nf_DumpProcessMem()
 	return true;
 }
 
-bool ArkProcessInfo::nf_EnumProcess(LPVOID outBuf, const DWORD proessinfosize)
+bool ArkProcessInfo::nf_EnumProcess(LPVOID pData, const DWORD proessinfoSize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
-	if (!outBuf)
+	if (!pData)
 		return false;
 	do {
 
@@ -111,8 +111,8 @@ bool ArkProcessInfo::nf_EnumProcess(LPVOID outBuf, const DWORD proessinfosize)
 			CTL_DEVCTRL_ARK_PROCESSENUM,
 			NULL,
 			inSize,
-			outBuf,
-			proessinfosize,
+			pData,
+			proessinfoSize,
 			dwSize)
 			)
 		{

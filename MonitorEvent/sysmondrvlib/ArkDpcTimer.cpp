@@ -20,11 +20,11 @@ ArkDpcTimer::~ArkDpcTimer()
 
 }
 
-bool ArkDpcTimer::nf_GetDpcTimerData(LPVOID outBuf, const DWORD DpcTimerinfosize)
+bool ArkDpcTimer::nf_GetDpcTimerData(LPVOID pData, const DWORD DpcTimerinfoSize)
 {
 	DWORD inSize = 0;
 	DWORD dwSize = 0;
-	if (!outBuf)
+	if (!pData)
 		return false;
 
 	do {
@@ -33,8 +33,8 @@ bool ArkDpcTimer::nf_GetDpcTimerData(LPVOID outBuf, const DWORD DpcTimerinfosize
 			CTL_DEVCTRL_ARK_GETDPCTIMERDATA,
 			NULL,
 			inSize,
-			outBuf,
-			DpcTimerinfosize,
+			pData,
+			DpcTimerinfoSize,
 			dwSize)
 			)
 		{
