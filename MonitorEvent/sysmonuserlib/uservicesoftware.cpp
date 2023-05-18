@@ -121,7 +121,7 @@ const DWORD UServerSoftware::EnumService(LPVOID pData)
 }
 const DWORD UServerSoftware::EnumSoftware(LPVOID pData)
 {
-	DWORD countnumber = 0;
+	DWORD dwCountNumber = 0;
 	try
 	{
 		if (!pData)
@@ -193,35 +193,35 @@ const DWORD UServerSoftware::EnumSoftware(LPVOID pData)
 				// 名字
 				dwKeyLen = MAX_PATH;
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"DisplayName", 0, &dwType, (LPBYTE)SoftInfo.szSoftName, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].szSoftName, SoftInfo.szSoftName);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftName, SoftInfo.szSoftName);
 				else
 				{
-					lstrcpyW(softwareinfo[countnumber].szSoftName, szNewKeyName);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftName, szNewKeyName);
 				}
 				// 版本号
 				dwKeyLen = sizeof(SoftInfo.szSoftVer);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"DisplayVersion", 0, &dwType, (LPBYTE)SoftInfo.szSoftVer, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].szSoftVer, SoftInfo.szSoftVer);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftVer, SoftInfo.szSoftVer);
 				dwKeyLen = sizeof(SoftInfo.szSoftVer);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"VersionNumber", 0, &dwType, (LPBYTE)SoftInfo.szSoftVer, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].szSoftVer, SoftInfo.szSoftVer);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftVer, SoftInfo.szSoftVer);
 				// 安装时间
 				dwKeyLen = sizeof(SoftInfo.szSoftDate);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"HelpLink", 0, &dwType, (LPBYTE)SoftInfo.szSoftDate, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].szSoftDate, SoftInfo.szSoftDate);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftDate, SoftInfo.szSoftDate);
 				// 大小
 				dwKeyLen = sizeof(SoftInfo.szSoftSize);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"Size", 0, &dwType, (LPBYTE)SoftInfo.szSoftSize, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].szSoftSize, SoftInfo.szSoftSize);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftSize, SoftInfo.szSoftSize);
 				// 发布商
 				dwKeyLen = sizeof(SoftInfo.strSoftVenRel);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"Publisher", 0, &dwType, (LPBYTE)SoftInfo.strSoftVenRel, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].strSoftVenRel, SoftInfo.strSoftVenRel);
+					lstrcpyW(softwareinfo[dwCountNumber].strSoftVenRel, SoftInfo.strSoftVenRel);
 				// 卸载路径
 				dwKeyLen = sizeof(SoftInfo.strSoftUniPath);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"UninstallString", 0, &dwType, (LPBYTE)SoftInfo.strSoftUniPath, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].strSoftUniPath, SoftInfo.strSoftUniPath);
-				++countnumber;
+					lstrcpyW(softwareinfo[dwCountNumber].strSoftUniPath, SoftInfo.strSoftUniPath);
+				++dwCountNumber;
 			} while (false);
 			if (hkValueKey)
 			{
@@ -237,18 +237,18 @@ const DWORD UServerSoftware::EnumSoftware(LPVOID pData)
 		}
 		if (hkResult)
 			RegCloseKey(hkResult);
-		return countnumber;
+		return dwCountNumber;
 	}
 	catch (const std::exception&)
 	{
-		return countnumber;
+		return dwCountNumber;
 	}
 }
 const DWORD UServerSoftware::EnumSoftwareWo64(LPVOID pData, const int iCount)
 {
 	if (iCount >= 4095)
-		return;
-	DWORD countnumber = iCount;
+		return 0;
+	DWORD dwCountNumber = iCount, dwSucCount = 0;
 	try
 	{
 		if (!pData)
@@ -321,35 +321,35 @@ const DWORD UServerSoftware::EnumSoftwareWo64(LPVOID pData, const int iCount)
 				// 名字
 				dwKeyLen = sizeof(SoftInfo.szSoftName);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"DisplayName", 0, &dwType, (LPBYTE)SoftInfo.szSoftName, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].szSoftName, SoftInfo.szSoftName);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftName, SoftInfo.szSoftName);
 				else
 				{
-					lstrcpyW(softwareinfo[countnumber].szSoftName, szNewKeyName);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftName, szNewKeyName);
 				}
 				// 版本号
 				dwKeyLen = sizeof(SoftInfo.szSoftVer);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"DisplayVersion", 0, &dwType, (LPBYTE)SoftInfo.szSoftVer, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].szSoftVer, SoftInfo.szSoftVer);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftVer, SoftInfo.szSoftVer);
 				dwKeyLen = sizeof(SoftInfo.szSoftVer);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"VersionNumber", 0, &dwType, (LPBYTE)SoftInfo.szSoftVer, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].szSoftVer, SoftInfo.szSoftVer);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftVer, SoftInfo.szSoftVer);
 				// 安装时间
 				dwKeyLen = sizeof(SoftInfo.szSoftDate);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"HelpLink", 0, &dwType, (LPBYTE)SoftInfo.szSoftDate, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].szSoftDate, SoftInfo.szSoftDate);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftDate, SoftInfo.szSoftDate);
 				// 大小
 				dwKeyLen = sizeof(SoftInfo.szSoftSize);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"Size", 0, &dwType, (LPBYTE)SoftInfo.szSoftSize, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].szSoftSize, SoftInfo.szSoftSize);
+					lstrcpyW(softwareinfo[dwCountNumber].szSoftSize, SoftInfo.szSoftSize);
 				// 发布商
 				dwKeyLen = sizeof(SoftInfo.strSoftVenRel);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"Publisher", 0, &dwType, (LPBYTE)SoftInfo.strSoftVenRel, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].strSoftVenRel, SoftInfo.strSoftVenRel);
+					lstrcpyW(softwareinfo[dwCountNumber].strSoftVenRel, SoftInfo.strSoftVenRel);
 				// 卸载路径
 				dwKeyLen = sizeof(SoftInfo.strSoftUniPath);
 				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"UninstallString", 0, &dwType, (LPBYTE)SoftInfo.strSoftUniPath, &dwKeyLen))
-					lstrcpyW(softwareinfo[countnumber].strSoftUniPath, SoftInfo.strSoftUniPath);
-				++countnumber;
+					lstrcpyW(softwareinfo[dwCountNumber].strSoftUniPath, SoftInfo.strSoftUniPath);
+				++dwCountNumber; ++dwSucCount;
 			} while (false);
 			if (hkValueKey)
 			{
@@ -365,11 +365,11 @@ const DWORD UServerSoftware::EnumSoftwareWo64(LPVOID pData, const int iCount)
 		}
 		if (hkResult)
 			RegCloseKey(hkResult);
-		return countnumber;
+		return dwSucCount;
 	}
 	catch (const std::exception&)
 	{
-		return countnumber;
+		return dwSucCount;
 	}
 }
 const UINT UServerSoftware::DetermineContextForAllProducts()
