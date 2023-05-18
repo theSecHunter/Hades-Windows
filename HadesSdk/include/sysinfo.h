@@ -435,7 +435,7 @@ typedef struct _UProcessNode
 // u_software_service
 typedef struct _USOFTINFO
 {
-    WCHAR szSoftName[50];				// 软件名称 
+    WCHAR szSoftName[MAX_PATH];			// 软件名称 
     WCHAR szSoftVer[50];				// 软件版本号
     WCHAR szSoftDate[20];				// 软件安装日期
     WCHAR szSoftSize[MAX_PATH];			// 软件大小
@@ -445,7 +445,7 @@ typedef struct _USOFTINFO
     WCHAR strSoftIco[MAX_PATH];			// 软件图标路径
     void clear()
     {
-        RtlZeroMemory(szSoftName,50);
+        RtlZeroMemory(szSoftName, MAX_PATH);
         RtlZeroMemory(szSoftVer, 50);
         RtlZeroMemory(szSoftDate, 20);
         RtlZeroMemory(szSoftSize, MAX_PATH);
@@ -465,7 +465,7 @@ typedef struct _UServicesNode
 }UServicesNode, * PUServicesNode;
 typedef struct _UAllServerSoftware {
     ULONG softwarenumber;
-    USOFTINFO uUsoinfo[0x100];
+    USOFTINFO uUsoinfo[0x1000];
     ULONG servicenumber;
     UServicesNode uSericeinfo[0x500];
 }UAllServerSoftware, *PUAllServerSoftware;

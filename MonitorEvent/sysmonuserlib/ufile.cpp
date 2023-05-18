@@ -141,10 +141,10 @@ bool EnumDriectFile(CString Path, LPVOID outbuf)
 	return true;
 }
 
-bool UFile::uf_GetFileInfo(char* filepath,LPVOID outbuf)
+bool UFile::uf_GetFileInfo(char* pFilepath,LPVOID pData)
 {
-	CString filestr = filepath;
-	if (!outbuf && (0 >= filestr.GetLength()))
+	CString filestr = pFilepath;
+	if (!pData && (0 >= filestr.GetLength()))
 		return false;
 
 	// 获取文件路径
@@ -213,14 +213,14 @@ bool UFile::uf_GetFileInfo(char* filepath,LPVOID outbuf)
 		FindClose(hFile);
 	return true;
 }
-bool UFile::uf_GetDirectoryFile(char* DriPath, LPVOID outbuf)
+bool UFile::uf_GetDirectoryFile(char* pDriPath, LPVOID pData)
 {
 	g_driectfileinfo = NULL;
 	g_FileCount = 0, dwAllSize = 0;
-	PUDriectInfo const pDirinfo = (PUDriectInfo)outbuf;
+	PUDriectInfo const pDirinfo = (PUDriectInfo)pData;
 	if (!pDirinfo)
 		return false;
-	EnumDriectFile(DriPath, pDirinfo->fileEntry);
+	EnumDriectFile(pDriPath, pDirinfo->fileEntry);
 	pDirinfo->DriectAllSize = dwAllSize;
 	pDirinfo->FileNumber = g_FileCount;
 

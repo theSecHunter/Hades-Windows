@@ -5,5 +5,5 @@ public:
 	UNet();
 	~UNet();
 
-	bool uf_EnumNetwork(LPVOID outbuf);
+	bool uf_EnumNetwork(LPVOID pData);
 };

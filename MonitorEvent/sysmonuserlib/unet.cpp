@@ -166,9 +166,9 @@ DWORD EnumUDPTable()
 	return dwRetVal;
 }
 
-DWORD EnumTCPTablePid(UNetTcpNode* outbuf)
+DWORD EnumTCPTablePid(UNetTcpNode* pData)
 {
-	if (!outbuf)
+	if (!pData)
 		return 0;
 
 	PMIB_TCPTABLE_OWNER_PID pTcpTable = nullptr;
@@ -198,6 +198,7 @@ DWORD EnumTCPTablePid(UNetTcpNode* outbuf)
 	if (pTcpTable)
 		nNum = pTcpTable->dwNumEntries; 
 
+	DWORD dwCount = 0;
 	for (size_t i = 0; i < nNum; i++)
 	{
 
@@ -213,18 +214,18 @@ DWORD EnumTCPTablePid(UNetTcpNode* outbuf)
 		_snprintf_s(szrip, sizeof(szrip), "%s:%d", inet_ntoa(rip), htons((u_short)pTcpTable->table[i].dwRemotePort));
 		_ultoa_s(pTcpTable->table[i].dwOwningPid, PidString, 10);
 
-		RtlCopyMemory(outbuf[i].szlip, szlip, sizeof(szlip));
-		RtlCopyMemory(outbuf[i].szrip, szrip, sizeof(szrip));
-		RtlCopyMemory(outbuf[i].TcpState, TcpState[pTcpTable->table[i].dwState], 32);
-		RtlCopyMemory(outbuf[i].PidString, PidString, sizeof(PidString));
-
+		RtlCopyMemory(pData[i].szlip, szlip, sizeof(szlip));
+		RtlCopyMemory(pData[i].szrip, szrip, sizeof(szrip));
+		RtlCopyMemory(pData[i].TcpState, TcpState[pTcpTable->table[i].dwState], 32);
+		RtlCopyMemory(pData[i].PidString, PidString, sizeof(PidString));
+		++dwCount;
 	}
 
 	if (pTcpTable)
 		delete[] pTcpTable;
-	return nNum;
+	return dwCount;
 }
-DWORD EnumUDPTablePid(UNetUdpNode* outbuf)
+DWORD EnumUDPTablePid(UNetUdpNode* pData)
 {
 	PMIB_UDPTABLE_OWNER_PID pUdpTable(NULL);
 	DWORD dwSize(0);
@@ -251,6 +252,7 @@ DWORD EnumUDPTablePid(UNetUdpNode* outbuf)
 	if (pUdpTable)
 		nNum = (int)pUdpTable->dwNumEntries;
 
+	DWORD dwCount = 0;
 	for (size_t i = 0; i < nNum; i++)
 	{
 
@@ -259,23 +261,23 @@ DWORD EnumUDPTablePid(UNetUdpNode* outbuf)
 		_snprintf_s(szlip, sizeof(szlip), "%s:%d", inet_ntoa(lip), htons((u_short)pUdpTable->table[i].dwLocalPort));
 		_ultoa_s(pUdpTable->table[i].dwOwningPid, PidString, 10);
 
-		RtlCopyMemory(outbuf[i].szrip, szlip, sizeof(szlip));
-		RtlCopyMemory(outbuf[i].PidString, PidString, sizeof(PidString));
-
+		RtlCopyMemory(pData[i].szrip, szlip, sizeof(szlip));
+		RtlCopyMemory(pData[i].PidString, PidString, sizeof(PidString));
+		++dwCount;
 	}
 
 	if (pUdpTable)
 		delete[] pUdpTable;
 
-	return nNum;
+	return dwCount;
 }
 
-bool UNet::uf_EnumNetwork(LPVOID outbuf)
+bool UNet::uf_EnumNetwork(LPVOID pData)
 {
-	if (!outbuf)
+	if (!pData)
 		return false;
 
-	PUNetNode netnode = (PUNetNode)outbuf;
+	PUNetNode netnode = (PUNetNode)pData;
 	if (!netnode)
 		return false;
 

@@ -385,7 +385,8 @@ void uMsgInterface::uMsg_taskPopInit()
 // 接口：用户态TaskId下发获取数据,同步阻塞
 void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& vec_task_string)
 {
-    std::string tmpstr; wstring catstr;
+    std::string tmpstr = "";
+    std::wstring catstr = L"";
     size_t i = 0, index = 0;
     DWORD dwAllocateMemSize = 0;
     char* ptr_Getbuffer = nullptr;
@@ -425,7 +426,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     j["win_user_process_pribase"] = tmpstr.c_str();
                     j["win_user_process_parenid"] = to_string(procesNode->sysprocess[i].th32ParentProcessID).c_str();
                     j["win_user_process_thrcout"] = to_string(procesNode->sysprocess[i].threadcout).c_str();
-                    vec_task_string.push_back(j.dump());
+                    vec_task_string.emplace_back(j.dump());
                 }
                 OutputDebugString(L"[User] Process Enum Success");
                 std::cout << "[User] Process Enum Success" << std::endl;
@@ -457,7 +458,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     tmpstr.clear();
                     tmpstr = String_ToUtf8(autorunnode->regrun[i].szValueKey);
                     j["win_user_autorun_regKey"] = tmpstr.c_str();
-                    vec_task_string.push_back(j.dump());
+                    vec_task_string.emplace_back(j.dump());
                 }
 
                 j.clear();
@@ -475,7 +476,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     Wchar_tToString(tmpstr, autorunnode->taskschrun[i].TaskCommand);
                     tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_autorun_tscCommand"] = tmpstr.c_str();
-                    vec_task_string.push_back(j.dump());
+                    vec_task_string.emplace_back(j.dump());
                 }
                 OutputDebugString(L"[User] SystemAutoStartRun Enum Success");
                 std::cout << "[User] SystemAutoStartRun Enum Success" << std::endl;
@@ -496,7 +497,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     j["win_user_net_dst"] = netnode->tcpnode[i].szrip;
                     j["win_user_net_status"] = netnode->tcpnode[i].TcpState;
                     j["win_user_net_pid"] = netnode->tcpnode[i].PidString;
-                    vec_task_string.push_back(j.dump());
+                    vec_task_string.emplace_back(j.dump());
                 }
 
                 j.clear();
@@ -506,7 +507,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
 
                     j["win_user_net_src"] = netnode->tcpnode[i].szlip;
                     j["win_user_net_pid"] = netnode->tcpnode[i].PidString;
-                    vec_task_string.push_back(j.dump());
+                    vec_task_string.emplace_back(j.dump());
                 }
                 OutputDebugString(L"[User] EnumNetwork Enum Success");
                 std::cout << "[User] EnumNetwork Enum Success" << std::endl;
@@ -545,7 +546,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     j["win_user_sysuser_name"] = tmpstr.c_str();
                     j["win_user_sysuser_sid"] = to_string((ULONGLONG)pusernode->usernode[i].serverusid).c_str();
                     j["win_user_sysuser_flag"] = to_string(pusernode->usernode[i].serveruflag).c_str();
-                    vec_task_string.push_back(j.dump());
+                    vec_task_string.emplace_back(j.dump());
                 }
                 OutputDebugString(L"[User] SysUser Enum Success");
                 std::cout << "[User] SysUser Enum Success" << std::endl;
@@ -581,7 +582,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_server_lpDescr"] = tmpstr.c_str();
                     j["win_user_server_status"] = pNode->uSericeinfo[i].dwCurrentState;
-                    vec_task_string.push_back(j.dump());
+                    vec_task_string.emplace_back(j.dump());
                 }
 
                 j.clear();
@@ -616,7 +617,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftVenRel);
                     tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_software_venrel"] = tmpstr.c_str();
-                    vec_task_string.push_back(j.dump());
+                    vec_task_string.emplace_back(j.dump());
                 }
                 OutputDebugString(L"[User] Software_Server Enum Success");
                 std::cout << "[User] Software_Server Enum Success" << std::endl;
@@ -636,7 +637,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 j["win_user_driectinfo_flag"] = "1";
                 j["win_user_driectinfo_filecout"] = to_string(directinfo->FileNumber).c_str();
                 j["win_user_driectinfo_size"] = to_string(directinfo->DriectAllSize).c_str();
-                vec_task_string.push_back(j.dump());
+                vec_task_string.emplace_back(j.dump());
                
                 
                 // 枚举的文件发送
@@ -653,7 +654,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                     tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_driectinfo_filePath"] = tmpstr.c_str();
                     j["win_user_driectinfo_fileSize"] = to_string(directinfo->fileEntry[i].filesize).c_str();
-                    vec_task_string.push_back(j.dump());
+                    vec_task_string.emplace_back(j.dump());
                 }
                 OutputDebugString(L"[User] GetDirectoryFile Enum Success");
                 std::cout << "[User] GetDirectoryFile Enum Success" << std::endl;
@@ -695,7 +696,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 tmpstr.clear();
                 Wchar_tToString(tmpstr, fileinfo->seFileModify);
                 j["win_user_fileinfo_seFileModify"] = tmpstr.c_str();
-                vec_task_string.push_back(j.dump());
+                vec_task_string.emplace_back(j.dump());
                 OutputDebugString(L"[User] GetFIleInfo Success");
                 std::cout << "[User] GetFIleInfo Success" << std::endl;
             }

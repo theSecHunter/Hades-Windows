@@ -17,8 +17,11 @@ UAutoStart::~UAutoStart()
 }
 
 // 默认不超过1000条注册表启动
-ULONG CheckRegisterRun(RegRun* outbuf)
+ULONG CheckRegisterRun(RegRun* pRegRun)
 {
+	if (!pRegRun)
+		return 0;
+
 	HKEY hKey;
 	DWORD dwType = 0;
 	DWORD dwBufferSize = MAXBYTE;
@@ -27,9 +30,6 @@ ULONG CheckRegisterRun(RegRun* outbuf)
 	CHAR szValueKey[MAXBYTE] = { 0 };
 	int i = 0, j = 0;
 	int index = 0;
-
-	if (!outbuf)
-		return false;
 
 	if (RegOpenKeyA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", &hKey) == ERROR_SUCCESS)
 	{
@@ -41,11 +41,10 @@ ULONG CheckRegisterRun(RegRun* outbuf)
 				break;
 			}
 
-			RtlCopyMemory(outbuf[index].szValueName, szValueName, MAXBYTE);
-			RtlCopyMemory(outbuf[index].szValueKey, szValueKey, MAXBYTE);
-			index++;
-			if (1000 >= index)
-				return index;
+			RtlCopyMemory(pRegRun[index].szValueName, szValueName, MAXBYTE);
+			RtlCopyMemory(pRegRun[index].szValueKey, szValueKey, MAXBYTE);
+			if (1000 >= (++index))
+				break;
 
 			i++;
 			j++;
@@ -68,11 +67,10 @@ ULONG CheckRegisterRun(RegRun* outbuf)
 				break;
 			}
 
-			RtlCopyMemory(outbuf[index].szValueName, szValueName, MAXBYTE);
-			RtlCopyMemory(outbuf[index].szValueKey, szValueKey, MAXBYTE);
-			index++;
-			if (1000 >= index)
-				return index;
+			RtlCopyMemory(pRegRun[index].szValueName, szValueName, MAXBYTE);
+			RtlCopyMemory(pRegRun[index].szValueKey, szValueKey, MAXBYTE);
+			if (1000 >= (++index))
+				break;
 
 			i++;
 			j++;
@@ -95,11 +93,10 @@ ULONG CheckRegisterRun(RegRun* outbuf)
 				break;
 			}
 
-			RtlCopyMemory(outbuf[index].szValueName, szValueName, MAXBYTE);
-			RtlCopyMemory(outbuf[index].szValueKey, szValueKey, MAXBYTE);
-			index++;
-			if (1000 >= index)
-				return index;
+			RtlCopyMemory(pRegRun[index].szValueName, szValueName, MAXBYTE);
+			RtlCopyMemory(pRegRun[index].szValueKey, szValueKey, MAXBYTE);
+			if (1000 >= (++index))
+				break;
 
 			i++;
 			j++;
@@ -123,11 +120,10 @@ ULONG CheckRegisterRun(RegRun* outbuf)
 				break;
 			}
 
-			RtlCopyMemory(outbuf[index].szValueName, szValueName, MAXBYTE);
-			RtlCopyMemory(outbuf[index].szValueKey, szValueKey, MAXBYTE);
-			index++;
-			if (1000 >= index)
-				return index;
+			RtlCopyMemory(pRegRun[index].szValueName, szValueName, MAXBYTE);
+			RtlCopyMemory(pRegRun[index].szValueKey, szValueKey, MAXBYTE);
+			if (1000 >= (++index))
+				break;
 
 			i++;
 			j++;
@@ -197,13 +193,15 @@ void XmlCommandAn(const wchar_t* source, wchar_t* deststr)
 	通过WMI只能枚举使用Win32_ScheduledJob类别或At.exe实用程序创建的计划任务。NetScheduleJobEnum(); Win8以上就不支持了(放弃)
 	Ues: Task Scheduler 2.0
 */
-ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* outbuf)
+ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* pTaskRun)
 {
+	if (!pTaskRun)
+		return 0;
 	//  ------------------------------------------------------
 	//  Initialize COM.
 	HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
 	if (FAILED(hr))
-		return false;
+		return 0;
 
 	//  Set general COM security levels.
 	hr = CoInitializeSecurity(
@@ -220,7 +218,7 @@ ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* outbuf)
 	if (FAILED(hr))
 	{
 		CoUninitialize();
-		return false;
+		return 0;
 	}
 
 	//  ------------------------------------------------------
@@ -234,7 +232,7 @@ ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* outbuf)
 	if (FAILED(hr))
 	{
 		CoUninitialize();
-		return false;
+		return 0;
 	}
 
 	//  Connect to the task service.
@@ -244,7 +242,7 @@ ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* outbuf)
 	{
 		pService->Release();
 		CoUninitialize();
-		return false;
+		return 0;
 	}
 
 	//  ------------------------------------------------------
@@ -256,7 +254,7 @@ ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* outbuf)
 	if (FAILED(hr))
 	{
 		CoUninitialize();
-		return false;
+		return 0;
 	}
 
 	//  -------------------------------------------------------
@@ -268,7 +266,7 @@ ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* outbuf)
 	if (FAILED(hr))
 	{
 		CoUninitialize();
-		return false;
+		return 0;
 	}
 
 	LONG numTasks = 0;
@@ -278,12 +276,13 @@ ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* outbuf)
 	{
 		pTaskCollection->Release();
 		CoUninitialize();
-		return false;
+		return 0;
 	}
 
 	TASK_STATE taskState;
 	wchar_t TaskCommand[1024] = { 0 };
 
+	DWORD iCouent = 0;
 	for (LONG i = 0; i < numTasks; i++)
 	{
 		IRegisteredTask* pRegisteredTask = NULL;
@@ -296,29 +295,31 @@ ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* outbuf)
 			if (SUCCEEDED(hr))
 			{
 				
-				lstrcpyW(outbuf[i].szValueName, taskName);
+				lstrcpyW(pTaskRun[i].szValueName, taskName);
 
 				hr = pRegisteredTask->get_State(&taskState);
 				if (SUCCEEDED(hr))
-					outbuf[i].State = taskState;
+					pTaskRun[i].State = taskState;
 
 				DATE* pLastTime = NULL;
 				hr = pRegisteredTask->get_LastRunTime(pLastTime);
 				if (SUCCEEDED(hr) && pLastTime)
-					outbuf[i].LastTime = *pLastTime;
+					pTaskRun[i].LastTime = *pLastTime;
 
 				hr = pRegisteredTask->get_NextRunTime(pLastTime);
 				if (SUCCEEDED(hr) && pLastTime)
-					outbuf[i].NextTime = *pLastTime;
+					pTaskRun[i].NextTime = *pLastTime;
 
 				hr = pRegisteredTask->get_Xml(&taskName);
 				if (SUCCEEDED(hr))
 				{
 					XmlCommandAn((wchar_t*)taskName, TaskCommand);
-					lstrcpyW(outbuf[i].TaskCommand, TaskCommand);
+					lstrcpyW(pTaskRun[i].TaskCommand, TaskCommand);
 				}
 
 				SysFreeString(taskName);
+
+				iCouent++;
 			}
 			pRegisteredTask->Release();
 		}
@@ -326,15 +327,15 @@ ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* outbuf)
 
 	pTaskCollection->Release();
 	CoUninitialize();
-	return numTasks;
+	return iCouent;
 }
 
-bool UAutoStart::uf_EnumAutoStartask(LPVOID outBuf, const DWORD size)
+bool UAutoStart::uf_EnumAutoStartask(LPVOID pData, const DWORD dwSize)
 {
-	if (!outBuf || 0 >= size)
+	if (!pData || 0 >= dwSize)
 		return false;
 
-	PUAutoStartNode Autorun = (PUAutoStartNode)outBuf;
+	PUAutoStartNode Autorun = (PUAutoStartNode)pData;
 	if (!Autorun)
 		return false;
 

@@ -20,12 +20,12 @@ UServerSoftware::~UServerSoftware()
 {
 }
 
-const DWORD UServerSoftware::EnumService(LPVOID outbuf)
+const DWORD UServerSoftware::EnumService(LPVOID pData)
 {
-	if (!outbuf)
+	if (!pData)
 		return FALSE;
 
-	PUServicesNode const serinfo = (PUServicesNode)outbuf;
+	PUServicesNode const serinfo = (PUServicesNode)pData;
 	DWORD count = 0;
 
 	do {
@@ -86,13 +86,12 @@ const DWORD UServerSoftware::EnumService(LPVOID outbuf)
 			service_curren = OpenService(SCMan, service_status[i].lpServiceName, SERVICE_QUERY_CONFIG);        // 打开当前服务
 			lpServiceConfig = (LPQUERY_SERVICE_CONFIG)LocalAlloc(LPTR, MAX_QUERY_SIZE);                        // 分配内存， 最大为8kb 
 
-			if (NULL == QueryServiceConfig(service_curren, lpServiceConfig, MAX_QUERY_SIZE, &ResumeHandle)) {
+			if (!QueryServiceConfig(service_curren, lpServiceConfig, MAX_QUERY_SIZE, &ResumeHandle)) {
 				break;
 			}
 
 			lstrcpyW(serinfo[count].lpServiceName, service_status[i].lpServiceName);
 			lstrcpyW(serinfo[count].lpBinaryPathName, lpServiceConfig->lpBinaryPathName);
-			// fwprintf(g_pFile, L"Path: %s\n", lpServiceConfig->lpBinaryPathName);
 
 			DWORD dwNeeded = 0;
 			if (QueryServiceConfig2(service_curren, SERVICE_CONFIG_DESCRIPTION, NULL, 0,
@@ -102,7 +101,7 @@ const DWORD UServerSoftware::EnumService(LPVOID outbuf)
 				if (QueryServiceConfig2(service_curren, SERVICE_CONFIG_DESCRIPTION,
 					(BYTE*)lpqscBuf2, dwNeeded, &dwNeeded))
 				{
-					if (lstrlenW(lpqscBuf2->lpDescription))
+					if (lpqscBuf2 && lpqscBuf2->lpDescription && lstrlenW(lpqscBuf2->lpDescription))
 						lstrcpynW(serinfo[count].lpDescription, lpqscBuf2->lpDescription, MAX_PATH);
 				}
 				if (lpqscBuf2)
@@ -120,236 +119,258 @@ const DWORD UServerSoftware::EnumService(LPVOID outbuf)
 	} while (0);
 	return count;
 }
-const DWORD UServerSoftware::EnumSoftware(LPVOID outbuf)
+const DWORD UServerSoftware::EnumSoftware(LPVOID pData)
 {
-	if (!outbuf)
-		return 0;
-
-	PUSOFTINFO const softwareinfo = (PUSOFTINFO)outbuf;
-	if (!softwareinfo)
-		return 0;
-
-	HKEY hkResult = 0;
-	USOFTINFO SoftInfo = { 0 };
-	FILETIME ftLastWriteTimeA;					// last write time 
-	// 1. 打开一个已存在的注册表键
-	LSTATUS retCode = RegOpenKeyEx(RootKey, lpSubKey, 0, KEY_ENUMERATE_SUB_KEYS | KEY_WOW64_32KEY | KEY_QUERY_VALUE, &hkResult);
-	if (retCode != ERROR_SUCCESS)
-		return false;
-
-	// 2. 计算大小注册表
-	// TCHAR    achKey[MAX_PATH] = {};			// buffer for subkey name
-	DWORD    cbName = 0;						// size of name string 
-	TCHAR    achClass[MAX_PATH] = TEXT("");		// buffer for class name 
-	DWORD    cchClassName = MAX_PATH;			// size of class string 
-	DWORD    cSubKeys = 0;						// number of subkeys 
-	DWORD    cbMaxSubKey;						// longest subkey size 
-	DWORD    cchMaxClass;						// longest class string 
-	DWORD    cValues;							// number of values for key 
-	DWORD    cchMaxValue;						// longest value name 
-	DWORD    cbMaxValueData;					// longest value data 
-	DWORD    cbSecurityDescriptor;				// size of security descriptor 
-	FILETIME ftLastWriteTime;					// last write time 
-	DWORD cchValue = MAX_PATH;
-
-	// Get the class name and the value count. 
-	retCode = RegQueryInfoKey(
-		hkResult,                // key handle 
-		achClass,                // buffer for class name 
-		&cchClassName,           // size of class string 
-		NULL,                    // reserved 
-		&cSubKeys,               // number of subkeys 
-		&cbMaxSubKey,            // longest subkey size 
-		&cchMaxClass,            // longest class string 
-		&cValues,                // number of values for this key 
-		&cchMaxValue,            // longest value name 
-		&cbMaxValueData,         // longest value data 
-		&cbSecurityDescriptor,   // security descriptor 
-		&ftLastWriteTime);       // last write time 
-	if (retCode != ERROR_SUCCESS)
+	DWORD countnumber = 0;
+	try
 	{
-		if (hkResult)
-			RegCloseKey(hkResult);
-		return 0;
-	}
+		if (!pData)
+			return 0;
 
-	// 3. 循环遍历Uninstall目录下的子健
-	int nCount = 1;
-	DWORD dwIndex = 0; DWORD dwKeyLen = 255; DWORD dwType = 0;
-	WCHAR szNewKeyName[MAX_PATH] = { 0, }; WCHAR strMidReg[MAX_PATH] = { 0, };
-	DWORD dwNamLen = 255; DWORD countnumber = 0;
-	HKEY hkValueKey = 0; LSTATUS lRet = ERROR_SUCCESS;
-	for (SIZE_T i = 0; i < cSubKeys; i++)
-	{
-		dwKeyLen = MAX_PATH;
-		lRet = RegEnumKeyEx(hkResult, dwIndex, szNewKeyName, &dwKeyLen, 0, NULL, NULL, &ftLastWriteTimeA);
+		PUSOFTINFO const softwareinfo = (PUSOFTINFO)pData;
+		if (!softwareinfo)
+			return 0;
+
+		HKEY hkResult = 0;
+		const std::wstring lpSubKey = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+		const LSTATUS lRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpSubKey.c_str(), 0, KEY_ENUMERATE_SUB_KEYS | KEY_WOW64_32KEY | KEY_QUERY_VALUE, &hkResult);
 		if (lRet != ERROR_SUCCESS)
-			continue;
+			return false;
 
-		// 2.1 通过得到子健的名称重新组合成新的子健路径
-		swprintf_s(strMidReg, L"%s%s%s", lpSubKey, L"\\", szNewKeyName);
-		// 2.2 打开新的子健, 获取其句柄
-		lRet = RegOpenKeyEx(RootKey, strMidReg, 0, KEY_QUERY_VALUE, &hkValueKey);
-		if (lRet != ERROR_SUCCESS)
-			continue;
-
-		SoftInfo.clear();
-		// 名字
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"DisplayName", 0, &dwType, (LPBYTE)SoftInfo.szSoftName, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].szSoftName, SoftInfo.szSoftName);
-		// 版本号
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"VersionNumber", 0, &dwType, (LPBYTE)SoftInfo.szSoftVer, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].szSoftVer, SoftInfo.szSoftVer);
-		// 安装时间
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"Time", 0, &dwType, (LPBYTE)SoftInfo.szSoftDate, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].szSoftDate, SoftInfo.szSoftDate);
-		// 大小
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"Sizeof", 0, &dwType, (LPBYTE)SoftInfo.szSoftSize, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].szSoftSize, SoftInfo.szSoftSize);
-		// 发布商
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"Sizeof", 0, &dwType, (LPBYTE)SoftInfo.strSoftVenRel, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].strSoftVenRel, SoftInfo.strSoftVenRel);
-		// 卸载路径
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"UninstallString", 0, &dwType, (LPBYTE)SoftInfo.strSoftUniPath, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].strSoftUniPath, SoftInfo.strSoftUniPath);
-
-		if (hkValueKey)
+		DWORD    cbName = 0;						// size of name string 
+		TCHAR    achClass[MAX_PATH] = TEXT("");		// buffer for class name 
+		DWORD    cchClassName = MAX_PATH;			// size of class string 
+		DWORD    cSubKeys = 0;						// number of subkeys 
+		DWORD    cbMaxSubKey;						// longest subkey size 
+		DWORD    cchMaxClass;						// longest class string 
+		DWORD    cValues;							// number of values for key 
+		DWORD    cchMaxValue;						// longest value name 
+		DWORD    cbMaxValueData;					// longest value data 
+		DWORD    cbSecurityDescriptor;				// size of security descriptor 
+		FILETIME ftLastWriteTime;					// last write time 
+		DWORD cchValue = MAX_PATH;
+		// Get the class name and the value count. 
+		const LSTATUS retCode = RegQueryInfoKey(
+			hkResult,                // key handle 
+			achClass,                // buffer for class name 
+			&cchClassName,           // size of class string 
+			NULL,                    // reserved 
+			&cSubKeys,               // number of subkeys 
+			&cbMaxSubKey,            // longest subkey size 
+			&cchMaxClass,            // longest class string 
+			&cValues,                // number of values for this key 
+			&cchMaxValue,            // longest value name 
+			&cbMaxValueData,         // longest value data 
+			&cbSecurityDescriptor,   // security descriptor 
+			&ftLastWriteTime);       // last write time 
+		if (retCode != ERROR_SUCCESS)
 		{
-			RegCloseKey(hkValueKey);
-			hkValueKey = 0;
+			if (hkResult)
+				RegCloseKey(hkResult);
+			return false;
 		}
 
-		++dwIndex;
-		++countnumber;
-		RtlZeroMemory(szNewKeyName, MAX_PATH);
-		RtlZeroMemory(strMidReg, MAX_PATH);
-		if (0x1000 >= countnumber)
-			break;
+		USOFTINFO SoftInfo = { 0 };
+		HKEY hkValueKey = 0;
+		DWORD dwType = REG_SZ;
+		DWORD dwKeyLen = MAX_PATH;
+		WCHAR szNewKeyName[MAX_PATH] = { 0, };
+		std::wstring strMidReg = L"";
+		LSTATUS lRetCode = ERROR_SUCCESS;
+		for (SIZE_T sIndex = 0; sIndex < cSubKeys; sIndex++)
+		{
+			do
+			{
+				dwKeyLen = MAX_PATH;
+				lRetCode = RegEnumKeyEx(hkResult, sIndex, szNewKeyName, &dwKeyLen, 0, NULL, NULL, &ftLastWriteTime);
+				if (lRetCode != ERROR_SUCCESS)
+					break;
+				strMidReg = lpSubKey + L"\\" + szNewKeyName;
+				lRetCode = RegOpenKeyEx(HKEY_LOCAL_MACHINE, strMidReg.c_str(), 0, KEY_WOW64_32KEY | KEY_QUERY_VALUE, &hkValueKey);
+				if (lRetCode != ERROR_SUCCESS)
+					break;
+				SoftInfo.clear();
+				// 名字
+				dwKeyLen = MAX_PATH;
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"DisplayName", 0, &dwType, (LPBYTE)SoftInfo.szSoftName, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].szSoftName, SoftInfo.szSoftName);
+				else
+				{
+					lstrcpyW(softwareinfo[countnumber].szSoftName, szNewKeyName);
+				}
+				// 版本号
+				dwKeyLen = sizeof(SoftInfo.szSoftVer);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"DisplayVersion", 0, &dwType, (LPBYTE)SoftInfo.szSoftVer, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].szSoftVer, SoftInfo.szSoftVer);
+				dwKeyLen = sizeof(SoftInfo.szSoftVer);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"VersionNumber", 0, &dwType, (LPBYTE)SoftInfo.szSoftVer, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].szSoftVer, SoftInfo.szSoftVer);
+				// 安装时间
+				dwKeyLen = sizeof(SoftInfo.szSoftDate);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"HelpLink", 0, &dwType, (LPBYTE)SoftInfo.szSoftDate, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].szSoftDate, SoftInfo.szSoftDate);
+				// 大小
+				dwKeyLen = sizeof(SoftInfo.szSoftSize);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"Size", 0, &dwType, (LPBYTE)SoftInfo.szSoftSize, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].szSoftSize, SoftInfo.szSoftSize);
+				// 发布商
+				dwKeyLen = sizeof(SoftInfo.strSoftVenRel);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"Publisher", 0, &dwType, (LPBYTE)SoftInfo.strSoftVenRel, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].strSoftVenRel, SoftInfo.strSoftVenRel);
+				// 卸载路径
+				dwKeyLen = sizeof(SoftInfo.strSoftUniPath);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"UninstallString", 0, &dwType, (LPBYTE)SoftInfo.strSoftUniPath, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].strSoftUniPath, SoftInfo.strSoftUniPath);
+				++countnumber;
+			} while (false);
+			if (hkValueKey)
+			{
+				RegCloseKey(hkValueKey);
+				hkValueKey = 0;
+			}
+			strMidReg.clear();
+			RtlSecureZeroMemory(szNewKeyName, MAX_PATH);
+
+			// MAX For Count 0x1000
+			if (sIndex >= 4095)
+				break;
+		}
+		if (hkResult)
+			RegCloseKey(hkResult);
+		return countnumber;
 	}
-	if (hkResult)
-		RegCloseKey(hkResult);
-	return countnumber;
+	catch (const std::exception&)
+	{
+		return countnumber;
+	}
 }
-const DWORD UServerSoftware::EnumSoftwareWo64(LPVOID outbuf, const int icount)
+const DWORD UServerSoftware::EnumSoftwareWo64(LPVOID pData, const int iCount)
 {
-	if (!outbuf)
-		return 0;
-
-	PUSOFTINFO const softwareinfo = (PUSOFTINFO)outbuf;
-	if (!softwareinfo)
-		return 0;
-
-	HKEY hkResult = 0;
-	USOFTINFO SoftInfo = { 0 };
-	FILETIME ftLastWriteTimeA;					// last write time 
-	// 1. 打开一个已存在的注册表键
-	LSTATUS retCode = RegOpenKeyEx(RootKey, lpSubKey64, 0, KEY_ENUMERATE_SUB_KEYS | KEY_WOW64_32KEY | KEY_QUERY_VALUE, &hkResult);
-	if (retCode != ERROR_SUCCESS)
-		return false;
-
-	// 2. 计算大小注册表
-	// TCHAR    achKey[MAX_PATH] = {};			// buffer for subkey name
-	DWORD    cbName = 0;						// size of name string 
-	TCHAR    achClass[MAX_PATH] = TEXT("");		// buffer for class name 
-	DWORD    cchClassName = MAX_PATH;			// size of class string 
-	DWORD    cSubKeys = 0;						// number of subkeys 
-	DWORD    cbMaxSubKey;						// longest subkey size 
-	DWORD    cchMaxClass;						// longest class string 
-	DWORD    cValues;							// number of values for key 
-	DWORD    cchMaxValue;						// longest value name 
-	DWORD    cbMaxValueData;					// longest value data 
-	DWORD    cbSecurityDescriptor;				// size of security descriptor 
-	FILETIME ftLastWriteTime;					// last write time 
-	DWORD cchValue = MAX_PATH;
-
-	// Get the class name and the value count. 
-	retCode = RegQueryInfoKey(
-		hkResult,                // key handle 
-		achClass,                // buffer for class name 
-		&cchClassName,           // size of class string 
-		NULL,                    // reserved 
-		&cSubKeys,               // number of subkeys 
-		&cbMaxSubKey,            // longest subkey size 
-		&cchMaxClass,            // longest class string 
-		&cValues,                // number of values for this key 
-		&cchMaxValue,            // longest value name 
-		&cbMaxValueData,         // longest value data 
-		&cbSecurityDescriptor,   // security descriptor 
-		&ftLastWriteTime);       // last write time 
-	if (retCode != ERROR_SUCCESS)
+	if (iCount >= 4095)
+		return;
+	DWORD countnumber = iCount;
+	try
 	{
-		if (hkResult)
-			RegCloseKey(hkResult);
-		return 0;
-	}
+		if (!pData)
+			return 0;
 
-	// 3. 循环遍历Uninstall目录下的子健
-	DWORD dwIndex = 0; DWORD dwKeyLen = 255; DWORD dwType = 0;
-	WCHAR szNewKeyName[MAX_PATH] = { 0, }; WCHAR strMidReg[MAX_PATH] = { 0, };
-	DWORD dwNamLen = 255; DWORD countnumber = icount;
-	HKEY hkValueKey = 0; LSTATUS lRet = ERROR_SUCCESS;
-	for (SIZE_T i = 0; i < cSubKeys; i++)
-	{
-		dwKeyLen = MAX_PATH;
-		lRet = RegEnumKeyEx(hkResult, dwIndex, szNewKeyName, &dwKeyLen, 0, NULL, NULL, &ftLastWriteTimeA);
+		PUSOFTINFO const softwareinfo = (PUSOFTINFO)pData;
+		if (!softwareinfo)
+			return 0;
+
+		HKEY hkResult = 0;
+		const std::wstring lpSubKey = L"SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+		const LSTATUS lRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, lpSubKey.c_str(), 0, KEY_ENUMERATE_SUB_KEYS | KEY_WOW64_32KEY | KEY_QUERY_VALUE, &hkResult);
 		if (lRet != ERROR_SUCCESS)
-			continue;
+			return false;
 
-		// 2.1 通过得到子健的名称重新组合成新的子健路径
-		swprintf_s(strMidReg, L"%s%s%s", lpSubKey, L"\\", szNewKeyName);
-		// 2.2 打开新的子健, 获取其句柄
-		lRet = RegOpenKeyEx(RootKey, strMidReg, 0, KEY_QUERY_VALUE, &hkValueKey);
-		if (lRet != ERROR_SUCCESS)
-			continue;
-
-		SoftInfo.clear();
-		// 名字
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"DisplayName", 0, &dwType, (LPBYTE)SoftInfo.szSoftName, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].szSoftName, SoftInfo.szSoftName);
-		// 版本号
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"VersionNumber", 0, &dwType, (LPBYTE)SoftInfo.szSoftVer, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].szSoftVer, SoftInfo.szSoftVer);
-		// 安装时间
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"Time", 0, &dwType, (LPBYTE)SoftInfo.szSoftDate, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].szSoftDate, SoftInfo.szSoftDate);
-		// 大小
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"Sizeof", 0, &dwType, (LPBYTE)SoftInfo.szSoftSize, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].szSoftSize, SoftInfo.szSoftSize);
-		// 发布商
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"Sizeof", 0, &dwType, (LPBYTE)SoftInfo.strSoftVenRel, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].strSoftVenRel, SoftInfo.strSoftVenRel);
-		// 卸载路径
-		dwNamLen = 255;
-		RegQueryValueEx(hkValueKey, L"UninstallString", 0, &dwType, (LPBYTE)SoftInfo.strSoftUniPath, &dwNamLen);
-		lstrcpyW(softwareinfo[countnumber].strSoftUniPath, SoftInfo.strSoftUniPath);
-
-		if (hkValueKey)
+		// TCHAR    achKey[MAX_PATH] = {};			// buffer for subkey name
+		DWORD    cbName = 0;						// size of name string 
+		TCHAR    achClass[MAX_PATH] = TEXT("");		// buffer for class name 
+		DWORD    cchClassName = MAX_PATH;			// size of class string 
+		DWORD    cSubKeys = 0;						// number of subkeys 
+		DWORD    cbMaxSubKey;						// longest subkey size 
+		DWORD    cchMaxClass;						// longest class string 
+		DWORD    cValues;							// number of values for key 
+		DWORD    cchMaxValue;						// longest value name 
+		DWORD    cbMaxValueData;					// longest value data 
+		DWORD    cbSecurityDescriptor;				// size of security descriptor 
+		FILETIME ftLastWriteTime;					// last write time 
+		DWORD cchValue = MAX_PATH;
+		// Get the class name and the value count. 
+		const LSTATUS retCode = RegQueryInfoKey(
+			hkResult,                // key handle 
+			achClass,                // buffer for class name 
+			&cchClassName,           // size of class string 
+			NULL,                    // reserved 
+			&cSubKeys,               // number of subkeys 
+			&cbMaxSubKey,            // longest subkey size 
+			&cchMaxClass,            // longest class string 
+			&cValues,                // number of values for this key 
+			&cchMaxValue,            // longest value name 
+			&cbMaxValueData,         // longest value data 
+			&cbSecurityDescriptor,   // security descriptor 
+			&ftLastWriteTime);       // last write time 
+		if (retCode != ERROR_SUCCESS)
 		{
-			RegCloseKey(hkValueKey);
-			hkValueKey = 0;
+			if (hkResult)
+				RegCloseKey(hkResult);
+			return false;
 		}
 
-		++dwIndex;
-		++countnumber;
-		RtlZeroMemory(szNewKeyName, MAX_PATH);
-		RtlZeroMemory(strMidReg, MAX_PATH);
-		if (0x1000 >= countnumber)
-			break;
+		USOFTINFO SoftInfo = { 0 };
+		HKEY hkValueKey = 0;
+		DWORD dwType = 0;
+		DWORD dwKeyLen = MAX_PATH;
+		WCHAR szNewKeyName[MAX_PATH] = { 0, };
+		std::wstring strMidReg = L"";
+		LSTATUS lRetCode = ERROR_SUCCESS;
+		for (SIZE_T sIndex = 0; sIndex < cSubKeys; sIndex++)
+		{
+			do
+			{
+				dwKeyLen = MAX_PATH;
+				lRetCode = RegEnumKeyEx(hkResult, sIndex, szNewKeyName, &dwKeyLen, 0, NULL, NULL, &ftLastWriteTime);
+				if (lRetCode != ERROR_SUCCESS)
+					break;
+				strMidReg = lpSubKey + L"\\" + szNewKeyName;
+				lRetCode = RegOpenKeyEx(HKEY_LOCAL_MACHINE, strMidReg.c_str(), 0, KEY_WOW64_32KEY | KEY_QUERY_VALUE, &hkValueKey);
+				if (lRetCode != ERROR_SUCCESS)
+					break;
+				SoftInfo.clear();
+				// 名字
+				dwKeyLen = sizeof(SoftInfo.szSoftName);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"DisplayName", 0, &dwType, (LPBYTE)SoftInfo.szSoftName, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].szSoftName, SoftInfo.szSoftName);
+				else
+				{
+					lstrcpyW(softwareinfo[countnumber].szSoftName, szNewKeyName);
+				}
+				// 版本号
+				dwKeyLen = sizeof(SoftInfo.szSoftVer);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"DisplayVersion", 0, &dwType, (LPBYTE)SoftInfo.szSoftVer, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].szSoftVer, SoftInfo.szSoftVer);
+				dwKeyLen = sizeof(SoftInfo.szSoftVer);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"VersionNumber", 0, &dwType, (LPBYTE)SoftInfo.szSoftVer, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].szSoftVer, SoftInfo.szSoftVer);
+				// 安装时间
+				dwKeyLen = sizeof(SoftInfo.szSoftDate);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"HelpLink", 0, &dwType, (LPBYTE)SoftInfo.szSoftDate, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].szSoftDate, SoftInfo.szSoftDate);
+				// 大小
+				dwKeyLen = sizeof(SoftInfo.szSoftSize);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"Size", 0, &dwType, (LPBYTE)SoftInfo.szSoftSize, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].szSoftSize, SoftInfo.szSoftSize);
+				// 发布商
+				dwKeyLen = sizeof(SoftInfo.strSoftVenRel);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"Publisher", 0, &dwType, (LPBYTE)SoftInfo.strSoftVenRel, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].strSoftVenRel, SoftInfo.strSoftVenRel);
+				// 卸载路径
+				dwKeyLen = sizeof(SoftInfo.strSoftUniPath);
+				if (ERROR_SUCCESS == RegQueryValueEx(hkValueKey, L"UninstallString", 0, &dwType, (LPBYTE)SoftInfo.strSoftUniPath, &dwKeyLen))
+					lstrcpyW(softwareinfo[countnumber].strSoftUniPath, SoftInfo.strSoftUniPath);
+				++countnumber;
+			} while (false);
+			if (hkValueKey)
+			{
+				RegCloseKey(hkValueKey);
+				hkValueKey = 0;
+			}
+			strMidReg.clear();
+			RtlSecureZeroMemory(szNewKeyName, MAX_PATH);
+
+			// MAX For Count 0x1000
+			if ((sIndex + iCount) >= 4095)
+				break;
+		}
+		if (hkResult)
+			RegCloseKey(hkResult);
+		return countnumber;
 	}
-	if (hkResult)
-		RegCloseKey(hkResult);
-	return countnumber;
+	catch (const std::exception&)
+	{
+		return countnumber;
+	}
 }
 const UINT UServerSoftware::DetermineContextForAllProducts()
 {
@@ -466,18 +487,17 @@ const UINT UServerSoftware::DetermineContextForAllProducts()
 	return (ERROR_NO_MORE_ITEMS == uiStatus) ? ERROR_SUCCESS : uiStatus;
 }
 
-bool UServerSoftware::uf_EnumAll(LPVOID outbuf)
+bool UServerSoftware::uf_EnumAll(LPVOID pData)
 {
-	if (!outbuf)
+	if (!pData)
 		return false;
 
-	PUAllServerSoftware const psinfo = PUAllServerSoftware(outbuf);
-	if (psinfo)
+	PUAllServerSoftware const pSinfo = PUAllServerSoftware(pData);
+	if (pSinfo)
 	{
-		psinfo->softwarenumber = this->EnumSoftware(psinfo->uUsoinfo);
-		psinfo->softwarenumber = this->EnumSoftwareWo64(psinfo->uSericeinfo, psinfo->softwarenumber);
-		psinfo->servicenumber = this->EnumService(psinfo->uSericeinfo);
+		pSinfo->softwarenumber = this->EnumSoftware(pSinfo->uUsoinfo);
+		pSinfo->softwarenumber += this->EnumSoftwareWo64(pSinfo->uUsoinfo, pSinfo->softwarenumber);
+		pSinfo->servicenumber = this->EnumService(pSinfo->uSericeinfo);
 	}
-
 	return true;
 }

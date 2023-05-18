@@ -438,9 +438,9 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
         else
             task_array_data.push_back("Failuer!");
     }
-    else if ((taskid >= 100) && (taskid < 200))
+    else if (g_kern_interface && (taskid >= 100) && (taskid < 200))
         ((kMsgInterface*)g_kern_interface)->kMsg_taskPush(taskid, task_array_data);
-    else if ((taskid >= 200) && (taskid < 300))
+    else if (g_user_interface && (taskid >= 200) && (taskid < 300)) 
         ((uMsgInterface*)g_user_interface)->uMsg_taskPush(taskid, task_array_data);
     else
     {

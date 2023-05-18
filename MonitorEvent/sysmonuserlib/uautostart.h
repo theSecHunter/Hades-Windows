@@ -5,5 +5,5 @@ public:
 	UAutoStart();
 	~UAutoStart();
 
-	bool uf_EnumAutoStartask(LPVOID outBuf, const DWORD size);
+	bool uf_EnumAutoStartask(LPVOID pData, const DWORD dwSize);
 };

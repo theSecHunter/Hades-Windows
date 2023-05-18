@@ -293,8 +293,11 @@ int UserInfoPrinf(const LPCWSTR servername,
 	return 0;
 }
 
-DWORD EnumSystemUser(USysUserNode* outbuf)
+DWORD EnumSystemUser(USysUserNode* pData)
 {
+	if (!pData)
+		return 0;
+
 	LPUSER_INFO_0 pBuf = NULL;
 	LPUSER_INFO_0 pTmpBuf;
 	DWORD dwLevel = 0;
@@ -345,10 +348,10 @@ DWORD EnumSystemUser(USysUserNode* outbuf)
 					//
 					NetUserGetInfo((LPCWSTR)pszServerName, pTmpBuf->usri0_name, 20, (LPBYTE*)&userinfo);
 					//wprintf(L"ServerUser:%s ", pTmpBuf->usri0_name);
-					lstrcpyW(outbuf[i].serveruser, pTmpBuf->usri0_name);
-					lstrcpyW(outbuf[i].servername, userinfo->usri23_name);
-					outbuf[i].serverusid = userinfo->usri23_user_sid;
-					outbuf[i].serveruflag = userinfo->usri23_flags;
+					lstrcpyW(pData[i].serveruser, pTmpBuf->usri0_name);
+					lstrcpyW(pData[i].servername, userinfo->usri23_name);
+					pData[i].serverusid = userinfo->usri23_user_sid;
+					pData[i].serveruflag = userinfo->usri23_flags;
 
 					// Info
 					// NetUserGetInfo((LPCWSTR)pszServerName, pTmpBuf->usri0_name, 20, (LPBYTE*)&userinfo);
@@ -357,7 +360,6 @@ DWORD EnumSystemUser(USysUserNode* outbuf)
 					pTmpBuf++;
 					dwTotalCount++;
 				}
-
 			}
 		}
 
@@ -377,15 +379,14 @@ DWORD EnumSystemUser(USysUserNode* outbuf)
 	// Print the final count of users enumerated.
 	//
 	return dwTotalCount;
-
 }
 
-bool NSysUser::uf_EnumSysUser(LPVOID outbuf)
+bool NSysUser::uf_EnumSysUser(LPVOID pData)
 {
-	if (!outbuf)
+	if (!pData)
 		return false;
 
-	PUUserNode usernode = (PUUserNode)outbuf;
+	PUUserNode usernode = (PUUserNode)pData;
 	if (!usernode)
 		return false;
 

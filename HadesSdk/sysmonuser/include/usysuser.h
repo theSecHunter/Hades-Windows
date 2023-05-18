@@ -5,7 +5,7 @@ public:
 	NSysUser();
 	~NSysUser();
 
-	bool uf_EnumSysUser(LPVOID outbuf);
+	bool uf_EnumSysUser(LPVOID pData);
 };
 
 

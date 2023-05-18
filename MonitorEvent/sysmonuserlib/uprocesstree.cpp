@@ -230,7 +230,7 @@ BOOL GetProceThread(const DWORD ProcPid)
 		CloseHandle(lpthread);
 	return TRUE;
 }
-BOOL GetProcessPath(const DWORD pid, WCHAR* processpath)
+BOOL GetProcessPath(const DWORD dwPID, WCHAR* processpath)
 {
 	HANDLE hSnapshot = NULL;
 	BOOL fOk;
@@ -243,7 +243,7 @@ BOOL GetProcessPath(const DWORD pid, WCHAR* processpath)
 	}
 	for (fOk = Process32First(hSnapshot, &pe); fOk; fOk = Process32Next(hSnapshot, &pe))
 	{
-		if (pid != pe.th32ProcessID)
+		if (dwPID != pe.th32ProcessID)
 			continue;
 
 		if (GetProcessFullPath(pe.th32ProcessID, processpath))
@@ -375,15 +375,15 @@ void GetQueryViryualMemoryStatue(HANDLE hProccess)
 		++count;
 	}
 }
-BOOL UProcess::uf_GetProcessInfo(const DWORD pid, LPVOID outbuf)
+BOOL UProcess::uf_GetProcessInfo(const DWORD dwPID, LPVOID pData)
 {
-	GetProceThread(pid);
-	GetProcessModule(pid);
+	GetProceThread(dwPID);
+	GetProcessModule(dwPID);
 	return TRUE;
 }
 
 // EnumProcess
-DWORD EnumProcess(LPVOID outbuf)
+DWORD EnumProcess(LPVOID pData)
 {
 	TCHAR ProcessPath[MAX_PATH] = { 0, };
 	// 初始化无效的句柄值
@@ -391,9 +391,9 @@ DWORD EnumProcess(LPVOID outbuf)
 	PROCESSENTRY32W p_32 = { 0 };
 	DWORD procesnumber = 0;
 
-	PUProcessEnum processbuf = (PUProcessEnum)outbuf;
+	PUProcessEnum processbuf = (PUProcessEnum)pData;
 	if (!processbuf)
-		return FALSE;
+		return procesnumber;
 
 	// 1.创建进程快照
 	hprocess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -406,7 +406,7 @@ DWORD EnumProcess(LPVOID outbuf)
 		if (!Process32First(hprocess, &p_32))
 		{
 			CloseHandle(hprocess);
-			return FALSE;
+			return procesnumber;
 		}
 		string pri;
 		do
@@ -445,19 +445,19 @@ DWORD EnumProcess(LPVOID outbuf)
 		} while (Process32Next(hprocess, &p_32));
 	}
 	else
-		return false;
+		return procesnumber;
 
 	if (hprocess)
 		CloseHandle(hprocess);
 
 	return procesnumber;
 }
-BOOL UProcess::uf_EnumProcess(LPVOID outbuf)
+BOOL UProcess::uf_EnumProcess(LPVOID pData)
 {
-	if (!outbuf)
+	if (!pData)
 		return false;
 
-	PUProcessNode procesNode = (PUProcessNode)outbuf;
+	PUProcessNode procesNode = (PUProcessNode)pData;
 	if (!procesNode)
 		return false;
 
