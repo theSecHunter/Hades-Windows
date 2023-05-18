@@ -345,7 +345,6 @@ void WINAPI NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
         }
     }
 
-    //shared_ptr<char> sptr2 = make_shared<char>(etw_networklens);
     UPubNode* const EtwData = (UPubNode*)new char[etw_networklens];
     if (!EtwData)
         return;

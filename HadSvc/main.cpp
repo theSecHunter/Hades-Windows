@@ -158,11 +158,8 @@ int main(int argc, char* argv[])
 		g_DataHandler.DebugTaskInterface(208);
 		//g_DataHandler.DebugTaskInterface(204);
 		//g_DataHandler.DebugTaskInterface(UF_SYSFILE_ID);
-		//// 数据未清理
 		//g_DataHandler.DebugTaskInterface(UF_FILE_INFO);
-		//// 上线后已上报
 		//g_DataHandler.DebugTaskInterface(UF_SYSINFO_ID);
-		//// 数据未清理
 		//g_DataHandler.DebugTaskInterface(UF_PROCESS_PID_TREE);
 	}
 	if (true == gpip_send && true == etw_mon) {

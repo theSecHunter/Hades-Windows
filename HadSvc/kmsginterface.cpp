@@ -171,53 +171,53 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
     {
         g_RecvDataQueueCs.lock();
         static json_t j;
-        static UPubNode* pubnode = nullptr;
+        static UPubNode* pubNode = nullptr;
         static std::string tmpstr;
         for (;;)
         {
-            Sleep(10);
+            Sleep(1);
             if (g_RecvDataQueue.empty())
             {
                 g_RecvDataQueueCs.unlock();
                 return;
             }
-            pubnode = g_RecvDataQueue.front();
+            pubNode = g_RecvDataQueue.front();
             g_RecvDataQueue.pop();
-            if (!pubnode)
+            if (!pubNode)
             {
                 g_RecvDataQueueCs.unlock();
                 return;
             }
-            const int taskid = pubnode->taskid;
+            const int taskid = pubNode->taskid;
             switch (taskid)
             {
             case NF_PROCESS_INFO:
             {
-                const PROCESSINFO* const processinfo = (PROCESSINFO*)pubnode->data;
-                if (!processinfo)
+                const PROCESSINFO* pProcessInfo = (PROCESSINFO*)pubNode->data;
+                if (!pProcessInfo)
                     break;
-                j["win_sysmonitor_process_parentpid"] = to_string(processinfo->parentprocessid);
-                j["win_sysmonitor_process_pid"] = to_string(processinfo->pid);
-                j["win_sysmonitor_process_endprocess"] = to_string(processinfo->endprocess);
-                if (processinfo->endprocess)
+                j["win_sysmonitor_process_parentpid"] = to_string(pProcessInfo->parentprocessid);
+                j["win_sysmonitor_process_pid"] = to_string(pProcessInfo->pid);
+                j["win_sysmonitor_process_endprocess"] = to_string(pProcessInfo->endprocess);
+                if (pProcessInfo->endprocess)
                 {
                     tmpstr.clear();
-                    Wchar_tToString(tmpstr, processinfo->queryprocesspath);
+                    Wchar_tToString(tmpstr, pProcessInfo->queryprocesspath);
                     tmpstr = String_ToUtf8(tmpstr);
                     j["win_sysmonitor_process_queryprocesspath"] = tmpstr.c_str();
                     tmpstr.clear();
-                    Wchar_tToString(tmpstr, processinfo->processpath);
+                    Wchar_tToString(tmpstr, pProcessInfo->processpath);
                     tmpstr = String_ToUtf8(tmpstr);
                     j["win_sysmonitor_process_processpath"] = tmpstr.c_str();
                     tmpstr.clear();
-                    Wchar_tToString(tmpstr, processinfo->commandLine);
+                    Wchar_tToString(tmpstr, pProcessInfo->commandLine);
                     tmpstr = String_ToUtf8(tmpstr);
                     j["win_sysmonitor_process_commandLine"] = tmpstr.c_str();
                 }
                 else
                 {
                     tmpstr.clear();
-                    Wchar_tToString(tmpstr, processinfo->queryprocesspath);
+                    Wchar_tToString(tmpstr, pProcessInfo->queryprocesspath);
                     tmpstr = String_ToUtf8(tmpstr);
                     j["win_sysmonitor_process_queryprocesspath"] = tmpstr.c_str();
                 }
@@ -225,42 +225,42 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             break;
             case NF_THREAD_INFO:
             {
-                const THREADINFO* const threadinfo = (THREADINFO*)pubnode->data;
-                if (!threadinfo)
+                const THREADINFO* pThredInfo = (THREADINFO*)pubNode->data;
+                if (!pThredInfo)
                     break;
-                j["win_sysmonitor_thread_pid"] = to_string(threadinfo->processid);
-                j["win_sysmonitor_thread_id"] = to_string(threadinfo->threadid);
-                j["win_sysmonitor_thread_status"] = to_string(threadinfo->createid);
+                j["win_sysmonitor_thread_pid"] = to_string(pThredInfo->processid);
+                j["win_sysmonitor_thread_id"] = to_string(pThredInfo->threadid);
+                j["win_sysmonitor_thread_status"] = to_string(pThredInfo->createid);
             }
             break;
             case NF_IMAGEGMOD_INFO:
             {
-                const IMAGEMODINFO* const imageinfo = (IMAGEMODINFO*)pubnode->data;
-                if (!imageinfo)
+                const IMAGEMODINFO* pImageInfo = (IMAGEMODINFO*)pubNode->data;
+                if (!pImageInfo)
                     break;
-                j["win_sysmonitor_mod_pid"] = to_string(imageinfo->processid);
-                j["win_sysmonitor_mod_base"] = to_string(imageinfo->imagebase);
-                j["win_sysmonitor_mod_size"] = to_string(imageinfo->imagesize);
+                j["win_sysmonitor_mod_pid"] = to_string(pImageInfo->processid);
+                j["win_sysmonitor_mod_base"] = to_string(pImageInfo->imagebase);
+                j["win_sysmonitor_mod_size"] = to_string(pImageInfo->imagesize);
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, imageinfo->imagename);
+                Wchar_tToString(tmpstr, pImageInfo->imagename);
                 tmpstr = String_ToUtf8(tmpstr);
                 j["win_sysmonitor_mod_path"] = tmpstr.c_str();
-                j["win_sysmonitor_mod_sysimage"] = to_string(imageinfo->systemmodeimage);
+                j["win_sysmonitor_mod_sysimage"] = to_string(pImageInfo->systemmodeimage);
             }
             break;
             case NF_REGISTERTAB_INFO:
             {
-                const REGISTERINFO* const registerinfo = (REGISTERINFO*)pubnode->data;
-                if (!registerinfo)
+                const REGISTERINFO* pRegisterInfo = (REGISTERINFO*)pubNode->data;
+                if (!pRegisterInfo)
                     break;
                 tmpstr.clear();
-                Choose_register(tmpstr, registerinfo->opeararg);
+                Choose_register(tmpstr, pRegisterInfo->opeararg);
                 if (tmpstr.size())
                 {
-                    j["win_sysmonitor_regtab_pid"] = to_string(registerinfo->processid);
-                    j["win_sysmonitor_regtab_tpid"] = to_string(registerinfo->threadid);
+                    j["win_sysmonitor_regtab_pid"] = to_string(pRegisterInfo->processid);
+                    j["win_sysmonitor_regtab_tpid"] = to_string(pRegisterInfo->threadid);
                     j["win_sysmonitor_regtab_opeares"] = tmpstr.c_str();
-                    const std::wstring processPath = registerinfo->ProcessPath;
+                    const std::wstring processPath = pRegisterInfo->ProcessPath;
                     if (!processPath.empty())
                     {
                         tmpstr.clear();
@@ -274,23 +274,23 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
                 else
                 {
                     // server 丢弃该包 - 不关心的操作
-                    j["win_sysmonitor_regtab_pid"] = to_string(registerinfo->processid);
-                    j["win_sysmonitor_regtab_tpid"] = to_string(registerinfo->threadid);
+                    j["win_sysmonitor_regtab_pid"] = to_string(pRegisterInfo->processid);
+                    j["win_sysmonitor_regtab_tpid"] = to_string(pRegisterInfo->threadid);
                     j["win_sysmonitor_regtab_opeares"] = to_string(0);
                     break;
                 }
-                j["win_sysmonitor_regtab_rootobject"] = to_string((DWORD64)registerinfo->RootObject);
-                j["win_sysmonitor_regtab_object"] = to_string((DWORD64)registerinfo->Object);
-                j["win_sysmonitor_regtab_type"] = to_string(registerinfo->Type);
-                j["win_sysmonitor_regtab_attributes"] = to_string(registerinfo->Attributes);
-                j["win_sysmonitor_regtab_desiredAccess"] = to_string(registerinfo->DesiredAccess);
-                j["win_sysmonitor_regtab_disposition"] = to_string((DWORD64)registerinfo->Disposition);
-                j["win_sysmonitor_regtab_grantedAccess"] = to_string(registerinfo->GrantedAccess);
-                j["win_sysmonitor_regtab_options"] = to_string(registerinfo->Options);
-                j["win_sysmonitor_regtab_wow64Flags"] = to_string(registerinfo->Wow64Flags);
-                j["win_sysmonitor_regtab_keyInformationClass"] = to_string(registerinfo->KeyInformationClass);
-                j["win_sysmonitor_regtab_index"] = to_string(registerinfo->Index);
-                const std::wstring CompleteName = registerinfo->CompleteName;
+                j["win_sysmonitor_regtab_rootobject"] = to_string((DWORD64)pRegisterInfo->RootObject);
+                j["win_sysmonitor_regtab_object"] = to_string((DWORD64)pRegisterInfo->Object);
+                j["win_sysmonitor_regtab_type"] = to_string(pRegisterInfo->Type);
+                j["win_sysmonitor_regtab_attributes"] = to_string(pRegisterInfo->Attributes);
+                j["win_sysmonitor_regtab_desiredAccess"] = to_string(pRegisterInfo->DesiredAccess);
+                j["win_sysmonitor_regtab_disposition"] = to_string((DWORD64)pRegisterInfo->Disposition);
+                j["win_sysmonitor_regtab_grantedAccess"] = to_string(pRegisterInfo->GrantedAccess);
+                j["win_sysmonitor_regtab_options"] = to_string(pRegisterInfo->Options);
+                j["win_sysmonitor_regtab_wow64Flags"] = to_string(pRegisterInfo->Wow64Flags);
+                j["win_sysmonitor_regtab_keyInformationClass"] = to_string(pRegisterInfo->KeyInformationClass);
+                j["win_sysmonitor_regtab_index"] = to_string(pRegisterInfo->Index);
+                const std::wstring CompleteName = pRegisterInfo->CompleteName;
                 if (!CompleteName.empty())
                 {
                     tmpstr.clear();
@@ -304,59 +304,58 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             break;
             case NF_FILE_INFO:
             {
-                const FILEINFO* const fileinfo = (FILEINFO*)pubnode->data;
-                if (!fileinfo)
+                const FILEINFO* pFileInfo = (FILEINFO*)pubNode->data;
+                if (!pFileInfo)
                     break;
-                j["win_sysmonitor_file_pid"] = to_string(fileinfo->processid);
-                j["win_sysmonitor_file_tpid"] = to_string(fileinfo->threadid);
+                j["win_sysmonitor_file_pid"] = to_string(pFileInfo->processid);
+                j["win_sysmonitor_file_tpid"] = to_string(pFileInfo->threadid);
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, fileinfo->DosName);
+                Wchar_tToString(tmpstr, pFileInfo->DosName);
                 tmpstr = String_ToUtf8(tmpstr);
                 j["win_sysmonitor_file_dosname"] = tmpstr.c_str();
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, fileinfo->FileName);
+                Wchar_tToString(tmpstr, pFileInfo->FileName);
                 tmpstr = String_ToUtf8(tmpstr);
                 j["win_sysmonitor_file_name"] = tmpstr.c_str();
 
                 //file attir
-                j["win_sysmonitor_file_LockOperation"] = to_string(fileinfo->LockOperation);
-                j["win_sysmonitor_file_DeletePending"] = to_string(fileinfo->DeletePending);
-                j["win_sysmonitor_file_ReadAccess"] = to_string(fileinfo->ReadAccess);
-                j["win_sysmonitor_file_WriteAccess"] = to_string(fileinfo->WriteAccess);
-                j["win_sysmonitor_file_DeleteAccess"] = to_string(fileinfo->DeleteAccess);
-                j["win_sysmonitor_file_SharedRead"] = to_string(fileinfo->SharedRead);
-                j["win_sysmonitor_file_SharedWrite"] = to_string(fileinfo->SharedWrite);
-                j["win_sysmonitor_file_SharedDelete"] = to_string(fileinfo->SharedDelete);
-                j["win_sysmonitor_file_flag"] = to_string(fileinfo->flag);
+                j["win_sysmonitor_file_LockOperation"] = to_string(pFileInfo->LockOperation);
+                j["win_sysmonitor_file_DeletePending"] = to_string(pFileInfo->DeletePending);
+                j["win_sysmonitor_file_ReadAccess"] = to_string(pFileInfo->ReadAccess);
+                j["win_sysmonitor_file_WriteAccess"] = to_string(pFileInfo->WriteAccess);
+                j["win_sysmonitor_file_DeleteAccess"] = to_string(pFileInfo->DeleteAccess);
+                j["win_sysmonitor_file_SharedRead"] = to_string(pFileInfo->SharedRead);
+                j["win_sysmonitor_file_SharedWrite"] = to_string(pFileInfo->SharedWrite);
+                j["win_sysmonitor_file_SharedDelete"] = to_string(pFileInfo->SharedDelete);
+                j["win_sysmonitor_file_flag"] = to_string(pFileInfo->flag);
             }
             break;
             case NF_SESSION_INFO:
             {
-                const SESSIONINFO* const sessioninfo = (SESSIONINFO*)pubnode->data;
-                if (!sessioninfo)
+                const SESSIONINFO* pSessionInfo = (SESSIONINFO*)pubNode->data;
+                if (!pSessionInfo)
                     break;
                 std::shared_ptr<IO_SESSION_STATE_INFORMATION> iosession;
                 RtlSecureZeroMemory(&iosession, sizeof(IO_SESSION_STATE_INFORMATION));
-                RtlCopyMemory(&iosession, sessioninfo->iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
+                RtlCopyMemory(&iosession, pSessionInfo->iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
 
                 tmpstr.clear();
-                Choose_session(tmpstr, sessioninfo->evens);
+                Choose_session(tmpstr, pSessionInfo->evens);
 
                 if (iosession->LocalSession)
                     tmpstr += " - User Local Login";
                 else
                     tmpstr += " - User Remote Login";
 
-                j["win_sysmonitor_session_pid"] = to_string(sessioninfo->processid);
-                j["win_sysmonitor_session_tpid"] = to_string(sessioninfo->threadid);
+                j["win_sysmonitor_session_pid"] = to_string(pSessionInfo->processid);
+                j["win_sysmonitor_session_tpid"] = to_string(pSessionInfo->threadid);
                 j["win_sysmonitor_session_event"] = tmpstr.c_str();
                 j["win_sysmonitor_session_sessionid"] = to_string(iosession->SessionId);
-
             }
             break;
             case NF_INJECT_INFO:
             {
-                const INJECTINFO* const pInjectinfo = (INJECTINFO*)pubnode->data;
+                const INJECTINFO* const pInjectinfo = (INJECTINFO*)pubNode->data;
                 if (!pInjectinfo)
                     break;
                 j["win_sysmonitor_inject_srcpid"] = to_string(pInjectinfo->srcPid);
@@ -374,10 +373,10 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             }
 
             // 注: Topic 释放 Pub的数据指针
-            if (pubnode)
+            if (pubNode)
             {
-                delete[] pubnode;
-                pubnode = nullptr;
+                delete[] pubNode;
+                pubNode = nullptr;
             }
 
             // 序列化
@@ -413,12 +412,12 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             j.clear();
             tmpstr.clear();
         }
+        g_RecvDataQueueCs.unlock();
     }
     catch (const std::exception&)
     {
         g_RecvDataQueueCs.unlock();
     }
-    g_RecvDataQueueCs.unlock();
 }
 
 void kMsgInterface::kMsg_taskPopNotifyRoutineLoop()
@@ -497,20 +496,19 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         {
             if (false == g_kernel_ssdtobj.nf_GetSysCurrentSsdtData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
                 break;
-            const SSDTINFO* const ssdtinfo = (SSDTINFO*)ptr_Getbuffer;
-            if (!ssdtinfo)
+            const SSDTINFO* pSSdtInfo = (SSDTINFO*)ptr_Getbuffer;
+            if (!pSSdtInfo)
                 break;
 
             for (i = 0; i < 0x200; ++i)
             {
-                if (!ssdtinfo[i].sstd_memoffset)
+                if (!pSSdtInfo[i].sstd_memoffset)
                     continue;
-                j["win_rootkit_ssdt_id"] = to_string(ssdtinfo[i].ssdt_id).c_str();
-                j["win_rootkit_ssdt_offsetaddr"] = to_string(ssdtinfo[i].sstd_memoffset).c_str();
+                j["win_rootkit_ssdt_id"] = to_string(pSSdtInfo[i].ssdt_id).c_str();
+                j["win_rootkit_ssdt_offsetaddr"] = to_string(pSSdtInfo[i].sstd_memoffset).c_str();
                 vec_task_string.push_back(j.dump());
             }
-            std::cout << "Grpc Ssdt Send Pkg Success" << std::endl;
-            break;
+            OutputDebugString(L"Task Get SSDT Data Pkg Success");
         }
     }
     break;
@@ -520,19 +518,19 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         {
             if (!g_kernel_idtobj.nf_GetIdtData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
                 break;
-            const IDTINFO* const idtinfo = (IDTINFO*)ptr_Getbuffer;
-            if (!idtinfo)
+            const IDTINFO* pIdtInfo = (IDTINFO*)ptr_Getbuffer;
+            if (!pIdtInfo)
                 break;
 
             for (i = 0; i < 0x100; ++i)
             {
-                if (!idtinfo[i].idt_isrmemaddr)
+                if (!pIdtInfo[i].idt_isrmemaddr)
                     continue;
-                j["win_rootkit_idt_id"] = to_string(idtinfo[i].idt_id).c_str();
-                j["win_rootkit_idt_offsetaddr"] = to_string(idtinfo[i].idt_isrmemaddr).c_str();
+                j["win_rootkit_idt_id"] = to_string(pIdtInfo[i].idt_id).c_str();
+                j["win_rootkit_idt_offsetaddr"] = to_string(pIdtInfo[i].idt_isrmemaddr).c_str();
                 vec_task_string.push_back(j.dump());
             }
-            std::cout << "Grpc Ssdt Send Pkg Success" << std::endl;
+            OutputDebugString(L"Task Get IDT Data Pkg Success");
         }
     }
     break;
@@ -540,21 +538,21 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     {
         if (false == g_kernel_dpcobj.nf_GetDpcTimerData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
             break;
-        const DPC_TIMERINFO* const dpcinfo = (DPC_TIMERINFO*)ptr_Getbuffer;
-        if (!dpcinfo)
+        const DPC_TIMERINFO* pDpcInfo = (DPC_TIMERINFO*)ptr_Getbuffer;
+        if (!pDpcInfo)
             break;
 
         for (i = 0; i < 0x100; ++i)
         {
-            if (!dpcinfo[i].dpc)
+            if (!pDpcInfo[i].dpc)
                 continue;
-            j["win_rootkit_dpc"] = to_string(dpcinfo[i].dpc).c_str();
-            j["win_rootkit_dpc_timeobj"] = to_string(dpcinfo[i].timeroutine).c_str();
-            j["win_rootkit_dpc_timeroutine"] = to_string(dpcinfo[i].timeroutine).c_str();
-            j["win_rootkit_dpc_periodtime"] = to_string(dpcinfo[i].period).c_str();
+            j["win_rootkit_dpc"] = to_string(pDpcInfo[i].dpc).c_str();
+            j["win_rootkit_dpc_timeobj"] = to_string(pDpcInfo[i].timeroutine).c_str();
+            j["win_rootkit_dpc_timeroutine"] = to_string(pDpcInfo[i].timeroutine).c_str();
+            j["win_rootkit_dpc_periodtime"] = to_string(pDpcInfo[i].period).c_str();
             vec_task_string.push_back(j.dump());
         }
-        std::cout << "Grpc Dpc Send Pkg Success" << std::endl;
+        OutputDebugString(L"Task Get Dpc Data Pkg Success");
     }
     break;
     case NF_FSD_ID:
@@ -562,30 +560,30 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_fsdobj.nf_GetFsdInfo(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        const ULONGLONG* const MjAddrArry = (ULONGLONG*)ptr_Getbuffer;
-        if (!MjAddrArry)
+        const ULONGLONG* pFsdMJAddrList = (ULONGLONG*)ptr_Getbuffer;
+        if (!pFsdMJAddrList)
             break;
 
         j["win_rootkit_is_fsdmod"] = "1";
         for (i = 0; i < 0x1b; ++i)
         {
-            j["win_rootkit_fsdfastfat_id"] = to_string(MjAddrArry[index]).c_str();
-            j["win_rootkit_fsdfastfat_mjaddr"] = to_string(MjAddrArry[index]).c_str();
+            j["win_rootkit_fsdfastfat_id"] = to_string(pFsdMJAddrList[index]).c_str();
+            j["win_rootkit_fsdfastfat_mjaddr"] = to_string(pFsdMJAddrList[index]).c_str();
             vec_task_string.push_back(j.dump());
             index++;
         }
-        std::cout << "FastFat MjFuction End" << std::endl;
+        OutputDebugString(L"Task Get FastFat MjFuction Data Pkg Success");
 
         j.clear();
         j["win_rootkit_is_fsdmod"] = "2";
         for (i = 0; i < 0x1b; ++i)
         {
-            j["win_rootkit_fsdntfs_id"] = to_string(MjAddrArry[index]).c_str();
-            j["win_rootkit_fsdntfs_mjaddr"] = to_string(MjAddrArry[index]).c_str();
+            j["win_rootkit_fsdntfs_id"] = to_string(pFsdMJAddrList[index]).c_str();
+            j["win_rootkit_fsdntfs_mjaddr"] = to_string(pFsdMJAddrList[index]).c_str();
             vec_task_string.push_back(j.dump());
             index++;
         }
-        std::cout << "Ntfs MjFuction End" << std::endl;
+        OutputDebugString(L"Task Get Ntfs MjFuction Data Pkg Success");
     }
     break;
     case NF_SYSCALLBACK_ID:
@@ -597,41 +595,41 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_mousekeyboardobj.nf_GetMouseKeyInfoData(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        const ULONGLONG* const MjAddrArry = (ULONGLONG*)ptr_Getbuffer;
-        if (!MjAddrArry)
+        const ULONGLONG* pMousKeyMJAddrList = (ULONGLONG*)ptr_Getbuffer;
+        if (!pMousKeyMJAddrList)
             break;
 
         j["win_rootkit_is_mousekeymod"] = "1";
         for (i = 0; i < 0x1b; ++i)
         {
-            j["win_rootkit_Mouse_id"] = to_string(MjAddrArry[index]).c_str();
-            j["win_rootkit_Mouse_mjaddr"] = to_string(MjAddrArry[index]).c_str();
+            j["win_rootkit_Mouse_id"] = to_string(pMousKeyMJAddrList[index]).c_str();
+            j["win_rootkit_Mouse_mjaddr"] = to_string(pMousKeyMJAddrList[index]).c_str();
             vec_task_string.push_back(j.dump());
             index++;
         }
-        std::cout << "Mouse MjFuction End" << std::endl;
+        OutputDebugString(L"Task Get Mouse MjFuction Data Pkg Success");
 
         j.clear();
         j["win_rootkit_is_mousekeymod"] = "2";
         for (i = 0; i < 0x1b; ++i)
         {
-            j["win_rootkit_i8042_id"] = to_string(MjAddrArry[index]).c_str();
-            j["win_rootkit_i8042_mjaddr"] = to_string(MjAddrArry[index]).c_str();
+            j["win_rootkit_i8042_id"] = to_string(pMousKeyMJAddrList[index]).c_str();
+            j["win_rootkit_i8042_mjaddr"] = to_string(pMousKeyMJAddrList[index]).c_str();
             vec_task_string.push_back(j.dump());
             index++;
         }
-        std::cout << "i8042 MjFuction End" << std::endl;
+        OutputDebugString(L"Task Get i8042 MjFuction Data Pkg Success");
 
         j.clear();
         j["win_rootkit_is_mousekeymod"] = "3";
         for (i = 0; i < 0x1b; ++i)
         {
-            j["win_rootkit_kbd_id"] = to_string(MjAddrArry[index]).c_str();
-            j["win_rootkit_kbd_mjaddr"] = to_string(MjAddrArry[index]).c_str();
+            j["win_rootkit_kbd_id"] = to_string(pMousKeyMJAddrList[index]).c_str();
+            j["win_rootkit_kbd_mjaddr"] = to_string(pMousKeyMJAddrList[index]).c_str();
             vec_task_string.push_back(j.dump());
             index++;
         }
-        std::cout << "kbd MjFuction End" << std::endl;
+        OutputDebugString(L"Task Get kbd MjFuction Data Pkg Success");
     }
     break;
     case NF_NETWORK_ID:
@@ -639,33 +637,33 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_networkobj.nf_GetNteworkProcessInfo(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        const PSYSNETWORKINFONODE networkinfo = (PSYSNETWORKINFONODE)ptr_Getbuffer;
-        if (!networkinfo)
+        const PSYSNETWORKINFONODE pNetworkInfo = (PSYSNETWORKINFONODE)ptr_Getbuffer;
+        if (!pNetworkInfo)
             break;
 
         // Tcp
         j["win_rootkit_is_mod"] = "1";
-        for (i = 0; i < networkinfo->tcpcout; ++i)
+        for (i = 0; i < pNetworkInfo->tcpcout; ++i)
         {
-            j["win_rootkit_tcp_pid"] = to_string(networkinfo->systcpinfo[i].processinfo.dwTcpProId).c_str();
-            j["win_rootkit_tcp_localIp_port"] = to_string(networkinfo->systcpinfo[i].TpcTable.localEntry.dwIP).c_str();
-            j["win_rootkit_tcp_remoteIp_port"] = to_string(networkinfo->systcpinfo[i].TpcTable.remoteEntry.dwIP).c_str();
-            j["win_rootkit_tcp_Status"] = to_string(networkinfo->systcpinfo[i].socketStatus.dwState).c_str();
+            j["win_rootkit_tcp_pid"] = to_string(pNetworkInfo->systcpinfo[i].processinfo.dwTcpProId).c_str();
+            j["win_rootkit_tcp_localIp_port"] = to_string(pNetworkInfo->systcpinfo[i].TpcTable.localEntry.dwIP).c_str();
+            j["win_rootkit_tcp_remoteIp_port"] = to_string(pNetworkInfo->systcpinfo[i].TpcTable.remoteEntry.dwIP).c_str();
+            j["win_rootkit_tcp_Status"] = to_string(pNetworkInfo->systcpinfo[i].socketStatus.dwState).c_str();
             vec_task_string.push_back(j.dump());
         }
-        std::cout << "Tpc Port Send Grpc Success" << std::endl;
+        OutputDebugString(L"Task Get NetWork Tcp Data Pkg Success");
 
         j.clear();
         j["win_rootkit_is_mod"] = "2";
         std::string udpipport;
-        for (i = 0; i < networkinfo->udpcout; ++i)
+        for (i = 0; i < pNetworkInfo->udpcout; ++i)
         {
-            udpipport = to_string(networkinfo->sysudpinfo[i].UdpTable.dwIP) + ":" + to_string(ntohs(networkinfo->sysudpinfo[i].UdpTable.Port));
-            j["win_rootkit_udp_pid"] = to_string(networkinfo->sysudpinfo[i].processinfo.dwUdpProId).c_str();
+            udpipport = to_string(pNetworkInfo->sysudpinfo[i].UdpTable.dwIP) + ":" + to_string(ntohs(pNetworkInfo->sysudpinfo[i].UdpTable.Port));
+            j["win_rootkit_udp_pid"] = to_string(pNetworkInfo->sysudpinfo[i].processinfo.dwUdpProId).c_str();
             j["win_rootkit_udp_localIp_port"] = udpipport.c_str();
             vec_task_string.push_back(j.dump());
         }
-        std::cout << "Udp Port Send Grpc Success" << std::endl;
+        OutputDebugString(L"Task Get NetWork Udp Data Pkg Success");
     }
     break;
     case NF_PROCESS_ENUM:
@@ -673,18 +671,18 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_processinfo.nf_EnumProcess(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        const PHANDLE_INFO phandleinfo = (PHANDLE_INFO)ptr_Getbuffer;
-        if (phandleinfo && phandleinfo[0].CountNum)
+        const PHANDLE_INFO pPhandleInfo = (PHANDLE_INFO)ptr_Getbuffer;
+        if (pPhandleInfo && pPhandleInfo[0].CountNum)
         {
 
-            for (i = 0; i < phandleinfo[0].CountNum; ++i)
+            for (i = 0; i < pPhandleInfo[0].CountNum; ++i)
             {
                 //wcout << "Pid: " << phandleinfo[i].ProcessId << " - Process: " << phandleinfo[i].ProcessPath << endl;// " - ProcessName: " << phandleinfo[i].ProcessName << endl;
                 // 去重
-                catstr = phandleinfo[i].ProcessPath;
+                catstr = pPhandleInfo[i].ProcessPath;
                 catstr += L" - ";
-                catstr += phandleinfo[i].ProcessName;
-                Process_list[phandleinfo[i].ProcessId] = catstr;
+                catstr += pPhandleInfo[i].ProcessName;
+                Process_list[pPhandleInfo[i].ProcessId] = catstr;
                 catstr.clear();
             }
 
@@ -699,42 +697,41 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 vec_task_string.push_back(j.dump());
             }
 
-            std::cout << "processinfo to server Success" << std::endl;
+            OutputDebugString(L"Task Get Process to Server Data Pkg Success");
         }
     }
     break;
     case NF_PROCESS_MOD:
     {
         int Process_Pid = 4;
-        cout << "Please Input Pid: 4";
-        //scanf("%d", &Process_Pid);
+        cout << "Test Input Pid: 4";
         // 默认测试
         if (false == g_kernel_processinfo.nf_GetProcessMod(Process_Pid, ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-        const PPROCESS_MOD modptr = (PPROCESS_MOD)ptr_Getbuffer;
-        if (modptr)
+        const PPROCESS_MOD pProcMod = (PPROCESS_MOD)ptr_Getbuffer;
+        if (pProcMod)
         {
             j["win_rootkit_processmod_pid"] = to_string(Process_Pid).c_str();
             for (i = 0; i < 1024 * 2; ++i)
             {
-                if (0 == modptr[i].EntryPoint && 0 == modptr[i].SizeOfImage && 0 == modptr[i].DllBase)
+                if ((0 == pProcMod[i].EntryPoint) && (0 == pProcMod[i].SizeOfImage) && (0 == pProcMod[i].DllBase))
                     continue;
-                j["win_rootkit_process_DllBase"] = to_string(modptr[i].DllBase).c_str();
-                j["win_rootkit_process_SizeofImage"] = to_string(modptr[i].SizeOfImage).c_str();
-                j["win_rootkit_process_EntryPoint"] = to_string(modptr[i].EntryPoint).c_str();
+                j["win_rootkit_process_DllBase"] = to_string(pProcMod[i].DllBase).c_str();
+                j["win_rootkit_process_SizeofImage"] = to_string(pProcMod[i].SizeOfImage).c_str();
+                j["win_rootkit_process_EntryPoint"] = to_string(pProcMod[i].EntryPoint).c_str();
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, modptr[i].BaseDllName);
+                Wchar_tToString(tmpstr, pProcMod[i].BaseDllName);
                 tmpstr = String_ToUtf8(tmpstr);
                 j["win_rootkit_process_BaseDllName"] = tmpstr.c_str();
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, modptr[i].FullDllName);
+                Wchar_tToString(tmpstr, pProcMod[i].FullDllName);
                 tmpstr = String_ToUtf8(tmpstr);
                 j["win_rootkit_process_FullDllName"] = tmpstr.c_str();
                 vec_task_string.push_back(j.dump());
             }
         }
-        std::cout << "Process Mod Success" << std::endl;
+        OutputDebugString(L"Task Get Process Mod Data Pkg Success");
     }
     break;
     case NF_PROCESS_KILL:
@@ -747,30 +744,29 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         if (false == g_kernel_sysmodinfo.nf_EnumSysMod(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
-
-        const PPROCESS_MOD modptr = (PPROCESS_MOD)ptr_Getbuffer;
-        if (modptr)
+        const PPROCESS_MOD pProcMod = (PPROCESS_MOD)ptr_Getbuffer;
+        if (pProcMod)
         {
             for (i = 0; i < 1024 * 2; ++i)
             {
                 // Bug
-                if (0 == modptr[i].EntryPoint && 0 == modptr[i].SizeOfImage && 0 == modptr[i].DllBase)
+                if ((0 == pProcMod[i].EntryPoint) && (0 == pProcMod[i].SizeOfImage) && (0 == pProcMod[i].DllBase))
                     continue;
-                j["win_rootkit_sys_DllBase"] = to_string(modptr[i].DllBase).c_str();
-                j["win_rootkit_sys_SizeofImage"] = to_string(modptr[i].SizeOfImage).c_str();
-                j["win_rootkit_sys_EntryPoint"] = to_string(modptr[i].EntryPoint).c_str();
+                j["win_rootkit_sys_DllBase"] = to_string(pProcMod[i].DllBase).c_str();
+                j["win_rootkit_sys_SizeofImage"] = to_string(pProcMod[i].SizeOfImage).c_str();
+                j["win_rootkit_sys_EntryPoint"] = to_string(pProcMod[i].EntryPoint).c_str();
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, modptr[i].BaseDllName);
+                Wchar_tToString(tmpstr, pProcMod[i].BaseDllName);
                 tmpstr = String_ToUtf8(tmpstr);
                 j["win_rootkit_sys_BaseDllName"] = tmpstr.c_str();
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, modptr[i].FullDllName);
+                Wchar_tToString(tmpstr, pProcMod[i].FullDllName);
                 tmpstr = String_ToUtf8(tmpstr);
                 j["win_rootkit_sys_FullDllName"] = tmpstr.c_str();
                 vec_task_string.push_back(j.dump());
             }
         }
-        std::cout << "SystemDriver Enum Success" << std::endl;
+        OutputDebugString(L"Task Get SystemDriver Enum Data Pkg Success");
     }
     break;
 

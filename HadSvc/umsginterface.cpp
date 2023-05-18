@@ -77,33 +77,33 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
 
     static json_t j;
     static std::string tmpstr;
-    static UPubNode* etw_taskdata = nullptr;
+    static UPubNode* pEtwTaskData = nullptr;
 
     for (;;)
     {
-        Sleep(10);
+        Sleep(1);
         if (g_RecvQueueData.empty())
         {
             g_RecvQueueCs.unlock();
             return;
         }
-        etw_taskdata = g_RecvQueueData.front();
+        pEtwTaskData = g_RecvQueueData.front();
         g_RecvQueueData.pop();
-        if (!etw_taskdata)
+        if (!pEtwTaskData)
         {
             g_RecvQueueCs.unlock();
             return;
         }
 
-        const int taskid = etw_taskdata->taskid;
+        const int taskid = pEtwTaskData->taskid;
         switch (taskid)
         {
         case UF_ETW_NETWORK:
         {
-            const UEtwNetWork* const etwNet = (UEtwNetWork*)&(etw_taskdata->data[0]);
-            if (!etwNet)
+            const UEtwNetWork* pEtwNet = (UEtwNetWork*)&(pEtwTaskData->data[0]);
+            if (!pEtwNet)
                 break;
-            Wchar_tToString(tmpstr, etwNet->EventName);
+            Wchar_tToString(tmpstr, pEtwNet->EventName);
             if (!tmpstr.empty())
             {
                 tmpstr = String_ToUtf8(tmpstr);
@@ -113,21 +113,21 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             {
                 j["win_network_eventname"] = "";
             }
-            j["win_network_addressfamily"] = to_string(etwNet->addressFamily);
-            j["win_network_protocol"] = to_string(etwNet->protocol);
-            j["win_network_processid"] = to_string(etwNet->processId);
-            j["win_network_localaddr"] = to_string(etwNet->ipv4LocalAddr);
-            j["win_network_toLocalport"] = to_string(etwNet->protocol);
-            j["win_network_remoteaddr"] = to_string(etwNet->ipv4toRemoteAddr);
-            j["win_network_toremoteport"] = to_string(etwNet->toRemotePort);
+            j["win_network_addressfamily"] = to_string(pEtwNet->addressFamily);
+            j["win_network_protocol"] = to_string(pEtwNet->protocol);
+            j["win_network_processid"] = to_string(pEtwNet->processId);
+            j["win_network_localaddr"] = to_string(pEtwNet->ipv4LocalAddr);
+            j["win_network_toLocalport"] = to_string(pEtwNet->protocol);
+            j["win_network_remoteaddr"] = to_string(pEtwNet->ipv4toRemoteAddr);
+            j["win_network_toremoteport"] = to_string(pEtwNet->toRemotePort);
         }
         break;
         case UF_ETW_PROCESSINFO:
         {
-            const UEtwProcessInfo* const etwProcess = (UEtwProcessInfo*)&(etw_taskdata->data[0]);
-            if (!etwProcess)
+            const UEtwProcessInfo* pEtwProcess = (UEtwProcessInfo*)&(pEtwTaskData->data[0]);
+            if (!pEtwProcess)
                 break;
-            Wchar_tToString(tmpstr, etwProcess->EventName);
+            Wchar_tToString(tmpstr, pEtwProcess->EventName);
             if (!tmpstr.empty())
             {
                 tmpstr = String_ToUtf8(tmpstr);
@@ -137,10 +137,10 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             {
                 j["win_etw_processinfo_eventname"] = "";
             }
-            j["win_etw_processinfo_parentid"] = to_string(etwProcess->parentId);
-            j["win_etw_processinfo_pid"] = to_string(etwProcess->processId);
-            j["win_etw_processinfo_status"] = to_string(etwProcess->processStatus);
-            Wchar_tToString(tmpstr, etwProcess->processPath);
+            j["win_etw_processinfo_parentid"] = to_string(pEtwProcess->parentId);
+            j["win_etw_processinfo_pid"] = to_string(pEtwProcess->processId);
+            j["win_etw_processinfo_status"] = to_string(pEtwProcess->processStatus);
+            Wchar_tToString(tmpstr, pEtwProcess->processPath);
             if (!tmpstr.empty())
             {
                 tmpstr = String_ToUtf8(tmpstr);
@@ -152,10 +152,10 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
         break;
         case UF_ETW_THREADINFO:
         {
-            const UEtwThreadInfo* const etwThread = (UEtwThreadInfo*)&(etw_taskdata->data[0]);
-            if (!etwThread)
+            const UEtwThreadInfo* pEtwThread = (UEtwThreadInfo*)&(pEtwTaskData->data[0]);
+            if (!pEtwThread)
                 break;
-            Wchar_tToString(tmpstr, etwThread->EventName);
+            Wchar_tToString(tmpstr, pEtwThread->EventName);
             if (!tmpstr.empty())
             {
                 tmpstr = String_ToUtf8(tmpstr);
@@ -165,18 +165,18 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             {
                 j["win_etw_threadinfo_eventname"] = "";
             }
-            j["win_etw_threadinfo_pid"] = to_string(etwThread->processId);
-            j["win_etw_threadinfo_tid"] = to_string(etwThread->threadId);
-            j["win_etw_threadinfo_win32startaddr"] = to_string(etwThread->Win32StartAddr);
-            j["win_etw_threadinfo_flags"] = to_string(etwThread->ThreadFlags);
+            j["win_etw_threadinfo_pid"] = to_string(pEtwThread->processId);
+            j["win_etw_threadinfo_tid"] = to_string(pEtwThread->threadId);
+            j["win_etw_threadinfo_win32startaddr"] = to_string(pEtwThread->Win32StartAddr);
+            j["win_etw_threadinfo_flags"] = to_string(pEtwThread->ThreadFlags);
         }
         break;
         case UF_ETW_IMAGEMOD:
         {
-            const UEtwImageInfo* const etwProcMod = (UEtwImageInfo*)&(etw_taskdata->data[0]);
-            if (!etwProcMod)
+            const UEtwImageInfo* pEtwProcMod = (UEtwImageInfo*)&(pEtwTaskData->data[0]);
+            if (!pEtwProcMod)
                 break;
-            Wchar_tToString(tmpstr, etwProcMod->EventName);
+            Wchar_tToString(tmpstr, pEtwProcMod->EventName);
             if (!tmpstr.empty())
             {
                 tmpstr = String_ToUtf8(tmpstr);
@@ -186,15 +186,15 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             {
                 j["win_etw_imageinfo_eventname"] = "";
             }
-            j["win_etw_imageinfo_processId"] = to_string(etwProcMod->ProcessId);
-            j["win_etw_imageinfo_imageBase"] = to_string(etwProcMod->ImageBase);
-            j["win_etw_imageinfo_imageSize"] = to_string(etwProcMod->ImageSize);
-            j["win_etw_imageinfo_signatureLevel"] = to_string(etwProcMod->SignatureLevel);
-            j["win_etw_imageinfo_signatureType"] = to_string(etwProcMod->SignatureType);
-            j["win_etw_imageinfo_imageChecksum"] = to_string(etwProcMod->ImageChecksum);
+            j["win_etw_imageinfo_processId"] = to_string(pEtwProcMod->ProcessId);
+            j["win_etw_imageinfo_imageBase"] = to_string(pEtwProcMod->ImageBase);
+            j["win_etw_imageinfo_imageSize"] = to_string(pEtwProcMod->ImageSize);
+            j["win_etw_imageinfo_signatureLevel"] = to_string(pEtwProcMod->SignatureLevel);
+            j["win_etw_imageinfo_signatureType"] = to_string(pEtwProcMod->SignatureType);
+            j["win_etw_imageinfo_imageChecksum"] = to_string(pEtwProcMod->ImageChecksum);
             j["win_etw_imageinfo_timeDateStamp"] = to_string(123);
-            j["win_etw_imageinfo_defaultBase"] = to_string(etwProcMod->DefaultBase);
-            Wchar_tToString(tmpstr, etwProcMod->FileName);
+            j["win_etw_imageinfo_defaultBase"] = to_string(pEtwProcMod->DefaultBase);
+            Wchar_tToString(tmpstr, pEtwProcMod->FileName);
             if (tmpstr.empty())
                 break;
             tmpstr = String_ToUtf8(tmpstr);
@@ -203,10 +203,10 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
         break;
         case UF_ETW_REGISTERTAB:
         {
-            const UEtwRegisterTabInfo* const etwregtab = (UEtwRegisterTabInfo*)&(etw_taskdata->data[0]);
-            if (!etwregtab)
+            const UEtwRegisterTabInfo* pEtwRegtab = (UEtwRegisterTabInfo*)&(pEtwTaskData->data[0]);
+            if (!pEtwRegtab)
                 break;
-            Wchar_tToString(tmpstr, etwregtab->EventName);
+            Wchar_tToString(tmpstr, pEtwRegtab->EventName);
             if (!tmpstr.empty())
             {
                 tmpstr = String_ToUtf8(tmpstr);
@@ -216,20 +216,20 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             {
                 j["win_etw_regtab_eventname"] = "";
             }
-            j["win_etw_regtab_status"] = to_string(etwregtab->Status);
-            j["win_etw_regtab_index"] = to_string(etwregtab->Index);
-            j["win_etw_regtab_keyHandle"] = to_string(etwregtab->KeyHandle);
-            Wchar_tToString(tmpstr, etwregtab->KeyName);
+            j["win_etw_regtab_status"] = to_string(pEtwRegtab->Status);
+            j["win_etw_regtab_index"] = to_string(pEtwRegtab->Index);
+            j["win_etw_regtab_keyHandle"] = to_string(pEtwRegtab->KeyHandle);
+            Wchar_tToString(tmpstr, pEtwRegtab->KeyName);
             tmpstr = String_ToUtf8(tmpstr);
             j["win_etw_regtab_keyName"] = tmpstr.c_str();
         }
         break;
         case UF_ETW_FILEIO:
         {
-            const UEtwFileIoTabInfo* const etwfileio = (UEtwFileIoTabInfo*)&(etw_taskdata->data[0]);
-            if (!etwfileio)
+            const UEtwFileIoTabInfo* pEtwFileIo = (UEtwFileIoTabInfo*)&(pEtwTaskData->data[0]);
+            if (!pEtwFileIo)
                 break;
-            Wchar_tToString(tmpstr, etwfileio->EventName);
+            Wchar_tToString(tmpstr, pEtwFileIo->EventName);
             if (!tmpstr.empty())
             {
                 tmpstr = String_ToUtf8(tmpstr);
@@ -240,11 +240,11 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 j["win_etw_fileio_eventname"] = "";
             }
 
-            // 这里不基于eventName区分了 Empty事件不同空的频率高 
-            int lens = lstrlenW(etwfileio->FilePath);
+            // 这里不基于EventName区分了 Empty事件不同空的频率高 
+            int lens = lstrlenW(pEtwFileIo->FilePath);
             if (lens > 0)
             {
-                Wchar_tToString(tmpstr, etwfileio->FilePath);
+                Wchar_tToString(tmpstr, pEtwFileIo->FilePath);
                 if (!tmpstr.empty())
                 {
                     tmpstr = String_ToUtf8(tmpstr);
@@ -256,10 +256,10 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 }
             }
 
-            lens = lstrlenW(etwfileio->FileName);
+            lens = lstrlenW(pEtwFileIo->FileName);
             if (lens > 0)
             {
-                Wchar_tToString(tmpstr, etwfileio->FileName);
+                Wchar_tToString(tmpstr, pEtwFileIo->FileName);
                 if (!tmpstr.empty())
                 {
                     tmpstr = String_ToUtf8(tmpstr);
@@ -271,20 +271,20 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 }
             }
 
-            j["win_etw_fileio_Pid"] = to_string(etwfileio->PID);
-            j["win_etw_fileio_Tid"] = to_string(etwfileio->TTID);
-            j["win_etw_fileio_FileAttributes"] = to_string(etwfileio->FileAttributes);
-            j["win_etw_fileio_CreateOptions"] = to_string(etwfileio->CreateOptions);
-            j["win_etw_fileio_ShareAccess"] = to_string(etwfileio->ShareAccess);
-            j["win_etw_fileio_Offset"] = to_string(etwfileio->Offset);
+            j["win_etw_fileio_Pid"] = to_string(pEtwFileIo->PID);
+            j["win_etw_fileio_Tid"] = to_string(pEtwFileIo->TTID);
+            j["win_etw_fileio_FileAttributes"] = to_string(pEtwFileIo->FileAttributes);
+            j["win_etw_fileio_CreateOptions"] = to_string(pEtwFileIo->CreateOptions);
+            j["win_etw_fileio_ShareAccess"] = to_string(pEtwFileIo->ShareAccess);
+            j["win_etw_fileio_Offset"] = to_string(pEtwFileIo->Offset);
         }
         }
 
         // 注: Topic 释放 Pub的数据指针
-        if (etw_taskdata)
+        if (pEtwTaskData)
         {
-            delete[] etw_taskdata;
-            etw_taskdata = nullptr;
+            delete[] pEtwTaskData;
+            pEtwTaskData = nullptr;
         }
 
         try
@@ -513,15 +513,15 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 std::cout << "[User] EnumNetwork Enum Success" << std::endl;
             }
             break;
-            case UF_SYSSESSION_INFO:    // v2.0
+            case UF_SYSSESSION_INFO:
             {
             }
             break;
-            case UF_SYSINFO_ID:         // v1.0 --> 是否上线时候主动发送?非被动采集
+            case UF_SYSINFO_ID:
             {
             }
             break;
-            case UF_SYSLOG_ID:          // 待定 --> etw完全可以取代
+            case UF_SYSLOG_ID:
             {
             }
             break;
