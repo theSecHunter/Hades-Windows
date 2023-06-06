@@ -168,9 +168,11 @@ int main(int argc, char* argv[])
 
 	// 等待AgentEvent Exit
 	WaitForSingleObject(g_SvcExitEvent, INFINITE);
-	CloseHandle(g_SvcExitEvent);
-	g_SvcExitEvent = nullptr;
-	
+	if (g_SvcExitEvent) {
+		CloseHandle(g_SvcExitEvent);
+		g_SvcExitEvent = nullptr;
+	}
+
 	if (g_mainMsgUlib.GetEtwMonStatus())
 		g_mainMsgUlib.uMsg_EtwClose();
 	if (g_mainMsgKlib.GetKerBeSnipingStatus())

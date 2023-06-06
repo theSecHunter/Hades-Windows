@@ -242,7 +242,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>
     <Link>
@@ -274,7 +274,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AnonymousPipe.cpp" />
+    <ClCompile Include="CodeTool.cpp" />
     <ClCompile Include="DataHandler.cpp" />
+    <ClCompile Include="FileDetailReader.cpp" />
     <ClCompile Include="HlprMiniCom.cpp" />
     <ClCompile Include="kmsginterface.cpp" />
     <ClCompile Include="main.cpp" />
@@ -290,7 +292,9 @@
   <ItemGroup>
     <ClInclude Include="..\HadesSdk\include\sysinfo.h" />
     <ClInclude Include="AnonymousPipe.h" />
+    <ClInclude Include="CodeTool.h" />
     <ClInclude Include="DataHandler.h" />
+    <ClInclude Include="FileDetailReader.h" />
     <ClInclude Include="HlprMiniCom.h" />
     <ClInclude Include="kmsginterface.h" />
     <ClInclude Include="msgassist.h" />

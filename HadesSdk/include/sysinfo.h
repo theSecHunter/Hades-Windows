@@ -531,6 +531,15 @@ typedef struct _UEtwProcessInfo
     UINT64          processId;
     UINT64          parentId;
     bool            processStatus;		        // 进程状态(启动/退出)
+    void clear()
+    {
+        RtlSecureZeroMemory(EventName, sizeof(EventName));
+        RtlSecureZeroMemory(processName, sizeof(processName));
+        RtlSecureZeroMemory(processPath, sizeof(processPath));
+        processId = 0;
+        parentId = 0;
+        processStatus = 0;
+    }
 }UEtwProcessInfo, * PUEtwProcessInfo;
 // u_etw_network
 typedef USHORT ADDRESS_FAMILY;
@@ -550,8 +559,8 @@ typedef struct _UEtwNetWork
         UINT32 ipv4LocalAddr;
     };
 #pragma warning(pop)
-    UINT16 toLocalPort;
 
+    UINT16 toLocalPort;
     UINT8 protocol;
 
 #pragma warning(push)
@@ -568,6 +577,19 @@ typedef struct _UEtwNetWork
     int	        processPathSize;
     ULONG       processId;
     wchar_t     EventName[50];
+    void clear()
+    {
+        toLocalPort = 0;
+        protocol = 0;
+        addressFamily = 0;
+        ipv4LocalAddr = 0;
+        ipv4toRemoteAddr = 0;
+        toRemotePort = 0;
+        processId = 0;
+        processPathSize = 0;
+        RtlSecureZeroMemory(processPath, sizeof(processPath));
+        RtlSecureZeroMemory(EventName, sizeof(EventName));
+    }
 }UEtwNetWork, * PUEtwNetWork;
 // u_etw_image
 typedef struct _UEtwImageInfo {
@@ -581,6 +603,19 @@ typedef struct _UEtwImageInfo {
     UINT64 DefaultBase;
     wchar_t     FileName[MAX_PATH * 2];
     wchar_t     EventName[50];
+    void clear()
+    {
+        ImageBase = 0;
+        ImageSize = 0;
+        ProcessId = 0;
+        SignatureLevel = 0;
+        SignatureType = 0;
+        ImageChecksum = 0;
+        TimeDateStamp = 0;
+        DefaultBase = 0;
+        RtlSecureZeroMemory(FileName, sizeof(FileName));
+        RtlSecureZeroMemory(EventName, sizeof(EventName));
+    }
 }UEtwImageInfo, * PUEtwImageInfo;
 // u_etw_thread
 typedef struct _UEtwThreadInfo {
@@ -589,6 +624,14 @@ typedef struct _UEtwThreadInfo {
     UINT64 Win32StartAddr;
     UINT64 ThreadFlags;
     wchar_t EventName[50];
+    void clear()
+    {
+        processId = 0;
+        threadId = 0;
+        Win32StartAddr = 0;
+        ThreadFlags = 0;
+        RtlSecureZeroMemory(EventName, sizeof(EventName));
+    }
 }UEtwThreadInfo, * PUEtwThreadInfo;
 // u_etw_register
 typedef struct _UEtwRegisterTabInfo {
@@ -598,6 +641,15 @@ typedef struct _UEtwRegisterTabInfo {
     UINT64 KeyHandle;
     wchar_t     KeyName[MAX_PATH * 2];
     wchar_t     EventName[50];
+    void clear()
+    {
+       InitialTime = 0;
+       Status = 0;
+       Index = 0;
+       KeyHandle = 0;
+       RtlSecureZeroMemory(KeyName, sizeof(KeyName));
+       RtlSecureZeroMemory(EventName, sizeof(EventName));
+    }
 }UEtwRegisterTabInfo, * PUEtwRegisterTabInfo;
 // u_etw_file_io
 typedef struct _UEtwFileIoTabInfo {
@@ -613,6 +665,21 @@ typedef struct _UEtwFileIoTabInfo {
     WCHAR  FileName[MAX_PATH];
     WCHAR  FilePath[MAX_PATH * 2];
     WCHAR  EventName[50];
+    void clear()
+    {
+        Offset = 0;
+        IrpPtr = 0;
+        FileObject = 0;
+        FileKey = 0;
+        TTID = 0;
+        PID = 0;
+        CreateOptions = 0;
+        ShareAccess = 0;
+        FileAttributes = 0;
+        RtlSecureZeroMemory(FileName, sizeof(FileName));
+        RtlSecureZeroMemory(FilePath, sizeof(FilePath));
+        RtlSecureZeroMemory(EventName, sizeof(EventName));
+    }
 }UEtwFileIoTabInfo, * PUEtwFileIoTabInfo;
 
 //======================public function============================

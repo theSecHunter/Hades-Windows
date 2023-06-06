@@ -277,7 +277,10 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             j["win_etw_fileio_CreateOptions"] = to_string(pEtwFileIo->CreateOptions);
             j["win_etw_fileio_ShareAccess"] = to_string(pEtwFileIo->ShareAccess);
             j["win_etw_fileio_Offset"] = to_string(pEtwFileIo->Offset);
+            j["win_etw_fileio_FileKey"] = to_string(pEtwFileIo->FileKey);
+            j["win_etw_fileio_FileObject"] = to_string(pEtwFileIo->FileObject);
         }
+        break;
         }
 
         // 注: Topic 释放 Pub的数据指针
@@ -356,7 +359,8 @@ void uMsgInterface::uMsg_taskPopEtwLoop()
 }
 static unsigned WINAPI uMsg_taskPopThread(void* pData)
 {
-    (reinterpret_cast<uMsgInterface*>(pData))->uMsg_taskPopEtwLoop();
+    if (pData)
+        (reinterpret_cast<uMsgInterface*>(pData))->uMsg_taskPopEtwLoop();
     return 0;
 }
 void uMsgInterface::uMsg_taskPopInit()
@@ -753,7 +757,8 @@ void uMsgInterface::uMsg_Free()
     for (size_t idx = 0; idx < m_topicthread.size(); ++idx)
     {
         SetEvent(g_jobAvailableEvent);
-        WaitForSingleObject(m_topicthread[idx], 1000);
+        // setEvent 并不一定是这个线程
+        WaitForSingleObject(m_topicthread[idx], 500);
         CloseHandle(m_topicthread[idx]);
     }
 
@@ -763,4 +768,17 @@ void uMsgInterface::uMsg_Free()
         g_jobAvailableEvent = INVALID_HANDLE_VALUE;
     }
     m_topicthread.clear();
+
+    // clear new memeory
+    std::unique_lock<std::mutex> lock(g_RecvQueueCs);
+    while (!g_RecvQueueData.empty())
+    {
+        auto pEtwTaskData = g_RecvQueueData.front();
+        g_RecvQueueData.pop();
+        if (pEtwTaskData)
+        {
+            delete[] pEtwTaskData;
+            pEtwTaskData = nullptr;
+        }
+    }
 }

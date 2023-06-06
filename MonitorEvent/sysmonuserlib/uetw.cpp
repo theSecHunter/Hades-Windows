@@ -220,6 +220,7 @@ void WINAPI FileEventFileLogInfo(PEVENT_RECORD rec)
 
 // 生产者：Etw事件回调 - 数据推送至订阅消息队列(消费者)
 // [NT Kernel Logger] PEVENT_RECORD回调
+// [+] new全换智能指针，不自己处理内存
 void WINAPI NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
     // TCPIP or UDPIP
      if (!info->TaskNameOffset)
@@ -230,7 +231,7 @@ void WINAPI NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
     size_t task_udplen = taskName.find(L"UdpIp");
    
     UEtwNetWork etwNetInfo;
-    RtlZeroMemory(&etwNetInfo, sizeof(UEtwNetWork));
+    etwNetInfo.clear();
 
     if (info->OpcodeNameOffset)
     {
@@ -370,9 +371,10 @@ void WINAPI ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     auto data = (PBYTE)rec->UserData;
     auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
 
-    ULONG len; WCHAR value[512];
-    wstring  tmpstr; wstring propName;
-    UEtwProcessInfo process_info = { 0, };
+    ULONG len = 0; WCHAR value[512] = { 0, };
+    wstring  tmpstr = L""; wstring propName = L"";
+    UEtwProcessInfo process_info;
+    process_info.clear();
     wchar_t* end = nullptr;
 
     if (info->OpcodeNameOffset)
@@ -480,9 +482,10 @@ void WINAPI ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     auto data = (PBYTE)rec->UserData;
     auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
 
-    ULONG len; WCHAR value[512];
-    wstring  tmpstr; wstring propName;
-    UEtwThreadInfo thread_info = { 0, };
+    ULONG len = 0; WCHAR value[512] = { 0, };
+    wstring  tmpstr = L""; wstring propName = L"";
+    UEtwThreadInfo thread_info;
+    thread_info.clear();
     wchar_t* end = nullptr;
 
     if (info->OpcodeNameOffset)
@@ -599,14 +602,24 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     auto data = (PBYTE)rec->UserData;
     const auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
 
-    ULONG len; WCHAR value[512];
-    wstring  tmpstr; wstring propName;
-    UEtwFileIoTabInfo fileio_info = { 0, };
+    ULONG len = 0; WCHAR value[512] = { 0, };
+    wstring  tmpstr = L""; wstring propName = L"";
+    UEtwFileIoTabInfo fileio_info;
+    fileio_info.clear();
     wchar_t* end = nullptr;
 
     if (info->OpcodeNameOffset)
     {
         const wstring EventName = (PCWSTR)((BYTE*)info + info->OpcodeNameOffset);
+        // filter evenet
+        if (EventName == L"OperationEnd")
+            return;
+        if (EventName == L"Read")
+            return;
+        if (EventName == L"QueryInfo")
+            return;
+        if (EventName == L"FSControl")
+            return;
         if (!EventName.empty())
             wcscpy_s(fileio_info.EventName, EventName.c_str());
     }
@@ -658,12 +671,14 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
         if (0 == lstrcmpW(propName.c_str(), L"TTID")) {
             // 线程ID
-            fileio_info.TTID = wcstol(value, &end, 16);
+            fileio_info.TTID = (DWORD)wcstol(value, &end, 16);
             const HANDLE hthread = OpenThread(THREAD_QUERY_INFORMATION, NULL, fileio_info.TTID);
             if (hthread)
-                fileio_info.PID = GetProcessIdOfThread(hthread);
+                fileio_info.PID = (DWORD)GetProcessIdOfThread(hthread);
             else
-                fileio_info.PID = -1;
+                fileio_info.PID = 0;
+            if (fileio_info.PID <= 4)
+                return;
         }
         else if (0 == lstrcmpW(propName.c_str(), L"IrpPtr")) {
             // IRP
@@ -690,9 +705,6 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         * File_Create
         */
         else if (0 == lstrcmpW(propName.c_str(), L"OpenPath")) {
-            //std::wstring FilePaths = L"[FilePath]: ";
-            //FilePaths.append(value);
-            //OutputDebugString(FilePaths.c_str());
             wcscpy_s(fileio_info.FilePath, value);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"CreateOptions")) {
@@ -708,9 +720,6 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         * FileIo_Name
         */
         else if (0 == lstrcmpW(propName.c_str(), L"FileName")) {
-            //std::wstring FileName = L"[FileNmae]: ";
-            //FileName.append(value);
-            //OutputDebugString(FileName.c_str());
             wcscpy_s(fileio_info.FileName, value);
         }
         /*
@@ -751,9 +760,10 @@ void WINAPI RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     auto data = (PBYTE)rec->UserData;
     const auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
 
-    ULONG len; WCHAR value[512];
-    wstring  tmpstr; wstring propName;
-    UEtwRegisterTabInfo regtab_info = { 0, };
+    ULONG len = 0; WCHAR value[512] = { 0, };
+    wstring  tmpstr = L""; wstring propName = L"";
+    UEtwRegisterTabInfo regtab_info;
+    regtab_info.clear();
     wchar_t* end = nullptr;
 
     if (info->OpcodeNameOffset)
@@ -825,17 +835,17 @@ void WINAPI RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
     }
 
-    UPubNode* const EtwData = (UPubNode*)new char[etw_regtabinfolens];
-    if (!EtwData)
+    UPubNode* const pEtwData = (UPubNode*)new char[etw_regtabinfolens];
+    if (!pEtwData)
         return;
-    RtlZeroMemory(EtwData, etw_regtabinfolens);
-    EtwData->taskid = UF_ETW_REGISTERTAB;
-    RtlCopyMemory(&EtwData->data[0], &regtab_info, sizeof(UEtwRegisterTabInfo));
+    RtlZeroMemory(pEtwData, etw_regtabinfolens);
+    pEtwData->taskid = UF_ETW_REGISTERTAB;
+    RtlCopyMemory(&pEtwData->data[0], &regtab_info, sizeof(UEtwRegisterTabInfo));
 
     if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
     {
         g_EtwQueueCs_Ptr->lock();
-        g_EtwQueue_Ptr->push(EtwData);
+        g_EtwQueue_Ptr->push(pEtwData);
         g_EtwQueueCs_Ptr->unlock();
         SetEvent(g_jobQueue_Event);
     }
@@ -846,9 +856,10 @@ void WINAPI ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     if (!info->TaskNameOffset)
         return;
 
-    ULONG len; WCHAR value[512] = { 0, };
-    wstring  tmpstr; wstring propName;
-    UEtwImageInfo etwimagemod_info = { 0, };
+    ULONG len = 0; WCHAR value[512] = { 0, };
+    wstring  tmpstr = L""; wstring propName = L"";
+    UEtwImageInfo etwimagemod_info;
+    etwimagemod_info.clear();
     wchar_t* end = nullptr;
 
     if (info->OpcodeNameOffset)
@@ -916,6 +927,8 @@ void WINAPI ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
         else if (0 == lstrcmpW(propName.c_str(), L"ProcessId")) {
             etwimagemod_info.ProcessId = wcstol(value, &end, 16);
+            if (etwimagemod_info.ProcessId == 0)
+                return;
         }
         else if (0 == lstrcmpW(propName.c_str(), L"ImageChecksum")) {
             etwimagemod_info.ImageChecksum = wcstol(value, &end, 16);
@@ -971,38 +984,38 @@ void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
             CloseTrace(g_processTracehandle);
         return;
     }
-    WCHAR sguid[64];
-    auto& header = pEvent->EventHeader;
-    ::StringFromGUID2(header.ProviderId, sguid, _countof(sguid));
+    WCHAR sGuid[64] = { 0, };
+    const auto& header = pEvent->EventHeader;
+    ::StringFromGUID2(header.ProviderId, sGuid, _countof(sGuid));
 
     ULONG size = 0;
-    auto status = ::TdhGetEventInformation(pEvent, 0, nullptr, nullptr, &size);
+    auto nStatus = ::TdhGetEventInformation(pEvent, 0, nullptr, nullptr, &size);
     if (size <= 0)
         return;
 
-    auto buffer = std::make_unique<BYTE[]>(size);
+    const auto buffer = std::make_unique<BYTE[]>(size);
     if (!buffer) {
         OutputDebugString(L"buffer Error Exit Etw Monitor");
-        ::ExitProcess(1);
+        return;
     }
 
-    auto info = reinterpret_cast<PTRACE_EVENT_INFO>(buffer.get());
-    status = ::TdhGetEventInformation(pEvent, 0, nullptr, info, &size);
-    if (status != ERROR_SUCCESS)
+    const auto info = reinterpret_cast<PTRACE_EVENT_INFO>(buffer.get());
+    nStatus = ::TdhGetEventInformation(pEvent, 0, nullptr, info, &size);
+    if (nStatus != ERROR_SUCCESS)
         return;
 
-    if (0 == lstrcmpW(L"{9A280AC0-C8E0-11D1-84E2-00C04FB998A2}", sguid) || \
-        0 == lstrcmpW(L"{BF3A50C5-A9C9-4988-A005-2DF0B7C80F80}", sguid))
+    if (0 == lstrcmpW(L"{9A280AC0-C8E0-11D1-84E2-00C04FB998A2}", sGuid) || \
+        0 == lstrcmpW(L"{BF3A50C5-A9C9-4988-A005-2DF0B7C80F80}", sGuid))
         NetWorkEventInfo(pEvent, info);
-    else if (0 == lstrcmpW(L"{3D6FA8D1-FE05-11D0-9DDA-00C04FD7BA7C}", sguid))
+    else if (0 == lstrcmpW(L"{3D6FA8D1-FE05-11D0-9DDA-00C04FD7BA7C}", sGuid))
         ThreadEventInfo(pEvent, info);
-    else if (0 == lstrcmpW(L"{3D6FA8D0-FE05-11D0-9DDA-00C04FD7BA7C}", sguid))
+    else if (0 == lstrcmpW(L"{3D6FA8D0-FE05-11D0-9DDA-00C04FD7BA7C}", sGuid))
         ProcessEventInfo(pEvent, info);
-    else if (0 == lstrcmpW(L"{90CBDC39-4A3E-11D1-84F4-0000F80464E3}", sguid))
+    else if (0 == lstrcmpW(L"{90CBDC39-4A3E-11D1-84F4-0000F80464E3}", sGuid))
         FileEventInfo(pEvent, info);
-    else if (0 == lstrcmpW(L"{AE53722E-C863-11D2-8659-00C04FA321A1}", sguid))
+    else if (0 == lstrcmpW(L"{AE53722E-C863-11D2-8659-00C04FA321A1}", sGuid))
         RegisterTabEventInfo(pEvent, info);
-    else if (0 == lstrcmpW(L"{2CB15D1D-5FC1-11D2-ABE1-00A0C911F518}", sguid))
+    else if (0 == lstrcmpW(L"{2CB15D1D-5FC1-11D2-ABE1-00A0C911F518}", sGuid))
         ImageModEventInfo(pEvent, info);
 }
 
