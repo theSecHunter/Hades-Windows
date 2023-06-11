@@ -431,12 +431,12 @@ void WINAPI ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
         if (0 == lstrcmpW(L"ProcessId", propName.c_str()))
         {
-            const int pid = wcstol(value, &end, 16);
+            const long pid = wcstol(value, &end, 16);
             process_info.processId = pid;
         }
         else if (0 == lstrcmpW(L"ParentId", propName.c_str()))
         {
-            const int pid = wcstol(value, &end, 16);
+            const long pid = wcstol(value, &end, 16);
             process_info.parentId = pid;
         }
         else if (0 == lstrcmpW(L"ExitStatus", propName.c_str()))
@@ -557,7 +557,7 @@ void WINAPI ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         else if (0 == lstrcmpW(propName.c_str(), L"Affinity")) {
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Win32StartAddr")) {
-            thread_info.Win32StartAddr = wcstol(value, &end, 10);
+            thread_info.Win32StartAddr = _wcstoui64(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"TebBase")) {
         }
@@ -570,11 +570,10 @@ void WINAPI ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         else if (0 == lstrcmpW(propName.c_str(), L"IoPriority")) {
         }
         else if (0 == lstrcmpW(propName.c_str(), L"ThreadFlags")) {
-            thread_info.ThreadFlags = wcstol(value, &end, 16);
+            thread_info.ThreadFlags = _wtoi(value);
         }
     }
 
-    // 先做判断 - 生产数据清洗有BUG
     if (thread_info.ThreadFlags && thread_info.processId && thread_info.threadId)
     {
         UPubNode* const EtwData = (UPubNode*)new char[etw_threadinfolens];
@@ -614,11 +613,13 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         // filter evenet
         if (EventName == L"OperationEnd")
             return;
-        if (EventName == L"Read")
-            return;
         if (EventName == L"QueryInfo")
             return;
         if (EventName == L"FSControl")
+            return;
+        if (EventName == L"Read")
+            return;
+        if (EventName == L"Write")
             return;
         if (!EventName.empty())
             wcscpy_s(fileio_info.EventName, EventName.c_str());
@@ -671,7 +672,7 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
         if (0 == lstrcmpW(propName.c_str(), L"TTID")) {
             // 线程ID
-            fileio_info.TTID = (DWORD)wcstol(value, &end, 16);
+            fileio_info.TTID = _wtoi(value);
             const HANDLE hthread = OpenThread(THREAD_QUERY_INFORMATION, NULL, fileio_info.TTID);
             if (hthread)
                 fileio_info.PID = (DWORD)GetProcessIdOfThread(hthread);
@@ -682,13 +683,13 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
         else if (0 == lstrcmpW(propName.c_str(), L"IrpPtr")) {
             // IRP
-            fileio_info.IrpPtr = wcstol(value, &end, 16);
+            fileio_info.IrpPtr = _wcstoui64(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"FileObject")) {
-            fileio_info.FileObject = wcstol(value, &end, 16);
+            fileio_info.FileObject = _wcstoui64(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"FileKey")) {
-            fileio_info.FileKey = wcstol(value, &end, 16);
+            fileio_info.FileKey = _wcstoui64(value, &end, 16);
         }
         /*
         * FileIo_DirEnum 
@@ -708,13 +709,13 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
             wcscpy_s(fileio_info.FilePath, value);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"CreateOptions")) {
-            fileio_info.CreateOptions = wcstol(value, &end, 16);
+            fileio_info.CreateOptions = _wtoi(value);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"ShareAccess")) {
-            fileio_info.ShareAccess = wcstol(value, &end, 16);
+            fileio_info.ShareAccess = _wtoi(value);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"FileAttributes")) {
-            fileio_info.FileAttributes = wcstol(value, &end, 16);
+            fileio_info.FileAttributes = _wtoi(value);
         }
         /*
         * FileIo_Name
@@ -731,7 +732,7 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Offset")) {
             // 文件读写起止位置
-            fileio_info.Offset = wcstol(value, &end, 16);
+            fileio_info.Offset = _wtoi(value);
         }
     }
 
@@ -819,16 +820,16 @@ void WINAPI RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         data += len;
 
         if (0 == lstrcmpW(propName.c_str(), L"InitialTime")) {
-            regtab_info.InitialTime = wcstol(value, &end, 16);
+            regtab_info.InitialTime = wcstoll(value, &end, 10);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Status")) {
-            regtab_info.Status = wcstol(value, &end, 16);
+            regtab_info.Status = _wtoi(value);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Index")) {
-            regtab_info.Index = wcstol(value, &end, 16);
+            regtab_info.Index = _wtoi(value);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"KeyHandle")) {
-            regtab_info.KeyHandle = wcstol(value, &end, 16);
+            regtab_info.KeyHandle = _wcstoui64(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"KeyName")) {
             lstrcpynW(regtab_info.KeyName, value, MAX_PATH);
@@ -865,6 +866,8 @@ void WINAPI ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
     if (info->OpcodeNameOffset)
     {
         const wstring EventName = (PCWSTR)((BYTE*)info + info->OpcodeNameOffset);
+        if (EventName == L"DCStart")
+            return;
         if (!EventName.empty())
             wcscpy_s(etwimagemod_info.EventName, EventName.c_str());
     }
@@ -920,32 +923,32 @@ void WINAPI ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         data += len;
 
         if (0 == lstrcmpW(propName.c_str(), L"ImageBase")) {
-            etwimagemod_info.ImageBase = wcstol(value, &end, 16);
+            etwimagemod_info.ImageBase = _wcstoui64(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"ImageSize")) {
-            etwimagemod_info.ImageSize = wcstol(value, &end, 16);
+            etwimagemod_info.ImageSize = _wcstoui64(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"ProcessId")) {
-            etwimagemod_info.ProcessId = wcstol(value, &end, 16);
-            if (etwimagemod_info.ProcessId == 0)
+            etwimagemod_info.ProcessId = _wtoi(value);
+            if (etwimagemod_info.ProcessId <= 4)
                 return;
         }
         else if (0 == lstrcmpW(propName.c_str(), L"ImageChecksum")) {
-            etwimagemod_info.ImageChecksum = wcstol(value, &end, 16);
+            etwimagemod_info.ImageChecksum = _wtoi(value);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"TimeDateStamp")) {
-            etwimagemod_info.TimeDateStamp = wcstol(value, &end, 16);
+            etwimagemod_info.TimeDateStamp = _wtoi(value);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"SignatureLevel")) {
-            etwimagemod_info.SignatureLevel = wcstol(value, &end, 16);
+            etwimagemod_info.SignatureLevel = _wtoi(value);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"SignatureType")) {
-            etwimagemod_info.SignatureType = wcstol(value, &end, 16);
+            etwimagemod_info.SignatureType = _wtoi(value);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Reserved0")) {
         }
         else if (0 == lstrcmpW(propName.c_str(), L"DefaultBase")) {
-            etwimagemod_info.DefaultBase = wcstol(value, &end, 16);
+            etwimagemod_info.DefaultBase = _wcstoui64(value, &end, 16);
         }
         else if (0 == lstrcmpW(propName.c_str(), L"Reserved1")) {
         }
@@ -1215,26 +1218,23 @@ bool UEtw::uf_init()
 {
     OutputDebugString(L"Etw nf_init - uf_RegisterTrace");
 #ifdef _DEBUG
-    //if (!uf_RegisterTrace(
-    //    EVENT_TRACE_FLAG_NETWORK_TCPIP | \
-    //    EVENT_TRACE_FLAG_PROCESS | \
-    //    EVENT_TRACE_FLAG_THREAD | \
-    //    EVENT_TRACE_FLAG_IMAGE_LOAD | \
-    //    EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
-    //    EVENT_TRACE_FLAG_REGISTRY))
-    //    return 0;
-    if (!uf_RegisterTrace(EVENT_TRACE_FLAG_PROCESS))
+    if (!uf_RegisterTrace(
+        /*EVENT_TRACE_FLAG_NETWORK_TCPIP | \
+        EVENT_TRACE_FLAG_PROCESS | \
+        EVENT_TRACE_FLAG_THREAD | \*/
+        EVENT_TRACE_FLAG_IMAGE_LOAD | \
+        EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
+        EVENT_TRACE_FLAG_REGISTRY))
         return 0;
     return 1;
 #else
-    // EVENT_TRACE_FLAG_SYSTEMCALL 关联不到PID - 需要内核映射物理内存关联
-    // EVENT_TRACE_FLAG_REGISTRY   数据未清洗
+    // EVENT_TRACE_FLAG_SYSTEMCALL 需要映射地址和进程地址，关联PID
+    // EVENT_TRACE_FLAG_REGISTRY
     if (!uf_RegisterTrace(
-        EVENT_TRACE_FLAG_NETWORK_TCPIP | \
+        /*EVENT_TRACE_FLAG_NETWORK_TCPIP | \*/
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
-        EVENT_TRACE_FLAG_IMAGE_LOAD | \
-        EVENT_TRACE_FLAG_REGISTRY | \
+        /*EVENT_TRACE_FLAG_IMAGE_LOAD | \*/
         EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT))
         return 0;
     return 1;
