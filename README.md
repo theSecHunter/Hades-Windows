@@ -19,7 +19,7 @@ v1.0引擎重构，采集器分离用户态和内核态lib，HadesSvc数据引�
 
 Hboat支持Windows插件上报数据解析，GoAgent统一管理和上报，可作为插件下发。
 
-GoAgent负责GRPC和WIN下插件管理(跨平台)：https://github.com/theSecHunter/Hades-Linux/tree/main
+GoAgent负责GRPC和WIN下插件管理(跨平台)：[https://github.com/theSecHunter/Hades-Linux/tree/main](https://github.com/theSecHunter/Hades-Linux/tree/main/agent)
 
 GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboat
 
