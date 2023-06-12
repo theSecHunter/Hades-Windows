@@ -474,9 +474,8 @@ static void handleEventDispath_(PNF_DATA pData)
 		pubdata->taskid = pData->code;
 		RtlCopyMemory(&pubdata->data[0], pData->buffer, pData->bufferSize);
 		// push - setevent
-		g_KernelQueueCs_Ptr->lock();
+		std::unique_lock<std::mutex> lock(*g_KernelQueueCs_Ptr);
 		g_KernelQueue_Ptr->push(pubdata);
-		g_KernelQueueCs_Ptr->unlock();
 		SetEvent(g_KjobQueue_Event);
 	}
 }

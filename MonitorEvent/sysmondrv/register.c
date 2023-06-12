@@ -37,11 +37,11 @@ static NTSTATUS Process_NotifyRegister(
 	NTSTATUS status = STATUS_SUCCESS;
 	WCHAR path[260 * 2] = { 0 };
 	
-	const ULONG processid = (int)PsGetCurrentProcessId();
-	const ULONG threadid = (int)PsGetCurrentThreadId();
+	const DWORD processid = (DWORD)PsGetCurrentProcessId();
+	const DWORD threadid = (DWORD)PsGetCurrentThreadId();
 
 	BOOLEAN QueryPathStatus = FALSE;
-	if (QueryProcessNamePath((DWORD)processid, path, sizeof(path)))
+	if (QueryProcessNamePath(processid, path, sizeof(path)))
 		QueryPathStatus = TRUE;
 	if (!g_reg_monitorprocess && !QueryPathStatus)
 		return STATUS_SUCCESS;
@@ -153,7 +153,7 @@ static NTSTATUS Process_NotifyRegister(
 		// ÐÞ¸Ä
 		case RegNtPreSetValueKey:
 		{
-			PREG_SET_VALUE_KEY_INFORMATION RegSetValueinfo = (PREG_CREATE_KEY_INFORMATION_V1)Argument2;
+			PREG_SET_VALUE_KEY_INFORMATION RegSetValueinfo = (PREG_SET_VALUE_KEY_INFORMATION)Argument2;
 			if (!RegSetValueinfo)
 				break;
 			registerinfo.Object = RegSetValueinfo->Object;
@@ -240,7 +240,7 @@ static NTSTATUS Process_NotifyRegister(
 		ExAcquireResourceExclusiveLite(&g_resourcelock, TRUE);
 		const int replaybuflen = sizeof(HADES_REPLY);
 		const int sendbuflen = sizeof(HADES_NOTIFICATION);
-		PHADES_NOTIFICATION const notification = (char*)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSR');
+		HADES_NOTIFICATION* const notification = (PHADES_NOTIFICATION)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSR');
 		if (notification)
 		{
 			RtlZeroMemory(notification, sendbuflen);

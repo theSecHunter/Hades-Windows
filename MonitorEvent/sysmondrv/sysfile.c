@@ -46,8 +46,8 @@ OB_PREOP_CALLBACK_STATUS preNotifyCall(
 
 	FILEINFO fileinfo;
 	RtlSecureZeroMemory(&fileinfo, sizeof(FILEINFO));
-	fileinfo.processid = PsGetCurrentProcessId();
-	fileinfo.threadid = PsGetCurrentThreadId();
+	fileinfo.processid = (int)PsGetCurrentProcessId();
+	fileinfo.threadid = (int)PsGetCurrentThreadId();
 
 	fileinfo.LockOperation = fileo->LockOperation;
 	fileinfo.DeletePending = fileo->DeletePending;

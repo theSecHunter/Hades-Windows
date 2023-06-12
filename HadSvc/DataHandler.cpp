@@ -39,13 +39,13 @@ static HANDLE                                   g_Ker_Queue_Event = nullptr;
 static HANDLE                                   g_ExitEvent;
 
 // NamedPip|Anonymous
-const std::wstring PIPE_HADESWIN_NAME = L"\\\\.\\Pipe\\HadesPipe";
-std::shared_ptr<NamedPipe> g_namedpipe = nullptr;
-std::shared_ptr<AnonymousPipe> g_anonymouspipe = nullptr;
+static const std::wstring PIPE_HADESWIN_NAME = L"\\\\.\\Pipe\\HadesPipe";
+static std::shared_ptr<NamedPipe> g_namedpipe = nullptr;
+static std::shared_ptr<AnonymousPipe> g_anonymouspipe = nullptr;
 
 // Drivers
-static DriverManager		g_DrvManager;
-const std::wstring			g_drverName = L"sysmondriver";
+static DriverManager g_DrvManager;
+static const std::wstring g_drverName = L"sysmondriver";
 
 void GetOSVersion(std::string& strOSVersion, int& verMajorVersion, int& verMinorVersion, bool& Is64)
 {
@@ -382,7 +382,7 @@ DataHandler::~DataHandler()
 }
 
 // 管道写
-bool PipWriteAnonymous(std::string& serializbuf, const int datasize)
+inline bool PipWriteAnonymous(std::string& serializbuf, const int datasize)
 {
     /*
     * |---------------------------------
@@ -718,92 +718,74 @@ void DataHandler::DebugTaskInterface(const int taskid)
 // 内核数据ConSumer
 void DataHandler::KerSublthreadProc()
 {
-    static std::mutex krecord_mutex;
     std::shared_ptr<protocol::Record> record = std::make_shared<protocol::Record>();
     if (!record)
         return;
-    static protocol::Payload* const PayloadMsg = record->mutable_data();
+    protocol::Payload* const PayloadMsg = record->mutable_data();
     if (!PayloadMsg)
         return;
-    static auto MapMessage = PayloadMsg->mutable_fields();
+    auto MapMessage = PayloadMsg->mutable_fields();
     if (!MapMessage)
         return;
-    static std::string serializbuf;
+    std::string serializbuf = "";
 
     do {
         WaitForSingleObject(g_Ker_Queue_Event, INFINITE);
         if (g_shutdown)
             break;
         do{
-            {
-                g_Ker_QueueCs_Ptr.lock();
-                if (g_Ker_SubQueue_Ptr.empty())
-                {
-                    g_Ker_QueueCs_Ptr.unlock();
-                    break;
-                }
-                const auto subwrite = g_Ker_SubQueue_Ptr.front();
-                g_Ker_SubQueue_Ptr.pop();
-                g_Ker_QueueCs_Ptr.unlock();
-
-                krecord_mutex.lock();
-                record->set_data_type(subwrite->taskid);
-                record->set_timestamp(GetCurrentTime());
-                (*MapMessage)["data_type"] = to_string(subwrite->taskid);
-                (*MapMessage)["udata"] = subwrite->data->c_str(); // json
-                serializbuf = record->SerializeAsString();
-                const size_t datasize = serializbuf.size();
-                PipWriteAnonymous(serializbuf, datasize);
-                krecord_mutex.unlock();
-            }
+            std::unique_lock<std::mutex> lock(g_Ker_QueueCs_Ptr);
+            if (g_Ker_SubQueue_Ptr.empty())
+                break;
+            const auto subwrite = g_Ker_SubQueue_Ptr.front();
+            g_Ker_SubQueue_Ptr.pop();
+            if (!subwrite)
+                break;
+            record->set_data_type(subwrite->taskid);
+            record->set_timestamp(GetCurrentTime());
+            (*MapMessage)["data_type"] = to_string(subwrite->taskid);
+            (*MapMessage)["udata"] = subwrite->data->c_str(); // json
+            serializbuf = record->SerializeAsString();
+            const size_t datasize = serializbuf.size();
+            PipWriteAnonymous(serializbuf, datasize);
             MapMessage->clear();
             serializbuf.clear();
         } while (false);
-
     } while (!g_shutdown);
 }
 // Etw数据ConSumer
 void DataHandler::EtwSublthreadProc()
 {
-    static std::mutex urecord_mutex;
-    static std::shared_ptr<protocol::Record> record = std::make_shared<protocol::Record>();
+    std::shared_ptr<protocol::Record> record = std::make_shared<protocol::Record>();
     if (!record)
         return;
-    static protocol::Payload* const PayloadMsg = record->mutable_data();
+    protocol::Payload* const PayloadMsg = record->mutable_data();
     if (!PayloadMsg)
         return;
-    static auto MapMessage = PayloadMsg->mutable_fields();
+    auto MapMessage = PayloadMsg->mutable_fields();
     if (!MapMessage)
         return;
 
-    static std::string serializbuf;
+    std::string serializbuf = "";
     do {
         WaitForSingleObject(g_Etw_Queue_Event, INFINITE);
         if (g_shutdown || !record)
             break;
-
         do {
-            {
-                g_Etw_QueueCs_Ptr.lock();
-                if (g_Etw_SubQueue_Ptr.empty())
-                {
-                    g_Etw_QueueCs_Ptr.unlock();
-                    break;
-                }
-                const auto subwrite = g_Etw_SubQueue_Ptr.front();
-                g_Etw_SubQueue_Ptr.pop();
-                g_Etw_QueueCs_Ptr.unlock();
-
-                urecord_mutex.lock();
-                record->set_data_type(subwrite->taskid);
-                record->set_timestamp(GetCurrentTime());
-                (*MapMessage)["data_type"] = to_string(subwrite->taskid);
-                (*MapMessage)["udata"] = subwrite->data->c_str(); // json
-                serializbuf = record->SerializeAsString();
-                const size_t datasize = serializbuf.size();
-                PipWriteAnonymous(serializbuf, datasize);
-                urecord_mutex.unlock();
-            }
+            std::unique_lock<std::mutex> lock(g_Etw_QueueCs_Ptr);
+            if (g_Etw_SubQueue_Ptr.empty())
+                break;
+            const auto subwrite = g_Etw_SubQueue_Ptr.front();
+            g_Etw_SubQueue_Ptr.pop();
+            if (!subwrite)
+                break;
+            record->set_data_type(subwrite->taskid);
+            record->set_timestamp(GetCurrentTime());
+            (*MapMessage)["data_type"] = to_string(subwrite->taskid);
+            (*MapMessage)["udata"] = subwrite->data->c_str(); // json
+            serializbuf = record->SerializeAsString();
+            const size_t datasize = serializbuf.size();
+            PipWriteAnonymous(serializbuf, datasize);
             MapMessage->clear();
             serializbuf.clear();
         } while (false);
@@ -873,13 +855,19 @@ bool DataHandler::ThreadPool_Init()
     if (!g_Etw_Queue_Event || !g_Ker_Queue_Event || !m_jobAvailableEvnet_WriteTask)
         return false;
 
-    ((uMsgInterface*)g_user_interface)->uMsg_SetSubEventPtr(g_Etw_Queue_Event);
-    ((uMsgInterface*)g_user_interface)->uMsg_SetSubQueueLockPtr(g_Etw_QueueCs_Ptr);
-    ((uMsgInterface*)g_user_interface)->uMsg_SetSubQueuePtr(g_Etw_SubQueue_Ptr);
+    if (g_user_interface)
+    {
+        ((uMsgInterface*)g_user_interface)->uMsg_SetSubEventPtr(g_Etw_Queue_Event);
+        ((uMsgInterface*)g_user_interface)->uMsg_SetSubQueueLockPtr(g_Etw_QueueCs_Ptr);
+        ((uMsgInterface*)g_user_interface)->uMsg_SetSubQueuePtr(g_Etw_SubQueue_Ptr);
+    }
 
-    ((kMsgInterface*)g_kern_interface)->kMsg_SetSubEventPtr(g_Ker_Queue_Event);
-    ((kMsgInterface*)g_kern_interface)->kMsg_SetSubQueueLockPtr(g_Ker_QueueCs_Ptr);
-    ((kMsgInterface*)g_kern_interface)->kMsg_SetSubQueuePtr(g_Ker_SubQueue_Ptr);
+    if (g_kern_interface)
+    {
+        ((kMsgInterface*)g_kern_interface)->kMsg_SetSubEventPtr(g_Ker_Queue_Event);
+        ((kMsgInterface*)g_kern_interface)->kMsg_SetSubQueueLockPtr(g_Ker_QueueCs_Ptr);
+        ((kMsgInterface*)g_kern_interface)->kMsg_SetSubQueuePtr(g_Ker_SubQueue_Ptr);
+    }
 
     size_t i = 0;
     HANDLE hThread;

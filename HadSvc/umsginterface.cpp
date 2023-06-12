@@ -73,225 +73,220 @@ uMsgInterface::~uMsgInterface()
 // Topic数据处理和推送反馈Sub
 void uMsgInterface::uMsgEtwDataHandlerEx()
 {
-    g_RecvQueueCs.lock();
-
-    static json_t j;
-    static std::string tmpstr;
-    static UPubNode* pEtwTaskData = nullptr;
-
-    for (;;)
+    std::unique_lock<std::mutex> lock(g_RecvQueueCs);
+    
+    try
     {
-        Sleep(1);
-        if (g_RecvQueueData.empty())
-        {
-            g_RecvQueueCs.unlock();
-            return;
-        }
-        pEtwTaskData = g_RecvQueueData.front();
-        g_RecvQueueData.pop();
-        if (!pEtwTaskData)
-        {
-            g_RecvQueueCs.unlock();
-            return;
-        }
+        json_t j;
+        std::string tmpstr = "";
+        UPubNode* pEtwTaskData = nullptr;
 
-        const int taskid = pEtwTaskData->taskid;
-        switch (taskid)
+        for (;;)
         {
-        case UF_ETW_NETWORK:
-        {
-            const UEtwNetWork* pEtwNet = (UEtwNetWork*)&(pEtwTaskData->data[0]);
-            if (!pEtwNet)
-                break;
-            Wchar_tToString(tmpstr, pEtwNet->EventName);
-            if (!tmpstr.empty())
-            {
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_network_eventname"] = tmpstr.c_str();
-            }
-            else
-            {
-                j["win_network_eventname"] = "";
-            }
-            j["win_network_addressfamily"] = to_string(pEtwNet->addressFamily);
-            j["win_network_protocol"] = to_string(pEtwNet->protocol);
-            j["win_network_processid"] = to_string(pEtwNet->processId);
-            j["win_network_localaddr"] = to_string(pEtwNet->ipv4LocalAddr);
-            j["win_network_toLocalport"] = to_string(pEtwNet->protocol);
-            j["win_network_remoteaddr"] = to_string(pEtwNet->ipv4toRemoteAddr);
-            j["win_network_toremoteport"] = to_string(pEtwNet->toRemotePort);
-        }
-        break;
-        case UF_ETW_PROCESSINFO:
-        {
-            const UEtwProcessInfo* pEtwProcess = (UEtwProcessInfo*)&(pEtwTaskData->data[0]);
-            if (!pEtwProcess)
-                break;
-            Wchar_tToString(tmpstr, pEtwProcess->EventName);
-            if (!tmpstr.empty())
-            {
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_etw_processinfo_eventname"] = tmpstr.c_str();
-            }
-            else
-            {
-                j["win_etw_processinfo_eventname"] = "";
-            }
-            j["win_etw_processinfo_parentid"] = to_string(pEtwProcess->parentId);
-            j["win_etw_processinfo_pid"] = to_string(pEtwProcess->processId);
-            j["win_etw_processinfo_status"] = to_string(pEtwProcess->processStatus);
-            Wchar_tToString(tmpstr, pEtwProcess->processPath);
-            if (!tmpstr.empty())
-            {
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_etw_processinfo_path"] = tmpstr.c_str();
-            }
-            else
-                j["win_etw_processinfo_path"] = "";
-        }
-        break;
-        case UF_ETW_THREADINFO:
-        {
-            const UEtwThreadInfo* pEtwThread = (UEtwThreadInfo*)&(pEtwTaskData->data[0]);
-            if (!pEtwThread)
-                break;
-            Wchar_tToString(tmpstr, pEtwThread->EventName);
-            if (!tmpstr.empty())
-            {
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_etw_threadinfo_eventname"] = tmpstr.c_str();
-            }
-            else
-            {
-                j["win_etw_threadinfo_eventname"] = "";
-            }
-            j["win_etw_threadinfo_pid"] = to_string(pEtwThread->processId);
-            j["win_etw_threadinfo_tid"] = to_string(pEtwThread->threadId);
-            j["win_etw_threadinfo_win32startaddr"] = to_string(pEtwThread->Win32StartAddr);
-            j["win_etw_threadinfo_flags"] = to_string(pEtwThread->ThreadFlags);
-        }
-        break;
-        case UF_ETW_IMAGEMOD:
-        {
-            const UEtwImageInfo* pEtwProcMod = (UEtwImageInfo*)&(pEtwTaskData->data[0]);
-            if (!pEtwProcMod)
-                break;
-            Wchar_tToString(tmpstr, pEtwProcMod->EventName);
-            if (!tmpstr.empty())
-            {
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_etw_imageinfo_eventname"] = tmpstr.c_str();
-            }
-            else
-            {
-                j["win_etw_imageinfo_eventname"] = "";
-            }
-            j["win_etw_imageinfo_processId"] = to_string(pEtwProcMod->ProcessId);
-            j["win_etw_imageinfo_imageBase"] = to_string(pEtwProcMod->ImageBase);
-            j["win_etw_imageinfo_imageSize"] = to_string(pEtwProcMod->ImageSize);
-            j["win_etw_imageinfo_signatureLevel"] = to_string(pEtwProcMod->SignatureLevel);
-            j["win_etw_imageinfo_signatureType"] = to_string(pEtwProcMod->SignatureType);
-            j["win_etw_imageinfo_imageChecksum"] = to_string(pEtwProcMod->ImageChecksum);
-            j["win_etw_imageinfo_timeDateStamp"] = to_string(123);
-            j["win_etw_imageinfo_defaultBase"] = to_string(pEtwProcMod->DefaultBase);
-            Wchar_tToString(tmpstr, pEtwProcMod->FileName);
-            if (tmpstr.empty())
-                break;
-            tmpstr = String_ToUtf8(tmpstr);
-            j["win_etw_imageinfo_fileName"] = tmpstr.c_str();
-        }
-        break;
-        case UF_ETW_REGISTERTAB:
-        {
-            const UEtwRegisterTabInfo* pEtwRegtab = (UEtwRegisterTabInfo*)&(pEtwTaskData->data[0]);
-            if (!pEtwRegtab)
-                break;
-            Wchar_tToString(tmpstr, pEtwRegtab->EventName);
-            if (!tmpstr.empty())
-            {
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_etw_regtab_eventname"] = tmpstr.c_str();
-            }
-            else
-            {
-                j["win_etw_regtab_eventname"] = "";
-            }
-            j["win_etw_regtab_status"] = to_string(pEtwRegtab->Status);
-            j["win_etw_regtab_index"] = to_string(pEtwRegtab->Index);
-            j["win_etw_regtab_keyHandle"] = to_string(pEtwRegtab->KeyHandle);
-            Wchar_tToString(tmpstr, pEtwRegtab->KeyName);
-            tmpstr = String_ToUtf8(tmpstr);
-            j["win_etw_regtab_keyName"] = tmpstr.c_str();
-        }
-        break;
-        case UF_ETW_FILEIO:
-        {
-            const UEtwFileIoTabInfo* pEtwFileIo = (UEtwFileIoTabInfo*)&(pEtwTaskData->data[0]);
-            if (!pEtwFileIo)
-                break;
-            Wchar_tToString(tmpstr, pEtwFileIo->EventName);
-            if (!tmpstr.empty())
-            {
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_etw_fileio_eventname"] = tmpstr.c_str();
-            }
-            else
-            {
-                j["win_etw_fileio_eventname"] = "";
-            }
+            Sleep(1);
+            if (g_RecvQueueData.empty())
+                return;
 
-            // 这里不基于EventName区分了 Empty事件不同空的频率高 
-            int lens = lstrlenW(pEtwFileIo->FilePath);
-            if (lens > 0)
+            pEtwTaskData = g_RecvQueueData.front();
+            g_RecvQueueData.pop();
+            if (!pEtwTaskData)
+                return;
+
+            const int taskid = pEtwTaskData->taskid;
+            switch (taskid)
             {
-                Wchar_tToString(tmpstr, pEtwFileIo->FilePath);
+            case UF_ETW_NETWORK:
+            {
+                const UEtwNetWork* pEtwNet = (UEtwNetWork*)&(pEtwTaskData->data[0]);
+                if (!pEtwNet)
+                    break;
+                Wchar_tToString(tmpstr, pEtwNet->EventName);
                 if (!tmpstr.empty())
                 {
                     tmpstr = String_ToUtf8(tmpstr);
-                    j["win_etw_fileio_FilePath"] = tmpstr.c_str();
+                    j["win_network_eventname"] = tmpstr.c_str();
                 }
                 else
                 {
-                    j["win_etw_fileio_FilePath"] = "";
+                    j["win_network_eventname"] = "";
                 }
+                j["win_network_addressfamily"] = to_string(pEtwNet->addressFamily);
+                j["win_network_protocol"] = to_string(pEtwNet->protocol);
+                j["win_network_processid"] = to_string(pEtwNet->processId);
+                j["win_network_localaddr"] = to_string(pEtwNet->ipv4LocalAddr);
+                j["win_network_toLocalport"] = to_string(pEtwNet->protocol);
+                j["win_network_remoteaddr"] = to_string(pEtwNet->ipv4toRemoteAddr);
+                j["win_network_toremoteport"] = to_string(pEtwNet->toRemotePort);
             }
-
-            lens = lstrlenW(pEtwFileIo->FileName);
-            if (lens > 0)
+            break;
+            case UF_ETW_PROCESSINFO:
             {
-                Wchar_tToString(tmpstr, pEtwFileIo->FileName);
+                const UEtwProcessInfo* pEtwProcess = (UEtwProcessInfo*)&(pEtwTaskData->data[0]);
+                if (!pEtwProcess)
+                    break;
+                Wchar_tToString(tmpstr, pEtwProcess->EventName);
                 if (!tmpstr.empty())
                 {
                     tmpstr = String_ToUtf8(tmpstr);
-                    j["win_etw_fileio_FileName"] = tmpstr.c_str();
+                    j["win_etw_processinfo_eventname"] = tmpstr.c_str();
                 }
                 else
                 {
-                    j["win_etw_fileio_FileName"] = "";
+                    j["win_etw_processinfo_eventname"] = "";
                 }
+                j["win_etw_processinfo_parentid"] = to_string(pEtwProcess->parentId);
+                j["win_etw_processinfo_pid"] = to_string(pEtwProcess->processId);
+                j["win_etw_processinfo_status"] = to_string(pEtwProcess->processStatus);
+                Wchar_tToString(tmpstr, pEtwProcess->processPath);
+                if (!tmpstr.empty())
+                {
+                    tmpstr = String_ToUtf8(tmpstr);
+                    j["win_etw_processinfo_path"] = tmpstr.c_str();
+                }
+                else
+                    j["win_etw_processinfo_path"] = "";
+            }
+            break;
+            case UF_ETW_THREADINFO:
+            {
+                const UEtwThreadInfo* pEtwThread = (UEtwThreadInfo*)&(pEtwTaskData->data[0]);
+                if (!pEtwThread)
+                    break;
+                Wchar_tToString(tmpstr, pEtwThread->EventName);
+                if (!tmpstr.empty())
+                {
+                    tmpstr = String_ToUtf8(tmpstr);
+                    j["win_etw_threadinfo_eventname"] = tmpstr.c_str();
+                }
+                else
+                {
+                    j["win_etw_threadinfo_eventname"] = "";
+                }
+                j["win_etw_threadinfo_pid"] = to_string(pEtwThread->processId);
+                j["win_etw_threadinfo_tid"] = to_string(pEtwThread->threadId);
+                j["win_etw_threadinfo_win32startaddr"] = to_string(pEtwThread->Win32StartAddr);
+                j["win_etw_threadinfo_flags"] = to_string(pEtwThread->ThreadFlags);
+            }
+            break;
+            case UF_ETW_IMAGEMOD:
+            {
+                const UEtwImageInfo* pEtwProcMod = (UEtwImageInfo*)&(pEtwTaskData->data[0]);
+                if (!pEtwProcMod)
+                    break;
+                Wchar_tToString(tmpstr, pEtwProcMod->EventName);
+                if (!tmpstr.empty())
+                {
+                    tmpstr = String_ToUtf8(tmpstr);
+                    j["win_etw_imageinfo_eventname"] = tmpstr.c_str();
+                }
+                else
+                {
+                    j["win_etw_imageinfo_eventname"] = "";
+                }
+                j["win_etw_imageinfo_processId"] = to_string(pEtwProcMod->ProcessId);
+                j["win_etw_imageinfo_imageBase"] = to_string(pEtwProcMod->ImageBase);
+                j["win_etw_imageinfo_imageSize"] = to_string(pEtwProcMod->ImageSize);
+                j["win_etw_imageinfo_signatureLevel"] = to_string(pEtwProcMod->SignatureLevel);
+                j["win_etw_imageinfo_signatureType"] = to_string(pEtwProcMod->SignatureType);
+                j["win_etw_imageinfo_imageChecksum"] = to_string(pEtwProcMod->ImageChecksum);
+                j["win_etw_imageinfo_timeDateStamp"] = to_string(123);
+                j["win_etw_imageinfo_defaultBase"] = to_string(pEtwProcMod->DefaultBase);
+                Wchar_tToString(tmpstr, pEtwProcMod->FileName);
+                if (tmpstr.empty())
+                    break;
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_etw_imageinfo_fileName"] = tmpstr.c_str();
+            }
+            break;
+            case UF_ETW_REGISTERTAB:
+            {
+                const UEtwRegisterTabInfo* pEtwRegtab = (UEtwRegisterTabInfo*)&(pEtwTaskData->data[0]);
+                if (!pEtwRegtab)
+                    break;
+                Wchar_tToString(tmpstr, pEtwRegtab->EventName);
+                if (!tmpstr.empty())
+                {
+                    tmpstr = String_ToUtf8(tmpstr);
+                    j["win_etw_regtab_eventname"] = tmpstr.c_str();
+                }
+                else
+                {
+                    j["win_etw_regtab_eventname"] = "";
+                }
+                j["win_etw_regtab_status"] = to_string(pEtwRegtab->Status);
+                j["win_etw_regtab_index"] = to_string(pEtwRegtab->Index);
+                j["win_etw_regtab_keyHandle"] = to_string(pEtwRegtab->KeyHandle);
+                Wchar_tToString(tmpstr, pEtwRegtab->KeyName);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_etw_regtab_keyName"] = tmpstr.c_str();
+            }
+            break;
+            case UF_ETW_FILEIO:
+            {
+                const UEtwFileIoTabInfo* pEtwFileIo = (UEtwFileIoTabInfo*)&(pEtwTaskData->data[0]);
+                if (!pEtwFileIo)
+                    break;
+                Wchar_tToString(tmpstr, pEtwFileIo->EventName);
+                if (!tmpstr.empty())
+                {
+                    tmpstr = String_ToUtf8(tmpstr);
+                    j["win_etw_fileio_eventname"] = tmpstr.c_str();
+                }
+                else
+                {
+                    j["win_etw_fileio_eventname"] = "";
+                }
+
+                // 这里不基于EventName区分了 Empty事件不同空的频率高 
+                int lens = lstrlenW(pEtwFileIo->FilePath);
+                if (lens > 0)
+                {
+                    Wchar_tToString(tmpstr, pEtwFileIo->FilePath);
+                    if (!tmpstr.empty())
+                    {
+                        tmpstr = String_ToUtf8(tmpstr);
+                        j["win_etw_fileio_FilePath"] = tmpstr.c_str();
+                    }
+                    else
+                    {
+                        j["win_etw_fileio_FilePath"] = "";
+                    }
+                }
+
+                lens = lstrlenW(pEtwFileIo->FileName);
+                if (lens > 0)
+                {
+                    Wchar_tToString(tmpstr, pEtwFileIo->FileName);
+                    if (!tmpstr.empty())
+                    {
+                        tmpstr = String_ToUtf8(tmpstr);
+                        j["win_etw_fileio_FileName"] = tmpstr.c_str();
+                    }
+                    else
+                    {
+                        j["win_etw_fileio_FileName"] = "";
+                    }
+                }
+
+                j["win_etw_fileio_Pid"] = to_string(pEtwFileIo->PID);
+                j["win_etw_fileio_Tid"] = to_string(pEtwFileIo->TTID);
+                j["win_etw_fileio_FileAttributes"] = to_string(pEtwFileIo->FileAttributes);
+                j["win_etw_fileio_CreateOptions"] = to_string(pEtwFileIo->CreateOptions);
+                j["win_etw_fileio_ShareAccess"] = to_string(pEtwFileIo->ShareAccess);
+                j["win_etw_fileio_Offset"] = to_string(pEtwFileIo->Offset);
+                j["win_etw_fileio_FileKey"] = to_string(pEtwFileIo->FileKey);
+                j["win_etw_fileio_FileObject"] = to_string(pEtwFileIo->FileObject);
+            }
+            break;
             }
 
-            j["win_etw_fileio_Pid"] = to_string(pEtwFileIo->PID);
-            j["win_etw_fileio_Tid"] = to_string(pEtwFileIo->TTID);
-            j["win_etw_fileio_FileAttributes"] = to_string(pEtwFileIo->FileAttributes);
-            j["win_etw_fileio_CreateOptions"] = to_string(pEtwFileIo->CreateOptions);
-            j["win_etw_fileio_ShareAccess"] = to_string(pEtwFileIo->ShareAccess);
-            j["win_etw_fileio_Offset"] = to_string(pEtwFileIo->Offset);
-            j["win_etw_fileio_FileKey"] = to_string(pEtwFileIo->FileKey);
-            j["win_etw_fileio_FileObject"] = to_string(pEtwFileIo->FileObject);
-        }
-        break;
-        }
+            // 注: Topic 释放 Pub的数据指针
+            if (pEtwTaskData)
+            {
+                delete[] pEtwTaskData;
+                pEtwTaskData = nullptr;
+            }
 
-        // 注: Topic 释放 Pub的数据指针
-        if (pEtwTaskData)
-        {
-            delete[] pEtwTaskData;
-            pEtwTaskData = nullptr;
-        }
-
-        try
-        {
             // 序列化
             std::shared_ptr<std::string> data = nullptr;
             if (j.size())
@@ -299,37 +294,38 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 data = std::make_shared<std::string>(j.dump());
             }
             else
+            {
+                j.clear();
+                tmpstr.clear();
                 continue;
-            
+            }
+
+
             if (!g_SendQueueData_Ptr && !g_SendQueueCs_Ptr && !g_SendQueue_Event)
             {
                 OutputDebugString(L"没设置订阅指针Pip");
-                g_RecvQueueCs.unlock();
                 return;
             }
 
             const std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
             if (!sub || !data)
-            {
-                g_RecvQueueCs.unlock();
                 return;
-            }
-                
+
             sub->data = data;
             sub->taskid = taskid;
-            g_SendQueueCs_Ptr->lock();
-            g_SendQueueData_Ptr->push(sub);
-            g_SendQueueCs_Ptr->unlock();
-            SetEvent(g_SendQueue_Event);
+            {
+                std::unique_lock<std::mutex> lock(*g_SendQueueCs_Ptr);
+                g_SendQueueData_Ptr->push(sub);
+                SetEvent(g_SendQueue_Event);
+            }
             j.clear();
             tmpstr.clear();
-        }
-        catch (const std::exception&)
-        {
-            g_RecvQueueCs.unlock();
+            data = nullptr;
         }
     }
-    g_RecvQueueCs.unlock();
+    catch (const std::exception&)
+    {
+    }
 }
 // Topic监控,异步事件等待
 void uMsgInterface::uMsg_taskPopEtwLoop()

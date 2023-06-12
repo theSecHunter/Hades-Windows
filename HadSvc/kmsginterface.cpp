@@ -167,27 +167,23 @@ void Choose_register(string& opearestring, const int code)
 }
 void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
 {
+    std::unique_lock<std::mutex> lock(g_RecvDataQueueCs);
+
     try
     {
-        g_RecvDataQueueCs.lock();
-        static json_t j;
-        static UPubNode* pubNode = nullptr;
-        static std::string tmpstr;
+        json_t j;
+        std::string tmpstr = "";
+        UPubNode* pubNode = nullptr;
+
         for (;;)
         {
             Sleep(1);
             if (g_RecvDataQueue.empty())
-            {
-                g_RecvDataQueueCs.unlock();
                 return;
-            }
             pubNode = g_RecvDataQueue.front();
             g_RecvDataQueue.pop();
             if (!pubNode)
-            {
-                g_RecvDataQueueCs.unlock();
                 return;
-            }
             const int taskid = pubNode->taskid;
             switch (taskid)
             {
@@ -380,43 +376,39 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             }
 
             // 序列化
-            std::shared_ptr<std::string> data;
+            std::shared_ptr<std::string> data = nullptr;
             if (j.size())
                 data = std::make_shared<std::string>(j.dump());
             else
             {
                 j.clear();
+                tmpstr.clear();
                 continue;
             }
 
             if (!g_SendQueueData_Ptr && !g_SendQueueCs_Ptr && !g_SendQueue_Event)
             {
-                g_RecvDataQueueCs.unlock();
                 OutputDebugString(L"Grpc没设置订阅指针");
                 return;
             }
 
             const std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
             if (!sub || !data)
-            {
-                g_RecvDataQueueCs.unlock();
                 return;
-            }
             sub->data = data;
             sub->taskid = taskid;
-            g_SendQueueCs_Ptr->lock();
-            g_SendQueueData_Ptr->push(sub);
-            g_SendQueueCs_Ptr->unlock();
-            SetEvent(g_SendQueue_Event);
-
+            {
+                std::unique_lock<std::mutex> lock(*g_SendQueueCs_Ptr);
+                g_SendQueueData_Ptr->push(sub);
+                SetEvent(g_SendQueue_Event);
+            }
             j.clear();
             tmpstr.clear();
+            data = nullptr;
         }
-        g_RecvDataQueueCs.unlock();
     }
     catch (const std::exception&)
     {
-        g_RecvDataQueueCs.unlock();
     }
 }
 
@@ -1113,4 +1105,17 @@ void kMsgInterface::kMsg_Free()
         g_kjobAvailableEvent = INVALID_HANDLE_VALUE;
     }
     m_topicthread.clear();
+
+    // clear new memeory
+    std::unique_lock<std::mutex> lock(g_RecvDataQueueCs);
+    while (!g_RecvDataQueue.empty())
+    {
+        auto pKerTaskData = g_RecvDataQueue.front();
+        g_RecvDataQueue.pop();
+        if (pKerTaskData)
+        {
+            delete[] pKerTaskData;
+            pKerTaskData = nullptr;
+        }
+    }
 }

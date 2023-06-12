@@ -351,7 +351,7 @@ CONST FLT_REGISTRATION FilterRegistration = {
 
 };
 
-void FsFlt_SetDirectoryIpsMonitor(code)
+void FsFlt_SetDirectoryIpsMonitor(const BOOLEAN code)
 {
     KLOCK_QUEUE_HANDLE lh;
 
@@ -716,17 +716,18 @@ FsFilter1PreOperation(
     {
         const int iRenameInfotamtion = Data->Iopb->Parameters.SetFileInformation.FileInformationClass;
         // 1. find Rule Mods directoryPath 
-        PFLT_FILE_NAME_INFORMATION nameInfo = NULL;
-        NTSTATUS status = FltGetFileNameInformation(Data, FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT, &nameInfo);
+        PFLT_FILE_NAME_INFORMATION pNameInfo = NULL;
+        NTSTATUS status = FltGetFileNameInformation(Data, FLT_FILE_NAME_NORMALIZED | FLT_FILE_NAME_QUERY_DEFAULT, &pNameInfo);
         if (!NT_SUCCESS(status))
             return FLT_PREOP_SUCCESS_NO_CALLBACK;
-        FltReleaseFileNameInformation(Data);
         // Format FileInfo
-        FltParseFileNameInformation(nameInfo);
+        FltParseFileNameInformation(pNameInfo);
         if (iRenameInfotamtion != FileRenameInformation)
         {// 修改目录操作放行
-            if (!nameInfo->Volume.Length || (nameInfo->ParentDir.Length <= 2))
+            if (!pNameInfo->Volume.Length || (pNameInfo->ParentDir.Length <= 2)) {
+                FltReleaseFileNameInformation(pNameInfo);
                 return FLT_PREOP_SUCCESS_NO_CALLBACK;
+            }
         }
 
         // 2. find directory to rulePath
@@ -734,15 +735,16 @@ FsFilter1PreOperation(
         RtlInitEmptyUnicodeString(&swUnicodeDirectPath, swUnDirectPath, MAX_PATH * sizeof(WCHAR));
         if (iRenameInfotamtion != FileRenameInformation)
         {
-            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->Volume);
-            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->ParentDir);
+            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &pNameInfo->Volume);
+            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &pNameInfo->ParentDir);
         }
         else
         {
             // 目录字节拷贝Name
-            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->Name);
-            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &nameInfo->ParentDir);
+            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &pNameInfo->Name);
+            RtlAppendUnicodeStringToString(&swUnicodeDirectPath, &pNameInfo->ParentDir);
         }
+        FltReleaseFileNameInformation(pNameInfo);
         if (swUnicodeDirectPath.Length > MAX_PATH)
             return FLT_PREOP_SUCCESS_NO_CALLBACK;
         WCHAR swDirectPath[MAX_PATH] = { 0, };
@@ -755,8 +757,8 @@ FsFilter1PreOperation(
         // 3. query processid to processpath
         WCHAR path[260 * 2] = { 0 };
         //const ULONG pid = FltGetRequestorProcessId(Data);
-        const ULONG processid = (int)PsGetCurrentProcessId();
-        if (!QueryProcessNamePath((DWORD)processid, path, sizeof(path)))
+        const DWORD processid = (DWORD)PsGetCurrentProcessId();
+        if (!QueryProcessNamePath(processid, path, sizeof(path)))
             return FLT_PREOP_SUCCESS_NO_CALLBACK;
         do {
             // 4. find processpath to ruleName
@@ -876,7 +878,8 @@ FsFilterAntsDrPostFileHide(
             if (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress != NULL)
             {
 
-                Bufferptr = MmGetSystemAddressForMdl(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress, NormalPagePriority);
+                // NormalPagePriority
+                Bufferptr = MmGetSystemAddressForMdl(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress);
             }
             else
             {
@@ -947,8 +950,8 @@ FsFilterAntsDrPostFileHide(
             // 3. query processid to processpath
             WCHAR path[260 * 2] = { 0 };
             //const ULONG pid = FltGetRequestorProcessId(Data);
-            const ULONG processid = (int)PsGetCurrentProcessId();
-            if (!QueryProcessNamePath((DWORD)processid, path, sizeof(path)))
+            const DWORD processid = (DWORD)PsGetCurrentProcessId();
+            if (!QueryProcessNamePath(processid, path, sizeof(path))) 
                 return FLT_POSTOP_FINISHED_PROCESSING;
             do {
                 // 4. find processpath to ruleName

@@ -117,23 +117,23 @@ static BOOLEAN QueryProcessNamePath(__in DWORD pid, __out PWCHAR path, __in DWOR
     }
 #else
 // 不推荐 - 推荐MDL映射修改
-    const KIRQL ShudowMemoryPageProtect64()
-    {
-        KIRQL  irql = KeRaiseIrqlToDpcLevel();
-        UINT64  cr0 = __readcr0();
-        cr0 &= 0xfffffffffffeffff;
-        __writecr0(cr0);
-        _disable();
-        return  irql;
-    }
-    void StartMemoryPageProtect64(const KIRQL irql)
-    {
-        UINT64  cr0 = __readcr0();
-        cr0 |= 0x10000;
-        _enable();
-        __writecr0(cr0);
-        KeLowerIrql(irql);
-    }
+    //const KIRQL ShudowMemoryPageProtect64()
+    //{
+    //    KIRQL  irql = KeRaiseIrqlToDpcLevel();
+    //    UINT64  cr0 = __readcr0();
+    //    cr0 &= 0xfffffffffffeffff;
+    //    __writecr0(cr0);
+    //    _disable();
+    //    return  irql;
+    //}
+    //void StartMemoryPageProtect64(const KIRQL irql)
+    //{
+    //    UINT64  cr0 = __readcr0();
+    //    cr0 |= 0x10000;
+    //    _enable();
+    //    __writecr0(cr0);
+    //    KeLowerIrql(irql);
+    //}
 #endif
 
 #endif // !_UTIL_H

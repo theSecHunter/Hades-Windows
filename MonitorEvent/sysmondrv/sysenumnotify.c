@@ -32,15 +32,16 @@ VOID Enum_ProcessNotify(PNOTIFY_INFO pNotify)
 			PspCreateProcessNotifyRoutine = OffsetAddr + 7 + i;
 		}
 	}
-	if (FALSE == MmIsAddressValid((PVOID)PspCreateProcessNotifyRoutine))
+	if (PspCreateProcessNotifyRoutine && (FALSE == MmIsAddressValid((PVOID)PspCreateProcessNotifyRoutine)))
 		return;
 
 	ULONG count = 0;
 	for (i = 0; i < 64; i++)
 	{
 		MagicPtr = PspCreateProcessNotifyRoutine + i * 8;
-		NotifyAddr = *(PULONG64)(MagicPtr);
-		if (MmIsAddressValid((PVOID)NotifyAddr) && NotifyAddr != 0)
+		if (MagicPtr)
+			NotifyAddr = *(PULONG64)(MagicPtr);
+		if (NotifyAddr && MmIsAddressValid((PVOID)NotifyAddr))
 		{
 			NotifyAddr = *(PULONG64)(NotifyAddr & 0xfffffffffffffff8);
 

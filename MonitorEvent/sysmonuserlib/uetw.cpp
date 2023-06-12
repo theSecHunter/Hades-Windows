@@ -75,11 +75,14 @@ void Wchar_tToString(std::string& szDst, const wchar_t* wchar)
             return;
         }
         char* psText = nullptr;
-        psText = new char[dwNum + 1];
-        WideCharToMultiByte(CP_ACP, 0, wText, -1, psText, dwNum, NULL, FALSE);
-        psText[dwNum - 1] = 0;
-        szDst = psText;
-        delete[] psText;
+        psText = (char*)new char[dwNum + 1];
+        if (psText)
+        {
+            WideCharToMultiByte(CP_ACP, 0, wText, -1, psText, dwNum, NULL, FALSE);
+            psText[dwNum - 1] = 0;
+            szDst = psText;
+            delete[] psText;
+        }
     }
     catch (const std::exception&)
     {
@@ -355,9 +358,8 @@ void WINAPI NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
 
     if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
     {
-        g_EtwQueueCs_Ptr->lock();
+        std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
         g_EtwQueue_Ptr->push(EtwData);
-        g_EtwQueueCs_Ptr->unlock();
         SetEvent(g_jobQueue_Event);
     }
 }
@@ -465,12 +467,10 @@ void WINAPI ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
     {
-        g_EtwQueueCs_Ptr->lock();
+        std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
         g_EtwQueue_Ptr->push(EtwData);
-        g_EtwQueueCs_Ptr->unlock();
         SetEvent(g_jobQueue_Event);
     }
-
 }
 void WINAPI ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 {
@@ -584,9 +584,8 @@ void WINAPI ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         RtlCopyMemory(&EtwData->data[0], &thread_info, sizeof(UEtwThreadInfo));
         if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
         {
-            g_EtwQueueCs_Ptr->lock();
+            std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
             g_EtwQueue_Ptr->push(EtwData);
-            g_EtwQueueCs_Ptr->unlock();
             SetEvent(g_jobQueue_Event);
         }
     }
@@ -745,9 +744,8 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
     {
-        g_EtwQueueCs_Ptr->lock();
+        std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
         g_EtwQueue_Ptr->push(EtwData);
-        g_EtwQueueCs_Ptr->unlock();
         SetEvent(g_jobQueue_Event);
     }
 }
@@ -845,12 +843,10 @@ void WINAPI RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
     if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
     {
-        g_EtwQueueCs_Ptr->lock();
+        std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
         g_EtwQueue_Ptr->push(pEtwData);
-        g_EtwQueueCs_Ptr->unlock();
         SetEvent(g_jobQueue_Event);
     }
-
 }
 void WINAPI ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 {
@@ -963,21 +959,19 @@ void WINAPI ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
     }
 
-    UPubNode* const EtwData = (UPubNode*)new char[etw_imageinfolens];
-    if (!EtwData)
+    UPubNode* const pEtwData = (UPubNode*)new char[etw_imageinfolens];
+    if (!pEtwData)
         return;
-    RtlZeroMemory(EtwData, etw_imageinfolens);
-    EtwData->taskid = UF_ETW_IMAGEMOD;
-    RtlCopyMemory(&EtwData->data[0], &etwimagemod_info, sizeof(UEtwImageInfo));
+    RtlZeroMemory(pEtwData, etw_imageinfolens);
+    pEtwData->taskid = UF_ETW_IMAGEMOD;
+    RtlCopyMemory(&pEtwData->data[0], &etwimagemod_info, sizeof(UEtwImageInfo));
 
     if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_jobQueue_Event)
     {
-        g_EtwQueueCs_Ptr->lock();
-        g_EtwQueue_Ptr->push(EtwData);
-        g_EtwQueueCs_Ptr->unlock();
+        std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
+        g_EtwQueue_Ptr->push(pEtwData);
         SetEvent(g_jobQueue_Event);
     }
-
 }
 void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
 {
@@ -1231,7 +1225,7 @@ bool UEtw::uf_init()
     // EVENT_TRACE_FLAG_SYSTEMCALL 需要映射地址和进程地址，关联PID
     // EVENT_TRACE_FLAG_REGISTRY
     if (!uf_RegisterTrace(
-        /*EVENT_TRACE_FLAG_NETWORK_TCPIP | \*/
+        EVENT_TRACE_FLAG_NETWORK_TCPIP | \
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
         /*EVENT_TRACE_FLAG_IMAGE_LOAD | \*/

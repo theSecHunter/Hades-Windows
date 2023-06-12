@@ -6,6 +6,6 @@ NTSTATUS FsMini_Clean();
 NTSTATUS FsMini_Free();
 NTSTATUS Mini_StartFilter();
 
-void	 FsFlt_SetDirectoryIpsMonitor(code);
+void	 FsFlt_SetDirectoryIpsMonitor(const BOOLEAN code);
 
 #endif // !_MINIFILTER_H

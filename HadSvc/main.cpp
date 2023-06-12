@@ -71,10 +71,7 @@ static DWORD WINAPI HadesAgentActiveCheckThread(LPVOID lpThreadParameter)
 #endif
 		{
 			if (g_SvcExitEvent)
-			{
 				SetEvent(g_SvcExitEvent);
-				CloseHandle(g_SvcExitEvent);
-			}
 			break;
 		}
 		Sleep(5000);
@@ -111,12 +108,6 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	// Init Recv Etw/Kernel Data
-	g_DataHandler.ThreadPool_Init();
-
-	// Set Exit Event
-	g_DataHandler.SetExitSvcEvent(g_SvcExitEvent);
-
 	// Set HadesControl Lib ObjectPtr
 	if (false == g_MsgControl.setUmsgLib(&g_mainMsgUlib) || false == g_MsgControl.setKmsgLib(&g_mainMsgKlib))
 	{
@@ -129,7 +120,14 @@ int main(int argc, char* argv[])
 		OutputDebugString(L"设置DataHandler指针失败");
 		return 0;
 	}
-	
+
+	// Init Recv Etw/Kernel Data
+	g_DataHandler.ThreadPool_Init();
+
+	// Set Exit Event
+	g_DataHandler.SetExitSvcEvent(g_SvcExitEvent);
+
+
 	g_mainMsgUlib.uMsg_Init();
 	g_mainMsgKlib.kMsg_Init();
 

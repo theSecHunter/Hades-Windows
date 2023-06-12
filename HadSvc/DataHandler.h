@@ -37,6 +37,6 @@ private:
 	tThreads m_etw_subthreads;
 	tThreads m_threads_write;
 
-	HANDLE m_jobAvailableEvnet_WriteTask;
+	HANDLE m_jobAvailableEvnet_WriteTask = NULL;
 };
 

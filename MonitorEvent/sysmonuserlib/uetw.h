@@ -30,7 +30,7 @@ protected:
 	unsigned long uf_setmonitor(const unsigned __int64 hSession, PVOID64 m_traceconfig, const int ioct);
 
 private:
-	TRACEHANDLE m_hFileSession;
+	TRACEHANDLE m_hFileSession = 0;
 };
 
 #endif // !_UETW_H
