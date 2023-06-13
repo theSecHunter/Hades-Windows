@@ -25,7 +25,7 @@ OB_PREOP_CALLBACK_STATUS preNotifyCall(
 
 	// Msdn: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/ns-wdm-_ob_pre_operation_information
 	// Msdn: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-obreferenceobjectbyhandle
-	if (OperationInformation->ObjectType != *IoFileObjectType)
+	if (!OperationInformation || (OperationInformation->ObjectType != *IoFileObjectType))
 		return OB_PREOP_SUCCESS;
 
 	UNICODE_STRING DosName;
@@ -115,7 +115,8 @@ NTSTATUS File_Init(PDRIVER_OBJECT pDriverObject)
 
 	// Set type callout
 	POBJECT_TYPE_TEMP  ObjectTypeTemp = (POBJECT_TYPE_TEMP)*IoFileObjectType;
-	ObjectTypeTemp->TypeInfo.SupportsObjectCallbacks = 1;
+	if (ObjectTypeTemp)
+		ObjectTypeTemp->TypeInfo.SupportsObjectCallbacks = 1;
 
 	OB_CALLBACK_REGISTRATION obReg;
 	OB_OPERATION_REGISTRATION opReg;

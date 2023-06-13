@@ -99,9 +99,9 @@ static VOID Process_NotifyProcessEx(
     }
     else
         processinfo.endprocess = 1;
-    if (CreateInfo->ImageFileName->Length < 260 * 2)
+    if (CreateInfo->ImageFileName && (CreateInfo->ImageFileName->Length < 260 * 2)) 
         RtlCopyMemory(processinfo.processpath, CreateInfo->ImageFileName->Buffer, CreateInfo->ImageFileName->Length);
-    if (CreateInfo->CommandLine->Length < 260 * 2)
+    if (CreateInfo->CommandLine && (CreateInfo->CommandLine->Length < 260 * 2))
         RtlCopyMemory(processinfo.commandLine, CreateInfo->CommandLine->Buffer, CreateInfo->CommandLine->Length);
     processinfo.parentprocessid = CreateInfo->ParentProcessId;
 

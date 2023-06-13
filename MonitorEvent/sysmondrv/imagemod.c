@@ -136,19 +136,20 @@ void Process_NotifyImage(
 	imagemodinfo.systemmodeimage = ImageInfo->SystemModeImage;
 	imagemodinfo.imagebase = (__int64)ImageInfo->ImageBase;
 	imagemodinfo.imagesize = (__int64)ImageInfo->ImageSize;
-	memcpy(imagemodinfo.imagename, FullImageName->Buffer, FullImageName->Length);
+	if (FullImageName && FullImageName->Length)
+		memcpy(imagemodinfo.imagename, FullImageName->Buffer, FullImageName->Length);
 
-	PIMAGEMODBUFFER pimagebuf = NULL;
-	pimagebuf = Imagemod_PacketAllocate(sizeof(IMAGEMODINFO));
-	if (!pimagebuf)
+	PIMAGEMODBUFFER pImagebuf = NULL;
+	pImagebuf = Imagemod_PacketAllocate(sizeof(IMAGEMODINFO));
+	if (!pImagebuf)
 		return;
 
 
-	pimagebuf->dataLength = sizeof(IMAGEMODINFO);
-	memcpy(pimagebuf->dataBuffer, &imagemodinfo, sizeof(IMAGEMODINFO));
+	pImagebuf->dataLength = sizeof(IMAGEMODINFO);
+	memcpy(pImagebuf->dataBuffer, &imagemodinfo, sizeof(IMAGEMODINFO));
 
 	sl_lock(&g_imagemodQueryhead.imagemod_lock, &lh);
-	InsertHeadList(&g_imagemodQueryhead.imagemod_pending, &pimagebuf->pEntry);
+	InsertHeadList(&g_imagemodQueryhead.imagemod_pending, &pImagebuf->pEntry);
 	sl_unlock(&lh);
 
 	devctrl_pushinfo(NF_IMAGEMODE_INFO);
