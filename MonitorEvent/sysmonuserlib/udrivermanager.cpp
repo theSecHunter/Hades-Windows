@@ -127,7 +127,6 @@ bool InstallDriver1(const wchar_t* cszDriverName, const wchar_t* lpszDriverPath,
 
 	if (hService == NULL)
 	{
-		CloseServiceHandle(hService);
 		CloseServiceHandle(hServiceMgr);
 		if (GetLastError() == ERROR_SERVICE_EXISTS)
 			return TRUE;
@@ -638,7 +637,7 @@ bool DriverManager::nf_DriverInstall_Start(const int mav, const int miv, const b
 	if (!InstallDriver1(L"sysmondriver", PathAll.c_str(), L"370020"))
 	{
 		OutputDebugString(L"InitRegister Driver failuer.");
-		return true;
+		return false;
 	}
 	//if (StartDriver(L"hadesmondrv", PathAll.c_str()) == TRUE)
 	if (StartDriver1(L"sysmondriver") == TRUE)

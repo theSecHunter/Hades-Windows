@@ -30,6 +30,16 @@ static const wchar_t SESSION_NAME_FILE[] = L"HadesEtwTrace";
 static EVENT_TRACE_PROPERTIES g_traceconfig;
 static UCHAR g_pTraceConfig[2048] = { 0, };
 
+// Write Read Offset Filter
+static std::mutex g_FileReadLock;
+static std::map<UINT64, UINT64> g_etwFileReadFilter;
+
+static std::mutex g_FileWriteLock;
+static std::map<UINT64, UINT64> g_etwFileWriteilter;
+
+static std::mutex g_FileDirEnumLock;
+static std::map<UINT64, UINT64> g_etwFileDirEnumFilter;
+
 // Etw Event Manage
 // Session - Guid - tracconfig
 typedef struct _TracGuidNode
@@ -616,10 +626,6 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
             return;
         if (EventName == L"FSControl")
             return;
-        if (EventName == L"Read")
-            return;
-        if (EventName == L"Write")
-            return;
         if (!EventName.empty())
             wcscpy_s(fileio_info.EventName, EventName.c_str());
     }
@@ -735,10 +741,59 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
     }
 
+    // Filter
+    if (0 == lstrcmpW(fileio_info.EventName, L"Read")) {
+        std::unique_lock<std::mutex> lock(g_FileReadLock);
+        if (g_etwFileReadFilter.end() == g_etwFileReadFilter.find(fileio_info.FileKey)) {
+            g_etwFileReadFilter[fileio_info.FileKey] = 0;
+        }
+        else {
+            return;
+        }
+    }
+    else if (0 == lstrcmpW(fileio_info.EventName, L"Write")) {
+        std::unique_lock<std::mutex> lock(g_FileWriteLock);
+        if (g_etwFileWriteilter.end() == g_etwFileWriteilter.find(fileio_info.FileKey)) {
+            g_etwFileWriteilter[fileio_info.FileKey] = 0;
+        }
+        else {
+            return;
+        }
+    }
+    else if (0 == lstrcmpW(fileio_info.EventName, L"DirEnum")) {
+        std::unique_lock<std::mutex> lock(g_FileDirEnumLock);
+        if (g_etwFileDirEnumFilter.end() == g_etwFileDirEnumFilter.find(fileio_info.FileKey)) {
+            g_etwFileDirEnumFilter[fileio_info.FileKey] = 0;
+        }
+        else {
+            return;
+        }
+    }
+    else if (0 == lstrcmpW(fileio_info.EventName, L"Close")) {
+        {
+            std::unique_lock<std::mutex> lock(g_FileReadLock);
+            const auto& iter = g_etwFileReadFilter.find(fileio_info.FileKey);
+            if (iter != g_etwFileReadFilter.end())
+                g_etwFileReadFilter.erase(iter);
+        }
+        {
+            std::unique_lock<std::mutex> lock(g_FileWriteLock);
+            const auto& iter = g_etwFileWriteilter.find(fileio_info.FileKey);
+            if (iter != g_etwFileWriteilter.end())
+                g_etwFileWriteilter.erase(iter);
+        }
+        {
+            std::unique_lock<std::mutex> lock(g_FileDirEnumLock);
+            const auto& iter = g_etwFileDirEnumFilter.find(fileio_info.FileKey);
+            if (iter != g_etwFileDirEnumFilter.end())
+                g_etwFileDirEnumFilter.erase(iter);
+        }
+    }
+
     UPubNode* const EtwData = (UPubNode*)new char[etw_fileioinfolens];
     if (!EtwData)
         return;
-    RtlZeroMemory(EtwData, etw_fileioinfolens);
+    RtlSecureZeroMemory(EtwData, etw_fileioinfolens);
     EtwData->taskid = UF_ETW_FILEIO;
     RtlCopyMemory(&EtwData->data[0], &fileio_info, sizeof(UEtwFileIoTabInfo));
 
@@ -1265,6 +1320,10 @@ bool UEtw::uf_close()
             g_tracMap.erase(iter++);
             g_ms.Unlock();
         }
+
+        g_etwFileReadFilter.clear();
+        g_etwFileWriteilter.clear();
+        g_etwFileDirEnumFilter.clear();
 
         g_th.Lock();
         for (size_t i = 0; i < g_thrhandle.size(); ++i)
