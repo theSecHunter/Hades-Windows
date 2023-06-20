@@ -122,10 +122,13 @@ void UEtw::uf_setqueueeventptr(HANDLE& eventptr) { g_jobQueue_Event = eventptr; 
 // [ALL] Pid Get ProcessPath
 DWORD GetPathByProcessId(wchar_t* path, const  DWORD dwPid)
 {
-    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPid);
+    const HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPid);
     if (hProcess == NULL)
         return false;
-    return GetModuleFileNameEx(hProcess, NULL, path, MAX_PATH);
+    const DWORD dwRet = GetModuleFileNameEx(hProcess, NULL, path, MAX_PATH);
+    if (hProcess)
+        CloseHandle(hProcess);
+    return dwRet;
 }
 DWORD uf_GetNetWrokEventStr(wstring& propName)
 {
@@ -584,7 +587,7 @@ void WINAPI ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         }
     }
 
-    if (thread_info.ThreadFlags && thread_info.processId && thread_info.threadId)
+    if (thread_info.processId && thread_info.threadId)
     {
         UPubNode* const EtwData = (UPubNode*)new char[etw_threadinfolens];
         if (!EtwData)
@@ -678,13 +681,14 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         if (0 == lstrcmpW(propName.c_str(), L"TTID")) {
             // 线程ID
             fileio_info.TTID = _wtoi(value);
-            const HANDLE hthread = OpenThread(THREAD_QUERY_INFORMATION, NULL, fileio_info.TTID);
-            if (hthread)
-                fileio_info.PID = (DWORD)GetProcessIdOfThread(hthread);
-            else
-                fileio_info.PID = 0;
-            if (fileio_info.PID <= 4)
-                return;
+            // Get Pid并不准确
+            //const HANDLE hthread = OpenThread(THREAD_ALL_ACCESS, NULL, fileio_info.TTID);
+            //if (hthread) {
+            //    fileio_info.PID = (DWORD)GetProcessIdOfThread(hthread);
+            //    CloseHandle(hthread);
+            //}
+            //else
+            //    fileio_info.PID = 0;
         }
         else if (0 == lstrcmpW(propName.c_str(), L"IrpPtr")) {
             // IRP
@@ -871,7 +875,7 @@ void WINAPI RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 
         userlen -= (USHORT)len;
         data += len;
-
+        
         if (0 == lstrcmpW(propName.c_str(), L"InitialTime")) {
             regtab_info.InitialTime = wcstoll(value, &end, 10);
         }

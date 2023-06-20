@@ -268,7 +268,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                     }
                 }
 
-                j["win_etw_fileio_Pid"] = to_string(pEtwFileIo->PID);
+                //j["win_etw_fileio_Pid"] = to_string(pEtwFileIo->PID);
                 j["win_etw_fileio_Tid"] = to_string(pEtwFileIo->TTID);
                 j["win_etw_fileio_FileAttributes"] = to_string(pEtwFileIo->FileAttributes);
                 j["win_etw_fileio_CreateOptions"] = to_string(pEtwFileIo->CreateOptions);

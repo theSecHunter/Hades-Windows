@@ -73,7 +73,9 @@ void AnonymousPipe::read_loop()
     {
         if (m_stopevent)
             break;
-        bSuccess = ReadFile(m_hStdin, buffer.data(), kBufferSize, &dwRead, &ovlp);
+        ReadFile(m_hStdin, buffer.data(), kBufferSize, &dwRead, &ovlp);
+        if (!ovlp.hEvent)
+            break;
         DWORD wait = WaitForSingleObject(ovlp.hEvent, INFINITE);
         if (wait != WAIT_OBJECT_0) {
             break;

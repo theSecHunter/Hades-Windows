@@ -1093,7 +1093,10 @@ void USysBaseInfo::MemSwap()
     for (DWORD i = 0; i < dwNeedSize / sizeof(DWORD); ++i)
     {
         HANDLE hProccess = OpenProcess(PROCESS_SET_QUOTA, false, dwPIDList[i]);
-        SetProcessWorkingSetSize(hProccess, -1, -1);
+        if (hProccess) {
+            SetProcessWorkingSetSize(hProccess, -1, -1);
+            CloseHandle(hProccess);
+        }
     }
     // 3. 获取清理后的内存状态
     GlobalMemoryStatusEx(&stcMemStatusEx);

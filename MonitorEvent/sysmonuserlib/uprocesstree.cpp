@@ -108,7 +108,8 @@ BOOL GetProcessFullPath(DWORD dwPID, WCHAR* processpath)
 		return FALSE;
 	}
 
-	CloseHandle(hProcess);
+	if (hProcess)
+		CloseHandle(hProcess);
 
 	lstrcatW(processpath, pszFullPath);
 	return TRUE;
@@ -160,7 +161,8 @@ int GetProcessModules(DWORD processID)
 			}
 		}
 	}
-	CloseHandle(hProcess);
+	if (hProcess)
+		CloseHandle(hProcess);
 	return 0;
 }
 void GetProcessModule(const DWORD idProcess)
