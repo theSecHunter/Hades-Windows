@@ -33,6 +33,8 @@ PipeManage::~PipeManage()
 // 服务器读数据线程
 DWORD WINAPI ReadThread(LPVOID param) {
 	PPIPECLIENT client = (PPIPECLIENT)param;
+	if (!client)
+		return 0;
 
 	while (!client->exit) {
 		DWORD dwRead = 0;

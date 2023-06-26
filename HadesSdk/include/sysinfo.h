@@ -511,7 +511,8 @@ typedef struct _UPubNode
 {
     int taskid;
     // 柔性数组c99
-    char data[0];     
+    //char data[0];
+    char data[1];
 }UPubNode, * PUPubNode;
 // Sub head : Topic to 订阅者
 typedef struct _USubNode

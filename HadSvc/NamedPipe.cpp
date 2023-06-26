@@ -108,6 +108,9 @@ void NamedPipe::read_loop()
     buffer.resize(kBufferSize);
     OVERLAPPED ovlp = { 0 };
     ovlp.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (!ovlp.hEvent)
+        return;
+
     DWORD dwRead = 0;
     while (!m_stopevent)
     {

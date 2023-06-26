@@ -288,7 +288,7 @@ ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* pTaskRun)
 		IRegisteredTask* pRegisteredTask = NULL;
 		hr = pTaskCollection->get_Item(_variant_t(i + 1), &pRegisteredTask);
 
-		if (SUCCEEDED(hr))
+		if (SUCCEEDED(hr) && pRegisteredTask)
 		{
 			BSTR taskName = NULL;
 			hr = pRegisteredTask->get_Name(&taskName);

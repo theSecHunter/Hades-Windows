@@ -1211,7 +1211,7 @@ bool UEtw::uf_RegisterTraceFile()
     const UCHAR _Flag[] = { 173, 74, 129, 158, 4, 50, 210, 17, 154, 130, 0, 96, 8, 168, 105, 57 };
     char m_File[256] = { 0, };
     _getcwd(m_File, sizeof(m_File));
-    strcat(m_File, "\\HadesHidsWinEtwFile.etl");
+    strcat_s(m_File, "\\HadesHidsWinEtwFile.etl");
 
     // зЂВс
     g_traceconfig.Wnode.BufferSize = 1024;

@@ -69,13 +69,14 @@ void AnonymousPipe::read_loop()
     buffer.resize(kBufferSize);
     OVERLAPPED ovlp = { 0 };
     ovlp.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (!ovlp.hEvent) {
+        return;
+    }
     for (;;)
     {
         if (m_stopevent)
             break;
         ReadFile(m_hStdin, buffer.data(), kBufferSize, &dwRead, &ovlp);
-        if (!ovlp.hEvent)
-            break;
         DWORD wait = WaitForSingleObject(ovlp.hEvent, INFINITE);
         if (wait != WAIT_OBJECT_0) {
             break;

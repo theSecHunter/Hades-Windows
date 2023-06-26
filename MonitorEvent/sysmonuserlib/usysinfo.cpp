@@ -465,7 +465,7 @@ void USysBaseInfo::GetDisplayCardInfo(std::vector<std::string>& Cardinfo)
             {
                 CHAR sz[512] = { 0 };
                 CHAR name[64] = { 0 };
-                sprintf(name, "%d", j);
+                sprintf_s(name, "%d", j);
                 size = sizeof(sz);
                 lResult = RegQueryValueExA(key, name, 0, &type, (LPBYTE)sz, &size);
                 lResult = RegOpenKeyExA(keyEnum, sz, 0, KEY_READ, &key2);

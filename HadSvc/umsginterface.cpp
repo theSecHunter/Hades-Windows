@@ -314,7 +314,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             sub->data = data;
             sub->taskid = taskid;
             {
-                std::unique_lock<std::mutex> lock(*g_SendQueueCs_Ptr);
+                std::unique_lock<std::mutex> lock_(*g_SendQueueCs_Ptr);
                 g_SendQueueData_Ptr->push(sub);
                 SetEvent(g_SendQueue_Event);
             }

@@ -39,7 +39,7 @@ bool IsProcessExist(LPCTSTR lpProcessName)
 {
 	PROCESSENTRY32 pe32;
 	pe32.dwSize = sizeof(pe32);
-	HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	const HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if (hProcessSnap == INVALID_HANDLE_VALUE) {
 		return false;
 	}
@@ -55,7 +55,8 @@ bool IsProcessExist(LPCTSTR lpProcessName)
 		}
 		bResult = Process32Next(hProcessSnap, &pe32);
 	}
-	CloseHandle(hProcessSnap);
+	if (hProcessSnap)
+		CloseHandle(hProcessSnap);
 	return bExist;
 }
 
@@ -180,8 +181,9 @@ int main(int argc, char* argv[])
 	Sleep(1000);
 	if (g_mainMsgKlib.GetKerInitStatus())
 		g_mainMsgKlib.DriverFree();
-	if (gpip_send)
-		g_DataHandler.PipFree();
+	if (gpip_send) {
+		g_DataHandler.PipFreeAnonymous();
+	}
 
 	g_mainMsgUlib.uMsg_Free();
 	g_mainMsgKlib.kMsg_Free();

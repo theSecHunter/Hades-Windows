@@ -13,7 +13,7 @@ const bool UtilsTool::CGetCurrentDirectory(std::string& strDirpath)
 		strDirpath = szModule;
 		if (0 >= strDirpath.size())
 			return 0;
-		int offset = strDirpath.rfind("\\");
+		size_t offset = strDirpath.rfind("\\");
 		if (0 >= offset)
 			return 0;
 		strDirpath = strDirpath.substr(0, offset + 1);

@@ -150,14 +150,14 @@ int GetProcessModules(DWORD processID)
 	{
 		for (i = 0; i < (cbNeeded / sizeof(HMODULE)); i++)
 		{
-			TCHAR szModName[MAX_PATH];
+			TCHAR szModName[MAX_PATH] = { 0, };
 			// Get the full path to the module's file.
 			if (GetModuleFileNameEx(hProcess, hMods[i], szModName,
 				sizeof(szModName) / sizeof(TCHAR)))
 			{
 				// Print the module name and handle value.
-				wszModNameEx = szModName;
 				_tprintf(TEXT("\t%s (0x%08X)\n"), szModName, hMods[i]);
+				wszModNameEx = szModName;
 			}
 		}
 	}

@@ -88,17 +88,17 @@ std::string RuleEngineToos::String_ToUtf8(const std::string& str)
 		char* pBuf = nullptr;
 		do
 		{
-			int nwLen = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
+			size_t nwLen = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
 			pwBuf = new wchar_t[nwLen + 1];
 			if (!pwBuf)
 				break;
-			ZeroMemory(pwBuf, nwLen * 2 + 2);
+			RtlSecureZeroMemory(pwBuf, nwLen * 2 + 2);
 			::MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), pwBuf, nwLen);
-			int nLen = ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
+			size_t nLen = ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
 			char* pBuf = new char[nLen + 1];
 			if (!pBuf)
 				break;
-			ZeroMemory(pBuf, nLen + 1);
+			RtlSecureZeroMemory(pBuf, nLen + 1);
 			::WideCharToMultiByte(CP_UTF8, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
 		} while (false);
 		std::string retStr = "";

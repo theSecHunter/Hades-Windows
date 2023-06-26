@@ -268,15 +268,20 @@ MD5& MD5::finalize()
 
 string MD5::hexdigest() const
 {
-	if (!finalized)
+	try
+	{
+		if (!finalized)
+			return "";
+		char buf[33] = { 0, };
+		for (int i = 0; i < 16; i++)
+			sprintf(buf + i * 2, "%02x", digest[i]);
+		buf[32] = 0;
+		return string(buf);
+	}
+	catch (const std::exception&)
+	{
 		return "";
-
-	char buf[33];
-	for (int i = 0; i<16; i++)
-		sprintf(buf + i * 2, "%02x", digest[i]);
-	buf[32] = 0;
-
-	return string(buf);
+	}
 }
 
 ostream& operator<<(ostream& out, MD5 md5)
@@ -454,8 +459,8 @@ void CodeTool::DecodeBase64(const char *str, int bytes, char*& dest, int& len)
 	}
 	len = _decode_result.length();
 	dest = new char[_decode_result.length()];
-	for (size_t i = 0; i < _decode_result.length(); i++)
-		dest[i] = _decode_result[i];
+	for (size_t idx = 0; idx < _decode_result.length(); idx++)
+		dest[idx] = _decode_result[idx];
 }
 
 string CodeTool::GbkToUtf8(const char *src_str)
@@ -546,8 +551,8 @@ const string CodeTool::GetDesktopPath()
 {
 	char cDesktop[MAX_PATH] = { 0 };
 	LPITEMIDLIST lp = NULL;
-	SHGetSpecialFolderLocation(0, CSIDL_DESKTOPDIRECTORY, &lp);
-	if (lp != NULL)
+	HRESULT hRet = SHGetSpecialFolderLocation(0, CSIDL_DESKTOPDIRECTORY, &lp);
+	if ((hRet == S_OK) || (lp != NULL))
 	{
 		SHGetPathFromIDListA(lp, cDesktop);
 		CoTaskMemFree(lp);
@@ -559,8 +564,8 @@ const string CodeTool::GetAppDataPath()
 {
 	char cDesktop[MAX_PATH] = { 0 };
 	LPITEMIDLIST lp = NULL;
-	SHGetSpecialFolderLocation(0, CSIDL_APPDATA, &lp);
-	if (lp != NULL)
+	HRESULT hRet = SHGetSpecialFolderLocation(0, CSIDL_APPDATA, &lp);
+	if ((hRet == S_OK) || (lp != NULL))
 	{
 		SHGetPathFromIDListA(lp, cDesktop);
 		CoTaskMemFree(lp);

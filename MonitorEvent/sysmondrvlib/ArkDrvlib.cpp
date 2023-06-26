@@ -293,13 +293,13 @@ bool DevctrlIoct::devctrl_sendioct(
 	if (!GetOverlappedResult(g_hDevice, &ol, &dwBytesReturned, TRUE))
 	{
 		g_hDevice.Close();
-		return NF_STATUS_FAIL;
+		return false;
 	}
 
 	if (dwBytesReturned != OutBufSize)
 	{
 		g_hDevice.Close();
-		return NF_STATUS_FAIL;
+		return false;
 	}
 	return true;
 }

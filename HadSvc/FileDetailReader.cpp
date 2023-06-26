@@ -14,7 +14,7 @@ bool FileDetailReader::QueryValue(const std::string& ValueName, const std::strin
 		if (!ValueName.size() || !szModuleName.size())
 			break;
 
-		DWORD dwHandle;
+		DWORD dwHandle = 0;
 		// 判断系统能否检索到指定文件的版本信息
 		DWORD dwDataSize = ::GetFileVersionInfoSizeA(szModuleName.c_str(), &dwHandle);
 		if (dwDataSize == 0)

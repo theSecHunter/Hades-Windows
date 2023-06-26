@@ -330,7 +330,11 @@ bool DrvCheckStart()
         si.wShowWindow = SW_HIDE;
         // ∆Ù∂Ø√¸¡Ó––
         PROCESS_INFORMATION pi;
-        CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi);
+        if (CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi)) 
+        {
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+        }
         Sleep(3000);
         nSeriverstatus = g_DrvManager.nf_GetServicesStatus(g_drverName.c_str());
         if (SERVICE_RUNNING == nSeriverstatus)
@@ -668,7 +672,7 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
         std::lock_guard<std::mutex> lock{ crecord_mutex };
         coutwrite = task_array_data.size();
         record->set_data_type(taskid);
-        record->set_timestamp(GetCurrentTime());
+        record->set_timestamp(GetTickCount64());
         for (idx = 0; idx < coutwrite; ++idx)
         {
             (*MapMessage)["data_type"] = to_string(taskid);
@@ -742,7 +746,7 @@ void DataHandler::KerSublthreadProc()
             if (!subwrite)
                 break;
             record->set_data_type(subwrite->taskid);
-            record->set_timestamp(GetCurrentTime());
+            record->set_timestamp(GetTickCount64());
             (*MapMessage)["data_type"] = to_string(subwrite->taskid);
             (*MapMessage)["udata"] = subwrite->data->c_str(); // json
             serializbuf = record->SerializeAsString();
@@ -780,7 +784,7 @@ void DataHandler::EtwSublthreadProc()
             if (!subwrite)
                 break;
             record->set_data_type(subwrite->taskid);
-            record->set_timestamp(GetCurrentTime());
+            record->set_timestamp(GetTickCount64());
             (*MapMessage)["data_type"] = to_string(subwrite->taskid);
             (*MapMessage)["udata"] = subwrite->data->c_str(); // json
             serializbuf = record->SerializeAsString();
