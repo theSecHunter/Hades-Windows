@@ -1,6 +1,6 @@
 #include "msgassist.h"
 
-// 全部替换成STL or 智能指针
+// 智能指针 or 内存池
 bool Choose_mem(char*& ptr, DWORD& dwAllocateMemSize, const int code)
 {
     dwAllocateMemSize = 0;
@@ -134,9 +134,6 @@ bool Choose_mem(char*& ptr, DWORD& dwAllocateMemSize, const int code)
         break;
     }
 
-    // etw
-
-
     if (0 == dwAllocateMemSize)
         return false;
 
@@ -151,59 +148,115 @@ bool Choose_mem(char*& ptr, DWORD& dwAllocateMemSize, const int code)
 }
 std::string String_ToUtf8(const std::string& str)
 {
+    std::string retStr = "";
+    char* pBuf = nullptr;  wchar_t* pwBuf = nullptr;
     try
     {
-        int nwLen = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
-        wchar_t* pwBuf = new wchar_t[nwLen + 1];
-        ZeroMemory(pwBuf, nwLen * 2 + 2);
-        ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), pwBuf, nwLen);
-        int nLen = ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
-        char* pBuf = new char[nLen + 1];
-        ZeroMemory(pBuf, nLen + 1);
-        ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
-        std::string retStr(pBuf);
-        delete[]pwBuf;
-        delete[]pBuf;
-        pwBuf = NULL;
-        pBuf = NULL;
+        const size_t nwLen = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);   
+        do
+        {
+            pwBuf = new wchar_t[nwLen + 1];
+            if (!pwBuf)
+                break;
+            RtlSecureZeroMemory(pwBuf, nwLen * 2 + 2);
+            ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), pwBuf, nwLen);
+            const size_t nLen = ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
+            pBuf = new char[nLen + 1];
+            if (!pBuf)
+                break;
+            RtlSecureZeroMemory(pBuf, nLen + 1);
+            ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
+            retStr = pBuf;
+        } while (false);
+        if (pwBuf) {
+            delete[] pwBuf;
+            pwBuf = NULL;
+        }
+        if (pBuf) {
+            delete[] pBuf;
+            pBuf = NULL;
+        }
         return retStr;
     }
     catch (const std::exception&)
     {
+        if (pwBuf) {
+            delete[] pwBuf;
+            pwBuf = NULL;
+        }
+        if (pBuf) {
+            delete[] pBuf;
+            pBuf = NULL;
+        }
+        return retStr;
     }
-    return "";
 }
 std::string UTF8_ToString(const std::string& str)
 {
+    std::string retStr = "";
+    char* pBuf = nullptr;  wchar_t* pwBuf = nullptr;
     try
     {
-        int nwLen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
-        wchar_t* pwBuf = new wchar_t[nwLen + 1];
-        memset(pwBuf, 0, nwLen * 2 + 2);
-        MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), pwBuf, nwLen);
-        int nLen = WideCharToMultiByte(CP_ACP, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
-        char* pBuf = new char[nLen + 1];
-        memset(pBuf, 0, nLen + 1);
-        WideCharToMultiByte(CP_ACP, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
-        std::string retStr = pBuf;
-        delete[]pBuf;
-        delete[]pwBuf;
-        pBuf = NULL;
-        pwBuf = NULL;
+        const size_t nwLen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
+        do
+        {
+            pwBuf = new wchar_t[nwLen + 1];
+            if (!pwBuf)
+                break;
+            memset(pwBuf, 0, nwLen * 2 + 2);
+            MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), pwBuf, nwLen);
+            const size_t nLen = WideCharToMultiByte(CP_ACP, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
+            char* pBuf = new char[nLen + 1];
+            if (!pBuf)
+                break;
+            memset(pBuf, 0, nLen + 1);
+            WideCharToMultiByte(CP_ACP, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
+            retStr = pBuf;
+        } while (false);
+        if (pwBuf) {
+            delete[] pwBuf;
+            pwBuf = NULL;
+        }
+        if (pBuf) {
+            delete[] pBuf;
+            pBuf = NULL;
+        }
         return retStr;
     }
     catch (const std::exception&)
     {
+        if (pwBuf) {
+            delete[] pwBuf;
+            pwBuf = NULL;
+        }
+        if (pBuf) {
+            delete[] pBuf;
+            pBuf = NULL;
+        }
+        return retStr;
     }
-    return "";
 }
 std::wstring Str2WStr(const std::string& str)
 {
-    USES_CONVERSION;
-    return A2W(str.c_str());
+    try
+    {
+        USES_CONVERSION;
+        return A2W(str.c_str());
+    }
+    catch (const std::exception&)
+    {
+        return L"";
+    }
 } 
 std::string WStr2Str(const std::wstring& wstr)
 {
-    USES_CONVERSION;
-    return W2A(wstr.c_str());
+    try
+    {
+        USES_CONVERSION;
+        return W2A(wstr.c_str());
+    }
+    catch (const std::exception&)
+    {
+        return "";
+    }
 }

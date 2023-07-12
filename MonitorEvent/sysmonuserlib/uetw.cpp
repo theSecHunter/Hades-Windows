@@ -22,8 +22,8 @@
 
 using namespace std;
 
-// 进程Event_Notify
-std::function<void(const PROCESSINFO&)> on_processinfo_;
+// Process Event_Notify
+static std::function<void(const PROCESSINFO&)> on_processinfo_ = nullptr;
 
 // [Guid File Logger] Event File Logger
 static const wchar_t SESSION_NAME_FILE[] = L"HadesEtwTrace";
@@ -39,6 +39,10 @@ static std::map<UINT64, UINT64> g_etwFileWriteilter;
 
 static std::mutex g_FileDirEnumLock;
 static std::map<UINT64, UINT64> g_etwFileDirEnumFilter;
+
+// SystemCall ProcessInfo
+static std::map<UINT64, UINT64> g_etwThrPidToStartAddrLimt;
+static std::map<UINT64, std::queue<std::string>> g_etwSystemCallToPid;
 
 // Etw Event Manage
 // Session - Guid - tracconfig
@@ -236,7 +240,7 @@ void WINAPI FileEventFileLogInfo(PEVENT_RECORD rec)
 
 // 生产者：Etw事件回调 - 数据推送至订阅消息队列(消费者)
 // [NT Kernel Logger] PEVENT_RECORD回调
-// [+] new全换智能指针，不自己处理内存
+// 优化：new换智能指针 or 引入内存池(最优)
 void WINAPI NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info) {
     // TCPIP or UDPIP
      if (!info->TaskNameOffset)
@@ -1032,6 +1036,79 @@ void WINAPI ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         SetEvent(g_jobQueue_Event);
     }
 }
+void WINAPI SystemCallEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
+{
+    if (!info->TaskNameOffset)
+        return;
+
+    // properties data length and pointer
+    auto userlen = rec->UserDataLength;
+    auto data = (PBYTE)rec->UserData;
+    auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
+
+    ULONG len = 0; WCHAR value[512] = { 0, };
+    wstring  tmpstr = L""; wstring propName = L"";
+    wchar_t* end = nullptr;
+
+    if (info->OpcodeNameOffset)
+    {
+        const wstring EventName = (PCWSTR)((BYTE*)info + info->OpcodeNameOffset);
+        if (EventName != L"SysClEnter")
+            return;
+        if (!EventName.empty());
+            //wcscpy_s(thread_info.EventName, EventName.c_str());
+    }
+
+    for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
+
+        propName.clear(); tmpstr.clear();
+
+        auto& pi = info->EventPropertyInfoArray[i];
+        propName = (PCWSTR)((BYTE*)info + pi.NameOffset);
+        len = pi.length;
+        if ((pi.Flags & (PropertyStruct | PropertyParamCount)) == 0) {
+            PEVENT_MAP_INFO mapInfo = nullptr;
+            std::unique_ptr<BYTE[]> mapBuffer;
+            PWSTR mapName = nullptr;
+            if (pi.nonStructType.MapNameOffset) {
+                ULONG size = 0;
+                mapName = (PWSTR)((BYTE*)info + pi.nonStructType.MapNameOffset);
+                if (ERROR_INSUFFICIENT_BUFFER == ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size)) {
+                    mapBuffer = std::make_unique<BYTE[]>(size);
+                    mapInfo = reinterpret_cast<PEVENT_MAP_INFO>(mapBuffer.get());
+                    if (ERROR_SUCCESS != ::TdhGetEventMapInformation(rec, mapName, mapInfo, &size))
+                        mapInfo = nullptr;
+                }
+            }
+
+            ULONG size = sizeof(value);
+            USHORT consumed;
+            auto error = ::TdhFormatProperty(info, mapInfo, pointerSize,
+                pi.nonStructType.InType, pi.nonStructType.OutType,
+                (USHORT)len, userlen, data, &size, value, &consumed);
+
+            // 提取数据
+            if (ERROR_SUCCESS == error) {
+                len = consumed;
+                if (mapName)
+                    lstrcatW(value, mapName);
+            }
+            else if (mapInfo) {
+                error = ::TdhFormatProperty(info, nullptr, pointerSize,
+                    pi.nonStructType.InType, pi.nonStructType.OutType,
+                    (USHORT)len, userlen, data, &size, value, &consumed);
+            }
+
+        }
+
+        userlen -= (USHORT)len;
+        data += len;
+
+        if (0 == lstrcmpW(propName.c_str(), L"SysCallAddress")) {
+            //thread_info.processId = wcstol(value, &end, 16);
+        }
+    }
+}
 void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
 {
     if (true == g_etwevent_exit)
@@ -1073,6 +1150,8 @@ void WINAPI DispatchEventHandle(PEVENT_RECORD pEvent)
         RegisterTabEventInfo(pEvent, info);
     else if (0 == lstrcmpW(L"{2CB15D1D-5FC1-11D2-ABE1-00A0C911F518}", sGuid))
         ImageModEventInfo(pEvent, info);
+    else if (0 == lstrcmpW(L"{CE1DBFB4-137E-4DA6-87B0-3F59AA102CBC}", sGuid))
+        SystemCallEventInfo(pEvent, info);
 }
 
 // [NT Kernel Logger] Session注册启动/跟踪/回调
@@ -1270,28 +1349,23 @@ bool UEtw::uf_RegisterTraceFile()
 bool UEtw::uf_init()
 {
     OutputDebugString(L"Etw nf_init - uf_RegisterTrace");
-#ifdef _DEBUG
-    if (!uf_RegisterTrace(
-        /*EVENT_TRACE_FLAG_NETWORK_TCPIP | \
-        EVENT_TRACE_FLAG_PROCESS | \
-        EVENT_TRACE_FLAG_THREAD | \*/
-        EVENT_TRACE_FLAG_IMAGE_LOAD | \
-        EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT | \
-        EVENT_TRACE_FLAG_REGISTRY))
-        return 0;
-    return 1;
-#else
-    // EVENT_TRACE_FLAG_SYSTEMCALL 需要映射地址和进程地址，关联PID
-    // EVENT_TRACE_FLAG_REGISTRY
-    if (!uf_RegisterTrace(
+    bool test = false;
+    if (!test && !uf_RegisterTrace(
         EVENT_TRACE_FLAG_NETWORK_TCPIP | \
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
-        /*EVENT_TRACE_FLAG_IMAGE_LOAD | \*/
-        EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT))
+        /*EVENT_TRACE_FLAG_IMAGE_LOAD | \
+        EVENT_TRACE_FLAG_REGISTRY | \*/
+        EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT)) {
         return 0;
+    }
+    else if (test)
+    {
+        // EVENT_TRACE_FLAG_SYSTEMCALL 需要映射地址和进程地址，关联PID
+        if (!uf_RegisterTrace(EVENT_TRACE_FLAG_SYSTEMCALL))
+            return 0;
+    }
     return 1;
-#endif
 }
 bool UEtw::uf_close()
 {
@@ -1340,7 +1414,6 @@ bool UEtw::uf_close()
     }
     catch (const std::exception&)
     {
-
     }
     return true;
 }
@@ -1367,14 +1440,14 @@ bool UEtw::uf_close(const bool flag)
     StopTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(g_pTraceConfig + 8));
     ControlTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(g_pTraceConfig + 8), EVENT_TRACE_CONTROL_STOP);
 
-    //g_th.Lock();
+    g_th.Lock();
     for (size_t i = 0; i < g_thrhandle.size(); ++i)
     {
         WaitForSingleObject(g_thrhandle[i], 1000);
         CloseHandle(g_thrhandle[i]);
     }
     g_thrhandle.clear();
-    //g_th.Unlock();
+    g_th.Unlock();
     return true;
 }
 

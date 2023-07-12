@@ -10,6 +10,7 @@
 
 static std::mutex g_write_mutex;
 static std::condition_variable g_write_event;
+static HANDLE g_read_event = NULL;
 
 bool AnonymousPipe::initPip()
 {
@@ -22,11 +23,18 @@ bool AnonymousPipe::initPip()
 
 void AnonymousPipe::uninPip()
 {
-    if (m_hStdout)
-        CloseHandle(m_hStdout);
-    if (m_hStdin)
-        CloseHandle(m_hStdin);
     m_stopevent = true;
+    if (m_hStdout) {
+        CloseHandle(m_hStdout);
+        m_hStdout = NULL;
+    }
+    if (m_hStdin) {
+        CloseHandle(m_hStdin);
+        m_hStdin = NULL;
+    }
+    if (g_read_event)
+        SetEvent(g_read_event);
+    g_write_event.notify_one();
     if (m_rthread.joinable())
     {
         m_rthread.join();
@@ -69,18 +77,19 @@ void AnonymousPipe::read_loop()
     buffer.resize(kBufferSize);
     OVERLAPPED ovlp = { 0 };
     ovlp.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    g_read_event = ovlp.hEvent;
     if (!ovlp.hEvent) {
         return;
     }
     for (;;)
     {
-        if (m_stopevent)
-            break;
         ReadFile(m_hStdin, buffer.data(), kBufferSize, &dwRead, &ovlp);
         DWORD wait = WaitForSingleObject(ovlp.hEvent, INFINITE);
         if (wait != WAIT_OBJECT_0) {
             break;
         }
+        else if (m_stopevent)
+            break;
         dwRead = (DWORD)ovlp.InternalHigh;
         if (dwRead <= 0) {
             continue;
@@ -92,6 +101,8 @@ void AnonymousPipe::read_loop()
             on_read_notify(data, dwRead);
         }
     }
+    if (ovlp.hEvent)
+        CloseHandle(ovlp.hEvent);
 }
 
 void AnonymousPipe::write_loop()
