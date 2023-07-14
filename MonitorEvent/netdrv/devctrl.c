@@ -38,12 +38,9 @@ typedef struct _NF_QUEUE_ENTRY
 void devctrl_ioThread(IN PVOID StartContext);
 NTSTATUS devctrl_create(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
-	KLOCK_QUEUE_HANDLE lh;
-	NTSTATUS 	status = STATUS_SUCCESS;
-	HANDLE		pid = PsGetCurrentProcessId();
-
 	UNREFERENCED_PARAMETER(irpSp);
 
+	NTSTATUS status = STATUS_SUCCESS;
 	irp->IoStatus.Information = 0;
 	irp->IoStatus.Status = status;
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
@@ -156,6 +153,8 @@ NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 }
 NTSTATUS devctrl_openMem(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATION irpSp)
 {
+	UNREFERENCED_PARAMETER(DeviceObject);
+
 	PVOID ioBuffer = NULL;
 	ioBuffer = irp->AssociatedIrp.SystemBuffer;
 	if (!ioBuffer)
@@ -166,7 +165,7 @@ NTSTATUS devctrl_openMem(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATI
 
 	if (ioBuffer && (outputBufferLength >= sizeof(NF_BUFFERS)))
 	{
-		NTSTATUS 	status;
+		NTSTATUS status;
 
 		for (;;)
 		{
@@ -297,11 +296,8 @@ NTSTATUS devctrl_read1(PIRP irp, PIO_STACK_LOCATION irpSp)
 }
 NTSTATUS devctrl_read(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
-	KLOCK_QUEUE_HANDLE lh;
-	NTSTATUS 	status = STATUS_SUCCESS;
-	HANDLE		pid = PsGetCurrentProcessId();
-
 	UNREFERENCED_PARAMETER(irpSp);
+	NTSTATUS 	status = STATUS_SUCCESS;
 
 	irp->IoStatus.Information = 0;
 	irp->IoStatus.Status = status;
@@ -420,9 +416,7 @@ NTSTATUS devctrl_write(PIRP irp, PIO_STACK_LOCATION irpSp)
 }
 NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
-	KLOCK_QUEUE_HANDLE lh;
 	NTSTATUS 	status = STATUS_SUCCESS;
-	HANDLE		pid = PsGetCurrentProcessId();
 
 	UNREFERENCED_PARAMETER(irpSp);
 
@@ -563,7 +557,7 @@ VOID devctrl_clean()
 	sl_lock(&g_sIolock, &lh);
 	while (!IsListEmpty(&g_IoQueryHead))
 	{
-		pQuery = RemoveHeadList(&g_IoQueryHead);
+		pQuery = (PNF_QUEUE_ENTRY)RemoveHeadList(&g_IoQueryHead);
 		sl_unlock(&lh);
 
 		ExFreeToNPagedLookasideList(&g_IoQueryList, pQuery);
@@ -627,7 +621,7 @@ VOID devctrl_free()
 		g_ioThreadObject = NULL;
 	}
 
-	return STATUS_SUCCESS;
+	return;
 }
 VOID devctrl_setShutdown()
 {
@@ -710,7 +704,12 @@ NTSTATUS devtrl_popDataLinkData(UINT64* pOffset)
 			break;
 		}
 	
-		pEntry = RemoveHeadList(&pdatalinkbuf->pendedPackets);
+		pEntry = (PNF_DATALINK_BUFFER)RemoveHeadList(&pdatalinkbuf->pendedPackets);
+		if (!pEntry)
+		{
+			status = STATUS_UNSUCCESSFUL;
+			break;
+		}
 
 		pPacketlens = pEntry->dataLength;
 		dataSize = sizeof(NF_DATA) - 1 + pPacketlens;
@@ -934,7 +933,7 @@ void devctrl_serviceReads()
 	PIRP                irp = NULL;
 	PLIST_ENTRY         pIrpEntry;
 	BOOLEAN             foundPendingIrp = FALSE;
-	PNF_READ_RESULT		pResult;
+	PNF_READ_RESULT		pResult = NULL;
 	KLOCK_QUEUE_HANDLE lh;
 
 	sl_lock(&g_sIolock, &lh);
@@ -989,12 +988,7 @@ void devctrl_serviceReads()
 }
 void devctrl_ioThread(IN PVOID StartContext)
 {
-	PIRP                irp = NULL;
-	PLIST_ENTRY         pIrpEntry;
-	BOOLEAN             foundPendingIrp = FALSE;
-	PNF_READ_RESULT		pResult;
-	KLOCK_QUEUE_HANDLE lh;
-
+	UNREFERENCED_PARAMETER(StartContext);
 	for (;;)
 	{
 		KeWaitForSingleObject(

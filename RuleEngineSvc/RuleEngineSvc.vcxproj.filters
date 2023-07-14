@@ -28,6 +28,9 @@
     <Filter Include="thread">
       <UniqueIdentifier>{b5f23b84-23bb-4476-98fe-6a406c44548b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="network">
+      <UniqueIdentifier>{1e146d39-6e40-4771-bd13-dce26b73bda6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -51,6 +54,9 @@
     <ClInclude Include="ThreadRuleAssist.h">
       <Filter>thread</Filter>
     </ClInclude>
+    <ClInclude Include="NetWorkRuleAssist.h">
+      <Filter>network</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RuleEngineSvc.cpp">
@@ -73,6 +79,9 @@
     </ClCompile>
     <ClCompile Include="ThreadRuleAssist.cpp">
       <Filter>thread</Filter>
+    </ClCompile>
+    <ClCompile Include="NetWorkRuleAssist.cpp">
+      <Filter>network</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

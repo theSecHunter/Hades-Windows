@@ -70,6 +70,10 @@ helper_callout_classFn_flowEstablished(
 	_Inout_ FWPS_CLASSIFY_OUT0* classifyOut
 	)
 {
+	UNREFERENCED_PARAMETER(layerData);
+	UNREFERENCED_PARAMETER(flowContext);
+	UNREFERENCED_PARAMETER(classifyContext);
+
 	NTSTATUS status = STATUS_SUCCESS;
 	KLOCK_QUEUE_HANDLE lh;
 	PNF_CALLOUT_FLOWESTABLISHED_INFO flowContextLocal = NULL;
@@ -194,8 +198,11 @@ helper_callout_classFn_mac(
 	_Inout_ FWPS_CLASSIFY_OUT* classifyOut
 )
 {
-	PNF_CALLOUT_MAC_INFO pdatalink_info = NULL;
+	UNREFERENCED_PARAMETER(filter);
+	UNREFERENCED_PARAMETER(flowContext);
+	UNREFERENCED_PARAMETER(classifyContext);
 
+	PNF_CALLOUT_MAC_INFO pdatalink_info = NULL;
 	// NET_BUFFER_LIST* pNetBufferList = NULL;
 
 	KLOCK_QUEUE_HANDLE lh;
@@ -387,8 +394,6 @@ VOID helper_callout_deleteFn_mac(
 	IN UINT64 flowContext
 )
 {
-	KLOCK_QUEUE_HANDLE lh;
-
 	UNREFERENCED_PARAMETER(layerId);
 	UNREFERENCED_PARAMETER(calloutId);
 	UNREFERENCED_PARAMETER(flowContext);
@@ -441,7 +446,7 @@ helper_callout_classFn_connectredirect(
 	IN UINT64 flowContext,
 	OUT FWPS_CLASSIFY_OUT* classifyOut)
 {
-	
+	UNREFERENCED_PARAMETER(flowContext);
 	if (FALSE == g_redirectflag || FALSE == g_monitorflag)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
@@ -463,7 +468,6 @@ helper_callout_classFn_connectredirect(
 	}
 
 	NTSTATUS status = STATUS_SUCCESS;
-	KLOCK_QUEUE_HANDLE lh;
 	PTCPCTX pTcpCtx = NULL;
 
 	// 申请结构体保存数据
@@ -1089,7 +1093,7 @@ callouts_registerCallouts(
 	return status;
 }
 
-BOOLEAN callout_init(
+NTSTATUS callout_init(
 	PDEVICE_OBJECT deviceObject
 )
 {
@@ -1181,10 +1185,7 @@ BOOLEAN callout_init(
 }
 
 VOID callout_free()
-{
-	PNF_CALLOUT_FLOWESTABLISHED_INFO	pcalloutsflowCtx = NULL;
-	PNF_CALLOUT_MAC_INFO				pcalloutsDatalinkCtx = NULL;
-	
+{	
 	ExDeleteNPagedLookasideList(&g_callouts_flowCtxPacketsLAList);
 	ExDeleteNPagedLookasideList(&g_callouts_datalinkPacktsList);
 

@@ -19,7 +19,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="wfpdriver.inf">
+    <Inf Include="hadesndr.inf">
       <Filter>Driver Files</Filter>
     </Inf>
   </ItemGroup>

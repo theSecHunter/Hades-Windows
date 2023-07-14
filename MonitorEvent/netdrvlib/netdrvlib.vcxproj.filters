@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="EventHandler.cpp">
+      <Filter>EventHandler</Filter>
+    </ClCompile>
+    <ClCompile Include="CodeTool.cpp">
+      <Filter>Command</Filter>
+    </ClCompile>
+    <ClCompile Include="devctrl.cpp">
+      <Filter>DevCtrl</Filter>
+    </ClCompile>
+    <ClCompile Include="workqueue.cpp">
+      <Filter>Work</Filter>
+    </ClCompile>
+    <ClCompile Include="mempool.cpp">
+      <Filter>Base</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="threadpool.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="mempool.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="EventHandler.h">
+      <Filter>EventHandler</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeTool.h">
+      <Filter>Command</Filter>
+    </ClInclude>
+    <ClInclude Include="nf_api.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="nfevents.h">
+      <Filter>EventHandler</Filter>
+    </ClInclude>
+    <ClInclude Include="devctrl.h">
+      <Filter>DevCtrl</Filter>
+    </ClInclude>
+    <ClInclude Include="EventQueue.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="sync.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="stdinc.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="ntbasic.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="nfdriver.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="workqueue.h">
+      <Filter>Work</Filter>
+    </ClInclude>
+    <ClInclude Include="tcpctx.h">
+      <Filter>EventHandler</Filter>
+    </ClInclude>
+    <ClInclude Include="datalinkctx.h">
+      <Filter>EventHandler</Filter>
+    </ClInclude>
+    <ClInclude Include="establishedctx.h">
+      <Filter>EventHandler</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="EventHandler">
+      <UniqueIdentifier>{6a9851a3-dfd9-4f77-a155-9be6904cf04a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Command">
+      <UniqueIdentifier>{f361af01-826f-4243-84a5-0748ea326e02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Interface">
+      <UniqueIdentifier>{905a7863-c4e6-4d41-b83a-915002443f08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DevCtrl">
+      <UniqueIdentifier>{6b70e649-0bb2-417c-aed6-292be9d8bef7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Base">
+      <UniqueIdentifier>{8586241f-944e-4283-b3c1-e1bf97109e1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Work">
+      <UniqueIdentifier>{2d0f6135-7ac9-4247-8005-54ea8f570d34}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

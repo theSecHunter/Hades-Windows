@@ -25,6 +25,7 @@ NTSTATUS driver_init(
 	IN  PDRIVER_OBJECT  driverObject,
 	IN  PUNICODE_STRING registryPath)
 {
+	UNREFERENCED_PARAMETER(registryPath);
 	NTSTATUS status = STATUS_SUCCESS;
 
 	RtlInitUnicodeString(&u_devicename, L"\\Device\\WFPDark");
@@ -88,7 +89,7 @@ bfeStateCallback(
 
 	if (newState == FWPM_SERVICE_RUNNING)
 	{
-		NTSTATUS status = callout_init(&g_deviceControl);
+		NTSTATUS status = callout_init(g_deviceControl);
 		if (!NT_SUCCESS(status))
 		{
 			KdPrint((DPREFIX"bfeStateCallback callouts_init failed, status=%x\n", status));
@@ -186,8 +187,6 @@ DriverEntry(
 
 VOID driver_free()
 {
-	NTSTATUS status = STATUS_SUCCESS;
-
 	if (g_deviceControl)
 	{
 		IoDeleteSymbolicLink(&u_devicesyslink);

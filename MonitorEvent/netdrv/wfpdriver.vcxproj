@@ -182,12 +182,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <OutDir>..\..\bin\</OutDir>
-    <TargetName>hadesnet_d</TargetName>
+    <TargetName>hadesndr</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <OutDir>..\..\bin\</OutDir>
-    <TargetName>hadesnet</TargetName>
+    <TargetName>hadesndr</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
@@ -199,14 +199,14 @@
     <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <IntDir>$(Configuration)/$(ProjectName)/</IntDir>
     <OutDir>..\..\bin\</OutDir>
-    <TargetName>hadesnet_d64</TargetName>
+    <TargetName>hadesndr</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <IntDir>$(Configuration)/$(ProjectName)/</IntDir>
     <OutDir>..\..\bin\</OutDir>
-    <TargetName>hadesnet64</TargetName>
+    <TargetName>hadesndr</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
@@ -267,7 +267,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Inf Include="wfpdriver.inf" />
+    <Inf Include="hadesndr.inf" />
   </ItemGroup>
   <ItemGroup>
     <FilesToPackage Include="$(TargetPath)" />

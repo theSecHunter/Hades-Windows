@@ -32,11 +32,13 @@ VOID establishedctx_clean()
 	sl_lock(&g_flowesobj.lock, &lh);
 	while (!IsListEmpty(&g_flowesobj.pendedPackets))
 	{
-		p_flowdata = RemoveHeadList(&g_flowesobj.pendedPackets);
-		sl_unlock(&lh);
-		establishedctx_packfree(p_flowdata);
-		p_flowdata = NULL;
-		sl_lock(&g_flowesobj.lock, &lh);
+		p_flowdata = (PNF_FLOWESTABLISHED_BUFFER)RemoveHeadList(&g_flowesobj.pendedPackets);
+		if (p_flowdata) {
+			sl_unlock(&lh);
+			establishedctx_packfree(p_flowdata);
+			p_flowdata = NULL;
+			sl_lock(&g_flowesobj.lock, &lh);
+		}
 	}
 	sl_unlock(&lh);
 }

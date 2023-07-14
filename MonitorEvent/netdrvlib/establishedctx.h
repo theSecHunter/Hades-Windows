@@ -1,10 +1,6 @@
 #ifndef _ESTABLISHEDCTX_H
 #define _ESTABLISHEDCTX_H
 
-typedef struct FWP_BYTE_ARRAY16_
-{
-	UINT8 byteArray16[16];
-} 	FWP_BYTE_ARRAY16;
 typedef struct _NF_CALLOUT_FLOWESTABLISHED_INFO
 {
 	ADDRESS_FAMILY addressFamily;

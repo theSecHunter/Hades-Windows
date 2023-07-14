@@ -1,0 +1,49 @@
+[Version]
+    Signature   = "$Windows NT$"
+    Class       = WFPCALLOUTS
+    ClassGuid   = {57465043-616C-6C6F-7574-5F636C617373}
+    Provider    = %ProviderString%
+    CatalogFile = hadesndr.cat
+    DriverVer = 05/26/2023,15.34.9.876
+	PnpLockDown = 1
+
+[SourceDisksNames]
+   1 = %wfpdriverDisk%,,,""
+
+[SourceDisksFiles]
+    hadesndr.sys = 1,,
+
+[DestinationDirs]
+    DefaultDestDir = 12                              ; %WinDir%\System32\Drivers
+	DriverFiles = 12
+
+[DefaultInstall.NTamd64]
+    OptionDesc = %wfpdriverServiceDesc%
+    CopyFiles  = DriverFiles
+
+[DefaultInstall.NTamd64.Services]
+    AddService = %wfpdriverServiceName%,,hadesndr.Service
+
+[DefaultUninstall.NTamd64]
+	LegacyUninstall = 1
+    DelFiles = DriverFiles
+
+[DefaultUninstall.NTamd64.Services]
+    DelService = %wfpdriverServiceName%,0x200               ; SPSVCINST_STOPSERVICE
+	
+[DriverFiles]
+	hadesndr.sys
+
+[hadesndr.Service]
+    DisplayName   = %wfpdriverServiceName%
+    Description   = %wfpdriverServiceDesc%
+    ServiceType   = 1                                     ; SERVICE_KERNEL_DRIVER
+    StartType     = 3                                     ; SERVICE_DEMAND_START
+    ErrorControl  = 1                                     ; SERVICE_ERROR_NORMAL
+    ServiceBinary = %12%\hadesndr.sys          			  ; %WinDir%\System32\Drivers\hadesndr.sys
+
+[Strings]
+    ProviderString     = "theSecHunter"
+    wfpdriverDisk        = "hadesndr Installation Disk"
+    wfpdriverServiceDesc = "hadesndr Callout Driver"
+    wfpdriverServiceName = "hadesndr"

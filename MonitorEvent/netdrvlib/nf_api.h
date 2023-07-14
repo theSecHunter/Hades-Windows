@@ -3,10 +3,9 @@
 
 extern "C"
 {
-	__declspec(dllexport) int nf_init(void);
-	// NFAPI_API void NFAPI_CC nf_getprocessinfo();
-	__declspec(dllexport) int nf_getprocessinfo(UINT32* Locaaddripv4, unsigned long localport, int protocol, PVOID64 getbuffer);
-	__declspec(dllexport) int nf_monitor(int code);
+	__declspec(dllexport) int nf_Init(void);
+	__declspec(dllexport) int nf_GetProcessInfo(UINT32* Locaaddripv4, unsigned long localport, int protocol, PVOID64 getbuffer);
+	__declspec(dllexport) int nf_Monitor(int code);
 }
 
 #endif
