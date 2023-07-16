@@ -20,7 +20,7 @@ ArkFsd::~ArkFsd()
 
 }
 
-bool ArkFsd::nf_GetFsdInfo(LPVOID pData, const DWORD FsdinfoSize)
+const bool ArkFsd::nf_GetFsdInfo(LPVOID pData, const DWORD FsdinfoSize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;

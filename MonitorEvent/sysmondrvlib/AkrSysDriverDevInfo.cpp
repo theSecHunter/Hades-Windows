@@ -13,15 +13,13 @@ static DevctrlIoct devobj;
 
 AkrSysDriverDevInfo::AkrSysDriverDevInfo()
 {
-
 }
 
 AkrSysDriverDevInfo::~AkrSysDriverDevInfo()
 {
-
 }
 
-bool AkrSysDriverDevInfo::nf_EnumSysMod(LPVOID pData, const DWORD proessinfoSize)
+const bool AkrSysDriverDevInfo::nf_EnumSysMod(LPVOID pData, const DWORD proessinfoSize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;
@@ -49,12 +47,12 @@ bool AkrSysDriverDevInfo::nf_EnumSysMod(LPVOID pData, const DWORD proessinfoSize
 	return false;
 }
 
-bool AkrSysDriverDevInfo::nf_GetDriverInfo()
+const bool AkrSysDriverDevInfo::nf_GetDriverInfo()
 {
 	return true;
 }
 
-bool AkrSysDriverDevInfo::nf_DumpDriverInfo()
+const bool AkrSysDriverDevInfo::nf_DumpDriverInfo()
 {
 	return true;
 }

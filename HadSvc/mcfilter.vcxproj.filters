@@ -137,6 +137,15 @@
     <ClInclude Include="FileDetailReader.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\HadesSdk\include\SingletonHandler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="uinterface.h">
+      <Filter>UserConsumerMsg</Filter>
+    </ClInclude>
+    <ClInclude Include="kinterface.h">
+      <Filter>KerConsumerMsg</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="mcfilter.rc">

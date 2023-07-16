@@ -8,14 +8,14 @@
 
 #pragma comment(lib, "netapi32.lib")
 
-NSysUser::NSysUser()
+USysUser::USysUser()
 {
 }
-NSysUser::~NSysUser()
+USysUser::~USysUser()
 {
 }
 
-int UserInfoPrinf(const LPCWSTR servername,
+const int UserInfoPrinf(const LPCWSTR servername,
 	const LPCWSTR     username,
 	DWORD      level,
 	const PUSER_INFO_23* userinfo)
@@ -293,7 +293,7 @@ int UserInfoPrinf(const LPCWSTR servername,
 	return 0;
 }
 
-DWORD EnumSystemUser(USysUserNode* pData)
+const DWORD EnumSystemUser(USysUserNode* pData)
 {
 	if (!pData)
 		return 0;
@@ -381,7 +381,7 @@ DWORD EnumSystemUser(USysUserNode* pData)
 	return dwTotalCount;
 }
 
-bool NSysUser::uf_EnumSysUser(LPVOID pData)
+const bool USysUser::uf_EnumSysUser(LPVOID pData)
 {
 	if (!pData)
 		return false;

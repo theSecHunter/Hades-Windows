@@ -9,11 +9,11 @@
 #include "nfdriver.h"
 #include "workqueue.h"
 
+static HANDLE				g_deviceHandle = NULL;
 static NF_BUFFERS			g_nfBuffers;
 static AutoHandle			g_hDevice;
 static AutoHandle			g_hDevice_work;
 static char					g_driverName[MAX_PATH] = { 0 };
-HANDLE						g_deviceHandle;
 
 PVOID64 DevctrlIoct::get_Driverhandler()
 {
@@ -69,11 +69,11 @@ int DevctrlIoct::devctrl_workthread()
 
 int DevctrlIoct::devctrl_opendeviceSylink(const char* devSylinkName)
 {
-	if (!devSylinkName && (0 >= strlen(devSylinkName)))
+	if (!devSylinkName || (0 >= strlen(devSylinkName)))
 		return -1;
 	
 	// Open Driver
-	HANDLE hDevice = CreateFileA(
+	const HANDLE hDevice = CreateFileA(
 		devSylinkName,
 		GENERIC_READ | GENERIC_WRITE,
 		0,
@@ -106,12 +106,12 @@ int DevctrlIoct::devctrl_InitshareMem()
 	}
 
 	DWORD dwBytesReturned = 0;
-	memset(&g_nfBuffers, 0, sizeof(g_nfBuffers));
+	RtlZeroMemory(&g_nfBuffers, sizeof(g_nfBuffers));
 
 	OVERLAPPED ol;
 	AutoEventHandle hEvent;
 
-	memset(&ol, 0, sizeof(ol));
+	RtlZeroMemory(&ol, sizeof(ol));
 	ol.hEvent = hEvent;
 
 	if (!DeviceIoControl(g_hDevice,

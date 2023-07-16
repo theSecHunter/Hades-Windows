@@ -18,7 +18,7 @@ ArkSysEnumNotify::~ArkSysEnumNotify()
 
 }
 
-bool ArkSysEnumNotify::nf_GetSysNofityInfo()
+const bool ArkSysEnumNotify::nf_GetSysNofityInfo()
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;

@@ -60,19 +60,20 @@ VS_VERSION_INFO VERSIONINFO
  FILEFLAGS 0x0L
 #endif
  FILEOS 0x40004L
- FILETYPE 0x7L
+ FILETYPE 0x2L
  FILESUBTYPE 0x0L
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "080404b0"
         BEGIN
-            VALUE "CompanyName", "Hades"
-            VALUE "FileDescription", "Hades For Windows DrvMonitorLib"
+            VALUE "CompanyName", "TODO: <公司名>"
+            VALUE "FileDescription", "TODO: <文件说明>"
             VALUE "FileVersion", "23.7.16.1"
-            VALUE "InternalName", "SysMonDr.lib"
-            VALUE "LegalCopyright", "Copyright (C) 2022"
-            VALUE "OriginalFilename", "SysMonDr.lib"
+            VALUE "InternalName", "RuleEngi.dll"
+            VALUE "LegalCopyright", "Copyright (C) 2023"
+            VALUE "OriginalFilename", "RuleEngi.dll"
+            VALUE "ProductName", "TODO: <产品名>"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END

@@ -25,7 +25,7 @@ bool HpTcpSvc::hpsk_init()
 		if (!s_pserver->Start(L"127.0.0.1", 10246))
 			exit(1);
 		// 4. wating stop event
-		HANDLE stopevent = CreateEvent(NULL, FALSE, FALSE, L"HpStopTcpSvcEvent");
+		const HANDLE stopevent = CreateEvent(NULL, FALSE, FALSE, L"HpStopTcpSvcEvent");
 		if (!stopevent)
 		{
 			if (s_pserver)
@@ -35,6 +35,8 @@ bool HpTcpSvc::hpsk_init()
 		WaitForSingleObject(stopevent, INFINITE);
 		if (s_pserver)
 			s_pserver->Stop();
+		if (m_listener)
+			delete m_listener;
 		CloseHandle(stopevent);
 		return true;
 	}

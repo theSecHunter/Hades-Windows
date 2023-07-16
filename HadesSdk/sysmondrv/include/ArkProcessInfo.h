@@ -1,14 +1,22 @@
 #pragma once
-class ArkProcessInfo
-{
-public:
-	ArkProcessInfo();
-	~ArkProcessInfo();
 
-	bool nf_GetProcessInfo();
-	bool nf_KillProcess();
-	bool nf_DumpProcessMem();
-	bool nf_EnumProcess(LPVOID pData, const DWORD proessinfoSize);
-	bool nf_GetProcessMod(DWORD dwPiD, LPVOID pData, const DWORD proessinfoSize);
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+	class __declspec(dllexport) ArkProcessInfo
+	{
+	public:
+		ArkProcessInfo();
+		~ArkProcessInfo();
+
+		const bool nf_GetProcessInfo();
+		const bool nf_KillProcess();
+		const bool nf_DumpProcessMem();
+		const bool nf_EnumProcess(LPVOID pData, const DWORD proessinfoSize);
+		const bool nf_GetProcessMod(DWORD dwPiD, LPVOID pData, const DWORD proessinfoSize);
+	};
+
+#ifdef __cplusplus
+}
+#endif

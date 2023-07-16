@@ -111,19 +111,19 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x86\Debug</OutDir>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
+    <IncludePath>..\HadesSdk\include;..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\x86\Release</OutDir>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
+    <IncludePath>..\HadesSdk\include;..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\xp\</OutDir>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>..\HadesSdk\include;..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
     <TargetName>$(ProjectName)_xp</TargetName>
   </PropertyGroup>
@@ -131,21 +131,21 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x64\Debug</OutDir>
     <TargetName>$(ProjectName)64_d</TargetName>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
+    <IncludePath>..\HadesSdk\include;..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\x64\Release</OutDir>
     <TargetName>$(ProjectName)64</TargetName>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
+    <IncludePath>..\HadesSdk\include;..\Duilib;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmonuser\include;..\HadesSdk\hpsocket\Include\HPSocket</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\xp\</OutDir>
     <TargetName>$(ProjectName)64_xp</TargetName>
-    <IncludePath>..\Duilib;$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);</IncludePath>
+    <IncludePath>..\HadesSdk\include;..\Duilib;$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);</IncludePath>
     <LibraryPath>..\lib;$(VC_LibraryPath_x64);$(WindowsSdk_71A_LibraryPath_x64);</LibraryPath>
     <LibraryWPath>$(WindowsSDK_MetadataPath);</LibraryWPath>
   </PropertyGroup>
@@ -261,6 +261,7 @@
     <ClInclude Include="HlprIocpService.h" />
     <ClInclude Include="HlprSocketTcp.h" />
     <ClInclude Include="HpTcpSvc.h" />
+    <ClInclude Include="Interface.h" />
     <ClInclude Include="MessageBoxDlg.h" />
     <ClInclude Include="public.h" />
     <ClInclude Include="Resource.h" />

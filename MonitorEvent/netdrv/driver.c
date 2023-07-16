@@ -13,8 +13,6 @@
 #include <stdlib.h>
 
 DRIVER_INITIALIZE DriverEntry;
-DRIVER_UNLOAD driverUnload;
-
 static PDEVICE_OBJECT g_deviceControl;
 static HANDLE g_bfeStateSubscribeHandle = NULL;
 
@@ -55,10 +53,7 @@ NTSTATUS driver_init(
 	return status;
 }
 
-VOID
-driverUnload(
-	IN  PDRIVER_OBJECT driverObject
-)
+VOID driver_unload(IN PDRIVER_OBJECT driverObject)
 {
 	UNREFERENCED_PARAMETER(driverObject);
 
@@ -79,8 +74,7 @@ driverUnload(
 #endif
 }
 
-VOID NTAPI
-bfeStateCallback(
+VOID NTAPI bfeStateCallback(
 	IN OUT void* context,
 	IN FWPM_SERVICE_STATE  newState
 )
@@ -97,8 +91,7 @@ bfeStateCallback(
 	}
 }
 
-NTSTATUS
-DriverEntry(
+NTSTATUS DriverEntry(
 	IN  PDRIVER_OBJECT  driverObject,
 	IN  PUNICODE_STRING registryPath
 )
@@ -111,7 +104,7 @@ DriverEntry(
 		driverObject->MajorFunction[i] = (PDRIVER_DISPATCH)devctrl_dispatch;
 	}
 
-	driverObject->DriverUnload = driverUnload;
+	driverObject->DriverUnload = driver_unload;
 
 	do 
 	{
@@ -137,11 +130,11 @@ DriverEntry(
 		}
 
 		// Init MAK Packet
-		status = datalinkctx_init();
-		if (!NT_SUCCESS(status))
-		{
-			break;
-		}
+		//status = datalinkctx_init();
+		//if (!NT_SUCCESS(status))
+		//{
+		//	break;
+		//}
 
 		status = establishedctx_init();
 		if (!NT_SUCCESS(status))

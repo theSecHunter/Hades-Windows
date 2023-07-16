@@ -33,12 +33,12 @@ bool nf_InitWorkQueue(PVOID64 Eventhandle)
 	do {
 
 		g_workhDevice = (AutoHandle*)g_devctl.get_Driverhandler();
-		if (!g_workhDevice && !(*g_workhDevice))
+		if (!g_workhDevice || !(*g_workhDevice))
 			break;
 
 		// 获取共享内存buffer
 		g_workBuffer = (NF_BUFFERS*)g_devctl.get_nfBufferPtr();
-		if (!g_workBuffer && !(*g_workBuffer).inBufLen && !(*g_workBuffer).outBufLen)
+		if (!g_workBuffer || !(*g_workBuffer).inBufLen || !(*g_workBuffer).outBufLen)
 			break;
 
 		// 获取事件句柄
@@ -47,9 +47,7 @@ bool nf_InitWorkQueue(PVOID64 Eventhandle)
 			break;
 
 		status = true;
-
 	} while (false);
-
 	return status;
 }
 
@@ -89,15 +87,16 @@ static void handleEventDispath(PNF_DATA pData)
 // ReadFile Driver Buffer
 DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 {
-	DWORD readBytes;
-	PNF_DATA pData;
+
 	OVERLAPPED ol;
-	DWORD dwRes;
+	PNF_DATA pData = NULL;
+	DWORD dwRes = 0;
+	DWORD readBytes = 0;
 	NF_READ_RESULT rr;
 	HANDLE events[] = { g_ioEvent, g_stopEvent };
-	DWORD waitTimeout;
-	bool abortBatch;
-	int i;
+	DWORD waitTimeout = 0;
+	bool abortBatch = false;
+	int i = 0;
 
 	OutputDebugString(L"Entry WorkThread");
 
@@ -112,13 +111,10 @@ DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 
 		g_eventQueue.suspend(true);
 
-		// 异步去读
 		for (i = 0; i < 8; i++)
 		{
 			readBytes = 0;
-
-			memset(&ol, 0, sizeof(ol));
-
+			RtlSecureZeroMemory(&ol, sizeof(ol));
 			ol.hEvent = g_ioEvent;
 
 			if (!ReadFile(*g_workhDevice, &rr, sizeof(rr), NULL, &ol))
@@ -167,14 +163,12 @@ DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 			}
 
 			readBytes = (DWORD)rr.length;
-
 			if (readBytes > (*g_workBuffer).inBufLen)
 			{
 				readBytes = (DWORD)(*g_workBuffer).inBufLen;
 			}
 
 			pData = (PNF_DATA)(*g_workBuffer).inBuf;
-
 			while (readBytes >= (sizeof(NF_DATA) - 1))
 			{
 				handleEventDispath(pData);
@@ -194,7 +188,6 @@ DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 				readBytes -= sizeof(NF_DATA) - 1 + pData->bufferSize;
 				pData = (PNF_DATA)(pData->buffer + pData->bufferSize);
 			}
-
 			if (abortBatch)
 				break;
 		}
@@ -208,8 +201,8 @@ DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 	}
 
 finish:
-
-	CancelIo(*g_workhDevice);
+	if (g_workhDevice)
+		CancelIo(*g_workhDevice);
 	g_eventQueue.free();
 	g_eventQueueOut.free();
 	SetEvent(g_workThreadStoppedEvent);

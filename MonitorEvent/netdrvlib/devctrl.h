@@ -23,17 +23,16 @@ public:
 	PVOID64 get_nfBufferPtr();
 
 private:
-	HANDLE m_devhandler;
-	HANDLE m_threadobjhandler;
-	HANDLE m_alpcthreadobjhandler;
-	HANDLE m_listthreadobjhandler;
-	DWORD  m_dwthreadid;
-	DWORD  m_dwthreadid1;
+	DWORD  m_dwthreadid = 0;
+	DWORD  m_dwthreadid1 = 0;
+	HANDLE m_devhandler = NULL;
+	HANDLE m_threadobjhandler = NULL;
+	HANDLE m_alpcthreadobjhandler = NULL;
+	HANDLE m_listthreadobjhandler = NULL;
 
 	// ·¢ËÍ¿ØÖÆÂë
 	int devctrl_sendioct(const int ioctcode);
 	int devctrl_writeio();
-
 };
 
 #endif // !_DEVCTRL_H

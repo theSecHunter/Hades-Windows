@@ -1,8 +1,8 @@
 #include "../HpTcpSvc.h"
-#include "MainWindow.h"
-#include "udrivermanager.h"
 #include "../Systeminfolib.h"
-#include <usysinfo.h>
+#include "../Interface.h"
+#include "MainWindow.h"
+
 #include <TlHelp32.h>
 #include <mutex>
 #include <WinUser.h>
@@ -22,10 +22,8 @@ const int WM_IPS_PROCESS = WM_USER + 600;
 static std::mutex			g_hadesStatuscs;
 // Start线程锁
 static std::mutex			g_startprocesslock;
-// 动态定时器需要
-static USysBaseInfo			g_DynSysBaseinfo;
-// 驱动管理
-static DriverManager		g_DrvManager;
+
+// 驱动名
 const std::wstring			g_drverName = L"sysmondriver";
 
 static HpTcpSvc				g_tcpsvc;
@@ -85,7 +83,7 @@ bool DrvCheckStart()
 {
 	std::wstring pszCmd = L"sc start sysmondriver";
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
-	int nSeriverstatus = g_DrvManager.nf_GetServicesStatus(g_drverName.c_str());
+	int nSeriverstatus = SingletonDriverManager::instance()->nf_GetServicesStatus(g_drverName.c_str());
 	switch (nSeriverstatus)
 	{
 		// 正在运行
@@ -112,7 +110,7 @@ bool DrvCheckStart()
 			CloseHandle(pi.hThread);
 		}
 		Sleep(3000);
-		nSeriverstatus = g_DrvManager.nf_GetServicesStatus(g_drverName.c_str());
+		nSeriverstatus = SingletonDriverManager::instance()->nf_GetServicesStatus(g_drverName.c_str());
 		if (SERVICE_RUNNING == nSeriverstatus)
 		{
 			OutputDebugString(L"sc Driver Running");
@@ -134,7 +132,7 @@ bool DrvCheckStart()
 			wsprintf(output, L"[Hades] SysMaver: %d SysMiver: %d", SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion);
 			OutputDebugStringW(output);
 
-			if (!g_DrvManager.nf_DriverInstall_Start(SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion, SYSTEMPUBLIC::sysattriinfo.Is64))
+			if (!SingletonDriverManager::instance()->nf_DriverInstall_Start(SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion, SYSTEMPUBLIC::sysattriinfo.Is64))
 			{
 				MessageBox(NULL, L"驱动安装失败，请您手动安装再次开启内核态采集", L"提示", MB_OKCANCEL);
 				return false;
@@ -597,21 +595,23 @@ void MainWindow::FlushData()
 	try
 	{
 		//cpu
-		const double cpuutilize = g_DynSysBaseinfo.GetSysDynCpuUtiliza();
+		const double cpuutilize = SingletonUSysBaseInfo::instance()->GetSysDynCpuUtiliza();
 		CString m_Cpusyl;
 		m_Cpusyl.Format(L"CPU: %0.2lf", cpuutilize);
 		m_Cpusyl += "%";
 		CLabelUI* pCpuut = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("winmain_layout_cpuinfo")));
-		pCpuut->SetText(m_Cpusyl.GetBuffer());
+		if (pCpuut)
+			pCpuut->SetText(m_Cpusyl.GetBuffer());
 
 		//memory
-		const DWORD dwMem = g_DynSysBaseinfo.GetSysDynSysMem();
+		const DWORD dwMem = SingletonUSysBaseInfo::instance()->GetSysDynSysMem();
 		// 当前占用率 Occupancy rate
 		CString m_MemoryBFB;
 		m_MemoryBFB.Format(L"内存: %u", dwMem);
 		m_MemoryBFB += "%";
 		CLabelUI* pMem = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("winmain_layout_memory")));
-		pMem->SetText(m_MemoryBFB.GetBuffer());
+		if (pMem)
+			pMem->SetText(m_MemoryBFB.GetBuffer());
 	}
 	catch (const std::exception&)
 	{

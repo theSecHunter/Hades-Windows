@@ -20,7 +20,7 @@ ArkDpcTimer::~ArkDpcTimer()
 
 }
 
-bool ArkDpcTimer::nf_GetDpcTimerData(LPVOID pData, const DWORD DpcTimerinfoSize)
+const bool ArkDpcTimer::nf_GetDpcTimerData(LPVOID pData, const DWORD DpcTimerinfoSize)
 {
 	DWORD inSize = 0;
 	DWORD dwSize = 0;

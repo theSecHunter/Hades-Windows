@@ -99,7 +99,7 @@ void SearchDir(const std::string& strDir, int bSub, std::vector<std::string>& pa
 	return;
 }
 */
-bool EnumDriectFile(CString Path, LPVOID outbuf)
+const bool EnumDriectFile(CString Path, LPVOID outbuf)
 {
 	// MAX 0x4096
 	if (g_FileCount >= 0x4090)
@@ -141,7 +141,7 @@ bool EnumDriectFile(CString Path, LPVOID outbuf)
 	return true;
 }
 
-bool UFile::uf_GetFileInfo(char* pFilepath,LPVOID pData)
+const bool UFile::uf_GetFileInfo(char* pFilepath,LPVOID pData)
 {
 	CString filestr = pFilepath;
 	if (!pData && (0 >= filestr.GetLength()))
@@ -213,7 +213,8 @@ bool UFile::uf_GetFileInfo(char* pFilepath,LPVOID pData)
 		FindClose(hFile);
 	return true;
 }
-bool UFile::uf_GetDirectoryFile(char* pDriPath, LPVOID pData)
+
+const bool UFile::uf_GetDirectoryFile(char* pDriPath, LPVOID pData)
 {
 	g_driectfileinfo = NULL;
 	g_FileCount = 0, dwAllSize = 0;

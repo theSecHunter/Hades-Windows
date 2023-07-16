@@ -1,6 +1,6 @@
-#include "udrivermanager.h"
 #include <Windows.h>
 #include <xstring>
+#include "udrivermanager.h"
 
 DriverManager::DriverManager()
 {
@@ -28,7 +28,7 @@ const BYTE g_szSecurity[SECURITY_STRING_LEN] =
 	0x02,0x00,0x01,0x02,0x00,0x00,0x00,0x00,0x00,0x05,0x20,0x00,0x00,0x00,0x23,0x02,0x00,0x00,0x01,0x01,0x00,
 	0x00,0x00,0x00,0x00,0x05,0x12,0x00,0x00,0x00,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x05,0x12,0x00,0x00,0x00
 };
-int	InstallDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+const int	InstallDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	WCHAR	szBuf[LG_PAGE_SIZE];
 	HKEY	hKey;
@@ -90,7 +90,7 @@ int	InstallDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath
 
 	return 0;
 }
-bool InstallDriver1(const wchar_t* cszDriverName, const wchar_t* lpszDriverPath, const wchar_t* lpszAltitude)
+const bool InstallDriver1(const wchar_t* cszDriverName, const wchar_t* lpszDriverPath, const wchar_t* lpszAltitude)
 {
 	HKEY		hKey;
 	DWORD		dwData = 0;
@@ -184,7 +184,7 @@ bool InstallDriver1(const wchar_t* cszDriverName, const wchar_t* lpszDriverPath,
 
 	return TRUE;
 }
-int CreateDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+const int CreateDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	SC_HANDLE		schManager;
 	SC_HANDLE		schService;
@@ -246,7 +246,7 @@ int CreateDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 
 	return 0;
 }
-int StartDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+const int StartDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	SC_HANDLE		schManager;
 	SC_HANDLE		schService;
@@ -308,7 +308,7 @@ int StartDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 
 	return bStarted ? 1 : -1;
 }
-int StopDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+const int StopDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	SC_HANDLE		schManager;
 	SC_HANDLE		schService;
@@ -359,7 +359,7 @@ int StopDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 
 	return 0;
 }
-BOOL StartDriver1(const wchar_t* lpszDriverName)
+const BOOL StartDriver1(const wchar_t* lpszDriverName)
 {
 	SC_HANDLE        schManager;
 	SC_HANDLE        schService;
@@ -398,7 +398,7 @@ BOOL StartDriver1(const wchar_t* lpszDriverName)
 
 	return TRUE;
 }
-BOOL StopDriver1(const wchar_t* lpszDriverName)
+const BOOL StopDriver1(const wchar_t* lpszDriverName)
 {
 	SC_HANDLE        schManager;
 	SC_HANDLE        schService;
@@ -428,7 +428,7 @@ BOOL StopDriver1(const wchar_t* lpszDriverName)
 
 	return TRUE;
 }
-int GetServicesStatus(const wchar_t* driverName)
+const int GetServicesStatus(const wchar_t* driverName)
 {
 	SC_HANDLE schSCManager = NULL;
 	SC_HANDLE schService = NULL;
@@ -479,7 +479,7 @@ int GetServicesStatus(const wchar_t* driverName)
 	}
 	return ssStatus.dwCurrentState;
 }
-int DeleteDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+const int DeleteDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	// п╤ть
 	SC_HANDLE    schManager;
@@ -511,7 +511,7 @@ int DeleteDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 	DeleteFile(cszDriverFullPath);
 	return 0;
 }
-LONG RegDeleteKeyNT(HKEY hStartKey, LPTSTR pKeyName)
+const LONG RegDeleteKeyNT(HKEY hStartKey, LPTSTR pKeyName)
 {
 	DWORD  dwSubKeyLength;
 	LPTSTR  pSubKey = NULL;
@@ -547,7 +547,7 @@ LONG RegDeleteKeyNT(HKEY hStartKey, LPTSTR pKeyName)
 
 	return lRet;
 }
-int RemoveDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+const int RemoveDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	HKEY hKey;
 	long errorno;
@@ -570,27 +570,27 @@ int RemoveDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 	return 0;
 }
 
-int DriverManager::nf_GetServicesStatus(const wchar_t* driverName)
+const int DriverManager::nf_GetServicesStatus(const wchar_t* driverName)
 {
 	return GetServicesStatus(driverName);
 }
 
-int DriverManager::nf_StartDrv(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+const int DriverManager::nf_StartDrv(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	return StartDriver(cszDriverName, cszDriverFullPath);
 }
 
-int DriverManager::nf_StopDrv(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+const int DriverManager::nf_StopDrv(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	return StopDriver(cszDriverName, cszDriverFullPath);
 }
 
-int DriverManager::nf_DeleteDrv(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+const int DriverManager::nf_DeleteDrv(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
 {
 	return DeleteDriver(cszDriverName, cszDriverFullPath);
 }
 
-bool DriverManager::nf_DriverInstall_Start(const int mav, const int miv, const bool Is64)
+const bool DriverManager::nf_DriverInstall_Start(const int mav, const int miv, const bool Is64)
 {
 	if (mav < 6)
 		return false;

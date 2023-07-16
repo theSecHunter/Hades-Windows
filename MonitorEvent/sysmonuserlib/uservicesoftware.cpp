@@ -487,7 +487,7 @@ const UINT UServerSoftware::DetermineContextForAllProducts()
 	return (ERROR_NO_MORE_ITEMS == uiStatus) ? ERROR_SUCCESS : uiStatus;
 }
 
-bool UServerSoftware::uf_EnumAll(LPVOID pData)
+const bool UServerSoftware::uf_EnumAll(LPVOID pData)
 {
 	if (!pData)
 		return false;

@@ -1,12 +1,20 @@
 #pragma once
 
-class ArkIdt
-{
-public:
-	ArkIdt();
-	~ArkIdt();
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-	bool nf_init();
-	bool nf_GetIdtData(LPVOID pData, const DWORD IdtinfoSize);
-};
+	class __declspec(dllexport) ArkIdt
+	{
+	public:
+		ArkIdt();
+		~ArkIdt();
+
+		const bool nf_init();
+		const bool nf_GetIdtData(LPVOID pData, const DWORD IdtinfoSize);
+	};
+
+#ifdef __cplusplus
+}
+#endif
 

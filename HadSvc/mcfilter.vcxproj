@@ -300,12 +300,14 @@
     <ClCompile Include="umsginterface.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\HadesSdk\include\SingletonHandler.h" />
     <ClInclude Include="..\HadesSdk\include\sysinfo.h" />
     <ClInclude Include="AnonymousPipe.h" />
     <ClInclude Include="CodeTool.h" />
     <ClInclude Include="DataHandler.h" />
     <ClInclude Include="FileDetailReader.h" />
     <ClInclude Include="HlprMiniCom.h" />
+    <ClInclude Include="kinterface.h" />
     <ClInclude Include="kmsginterface.h" />
     <ClInclude Include="msgassist.h" />
     <ClInclude Include="msgloop.h" />
@@ -315,6 +317,7 @@
     <ClInclude Include="socketMsg.h" />
     <ClInclude Include="time_stamp.h" />
     <ClInclude Include="transfer.pb.h" />
+    <ClInclude Include="uinterface.h" />
     <ClInclude Include="umsginterface.h" />
   </ItemGroup>
   <ItemGroup>

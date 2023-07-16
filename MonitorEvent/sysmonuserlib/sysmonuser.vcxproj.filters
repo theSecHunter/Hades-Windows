@@ -13,98 +13,128 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="etw">
+    <Filter Include="Etw">
       <UniqueIdentifier>{e4ea6fe8-9b5d-4b4b-997c-c6e503cc9bf4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="common">
+    <Filter Include="Common">
       <UniqueIdentifier>{0678ec58-e096-4259-9fd8-00a3b6ab15f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="File">
+      <UniqueIdentifier>{ae3e7ec8-4282-4989-80af-1c1373ac5eaf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Net">
+      <UniqueIdentifier>{d42de6e8-578f-4d79-8798-1c77b5f25f22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AutoStart">
+      <UniqueIdentifier>{a9331783-cab9-418c-acb5-f7f8a1e35637}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Process">
+      <UniqueIdentifier>{c3e8bf3c-2eca-421d-b281-31e08396b4e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DrvManage">
+      <UniqueIdentifier>{d92866df-23fd-4288-9ecc-8f09d4c1b6da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SysInfo">
+      <UniqueIdentifier>{839aa877-9e4f-429d-8a8e-94dfbdf79188}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SysUser">
+      <UniqueIdentifier>{193e1255-faa6-44ba-8d30-74cecdc2bb91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ServiceSoft">
+      <UniqueIdentifier>{6f1311fe-1a1c-475c-8aa2-8be07479ef1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Asm">
+      <UniqueIdentifier>{d024e24c-5d03-4612-9df7-3ad355704ab4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="uautostart.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="ufile.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="unet.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="uprocesstree.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="uservicesoftware.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="usysinfo.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="usysuser.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="MD5.cpp">
-      <Filter>common</Filter>
+      <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="uetw.cpp">
-      <Filter>etw</Filter>
+      <Filter>Etw</Filter>
+    </ClCompile>
+    <ClCompile Include="ufile.cpp">
+      <Filter>File</Filter>
+    </ClCompile>
+    <ClCompile Include="unet.cpp">
+      <Filter>Net</Filter>
+    </ClCompile>
+    <ClCompile Include="uautostart.cpp">
+      <Filter>AutoStart</Filter>
+    </ClCompile>
+    <ClCompile Include="uprocesstree.cpp">
+      <Filter>Process</Filter>
     </ClCompile>
     <ClCompile Include="udrivermanager.cpp">
-      <Filter>源文件</Filter>
+      <Filter>DrvManage</Filter>
+    </ClCompile>
+    <ClCompile Include="usysinfo.cpp">
+      <Filter>SysInfo</Filter>
+    </ClCompile>
+    <ClCompile Include="usysuser.cpp">
+      <Filter>SysUser</Filter>
+    </ClCompile>
+    <ClCompile Include="uservicesoftware.cpp">
+      <Filter>ServiceSoft</Filter>
     </ClCompile>
     <ClCompile Include="utilstool.cpp">
-      <Filter>源文件</Filter>
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sync.h">
-      <Filter>common</Filter>
+      <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="MD5.h">
-      <Filter>common</Filter>
+      <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="uetw.h">
-      <Filter>etw</Filter>
-    </ClInclude>
-    <ClInclude Include="uautostart.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="ufile.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="unet.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="uprocesstree.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="uservicesoftware.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="usysinfo.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="usysuser.h">
-      <Filter>头文件</Filter>
+      <Filter>Etw</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="udrivermanager.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\HadesSdk\include\sysinfo.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="ufile.h">
+      <Filter>File</Filter>
+    </ClInclude>
+    <ClInclude Include="unet.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="uautostart.h">
+      <Filter>AutoStart</Filter>
+    </ClInclude>
+    <ClInclude Include="uprocesstree.h">
+      <Filter>Process</Filter>
+    </ClInclude>
+    <ClInclude Include="udrivermanager.h">
+      <Filter>DrvManage</Filter>
+    </ClInclude>
+    <ClInclude Include="usysinfo.h">
+      <Filter>SysInfo</Filter>
+    </ClInclude>
+    <ClInclude Include="usysuser.h">
+      <Filter>SysUser</Filter>
+    </ClInclude>
+    <ClInclude Include="uservicesoftware.h">
+      <Filter>ServiceSoft</Filter>
+    </ClInclude>
     <ClInclude Include="utilstool.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\HadesSdk\include\SingletonHandler.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="x32.asm">
-      <Filter>源文件</Filter>
+      <Filter>Asm</Filter>
     </MASM>
     <MASM Include="x64.asm">
-      <Filter>源文件</Filter>
+      <Filter>Asm</Filter>
     </MASM>
   </ItemGroup>
   <ItemGroup>

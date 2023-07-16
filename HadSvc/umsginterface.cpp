@@ -17,13 +17,7 @@
 #include "msgassist.h"
 #include "umsginterface.h"
 
-#include "uautostart.h"
-#include "unet.h"
-#include "usysuser.h"
-#include "uprocesstree.h"
-#include "uservicesoftware.h"
-#include "ufile.h"
-#include "uetw.h"
+#include "uinterface.h"
 
 //rapidjson
 #include <rapidjson/rapidjson.h>
@@ -35,23 +29,15 @@
 #include <json.hpp>
 using json_t = nlohmann::json;
 
-// 生产者全局对象
-static UAutoStart               g_user_uautostrobj;
-static UNet                     g_user_unetobj;
-static NSysUser                 g_user_usysuser;
-static UProcess                 g_user_uprocesstree;
-static UServerSoftware          g_user_userversoftware;
-static UFile                    g_user_ufile;
-static UEtw                     g_user_etw;
 // Topic主题队列指针1
 static std::mutex               g_RecvQueueCs;
 static std::queue<UPubNode*>    g_RecvQueueData;
 static HANDLE                   g_jobAvailableEvent;
 static bool                     g_exit = false;
 // Topic主题队列指针1设置,对于Etw属于消费者
-inline void uMsgInterface::uMsg_SetTopicQueuePtr() { g_user_etw.uf_setqueuetaskptr(g_RecvQueueData); }
-inline void uMsgInterface::uMsg_SetTopicQueueLockPtr() { g_user_etw.uf_setqueuelockptr(g_RecvQueueCs); }
-inline void uMsgInterface::uMsg_SetTopicEventPtr() { g_user_etw.uf_setqueueeventptr(g_jobAvailableEvent); }
+inline void uMsgInterface::uMsg_SetTopicQueuePtr() { SingletonUEtw::instance()->uf_setqueuetaskptr(g_RecvQueueData); }
+inline void uMsgInterface::uMsg_SetTopicQueueLockPtr() { SingletonUEtw::instance()->uf_setqueuelockptr(g_RecvQueueCs); }
+inline void uMsgInterface::uMsg_SetTopicEventPtr() { SingletonUEtw::instance()->uf_setqueueeventptr(g_jobAvailableEvent); }
 
 // 设置消费者指针(被消费者调用)
 static std::queue<std::shared_ptr<USubNode>>*       g_SendQueueData_Ptr = NULL;
@@ -83,7 +69,6 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
 
         for (;;)
         {
-            Sleep(1);
             if (g_RecvQueueData.empty())
                 return;
 
@@ -403,7 +388,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             {
             case UF_PROCESS_ENUM:
             {
-                if (false == g_user_uprocesstree.uf_EnumProcess(ptr_Getbuffer))
+                if (false == SingletonUProcess::instance()->uf_EnumProcess(ptr_Getbuffer))
                     break;
                 const PUProcessNode procesNode = (PUProcessNode)ptr_Getbuffer;
                 if (!procesNode)
@@ -435,13 +420,13 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             case UF_PROCESS_PID_TREE:
             {
                 // Command - pid
-                if (false == g_user_uprocesstree.uf_GetProcessInfo(4, ptr_Getbuffer))
+                if (false == SingletonUProcess::instance()->uf_GetProcessInfo(4, ptr_Getbuffer))
                     break;
             }
             break;
             case UF_SYSAUTO_START:
             {
-                if (false == g_user_uautostrobj.uf_EnumAutoStartask(ptr_Getbuffer, dwAllocateMemSize))
+                if (false == SingletonUAutoStart::instance()->uf_EnumAutoStartask(ptr_Getbuffer, dwAllocateMemSize))
                     break;
 
                 const PUAutoStartNode autorunnode = (PUAutoStartNode)ptr_Getbuffer;
@@ -484,7 +469,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             break;
             case UF_SYSNET_INFO:
             {
-                if (false == g_user_unetobj.uf_EnumNetwork(ptr_Getbuffer))
+                if (false == SingletonUNetWork::instance()->uf_EnumNetwork(ptr_Getbuffer))
                     break;
 
                 const PUNetNode netnode = (PUNetNode)ptr_Getbuffer;
@@ -527,7 +512,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             break;
             case UF_SYSUSER_ID:
             {
-                if (false == g_user_usysuser.uf_EnumSysUser(ptr_Getbuffer))
+                if (false == SingletonNSysUser::instance()->uf_EnumSysUser(ptr_Getbuffer))
                     break;
 
                 const PUUserNode pusernode = (PUUserNode)ptr_Getbuffer;
@@ -554,7 +539,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             break;
             case UF_SYSSERVICE_SOFTWARE_ID:
             {
-                if (false == g_user_userversoftware.uf_EnumAll(ptr_Getbuffer))
+                if (false == SingletonUServerSoftware::instance()->uf_EnumAll(ptr_Getbuffer))
                     break;
 
                 const PUAllServerSoftware pNode = (PUAllServerSoftware)ptr_Getbuffer;
@@ -626,7 +611,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             case UF_SYSFILE_ID:
             {
                 // Command 获取 目录路径
-                if (false == g_user_ufile.uf_GetDirectoryFile((char*)"D:\\bin", ptr_Getbuffer))
+                if (false == SingletonUFile::instance()->uf_GetDirectoryFile((char*)"D:\\bin", ptr_Getbuffer))
                     break;
 
                 const PUDriectInfo directinfo = (PUDriectInfo)ptr_Getbuffer;
@@ -663,7 +648,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
             case UF_FILE_INFO:
             {
                 // Command 获取 文件绝对路径
-                if (false == g_user_ufile.uf_GetFileInfo((char*)"d:\\bin\\1.txt", ptr_Getbuffer))
+                if (false == SingletonUFile::instance()->uf_GetFileInfo((char*)"d:\\bin\\1.txt", ptr_Getbuffer))
                     break;
 
                 const PUFileInfo fileinfo = (PUFileInfo)ptr_Getbuffer;
@@ -725,12 +710,12 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
 
 void uMsgInterface::uMsg_EtwInit()
 {
-    g_user_etw.uf_init();
+    SingletonUEtw::instance()->uf_init();
     etwStatus = true;
 }
 void uMsgInterface::uMsg_EtwClose()
 {
-    g_user_etw.uf_close();
+    SingletonUEtw::instance()->uf_close();
     etwStatus = false;
 }
 bool uMsgInterface::GetEtwMonStatus()

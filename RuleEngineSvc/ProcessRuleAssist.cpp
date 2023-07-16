@@ -6,7 +6,7 @@
 
 const static std::string g_ProcConfigName = "processRuleConfig.json";
 
-bool ConfigProcessJsonRuleParsing(unsigned int& imods, std::string& strProcessNameList)
+const bool ConfigProcessJsonRuleParsing(unsigned int& imods, std::string& strProcessNameList)
 {
 	if (!RuleEngineToos::IsFile(g_ProcConfigName))
 		return false;

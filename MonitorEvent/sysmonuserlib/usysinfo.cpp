@@ -22,8 +22,6 @@
     extern "C" void __stdcall GetCpuid(DWORD * deax, DWORD * debx, DWORD * decx, DWORD * dedx, char* cProStr);
 #endif // _WIN64
 
-
-
 // View: ϵͳ�汾
 void USysBaseInfo::GetOSVersion(std::string& strOSVersion, int& verMajorVersion, int& verMinorVersion, bool& Is64)
 {
@@ -1113,5 +1111,3 @@ USysBaseInfo::USysBaseInfo()
 USysBaseInfo::~USysBaseInfo()
 {
 }
-
-

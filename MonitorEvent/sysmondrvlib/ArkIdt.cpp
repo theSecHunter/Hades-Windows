@@ -22,7 +22,7 @@ ArkIdt::~ArkIdt()
 
 }
 
-bool ArkIdt::nf_init()
+const bool ArkIdt::nf_init()
 {
 	DWORD inSize = 0;
 	DWORD dwSize = 0;
@@ -50,7 +50,7 @@ bool ArkIdt::nf_init()
 	return false;
 }
 
-bool ArkIdt::nf_GetIdtData(LPVOID pData, const DWORD IdtinfoSize)
+const bool ArkIdt::nf_GetIdtData(LPVOID pData, const DWORD IdtinfoSize)
 {
 	DWORD inSize = 0;
 	DWORD dwSize = 0;

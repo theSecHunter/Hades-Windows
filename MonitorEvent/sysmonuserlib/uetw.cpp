@@ -16,10 +16,9 @@
 #include "sync.h"
 #include "uetw.h"
 
+#pragma comment(lib, "Tdh.lib")
 #pragma comment(lib,"psapi.lib")
 #pragma comment(lib, "Ws2_32.lib")
-#pragma comment(lib, "Tdh.lib")
-
 using namespace std;
 
 // Process Event_Notify
@@ -1055,8 +1054,8 @@ void WINAPI SystemCallEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         const wstring EventName = (PCWSTR)((BYTE*)info + info->OpcodeNameOffset);
         if (EventName != L"SysClEnter")
             return;
-        if (!EventName.empty());
-            //wcscpy_s(thread_info.EventName, EventName.c_str());
+        //if (!EventName.empty())
+        //    wcscpy_s(thread_info.EventName, EventName.c_str());
     }
 
     for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
@@ -1199,7 +1198,14 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
     m_traceconfig->Wnode.ClientContext = 1;
     // สนำร NT Kernel Logger + SystemTraceControlGuid
     // See Msdn: https://docs.microsoft.com/en-us/windows/win32/etw/nt-kernel-logger-constants
-    m_traceconfig->Wnode.Guid = SystemTraceControlGuid;
+    GUID GSystem;
+    RtlSecureZeroMemory(&GSystem, sizeof(GSystem));
+    GSystem.Data1 = 0x9e814aad;
+    GSystem.Data2 = 0x3204;
+    GSystem.Data3 = 0x11d2;
+    GSystem.Data4[0] = 0x9a;   GSystem.Data4[1] = 0x82;   GSystem.Data4[2] = 0x00;   GSystem.Data4[3] = 0x60;
+    GSystem.Data4[4] = 0x08;   GSystem.Data4[5] = 0xa8;   GSystem.Data4[6] = 0x69;   GSystem.Data4[4] = 0x39;
+    m_traceconfig->Wnode.Guid = GSystem;
     m_traceconfig->EnableFlags = dwEnableFlags;
     m_traceconfig->LogFileMode = EVENT_TRACE_REAL_TIME_MODE;
     m_traceconfig->LoggerNameOffset = sizeof(EVENT_TRACE_PROPERTIES);

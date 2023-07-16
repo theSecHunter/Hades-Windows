@@ -34,12 +34,12 @@ ArkProcessInfo::~ArkProcessInfo()
 
 }
 
-bool ArkProcessInfo::nf_GetProcessInfo()
+const bool ArkProcessInfo::nf_GetProcessInfo()
 {
 	return true;
 }
 
-bool ArkProcessInfo::nf_GetProcessMod(DWORD dwPiD, LPVOID pData, const DWORD proessinfoSize)
+const bool ArkProcessInfo::nf_GetProcessMod(DWORD dwPiD, LPVOID pData, const DWORD proessinfoSize)
 {
 	DWORD	inSize = sizeof(DWORD);
 	DWORD	dwSize = 0;
@@ -68,7 +68,7 @@ bool ArkProcessInfo::nf_GetProcessMod(DWORD dwPiD, LPVOID pData, const DWORD pro
 	return false;
 }
 
-bool ArkProcessInfo::nf_KillProcess()
+const bool ArkProcessInfo::nf_KillProcess()
 {
 	map<int, wstring> Process_list;
 	DWORD	inSize = 0;
@@ -94,12 +94,12 @@ bool ArkProcessInfo::nf_KillProcess()
 	return status;
 }
 
-bool ArkProcessInfo::nf_DumpProcessMem()
+const bool ArkProcessInfo::nf_DumpProcessMem()
 {
 	return true;
 }
 
-bool ArkProcessInfo::nf_EnumProcess(LPVOID pData, const DWORD proessinfoSize)
+const bool ArkProcessInfo::nf_EnumProcess(LPVOID pData, const DWORD proessinfoSize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;

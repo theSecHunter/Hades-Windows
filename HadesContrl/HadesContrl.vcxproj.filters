@@ -34,6 +34,9 @@
     <Filter Include="Dmp">
       <UniqueIdentifier>{1869506e-9845-4f80-85b6-4ebbf3e6000c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Interface">
+      <UniqueIdentifier>{09b12989-f293-4bd5-9733-f193ce2ed9f1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -83,6 +86,9 @@
     </ClInclude>
     <ClInclude Include="crashreport.h">
       <Filter>Dmp</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface.h">
+      <Filter>Interface</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

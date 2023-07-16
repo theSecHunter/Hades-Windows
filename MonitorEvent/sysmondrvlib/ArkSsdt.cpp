@@ -24,7 +24,7 @@ ArkSsdt::~ArkSsdt()
 
 }
 
-bool ArkSsdt::nf_init()
+const bool ArkSsdt::nf_init()
 {
 	DWORD inSize = 0;
 	DWORD dwSize = 0;
@@ -52,7 +52,7 @@ bool ArkSsdt::nf_init()
 
 }
 
-bool ArkSsdt::nf_GetSysCurrentSsdtData(LPVOID pData, const DWORD SSdtinfoSize)
+const bool ArkSsdt::nf_GetSysCurrentSsdtData(LPVOID pData, const DWORD SSdtinfoSize)
 {
 	DWORD	inSize = 0;
 	DWORD	dwSize = 0;

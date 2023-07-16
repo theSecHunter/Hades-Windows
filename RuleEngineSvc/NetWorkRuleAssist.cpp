@@ -1,6 +1,7 @@
+#include "pch.h"
 #include "NetWorkRuleAssist.h"
 
-bool ConfigNetWorkYamlRuleParsing(unsigned int& imods, std::string& strProcessNameList)
+const bool ConfigNetWorkYamlRuleParsing(unsigned int& imods, std::string& strProcessNameList)
 {
 	return true;
 }

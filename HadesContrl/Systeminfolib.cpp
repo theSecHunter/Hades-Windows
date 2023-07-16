@@ -1,12 +1,9 @@
 #include "Systeminfolib.h"
-#include <usysinfo.h>
 #include <Windows.h>
+#include "Interface.h"
 
-SystemAttributesNode SYSTEMPUBLIC::sysattriinfo;
 SystemDynamicNode SYSTEMPUBLIC::sysdynamicinfo;
-
-static USysBaseInfo g_systmelib;
-HWND MainWin_hwnd;
+SystemAttributesNode SYSTEMPUBLIC::sysattriinfo;
 
 Systeminfolib::Systeminfolib()
 {
@@ -16,15 +13,15 @@ Systeminfolib::Systeminfolib()
         CHAR ComUserName[MAX_PATH] = { 0, };
         GetComputerNameA(ComUserName, &ComUserLen);
         SYSTEMPUBLIC::sysattriinfo.currentUser = ComUserName;
-        g_systmelib.GetOSVersion(SYSTEMPUBLIC::sysattriinfo.verkerlinfo, SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion, SYSTEMPUBLIC::sysattriinfo.Is64);
-        g_systmelib.GetDisplayCardInfoWmic(SYSTEMPUBLIC::sysattriinfo.mainboard);
-        //g_systmelib.GetDiskInfo(SYSTEMPUBLIC::sysattriinfo.sysdisk);
-        //g_systmelib.Getbattery(SYSTEMPUBLIC::sysattriinfo.battery);
-        g_systmelib.GetSysCpuInfo(SYSTEMPUBLIC::sysattriinfo.cpuinfo);
-        g_systmelib.GetBluetooth(SYSTEMPUBLIC::sysattriinfo.bluetooth);
-        g_systmelib.GetCameraInfoList(SYSTEMPUBLIC::sysattriinfo.camera);
-        g_systmelib.GetMicroPhone(SYSTEMPUBLIC::sysattriinfo.microphone);
-        g_systmelib.GetGPU(SYSTEMPUBLIC::sysattriinfo.monitor);
+        SingletonUSysBaseInfo::instance()->GetOSVersion(SYSTEMPUBLIC::sysattriinfo.verkerlinfo, SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion, SYSTEMPUBLIC::sysattriinfo.Is64);
+        SingletonUSysBaseInfo::instance()->GetDisplayCardInfoWmic(SYSTEMPUBLIC::sysattriinfo.mainboard);
+        // SingletonUSysBaseInfo::instance()->GetDiskInfo(SYSTEMPUBLIC::sysattriinfo.sysdisk);
+        // SingletonUSysBaseInfo::instance()->Getbattery(SYSTEMPUBLIC::sysattriinfo.battery);
+        SingletonUSysBaseInfo::instance()->GetSysCpuInfo(SYSTEMPUBLIC::sysattriinfo.cpuinfo);
+        SingletonUSysBaseInfo::instance()->GetBluetooth(SYSTEMPUBLIC::sysattriinfo.bluetooth);
+        SingletonUSysBaseInfo::instance()->GetCameraInfoList(SYSTEMPUBLIC::sysattriinfo.camera);
+        SingletonUSysBaseInfo::instance()->GetMicroPhone(SYSTEMPUBLIC::sysattriinfo.microphone);
+        SingletonUSysBaseInfo::instance()->GetGPU(SYSTEMPUBLIC::sysattriinfo.monitor);
     }
     catch (const std::exception&)
     {

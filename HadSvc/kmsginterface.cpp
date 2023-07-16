@@ -1,15 +1,6 @@
 #include "msgassist.h"
 #include "kmsginterface.h"
-
-#include "ArkSsdt.h"
-#include "ArkIdt.h"
-#include "ArkDpcTimer.h"
-#include "ArkFsd.h"
-#include "ArkMouseKeyBoard.h"
-#include "ArkNetwork.h"
-#include "ArkProcessInfo.h"
-#include "ArkSysDriverDevInfo.h"
-#include <ArkDrvlib.h>
+#include "kinterface.h"
 
 #include <ProcessRuleAssist.h>
 #include <RegisterRuleAssist.h>
@@ -26,25 +17,17 @@
 #include <json.hpp>
 using json_t = nlohmann::json;
 
-// 生产者对象
-static ArkSsdt		        g_kernel_ssdtobj;
-static ArkIdt				g_kernel_idtobj;
-static ArkDpcTimer		    g_kernel_dpcobj;
-static ArkFsd				g_kernel_fsdobj;
-static ArkMouseKeyBoard	    g_kernel_mousekeyboardobj;
-static ArkNetwork			g_kernel_networkobj;
-static ArkProcessInfo		g_kernel_processinfo;
-static AkrSysDriverDevInfo	g_kernel_sysmodinfo;
 static DevctrlIoct          g_kernel_Ioct;
+
 static bool                 g_exit = false;
 const char devSyLinkName[] = "\\??\\Sysmondrv_hades";
 
 static std::queue<UPubNode*>    g_RecvDataQueue;
 static std::mutex               g_RecvDataQueueCs;
 static HANDLE                   g_kjobAvailableEvent = nullptr;
-inline void kMsgInterface::kMsg_SetTopicQueuePtr() { g_kernel_Ioct.kf_setqueuetaskptr(g_RecvDataQueue); }
-inline void kMsgInterface::kMsg_SetTopicQueueLockPtr() { g_kernel_Ioct.kf_setqueuelockptr(g_RecvDataQueueCs); }
-inline void kMsgInterface::kMsg_SetTopicEventPtr() { g_kernel_Ioct.kf_setqueueeventptr(g_kjobAvailableEvent); }
+inline void kMsgInterface::kMsg_SetTopicQueuePtr() { SingletonKDrvManage::instance()->kf_setqueuetaskptr(g_RecvDataQueue); }
+inline void kMsgInterface::kMsg_SetTopicQueueLockPtr() { SingletonKDrvManage::instance()->kf_setqueuelockptr(g_RecvDataQueueCs); }
+inline void kMsgInterface::kMsg_SetTopicEventPtr() { SingletonKDrvManage::instance()->kf_setqueueeventptr(g_kjobAvailableEvent); }
 
 // 设置Grpc消费者指针(被消费者调用)
 static std::queue<std::shared_ptr<USubNode>>*       g_SendQueueData_Ptr = NULL;
@@ -484,9 +467,9 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     {
     case NF_SSDT_ID:
     {
-        if (g_kernel_ssdtobj.nf_init())
+        if (SingletonKSSdt::instance()->nf_init())
         {
-            if (false == g_kernel_ssdtobj.nf_GetSysCurrentSsdtData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
+            if (false == SingletonKSSdt::instance()->nf_GetSysCurrentSsdtData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
                 break;
             const SSDTINFO* pSSdtInfo = (SSDTINFO*)ptr_Getbuffer;
             if (!pSSdtInfo)
@@ -506,9 +489,9 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     break;
     case NF_IDT_ID:
     {
-        if (g_kernel_idtobj.nf_init())
+        if (SingletonKIdt::instance()->nf_init())
         {
-            if (!g_kernel_idtobj.nf_GetIdtData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
+            if (!SingletonKIdt::instance()->nf_GetIdtData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
                 break;
             const IDTINFO* pIdtInfo = (IDTINFO*)ptr_Getbuffer;
             if (!pIdtInfo)
@@ -528,7 +511,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     break;
     case NF_DPC_ID:
     {
-        if (false == g_kernel_dpcobj.nf_GetDpcTimerData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
+        if (false == SingletonKDpcTimer::instance()->nf_GetDpcTimerData((LPVOID)ptr_Getbuffer, dwAllocateMemSize))
             break;
         const DPC_TIMERINFO* pDpcInfo = (DPC_TIMERINFO*)ptr_Getbuffer;
         if (!pDpcInfo)
@@ -549,7 +532,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     break;
     case NF_FSD_ID:
     {
-        if (false == g_kernel_fsdobj.nf_GetFsdInfo(ptr_Getbuffer, dwAllocateMemSize))
+        if (false == SingletonKFsd::instance()->nf_GetFsdInfo(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
         const ULONGLONG* pFsdMJAddrList = (ULONGLONG*)ptr_Getbuffer;
@@ -584,7 +567,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     break;
     case NF_MOUSEKEYBOARD_ID:
     {
-        if (false == g_kernel_mousekeyboardobj.nf_GetMouseKeyInfoData(ptr_Getbuffer, dwAllocateMemSize))
+        if (false == SingletonKMouseKeyBoard::instance()->nf_GetMouseKeyInfoData(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
         const ULONGLONG* pMousKeyMJAddrList = (ULONGLONG*)ptr_Getbuffer;
@@ -626,7 +609,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     break;
     case NF_NETWORK_ID:
     {
-        if (false == g_kernel_networkobj.nf_GetNteworkProcessInfo(ptr_Getbuffer, dwAllocateMemSize))
+        if (false == SingletonKNetWork::instance()->nf_GetNteworkProcessInfo(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
         const PSYSNETWORKINFONODE pNetworkInfo = (PSYSNETWORKINFONODE)ptr_Getbuffer;
@@ -660,7 +643,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     break;
     case NF_PROCESS_ENUM:
     {
-        if (false == g_kernel_processinfo.nf_EnumProcess(ptr_Getbuffer, dwAllocateMemSize))
+        if (false == SingletonKProcessInfo::instance()->nf_EnumProcess(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
         const PHANDLE_INFO pPhandleInfo = (PHANDLE_INFO)ptr_Getbuffer;
@@ -698,7 +681,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
         int Process_Pid = 4;
         cout << "Test Input Pid: 4";
         // 默认测试
-        if (false == g_kernel_processinfo.nf_GetProcessMod(Process_Pid, ptr_Getbuffer, dwAllocateMemSize))
+        if (false == SingletonKProcessInfo::instance()->nf_GetProcessMod(Process_Pid, ptr_Getbuffer, dwAllocateMemSize))
             break;
 
         const PPROCESS_MOD pProcMod = (PPROCESS_MOD)ptr_Getbuffer;
@@ -728,12 +711,12 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     break;
     case NF_PROCESS_KILL:
     {
-         g_kernel_processinfo.nf_KillProcess();
+         SingletonKProcessInfo::instance()->nf_KillProcess();
     }
     break;
     case NF_SYSMOD_ENUM:
     {
-        if (false == g_kernel_sysmodinfo.nf_EnumSysMod(ptr_Getbuffer, dwAllocateMemSize))
+        if (false == SingletonKSysDriverDevInfo::instance()->nf_EnumSysMod(ptr_Getbuffer, dwAllocateMemSize))
             break;
 
         const PPROCESS_MOD pProcMod = (PPROCESS_MOD)ptr_Getbuffer;
@@ -778,7 +761,7 @@ void kMsgInterface::DriverInit(const int flag)
     int status = 0;
 
     // Init devctrl
-    status = g_kernel_Ioct.devctrl_init();
+    status = SingletonKDrvManage::instance()->devctrl_init();
     if (0 > status)
     {
         OutputDebugString(L"devctrl_init error: main.c --> lines: 678");
@@ -788,7 +771,7 @@ void kMsgInterface::DriverInit(const int flag)
     do
     {
         // Open driver
-        status = g_kernel_Ioct.devctrl_opendeviceSylink(devSyLinkName);
+        status = SingletonKDrvManage::instance()->devctrl_opendeviceSylink(devSyLinkName);
         if (0 >= status)
         {
             OutputDebugString(L"devctrl_opendeviceSylink error: main.c --> lines: 688");
@@ -796,7 +779,7 @@ void kMsgInterface::DriverInit(const int flag)
         }
 
         // Init share Mem
-        status = g_kernel_Ioct.devctrl_InitshareMem();
+        status = SingletonKDrvManage::instance()->devctrl_InitshareMem();
         if (0 >= status)
         {
             OutputDebugString(L"devctrl_InitshareMem error: main.c --> lines: 690");
@@ -810,11 +793,11 @@ void kMsgInterface::DriverInit(const int flag)
             strProcessName.append("||");
             const std::wstring IpsProcessName = Str2WStr(strProcessName);
             OutputDebugString((L"[HadesSvc] devctrl_SetIpsProcessNameList: " + IpsProcessName).c_str());
-            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessName.c_str());
+            status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessName.c_str());
             OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
             if (status)
             {
-                status = g_kernel_Ioct.devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, dwMods);
+                status = SingletonKDrvManage::instance()->devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, dwMods);
                 if(status)
                     OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
                 else
@@ -831,7 +814,7 @@ void kMsgInterface::DriverInit(const int flag)
             registerProcName.append("||");
             const std::wstring IpsRegisterName = Str2WStr(registerProcName);
             OutputDebugString((L"[HadesSvc] devctrl_SetIpsProcessNameList: " + IpsRegisterName).c_str());
-            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterName.c_str());
+            status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterName.c_str());
             OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
             if (status)
                 OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList Success");
@@ -852,21 +835,21 @@ void kMsgInterface::DriverInit(const int flag)
             if (!IpsDirWhiterName.empty() && !IpsDirWhiteDirPath.empty())
             {
                 OutputDebugString((L"[HadesSvc] devctrl_SetIpswhiteNameList: " + IpsDirWhiterName).c_str());
-                status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiterName.c_str());
+                status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiterName.c_str());
                 OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
 
                 OutputDebugString((L"[HadesSvc] devctrl_SetIpswhiteDirectoryList: " + IpsDirWhiteDirPath).c_str());
-                status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiteDirPath.c_str());
+                status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiteDirPath.c_str());
                 OutputDebugString(L"[HadesSvc] devctrl_SetIpswhiteDirectoryList Success");
             }
             if (!IpsDirBlackName.empty() && !IpsDirBlackDirPat.empty())
             {
                 OutputDebugString((L"[HadesSvc] devctrl_SetIpsblackNameList: " + IpsDirBlackName).c_str());
-                status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackName.c_str());
+                status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackName.c_str());
                 OutputDebugString(L"[HadesSvc] devctrl_SetIpsblackNameList Success");
 
                 OutputDebugString((L"[HadesSvc] devctrl_SetIpsblackDirectoryList: " + IpsDirBlackDirPat).c_str());
-                status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackDirPat.c_str());
+                status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackDirPat.c_str());
                 OutputDebugString(L"[HadesSvc] devctrl_SetIpsblackDirectoryList Success");
             }
 
@@ -883,7 +866,7 @@ void kMsgInterface::DriverInit(const int flag)
             threadInjectProcName.append("||");
             const std::wstring IpsThreadName = Str2WStr(threadInjectProcName);
             OutputDebugString((L"[HadesSvc] devctrl_SetIpsProcessNameList: " + IpsThreadName).c_str());
-            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETTHREADINJECTNAME, IpsThreadName.c_str());
+            status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETTHREADINJECTNAME, IpsThreadName.c_str());
             OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
             if (status)
                 OutputDebugString(L"[HadesSvc] ThreadInejctProc devctrl_SetIpsProcessNameList Success");
@@ -892,7 +875,7 @@ void kMsgInterface::DriverInit(const int flag)
         }
 
         // Enable Event --> 内核提取出来数据以后处理类
-        //g_kernel_Ioct.nf_setEventHandler((PVOID)&eventobj);
+        //SingletonKDrvManage::instance()->nf_setEventHandler((PVOID)&eventobj);
 
         status = 1;
     } while (false);
@@ -907,21 +890,24 @@ void kMsgInterface::DriverInit(const int flag)
 }
 void kMsgInterface::DriverFree()
 {
-    g_kernel_Ioct.devctrl_free();
+    SingletonKDrvManage::instance()->devctrl_free();
     kInitStatus = false;
 }
+
+// 读线程
 void kMsgInterface::StopReadFileThread()
 {
-    g_kernel_Ioct.devctrl_stopthread();
+    SingletonKDrvManage::instance()->devctrl_stopthread();
 }
 void kMsgInterface::StartReadFileThread()
 {
-    g_kernel_Ioct.devctrl_startthread();
+    SingletonKDrvManage::instance()->devctrl_startthread();
 }
+
 void kMsgInterface::OnMonitor()
 {
     int status = 0;
-    status = g_kernel_Ioct.devctrl_OnMonitor();
+    status = SingletonKDrvManage::instance()->devctrl_OnMonitor();
     if (0 > status)
     {
         cout << "OnMonitor error kmsginterface" << endl;
@@ -932,7 +918,7 @@ void kMsgInterface::OnMonitor()
 void kMsgInterface::OffMonitor()
 {
     int status = 0;
-    status = g_kernel_Ioct.devctrl_OffMonitor();
+    status = SingletonKDrvManage::instance()->devctrl_OffMonitor();
     Sleep(100);
     if (0 > status)
     {
@@ -945,7 +931,7 @@ void kMsgInterface::OffMonitor()
 void kMsgInterface::OnBeSnipingMonitor()
 {
     int status = 0;
-    status = g_kernel_Ioct.devctrl_OnIpsMonitor();
+    status = SingletonKDrvManage::instance()->devctrl_OnIpsMonitor();
     Sleep(100);
     if (0 > status)
     {
@@ -956,7 +942,7 @@ void kMsgInterface::OnBeSnipingMonitor()
 void kMsgInterface::OffBeSnipingMonitor()
 {
     int status = 0;
-    status = g_kernel_Ioct.devctrl_OffIpsMonitor();
+    status = SingletonKDrvManage::instance()->devctrl_OffIpsMonitor();
     Sleep(100);
     if (0 > status)
     {
@@ -964,6 +950,8 @@ void kMsgInterface::OffBeSnipingMonitor()
     }
     kBesnipingStatus = false;
 }
+
+// 引擎态
 bool kMsgInterface::GetKerMonStatus()
 {
     return kerMonStatus;
@@ -976,6 +964,8 @@ bool kMsgInterface::GetKerBeSnipingStatus()
 {
     return kBesnipingStatus;
 }
+
+// 规则
 bool kMsgInterface::ReLoadProcessRuleConfig()
 {
     int status = 0;
@@ -985,14 +975,14 @@ bool kMsgInterface::ReLoadProcessRuleConfig()
         strProcessName.append("||");
         const std::wstring IpsProcessName = Str2WStr(strProcessName);
         if (!IpsProcessName.empty())
-            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessName.c_str());
+            status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETPROCESSNAME, IpsProcessName.c_str());
         if (0 >= status)
         {
             OutputDebugString(L"[HadesSvc] Process devctrl_SetIpsProcessNameList");
             return false;
         }
         if (dwMods)
-            status = g_kernel_Ioct.devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, dwMods);
+            status = SingletonKDrvManage::instance()->devctrl_SetIpsFilterMods(CTL_DEVCTRL_IPS_SETPROCESSFILTERMOD, dwMods);
         if (0 >= status)
         {
             OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsMods");
@@ -1011,7 +1001,7 @@ bool kMsgInterface::ReLoadRegisterRuleConfig()
         const std::wstring IpsRegisterName = Str2WStr(registerProcName);
         int status = 0;
         if (!IpsRegisterName.empty())
-            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterName.c_str());
+            status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETREGISTERNAME, IpsRegisterName.c_str());
         if (0 >= status)
         {
             OutputDebugString(L"[HadesSvc] Register devctrl_SetIpsProcessNameList");
@@ -1036,21 +1026,21 @@ bool kMsgInterface::ReLoadDirectoryRuleConfig()
         if (!IpsDirWhiterName.empty() && !IpsDirWhiteDirPath.empty())
         {
             OutputDebugString((L"[HadesSvc] devctrl_SetIpswhiteNameList: " + IpsDirWhiterName).c_str());
-            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiterName.c_str());
+            status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiterName.c_str());
             OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
 
             OutputDebugString((L"[HadesSvc] devctrl_SetIpswhiteDirectoryList: " + IpsDirWhiteDirPath).c_str());
-            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiteDirPath.c_str());
+            status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirWhiteDirPath.c_str());
             OutputDebugString(L"[HadesSvc] devctrl_SetIpswhiteDirectoryList Success");
         }
         if (!IpsDirBlackName.empty() && !IpsDirBlackDirPat.empty())
         {
             OutputDebugString((L"[HadesSvc] devctrl_SetIpsblackNameList: " + IpsDirBlackName).c_str());
-            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackName.c_str());
+            status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackName.c_str());
             OutputDebugString(L"[HadesSvc] devctrl_SetIpsblackNameList Success");
 
             OutputDebugString((L"[HadesSvc] devctrl_SetIpsblackDirectoryList: " + IpsDirBlackDirPat).c_str());
-            status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackDirPat.c_str());
+            status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETDIRECTORYRULE, IpsDirBlackDirPat.c_str());
             OutputDebugString(L"[HadesSvc] devctrl_SetIpsblackDirectoryList Success");
         }
 
@@ -1070,7 +1060,7 @@ bool kMsgInterface::ReLoadThreadInjectRuleConfig()
         threadInjectProcName.append("||");
         const std::wstring IpsThreadName = Str2WStr(threadInjectProcName);
         OutputDebugString((L"[HadesSvc] devctrl_SetIpsProcessNameList: " + IpsThreadName).c_str());
-        const int status = g_kernel_Ioct.devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETTHREADINJECTNAME, IpsThreadName.c_str());
+        const int status = SingletonKDrvManage::instance()->devctrl_SetIpsProcessNameList(CTL_DEVCTRL_IPS_SETTHREADINJECTNAME, IpsThreadName.c_str());
         OutputDebugString(L"[HadesSvc] devctrl_SetIpsProcessNameList Success");
         if (status)
             OutputDebugString(L"[HadesSvc] ThreadInejctProc devctrl_SetIpsProcessNameList Success");
@@ -1080,6 +1070,7 @@ bool kMsgInterface::ReLoadThreadInjectRuleConfig()
     }
     return false;
 }
+
 void kMsgInterface::kMsg_Init() {
     // 初始化Topic
     g_kjobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);

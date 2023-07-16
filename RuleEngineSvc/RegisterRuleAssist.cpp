@@ -53,7 +53,7 @@ inline void FindObjectRegisterPath(const PVOID object, std::wstring& RegisterPat
 	g_objmaplock.unlock();
 }
 
-bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
+const bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 {
 	if (!RuleEngineToos::IsFile(g_RegConfigName))
 		return false;
@@ -140,7 +140,7 @@ bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 	return nRet;
 }
 
-bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int Rulepermissions, const ULONG status, const PVOID object, const std::wstring& registerPath)
+const bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int Rulepermissions, const ULONG status, const PVOID object, const std::wstring& registerPath)
 {
 	try
 	{
@@ -265,7 +265,7 @@ bool FindRegisterRuleHitEx(const int opearType, const int permissions, const int
 	}
 	
 }
-bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
+const bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 {// true ·ÅÐÐ - false À¹½Ø 
 	if (!registerinfo || g_vecRegRuleList.empty())
 		return true;

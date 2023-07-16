@@ -12,9 +12,7 @@
 #define INITGUID
 #include <guiddef.h>
 
-
 static GUID		g_providerGuid;
-
 static GUID		g_calloutGuid_flow_established_v4;
 static GUID		g_calloutGuid_flow_established_v6;
 static GUID		g_calloutGuid_ale_connectredirect_v4;
@@ -59,8 +57,7 @@ typedef enum _NF_DIRECTION
 /*	=============================================
 				callouts callbacks
 	============================================= */
-VOID 
-helper_callout_classFn_flowEstablished(
+VOID helper_callout_classFn_flowEstablished(
 	_In_ const FWPS_INCOMING_VALUES0* inFixedValues,
 	_In_ const FWPS_INCOMING_METADATA_VALUES0* inMetaValues,
 	_Inout_opt_ void* layerData,
@@ -173,8 +170,7 @@ Exit:
 	}
 }
 
-NTSTATUS 
-helper_callout_notifyFn_flowEstablished(
+NTSTATUS helper_callout_notifyFn_flowEstablished(
 	_In_ FWPS_CALLOUT_NOTIFY_TYPE notifyType,
 	_In_ const GUID* filterKey,
 	_Inout_ FWPS_FILTER3* filter
@@ -187,8 +183,7 @@ helper_callout_notifyFn_flowEstablished(
 	return status;
 }
 
-VOID
-helper_callout_classFn_mac(
+VOID helper_callout_classFn_mac(
 	_In_ const FWPS_INCOMING_VALUES* inFixedValues,
 	_In_ const FWPS_INCOMING_METADATA_VALUES* inMetaValues,
 	_Inout_opt_ void* layerData,
@@ -374,8 +369,7 @@ Exit:
 	classifyOut->actionType = FWP_ACTION_PERMIT;
 }
 
-NTSTATUS
-helper_callout_notifyFn_mac(
+NTSTATUS helper_callout_notifyFn_mac(
 	_In_ FWPS_CALLOUT_NOTIFY_TYPE notifyType,
 	_In_ const GUID* filterKey,
 	_Inout_ const FWPS_FILTER* filter
@@ -426,18 +420,15 @@ void DbgPrintAddress(int ipFamily, void* addr, char* name, UINT64 id)
 	}
 }
 
-typedef
-NTSTATUS
-(NTAPI* t_FwpsPendClassify0)(
+typedef NTSTATUS (NTAPI* t_FwpsPendClassify0)(
 	UINT64 classifyHandle,
 	UINT64 filterId,
 	UINT32 flags,
 	FWPS_CLASSIFY_OUT0* classifyOut
 	);
-
 static t_FwpsPendClassify0 _FwpsPendClassify0 = FwpsPendClassify0;
-VOID
-helper_callout_classFn_connectredirect(
+
+VOID helper_callout_classFn_connectredirect(
 	IN const FWPS_INCOMING_VALUES* inFixedValues,
 	IN const FWPS_INCOMING_METADATA_VALUES* inMetaValues,
 	IN VOID* packet,
@@ -667,8 +658,7 @@ Exit:
 	classifyOut->actionType = FWP_ACTION_PERMIT;
 }
 
-NTSTATUS
-helper_callout_notifyFn_connectredirect(
+NTSTATUS helper_callout_notifyFn_connectredirect(
 	_In_ FWPS_CALLOUT_NOTIFY_TYPE notifyType,
 	_In_ const GUID* filterKey,
 	_Inout_ const FWPS_FILTER* filter
@@ -684,8 +674,7 @@ helper_callout_notifyFn_connectredirect(
 /*	=============================================
 				callouts Ctrl
 	============================================= */
-NTSTATUS
-helper_callout_registerCallout(
+NTSTATUS helper_callout_registerCallout(
 	IN OUT void* deviceObject,
 	IN  FWPS_CALLOUT_CLASSIFY_FN classifyFunction,
 	IN  FWPS_CALLOUT_NOTIFY_FN notifyFunction,
@@ -865,8 +854,7 @@ NTSTATUS callout_addDataLinkMacFilter(
 	return status;
 }
 
-NTSTATUS
-callouts_addFilters()
+NTSTATUS callouts_addFilters()
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	FWPM_CALLOUT0 fwpcallout;
@@ -927,8 +915,8 @@ callouts_addFilters()
 		//	&subLayer,
 		//	2
 		//);
-		if (!NT_SUCCESS(status))
-			break;
+		//if (!NT_SUCCESS(status))
+		//	break;
 
 		//status = callout_addFlowEstablishedFilter(
 		//	&g_calloutGuid_ale_connectredirect_v4,
@@ -976,8 +964,7 @@ callouts_addFilters()
 	return status;
 }
 
-NTSTATUS
-callouts_registerCallouts(
+NTSTATUS callouts_registerCallouts(
 	IN OUT void* deviceObject
 )
 {

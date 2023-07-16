@@ -42,7 +42,7 @@ typedef struct VMINFO {
 	MEMORYSTATE state;
 }VMINFO;
 
-BOOL DosPathToNtPath(LPTSTR pszDosPath, LPTSTR pszNtPath)
+const bool DosPathToNtPath(LPTSTR pszDosPath, LPTSTR pszNtPath)
 {
 	TCHAR			szDriveStr[500];
 	TCHAR			szDrive[3];
@@ -83,7 +83,7 @@ BOOL DosPathToNtPath(LPTSTR pszDosPath, LPTSTR pszNtPath)
 
 	return FALSE;
 }
-BOOL GetProcessFullPath(DWORD dwPID, WCHAR* processpath)
+const bool GetProcessFullPath(DWORD dwPID, WCHAR* processpath)
 {
 	TCHAR		szImagePath[MAX_PATH];
 	TCHAR		pszFullPath[MAX_PATH];
@@ -116,7 +116,7 @@ BOOL GetProcessFullPath(DWORD dwPID, WCHAR* processpath)
 }
 
 // ProcessInfo
-int GetProcessModules(DWORD processID)
+const int GetProcessModules(DWORD processID)
 {
 	/*
 	* Use:
@@ -187,7 +187,7 @@ void GetProcessModule(const DWORD idProcess)
 	if (hProcess)
 		CloseHandle(hProcess);
 }
-BOOL GetProceThread(const DWORD ProcPid)
+const bool GetProceThread(const DWORD ProcPid)
 {
 	HANDLE lpthread = INVALID_HANDLE_VALUE;
 	THREADENTRY32 t_32 = { 0 };
@@ -232,7 +232,7 @@ BOOL GetProceThread(const DWORD ProcPid)
 		CloseHandle(lpthread);
 	return TRUE;
 }
-BOOL GetProcessPath(const DWORD dwPID, WCHAR* processpath)
+const bool GetProcessPath(const DWORD dwPID, WCHAR* processpath)
 {
 	HANDLE hSnapshot = NULL;
 	BOOL fOk;
@@ -377,7 +377,7 @@ void GetQueryViryualMemoryStatue(HANDLE hProccess)
 		++count;
 	}
 }
-BOOL UProcess::uf_GetProcessInfo(const DWORD dwPID, LPVOID pData)
+const bool UProcess::uf_GetProcessInfo(const DWORD dwPID, LPVOID pData)
 {
 	GetProceThread(dwPID);
 	GetProcessModule(dwPID);
@@ -454,7 +454,7 @@ DWORD EnumProcess(LPVOID pData)
 
 	return procesnumber;
 }
-BOOL UProcess::uf_EnumProcess(LPVOID pData)
+const bool UProcess::uf_EnumProcess(LPVOID pData)
 {
 	if (!pData)
 		return false;

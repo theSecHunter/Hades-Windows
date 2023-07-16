@@ -9,11 +9,11 @@
 #include <stdio.h>
 #include <sysinfo.h>
 
-UNet::UNet()
+UNetWork::UNetWork()
 {
 }
 
-UNet::~UNet()
+UNetWork::~UNetWork()
 {
 
 }
@@ -272,7 +272,7 @@ DWORD EnumUDPTablePid(UNetUdpNode* pData)
 	return dwCount;
 }
 
-bool UNet::uf_EnumNetwork(LPVOID pData)
+const bool UNetWork::uf_EnumNetwork(LPVOID pData)
 {
 	if (!pData)
 		return false;

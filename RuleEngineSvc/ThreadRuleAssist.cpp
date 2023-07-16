@@ -5,7 +5,7 @@
 static const std::string g_threadConfigName = "threadRuleConfig.json";
 
 // parsing config to "InjectProcessNameArray"
-bool ConfigThreadJsonRuleParsing(std::string& strProcessNameList)
+const bool ConfigThreadJsonRuleParsing(std::string& strProcessNameList)
 {
 	if (!RuleEngineToos::IsFile(g_threadConfigName))
 		return false;

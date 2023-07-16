@@ -17,7 +17,7 @@ UAutoStart::~UAutoStart()
 }
 
 // 默认不超过1000条注册表启动
-ULONG CheckRegisterRun(RegRun* pRegRun)
+const ULONG CheckRegisterRun(RegRun* pRegRun)
 {
 	if (!pRegRun)
 		return 0;
@@ -193,7 +193,7 @@ void XmlCommandAn(const wchar_t* source, wchar_t* deststr)
 	通过WMI只能枚举使用Win32_ScheduledJob类别或At.exe实用程序创建的计划任务。NetScheduleJobEnum(); Win8以上就不支持了(放弃)
 	Ues: Task Scheduler 2.0
 */
-ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* pTaskRun)
+const ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* pTaskRun)
 {
 	if (!pTaskRun)
 		return 0;
@@ -330,7 +330,7 @@ ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* pTaskRun)
 	return iCouent;
 }
 
-bool UAutoStart::uf_EnumAutoStartask(LPVOID pData, const DWORD dwSize)
+const bool UAutoStart::uf_EnumAutoStartask(LPVOID pData, const DWORD dwSize)
 {
 	if (!pData || 0 >= dwSize)
 		return false;
