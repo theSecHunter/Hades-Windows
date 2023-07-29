@@ -1,5 +1,4 @@
 #pragma once
-#include <NetApi.h>
 
 class KNetWork
 {

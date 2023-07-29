@@ -1,15 +1,12 @@
 #include <Windows.h>
 #include "CodeTool.h"
-#include "devctrl.h"
 #include "workqueue.h"
 #include "EventHandler.h"
 #include "NetApi.h"
+#include "singGlobal.h"
 
 #include <iostream>
 using namespace std;
-
-static DevctrlIoct	devobj;
-static EventHandler packtebuff;
 
 bool SplitFilePath(const char* szFullPath, char* szPath, char* szFileName, char* szFileExt)
 {
@@ -434,7 +431,7 @@ int NetInit(void) {
 	}
 
 	// Init devctrl
-	status = devobj.devctrl_init();
+	status = SingletNetMonx::instance()->devctrl_init();
 	if (0 > status)
 	{
 		cout << "devctrl_init error: main.c" << endl;
@@ -444,7 +441,7 @@ int NetInit(void) {
 	do 
 	{
 		// Open driver
-		status = devobj.devctrl_opendeviceSylink(g_DevSyLinkName);
+		status = SingletNetMonx::instance()->devctrl_opendeviceSylink(g_DevSyLinkName);
 		if (0 > status)
 		{
 			cout << "devctrl_opendeviceSylink error: main.c" << endl;
@@ -452,17 +449,18 @@ int NetInit(void) {
 		}
 
 		// Init share Mem
-		status = devobj.devctrl_InitshareMem();
+		status = SingletNetMonx::instance()->devctrl_InitshareMem();
 		if (0 > status)
 		{
 			cout << "devctrl_InitshareMem error: main.c" << endl;
 			break;
 		}
 
+		static EventHandler cEventHandle;
 		// 必须在 devctrl_workthread 之前初始化 Work Queue
-		nf_InitWorkQueue((PVOID64)&packtebuff);
+		nf_InitWorkQueue((PVOID64)&cEventHandle);
 
-		status = devobj.devctrl_workthread();
+		status = SingletNetMonx::instance()->devctrl_workthread();
 		if (0 > status)
 		{
 			cout << "devctrl_workthread error: main.c" << endl;
@@ -470,7 +468,7 @@ int NetInit(void) {
 		}
 
 		// Enable try Network packte Monitor
-		status = devobj.devctrl_OnMonitor();
+		status = SingletNetMonx::instance()->devctrl_OnMonitor();
 		if (0 > status)
 		{
 			cout << "devctrl_InitshareMem error: main.c" << endl;

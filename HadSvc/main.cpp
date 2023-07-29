@@ -8,21 +8,10 @@
 #include <TlHelp32.h>
 #pragma comment(lib, "ws2_32.lib")
 
-#include "DataHandler.h"
-#include "umsginterface.h"
-#include "kmsginterface.h"
-#include "msgloop.h"
-#include "HlprMiniCom.h"
+#include "singGloal.h"
 #include <usysinfo.h>
 
 #include <DirectoryRuleAssist.h>
-
-static kMsgInterface	g_mainMsgKlib;
-static uMsgInterface	g_mainMsgUlib;
-static WinMsgLoop		g_MsgControl;
-static HlprMiniPortIpc	g_miniport;
-static USysBaseInfo		g_DynSysBaseinfo;
-static DataHandler		g_DataHandler;
 
 // Debug调试
 static bool kerne_mon = false;		// kernel采集
@@ -82,6 +71,8 @@ static DWORD WINAPI HadesAgentActiveCheckThread(LPVOID lpThreadParameter)
 
 int main(int argc, char* argv[])
 {
+	SingletonKNetWork::instance()->SetAllRule();
+	return 0;
 	// 允许单进程运行
 	const HANDLE hExit = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
 	if (hExit)
@@ -102,67 +93,54 @@ int main(int argc, char* argv[])
 		return 0;
 
 	// Init PipConnect
-	true == g_DataHandler.PipInitAnonymous() ? gpip_send = true : gpip_send = false;
+	true == SingletonDataHandler::instance()->PipInitAnonymous() ? gpip_send = true : gpip_send = false;
 	if (!gpip_send)
 	{
-		g_DataHandler.PipFreeAnonymous();
-		return 0;
-	}
-
-	// Set HadesControl Lib ObjectPtr
-	if (false == g_MsgControl.setUmsgLib(&g_mainMsgUlib) || false == g_MsgControl.setKmsgLib(&g_mainMsgKlib))
-	{
-		OutputDebugString(L"设置HadesControl指针失败");
-		return 0;
-	}
-	// Set DataHandler Lib ObjectPtr
-	if (false == g_DataHandler.SetUMontiorLibPtr(&g_mainMsgUlib) || false == g_DataHandler.SetKMontiorLibPtr(&g_mainMsgKlib))
-	{
-		OutputDebugString(L"设置DataHandler指针失败");
+		SingletonDataHandler::instance()->PipFreeAnonymous();
 		return 0;
 	}
 
 	// Init Recv Etw/Kernel Data
-	g_DataHandler.ThreadPool_Init();
+	SingletonDataHandler::instance()->ThreadPool_Init();
 
 	// Set Exit Event
-	g_DataHandler.SetExitSvcEvent(g_SvcExitEvent);
+	SingletonDataHandler::instance()->SetExitSvcEvent(g_SvcExitEvent);
 
 
-	g_mainMsgUlib.uMsg_Init();
-	g_mainMsgKlib.kMsg_Init();
+	SingletonUMon::instance()->uMsg_Init();
+	SingletonKerMon::instance()->kMsg_Init();
 
 	// Debug Test
 	if (true == gpip_send && (true == kerne_rootkit || true == kerne_mon))
 	{
-		g_mainMsgKlib.DriverInit(false);
+		SingletonKerMon::instance()->DriverInit(false);
 		cout << "Rootkit上报接口测试:" << endl;
-		g_DataHandler.DebugTaskInterface(100);
-		g_DataHandler.DebugTaskInterface(101);
-		//g_DataHandler.DebugTaskInterface(103);
-		g_DataHandler.DebugTaskInterface(108);
-		g_DataHandler.DebugTaskInterface(109);
-		g_DataHandler.DebugTaskInterface(110);
-		g_DataHandler.DebugTaskInterface(111);
-		g_DataHandler.DebugTaskInterface(113);
-		g_DataHandler.DebugTaskInterface(115);
+		SingletonDataHandler::instance()->DebugTaskInterface(100);
+		SingletonDataHandler::instance()->DebugTaskInterface(101);
+		//SingletonDataHandler::instance()->DebugTaskInterface(103);
+		SingletonDataHandler::instance()->DebugTaskInterface(108);
+		SingletonDataHandler::instance()->DebugTaskInterface(109);
+		SingletonDataHandler::instance()->DebugTaskInterface(110);
+		SingletonDataHandler::instance()->DebugTaskInterface(111);
+		SingletonDataHandler::instance()->DebugTaskInterface(113);
+		SingletonDataHandler::instance()->DebugTaskInterface(115);
 	}
 	if (true == gpip_send && true == user_mod)
 	{
 		cout << "User下发接口测试" << endl;
-		g_DataHandler.DebugTaskInterface(200);
-		g_DataHandler.DebugTaskInterface(202);
-		g_DataHandler.DebugTaskInterface(203);
-		g_DataHandler.DebugTaskInterface(207);
-		g_DataHandler.DebugTaskInterface(208);
-		//g_DataHandler.DebugTaskInterface(204);
-		//g_DataHandler.DebugTaskInterface(UF_SYSFILE_ID);
-		//g_DataHandler.DebugTaskInterface(UF_FILE_INFO);
-		//g_DataHandler.DebugTaskInterface(UF_SYSINFO_ID);
-		//g_DataHandler.DebugTaskInterface(UF_PROCESS_PID_TREE);
+		SingletonDataHandler::instance()->DebugTaskInterface(200);
+		SingletonDataHandler::instance()->DebugTaskInterface(202);
+		SingletonDataHandler::instance()->DebugTaskInterface(203);
+		SingletonDataHandler::instance()->DebugTaskInterface(207);
+		SingletonDataHandler::instance()->DebugTaskInterface(208);
+		//SingletonDataHandler::instance()->DebugTaskInterface(204);
+		//SingletonDataHandler::instance()->DebugTaskInterface(UF_SYSFILE_ID);
+		//SingletonDataHandler::instance()->DebugTaskInterface(UF_FILE_INFO);
+		//SingletonDataHandler::instance()->DebugTaskInterface(UF_SYSINFO_ID);
+		//SingletonDataHandler::instance()->DebugTaskInterface(UF_PROCESS_PID_TREE);
 	}
 	if (true == gpip_send && true == etw_mon) {
-		g_mainMsgUlib.uMsg_EtwInit();
+		SingletonUMon::instance()->uMsg_EtwInit();
 	}
 
 	// 等待AgentEvent Exit
@@ -172,20 +150,20 @@ int main(int argc, char* argv[])
 		g_SvcExitEvent = nullptr;
 	}
 
-	if (g_mainMsgUlib.GetEtwMonStatus())
-		g_mainMsgUlib.uMsg_EtwClose();
-	if (g_mainMsgKlib.GetKerBeSnipingStatus())
-		g_mainMsgKlib.OffBeSnipingMonitor();
-	if (g_mainMsgKlib.GetKerMonStatus())
-		g_mainMsgKlib.OffMonitor();
+	if (SingletonUMon::instance()->GetEtwMonStatus())
+		SingletonUMon::instance()->uMsg_EtwClose();
+	if (SingletonKerMon::instance()->GetKerBeSnipingStatus())
+		SingletonKerMon::instance()->OffBeSnipingMonitor();
+	if (SingletonKerMon::instance()->GetKerMonStatus())
+		SingletonKerMon::instance()->OffMonitor();
 	Sleep(1000);
-	if (g_mainMsgKlib.GetKerInitStatus())
-		g_mainMsgKlib.DriverFree();
+	if (SingletonKerMon::instance()->GetKerInitStatus())
+		SingletonKerMon::instance()->DriverFree();
 	if (gpip_send) {
-		g_DataHandler.PipFreeAnonymous();
+		SingletonDataHandler::instance()->PipFreeAnonymous();
 	}
 
-	g_mainMsgUlib.uMsg_Free();
-	g_mainMsgKlib.kMsg_Free();
+	SingletonUMon::instance()->uMsg_Free();
+	SingletonKerMon::instance()->kMsg_Free();
 	return 0;
 }

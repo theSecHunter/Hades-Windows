@@ -24,10 +24,6 @@ public:
 	void EtwSublthreadProc();
 	static DWORD WINAPI PTaskHandlerNotify(LPVOID lpThreadParameter);
 
-	// Set Lib Ptr
-	bool SetUMontiorLibPtr(void* ulibptr);
-	bool SetKMontiorLibPtr(void* klibptr);
-
 	// Set ExitEvent
 	void SetExitSvcEvent(HANDLE& hexitEvent);
 
@@ -39,4 +35,3 @@ private:
 
 	HANDLE m_jobAvailableEvnet_WriteTask = NULL;
 };
-

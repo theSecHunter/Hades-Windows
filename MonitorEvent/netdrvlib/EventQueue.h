@@ -93,7 +93,6 @@ public:
 
 	virtual void execute()
 	{
-		NF_STATUS status;
 		if (ET_TCP == m_et)
 		{
 

@@ -258,6 +258,7 @@
     <ClInclude Include="nfevents.h" />
     <ClInclude Include="ntbasic.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="singGlobal.h" />
     <ClInclude Include="stdinc.h" />
     <ClInclude Include="sync.h" />
     <ClInclude Include="tcpctx.h" />

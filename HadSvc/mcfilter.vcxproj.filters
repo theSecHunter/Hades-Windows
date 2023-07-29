@@ -155,6 +155,9 @@
     <ClInclude Include="knetwork.h">
       <Filter>KerNetFilter</Filter>
     </ClInclude>
+    <ClInclude Include="singGloal.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="mcfilter.rc">

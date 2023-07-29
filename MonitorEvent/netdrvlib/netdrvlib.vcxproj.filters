@@ -71,6 +71,9 @@
       <Filter>Base</Filter>
     </ClInclude>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="singGlobal.h">
+      <Filter>Base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="EventHandler">

@@ -1,6 +1,5 @@
 #ifndef _DEVCTRL_H
 #define _DEVCTRL_H
-#include <SingletonHandler.h>
 
 typedef USHORT ADDRESS_FAMILY;
 #define FWP_BYTE_ARRAY6_SIZE 6
@@ -36,6 +35,4 @@ private:
 	int devctrl_sendioct(const int ioctcode);
 	int devctrl_writeio();
 };
-
-using SingletNetMonx = ustdex::Singleton<DevctrlIoct>;
 #endif // !_DEVCTRL_H

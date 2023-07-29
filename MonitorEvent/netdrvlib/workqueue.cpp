@@ -2,8 +2,8 @@
 #include "sync.h"
 #include "nfevents.h"
 #include "nfdriver.h"
-#include "devctrl.h"
 #include "workqueue.h"
+#include "singGlobal.h"
 
 const int TCP_TIMEOUT_CHECK_PERIOD = 5 * 1000;
 
@@ -14,7 +14,6 @@ static NF_EventHandler*		g_pEventHandler = NULL;
 static AutoCriticalSection	g_cs;
 static DWORD				g_nThreads = 1;
 
-static DevctrlIoct			g_devctl;
 static AutoHandle*			g_workhDevice = NULL;
 static NF_BUFFERS*			g_workBuffer = NULL;
 
@@ -32,12 +31,12 @@ bool nf_InitWorkQueue(PVOID64 Eventhandle)
 	// 获取驱动句柄
 	do {
 
-		g_workhDevice = (AutoHandle*)g_devctl.get_Driverhandler();
+		g_workhDevice = (AutoHandle*)SingletNetMonx::instance()->get_Driverhandler();
 		if (!g_workhDevice || !(*g_workhDevice))
 			break;
 
 		// 获取共享内存buffer
-		g_workBuffer = (NF_BUFFERS*)g_devctl.get_nfBufferPtr();
+		g_workBuffer = (NF_BUFFERS*)SingletNetMonx::instance()->get_nfBufferPtr();
 		if (!g_workBuffer || !(*g_workBuffer).inBufLen || !(*g_workBuffer).outBufLen)
 			break;
 
@@ -87,7 +86,6 @@ static void handleEventDispath(PNF_DATA pData)
 // ReadFile Driver Buffer
 DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 {
-
 	OVERLAPPED ol;
 	PNF_DATA pData = NULL;
 	DWORD dwRes = 0;

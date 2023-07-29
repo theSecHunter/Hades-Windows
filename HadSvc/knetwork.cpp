@@ -1,6 +1,7 @@
 #include "knetwork.h"
 #include <NetWorkRuleAssist.h>
 #include <sysinfo.h>
+#include <NetApi.h>
 
 KNetWork::KNetWork()
 {
@@ -19,6 +20,7 @@ void KNetWork::SetAllRule()
 {
 	NetWorkRuleNode NetRuleNode; NetRuleNode.clear();
 	ConfigNetWorkYamlRuleParsing(NetRuleNode);
+	//NetSetRule();
 }
 
 void KNetWork::ReLoadDnsRule()

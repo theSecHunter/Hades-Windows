@@ -6,13 +6,9 @@
 #include "msgloop.h"
 #include <exception>
 
-// 引入管理类Lib
-#include "kmsginterface.h"
-#include "umsginterface.h"
+#include "singGloal.h"
 
 const int WM_GETMONITORSTATUS = WM_USER + 504;
-static kMsgInterface* g_klib = nullptr;
-static uMsgInterface* g_ulib = nullptr;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
@@ -27,65 +23,59 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			{
 			case 1:
 			{//用户态开关
-				if (!g_ulib)
-					break;
-				uStatus = g_ulib->GetEtwMonStatus();
+				uStatus = SingletonUMon::instance()->GetEtwMonStatus();
 				if (false == uStatus)
-					g_ulib->uMsg_EtwInit();
+					SingletonUMon::instance()->uMsg_EtwInit();
 				else if (true == uStatus)
-					g_ulib->uMsg_EtwClose();
+					SingletonUMon::instance()->uMsg_EtwClose();
 			}
 			break;
 			case 2:
 			{//内核态开关
-				if (!g_klib)
-					break;
-				kStatus = g_klib->GetKerMonStatus();
-				if (false == g_klib->GetKerInitStatus())
-					g_klib->DriverInit(false); // 初始化启动read i/o线程
+				kStatus = SingletonKerMon::instance()->GetKerMonStatus();
+				if (false == SingletonKerMon::instance()->GetKerInitStatus())
+					SingletonKerMon::instance()->DriverInit(false); // 初始化启动read i/o线程
 				else
 				{
 					if (false == kStatus)
-						g_klib->StartReadFileThread();//如果不需要初始化，行为拦截正在工作 - 只启动线程
+						SingletonKerMon::instance()->StartReadFileThread();//如果不需要初始化，行为拦截正在工作 - 只启动线程
 				}
 				if (false == kStatus)
 				{
 					OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Enable KernelMonitor Command");
-					g_klib->OnMonitor();
+					SingletonKerMon::instance()->OnMonitor();
 					OutputDebugString(L"[HadesSvc] GetKerMonStatus Enable KernelMonitor Success");
 				}
 				else if (true == kStatus)
 				{
 					OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Disable KernelMonitor Command");
-					g_klib->OffMonitor();
+					SingletonKerMon::instance()->OffMonitor();
 					OutputDebugString(L"[HadesSvc] GetKerMonStatus Disable KernelMonitor Success");
-					if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerBeSnipingStatus()))
-						g_klib->DriverFree();
+					if ((true == SingletonKerMon::instance()->GetKerInitStatus()) && (false == SingletonKerMon::instance()->GetKerBeSnipingStatus()))
+						SingletonKerMon::instance()->DriverFree();
 					else
-						g_klib->StopReadFileThread(); // 开启行为拦截状态下，关闭线程 - 防止下发I/O
+						SingletonKerMon::instance()->StopReadFileThread(); // 开启行为拦截状态下，关闭线程 - 防止下发I/O
 				}
 			}
 			break;
 			case 3:
 			{//行为拦截
-				if (!g_klib)
-					break;
-				if (false == g_klib->GetKerInitStatus())
-					g_klib->DriverInit(true);// 初始化不启动read i/o线程
-				kStatus = g_klib->GetKerBeSnipingStatus();
+				if (false == SingletonKerMon::instance()->GetKerInitStatus())
+					SingletonKerMon::instance()->DriverInit(true);// 初始化不启动read i/o线程
+				kStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
 				if (false == kStatus)
 				{
 					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Send Enable KernelMonitor Command");
-					g_klib->OnBeSnipingMonitor();
+					SingletonKerMon::instance()->OnBeSnipingMonitor();
 					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Enable KernelMonitor Success");
 				}
 				else if (true == kStatus)
 				{
 					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Disable Disable KernelMonitor Command");
-					g_klib->OffBeSnipingMonitor();
+					SingletonKerMon::instance()->OffBeSnipingMonitor();
 					OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Disable KernelMonitor Success");
-					if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerMonStatus()))
-						g_klib->DriverFree();
+					if ((true == SingletonKerMon::instance()->GetKerInitStatus()) && (false == SingletonKerMon::instance()->GetKerMonStatus()))
+						SingletonKerMon::instance()->DriverFree();
 				}
 			}
 			break;
@@ -97,18 +87,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		{// 获取当前监控状态
 			do
 			{
-				if (!g_klib || !g_ulib)
-					break;
 				HWND m_ControlHwnd = FindWindow(L"HadesMainWindow", NULL);
 				if (!m_ControlHwnd)
 					break;
-				const bool bUStatus = g_ulib->GetEtwMonStatus();
+				const bool bUStatus = SingletonUMon::instance()->GetEtwMonStatus();
 				const DWORD dwId = bUStatus ? 0x20 : 0x21;
 				::PostMessage(m_ControlHwnd, WM_GETMONITORSTATUS, dwId, NULL);
-				const bool bkStatus = g_klib->GetKerMonStatus();
+				const bool bkStatus = SingletonKerMon::instance()->GetKerMonStatus();
 				const DWORD dwId1 = bkStatus ? 0x22 : 0x23;
 				::PostMessage(m_ControlHwnd, WM_GETMONITORSTATUS, dwId1, NULL);
-				const bool bkMStatus = g_klib->GetKerBeSnipingStatus();
+				const bool bkMStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
 				const DWORD dwId2 = bkMStatus ? 0x24 : 0x25;
 				::PostMessage(m_ControlHwnd, WM_GETMONITORSTATUS, dwId2, NULL);
 			} while (false);				
@@ -157,17 +145,6 @@ static DWORD WINAPI pInitWinReg(LPVOID lpThreadParameter)
 		DispatchMessage(&msg);
 	}
 	return 0;
-}
-
-bool WinMsgLoop::setKmsgLib(LPVOID ptrlib)
-{
-	g_klib = (kMsgInterface*)ptrlib;
-	return g_klib ? true : false;
-}
-bool WinMsgLoop::setUmsgLib(LPVOID ptrlib)
-{
-	g_ulib = (uMsgInterface*)ptrlib;
-	return g_ulib ? true : false;
 }
 
 WinMsgLoop::WinMsgLoop()

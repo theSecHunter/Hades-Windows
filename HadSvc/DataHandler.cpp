@@ -1,8 +1,3 @@
-#include "umsginterface.h"
-#include "kmsginterface.h"
-#include "NamedPipe.h"
-#include "AnonymousPipe.h"
-
 #include <sysinfo.h>
 #include <winsock.h>
 #include <map>
@@ -19,11 +14,13 @@
 #include "DataHandler.h"
 #include "udrivermanager.h"
 #include "transfer.pb.h"
+#include "singGloal.h"
+#include "NamedPipe.h"
+#include "AnonymousPipe.h"
+
 
 static bool                         g_shutdown = false;
 static mutex                        g_pipwritecs;
-static LPVOID                       g_user_interface = nullptr;
-static LPVOID                       g_kern_interface = nullptr;
 
 // gloable UserSubQueue
 static std::queue<std::shared_ptr<USubNode>>    g_Etw_SubQueue_Ptr;
@@ -442,112 +439,97 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
         else
             task_array_data.push_back("Failuer!");
     }
-    else if (g_kern_interface && (taskid >= 100) && (taskid < 200))
-        ((kMsgInterface*)g_kern_interface)->kMsg_taskPush(taskid, task_array_data);
-    else if (g_user_interface && (taskid >= 200) && (taskid < 300)) 
-        ((uMsgInterface*)g_user_interface)->uMsg_taskPush(taskid, task_array_data);
+    else if ((taskid >= 100) && (taskid < 200))
+        SingletonKerMon::instance()->kMsg_taskPush(taskid, task_array_data);
+    else if ((taskid >= 200) && (taskid < 300))
+        SingletonUMon::instance()->uMsg_taskPush(taskid, task_array_data);
     else
     {
         switch (taskid)
         {
         case 401:
         {// Etw采集开启
-            const auto g_ulib = ((uMsgInterface*)g_user_interface);
-            if (!g_ulib)
-                return 0;
             task_array_data.clear();
-            const auto uStatus = g_ulib->GetEtwMonStatus();
+            const auto uStatus = SingletonUMon::instance()->GetEtwMonStatus();
             if (false == uStatus)
             {
-                g_ulib->uMsg_EtwInit();
+                SingletonUMon::instance()->uMsg_EtwInit();
                 task_array_data.push_back("Success");
             }
         }
         break;
         case 402:
         {// Etw采集关闭
-            const auto g_ulib = ((uMsgInterface*)g_user_interface);
-            if (!g_ulib)
-                return 0;
             task_array_data.clear();
-            const auto uStatus = g_ulib->GetEtwMonStatus();
+            const auto uStatus =  SingletonUMon::instance()->GetEtwMonStatus();
             if (true == uStatus)
             {
-                g_ulib->uMsg_EtwClose();
+                 SingletonUMon::instance()->uMsg_EtwClose();
                 task_array_data.push_back("Success");
             }
         }
         break;
         case 403:
         {// 内核态采集开启
-            const auto g_klib = ((kMsgInterface*)g_kern_interface);
-            if (!g_klib)
-                return 0;
             task_array_data.clear();
-            if (false == g_klib->GetKerInitStatus())
+            if (false == SingletonKerMon::instance()->GetKerInitStatus())
             {
-                g_klib->DriverInit(false); // 初始化启动read i/o线程
-                if (false == g_klib->GetKerInitStatus())
+                SingletonKerMon::instance()->DriverInit(false); // 初始化启动read i/o线程
+                if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 {
                     OutputDebugString(L"GetKerInitStatus false");
                     return 0;
                 }
             }
-            const bool kStatus = g_klib->GetKerMonStatus();
+            const bool kStatus = SingletonKerMon::instance()->GetKerMonStatus();
             if (false == kStatus)
             {
                 OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Enable KernelMonitor Command");
-                g_klib->OnMonitor();
+                SingletonKerMon::instance()->OnMonitor();
                 OutputDebugString(L"[HadesSvc] GetKerMonStatus Enable KernelMonitor Success");
                 // 开启Read IO Thread
-                g_klib->StartReadFileThread();
+                SingletonKerMon::instance()->StartReadFileThread();
                 task_array_data.push_back("Success");
             }
         }
         break;
         case 404:
         {// 内核态采集关闭
-            const auto g_klib = ((kMsgInterface*)g_kern_interface);
-            if (!g_klib)
-                return 0;
             task_array_data.clear();
-            if (false == g_klib->GetKerInitStatus())
+            if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
-            const bool kStatus = g_klib->GetKerMonStatus();
+            const bool kStatus = SingletonKerMon::instance()->GetKerMonStatus();
             if (true == kStatus)
             {
                 OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Disable KernelMonitor Command");
-                g_klib->OffMonitor();
+                SingletonKerMon::instance()->OffMonitor();
                 OutputDebugString(L"[HadesSvc] GetKerMonStatus Disable KernelMonitor Success");
                 // 行为拦截没开启，关闭驱动句柄
-                if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerBeSnipingStatus()))
-                    g_klib->DriverFree();
+                if ((true == SingletonKerMon::instance()->GetKerInitStatus()) && (false == SingletonKerMon::instance()->GetKerBeSnipingStatus()))
+                    SingletonKerMon::instance()->DriverFree();
                 else
-                    g_klib->StopReadFileThread(); // 开启行为拦截状态下，关闭线程 - 防止下发I/O
+                    SingletonKerMon::instance()->StopReadFileThread(); // 开启行为拦截状态下，关闭线程 - 防止下发I/O
                 task_array_data.push_back("Success");
             }
         }
         break;
         case 405:
         {// 行为监控开启
-            const auto g_klib = ((kMsgInterface*)g_kern_interface);
-            if (!g_klib)
-                return 0;
             task_array_data.clear();
-            if (false == g_klib->GetKerInitStatus())
+            if (false == SingletonKerMon::instance()->GetKerInitStatus())
             {
-                g_klib->DriverInit(true);
-                if (false == g_klib->GetKerInitStatus())
+                SingletonKerMon::instance()->DriverInit(true);
+                if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 {
                     OutputDebugString(L"GetKerInitStatus false");
                     return 0;
                 }
             }
-            const bool kStatus = g_klib->GetKerBeSnipingStatus();
+            const bool kStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
             if (false == kStatus)
             {
                 OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Send Enable KernelMonitor Command");
-                g_klib->OnBeSnipingMonitor();
+                SingletonKerMon::instance()->OnBeSnipingMonitor();
                 OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Enable KernelMonitor Success");
                 task_array_data.push_back("Success");
             }
@@ -555,97 +537,82 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
         break;
         case 406:
         {// 行为监控关闭
-            const auto g_klib = ((kMsgInterface*)g_kern_interface);
-            if (!g_klib)
-                return 0;
             task_array_data.clear();
-            if (false == g_klib->GetKerInitStatus())
+            if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
-            const bool kStatus = g_klib->GetKerBeSnipingStatus();
+            const bool kStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
             if (true == kStatus)
             {
                 OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Disable Disable KernelMonitor Command");
-                g_klib->OffBeSnipingMonitor();
+                SingletonKerMon::instance()->OffBeSnipingMonitor();
                 OutputDebugString(L"[HadesSvc] OnBeSnipingMonitor Disable KernelMonitor Success");
-                if ((true == g_klib->GetKerInitStatus()) && (false == g_klib->GetKerMonStatus()))
-                    g_klib->DriverFree();
+                if ((true == SingletonKerMon::instance()->GetKerInitStatus()) && (false == SingletonKerMon::instance()->GetKerMonStatus()))
+                    SingletonKerMon::instance()->DriverFree();
                 task_array_data.push_back("Success");
             }
         }
         break;
         case 407:
         {// 进程规则重载
-            const auto g_klib = ((kMsgInterface*)g_kern_interface);
-            if (!g_klib)
-                return 0;
             task_array_data.clear();
             // 驱动未启动
-            if (false == g_klib->GetKerInitStatus())
+            if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
-            const int ioldStatus = g_klib->GetKerBeSnipingStatus();
+            const int ioldStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
             OutputDebugString(L"[HadesSvc] ReLoadProcessRuleConfig Send Enable KernelMonitor Command");
-            g_klib->ReLoadProcessRuleConfig();
+            SingletonKerMon::instance()->ReLoadProcessRuleConfig();
             OutputDebugString(L"[HadesSvc] ReLoadProcessRuleConfig Enable KernelMonitor Success");
             // 规则重载内核会关闭行为监控 - 如果之前开启这里要重新开启
             if (ioldStatus)
-                g_klib->OnBeSnipingMonitor();
+                SingletonKerMon::instance()->OnBeSnipingMonitor();
             task_array_data.push_back("Success");
         }
         break;
         case 408:
         {// 注册表规则重载
-            const auto g_klib = ((kMsgInterface*)g_kern_interface);
-            if (!g_klib)
-                return 0;
             task_array_data.clear();
             // 驱动未启动
-            if (false == g_klib->GetKerInitStatus())
+            if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
-            const int ioldStatus = g_klib->GetKerBeSnipingStatus();
+            const int ioldStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
             OutputDebugString(L"[HadesSvc] ReLoadRegisterRuleConfig Send Enable KernelMonitor Command");
-            g_klib->ReLoadRegisterRuleConfig();
+            SingletonKerMon::instance()->ReLoadRegisterRuleConfig();
             OutputDebugString(L"[HadesSvc] ReLoadRegisterRuleConfig Enable KernelMonitor Success");
             // 规则重载内核会关闭行为监控 - 如果之前开启这里要重新开启
             if (ioldStatus)
-                g_klib->OnBeSnipingMonitor();
+                SingletonKerMon::instance()->OnBeSnipingMonitor();
             task_array_data.push_back("Success");
         }
         break;
         case 409:
         {// 目录规则重载
-            const auto g_klib = ((kMsgInterface*)g_kern_interface);
-            if (!g_klib)
-                return 0;
             task_array_data.clear();
             // 驱动未启动
-            if (false == g_klib->GetKerInitStatus())
+            if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
-            const int ioldStatus = g_klib->GetKerBeSnipingStatus();
+            const int ioldStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
             OutputDebugString(L"[HadesSvc] ReLoadDirectoryRuleConfig Send Enable KernelMonitor Command");
-            g_klib->ReLoadDirectoryRuleConfig();
+            SingletonKerMon::instance()->ReLoadDirectoryRuleConfig();
             OutputDebugString(L"[HadesSvc] ReLoadDirectpryRuleConfig Enable KernelMonitor Success");
             // 规则重载内核会关闭行为监控 - 如果之前开启这里要重新开启
             if (ioldStatus)
-                g_klib->OnBeSnipingMonitor();
+                SingletonKerMon::instance()->OnBeSnipingMonitor();
             task_array_data.push_back("Success");
         }
         break;
         case 410:
         {// 线程注入规则
-            const auto g_klib = ((kMsgInterface*)g_kern_interface);
-            if (!g_klib)
-                return 0;
             task_array_data.clear();
             // 驱动未启动
-            if (false == g_klib->GetKerInitStatus())
+            if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
-            const int ioldStatus = g_klib->GetKerBeSnipingStatus();
+            const int ioldStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
             OutputDebugString(L"[HadesSvc] ReLoadThreadInjectRuleConfig Send Enable KernelMonitor Command");
-            g_klib->ReLoadThreadInjectRuleConfig();
+            SingletonKerMon::instance()->ReLoadThreadInjectRuleConfig();
             OutputDebugString(L"[HadesSvc] ReLoadThreadInjectRuleConfig Enable KernelMonitor Success");
             // 规则重载内核会关闭行为监控 - 如果之前开启这里要重新开启
             if (ioldStatus)
-                g_klib->OnBeSnipingMonitor();
+                SingletonKerMon::instance()->OnBeSnipingMonitor();
             task_array_data.push_back("Success");
         }
         break;
@@ -838,18 +805,6 @@ void DataHandler::PipFreeAnonymous()
         g_anonymouspipe->uninPip();
 }
 
-// 初始化Lib库指针
-bool DataHandler::SetUMontiorLibPtr(void* ulibptr)
-{
-    g_user_interface = ulibptr;
-    return g_user_interface ? true : false;
-}
-bool DataHandler::SetKMontiorLibPtr(void* klibptr)
-{
-    g_kern_interface = (kMsgInterface*)klibptr;
-    return g_kern_interface ? true : false;
-}
-
 // 设置ConSumer订阅,初始化队列线程
 bool DataHandler::ThreadPool_Init()
 {
@@ -859,19 +814,13 @@ bool DataHandler::ThreadPool_Init()
     if (!g_Etw_Queue_Event || !g_Ker_Queue_Event || !m_jobAvailableEvnet_WriteTask)
         return false;
 
-    if (g_user_interface)
-    {
-        ((uMsgInterface*)g_user_interface)->uMsg_SetSubEventPtr(g_Etw_Queue_Event);
-        ((uMsgInterface*)g_user_interface)->uMsg_SetSubQueueLockPtr(g_Etw_QueueCs_Ptr);
-        ((uMsgInterface*)g_user_interface)->uMsg_SetSubQueuePtr(g_Etw_SubQueue_Ptr);
-    }
+    SingletonUMon::instance()->uMsg_SetSubEventPtr(g_Etw_Queue_Event);
+    SingletonUMon::instance()->uMsg_SetSubQueueLockPtr(g_Etw_QueueCs_Ptr);
+    SingletonUMon::instance()->uMsg_SetSubQueuePtr(g_Etw_SubQueue_Ptr);
 
-    if (g_kern_interface)
-    {
-        ((kMsgInterface*)g_kern_interface)->kMsg_SetSubEventPtr(g_Ker_Queue_Event);
-        ((kMsgInterface*)g_kern_interface)->kMsg_SetSubQueueLockPtr(g_Ker_QueueCs_Ptr);
-        ((kMsgInterface*)g_kern_interface)->kMsg_SetSubQueuePtr(g_Ker_SubQueue_Ptr);
-    }
+    SingletonKerMon::instance()->kMsg_SetSubEventPtr(g_Ker_Queue_Event);
+    SingletonKerMon::instance()->kMsg_SetSubQueueLockPtr(g_Ker_QueueCs_Ptr);
+    SingletonKerMon::instance()->kMsg_SetSubQueuePtr(g_Ker_SubQueue_Ptr);
 
     size_t i = 0;
     HANDLE hThread;

@@ -316,6 +316,7 @@
     <ClInclude Include="NamedPipe.h" />
     <ClInclude Include="pipeManage.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="singGloal.h" />
     <ClInclude Include="socketMsg.h" />
     <ClInclude Include="time_stamp.h" />
     <ClInclude Include="transfer.pb.h" />
