@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\contrib\graphbuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\contrib\graphbuilderadapter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\binary.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\convert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\depthguard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\directives.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\emit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\emitfromevents.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\emitter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\emitterstate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\emitterutils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\exceptions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\exp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\memory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\node_data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\nodebuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\nodeevents.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\null.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\ostream_wrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\parse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\regex_yaml.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\scanner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\scanscalar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\scantag.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\scantoken.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\simplekey.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\singledocparser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\stream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\src\tag.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{267F6939-2ABD-30A9-AB36-550E273E393C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

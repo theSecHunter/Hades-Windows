@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\CMakeFiles\a4aa0a156791b3ae2e958031c89b4c7a\Continuous.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\CMakeFiles\Continuous" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{4452B12F-B0D3-3168-8232-708BC8F734BC}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

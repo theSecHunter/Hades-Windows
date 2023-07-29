@@ -1,0 +1,10 @@
+^D:\HADES\HADES-WINDOWS\HADESSDK\YAMLCPP\UTIL\CMAKELISTS.TXT
+setlocal
+D:\CMake\bin\cmake.exe -SD:/Hades/Hades-Windows/HadesSdk/yamlcpp -BD:/Hades/Hades-Windows/HadesSdk/yamlcpp --check-stamp-file D:/Hades/Hades-Windows/HadesSdk/yamlcpp/util/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

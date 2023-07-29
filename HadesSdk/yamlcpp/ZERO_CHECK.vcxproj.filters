@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\CMakeFiles\a4aa0a156791b3ae2e958031c89b4c7a\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\cmake_uninstall.cmake.in">
+      <Filter>Buildsystem Input Files</Filter>
+    </None>
+    <None Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\util\CMakeLists.txt">
+      <Filter>Buildsystem Input Files\util</Filter>
+    </None>
+    <None Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\yaml-cpp-config.cmake.in">
+      <Filter>Buildsystem Input Files</Filter>
+    </None>
+    <None Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\yaml-cpp.pc.in">
+      <Filter>Buildsystem Input Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{4452B12F-B0D3-3168-8232-708BC8F734BC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{A5FF7190-BC21-3787-A08B-119EBF52C8BF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files">
+      <UniqueIdentifier>{D93F5902-268B-3AD6-BD95-A34B64019BD5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files\util">
+      <UniqueIdentifier>{7D7A9750-1827-3EC9-BEA2-87ACA3DF4CA5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

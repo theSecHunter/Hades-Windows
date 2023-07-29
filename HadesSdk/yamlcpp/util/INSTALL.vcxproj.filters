@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Hades\Hades-Windows\HadesSdk\yamlcpp\CMakeFiles\ca0e3cfc12321ebf00212e96dfa98be3\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{4452B12F-B0D3-3168-8232-708BC8F734BC}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
