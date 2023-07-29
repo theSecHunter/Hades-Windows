@@ -40,6 +40,9 @@
     <Filter Include="Protobuf">
       <UniqueIdentifier>{306d0201-bdc6-4c6d-a9f9-6a833d64f234}</UniqueIdentifier>
     </Filter>
+    <Filter Include="KerNetFilter">
+      <UniqueIdentifier>{9df4eb10-cb4b-48c7-934c-8a4269853e12}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -86,6 +89,9 @@
     </ClCompile>
     <ClCompile Include="FileDetailReader.cpp">
       <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="knetwork.cpp">
+      <Filter>KerNetFilter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -145,6 +151,9 @@
     </ClInclude>
     <ClInclude Include="kinterface.h">
       <Filter>KerConsumerMsg</Filter>
+    </ClInclude>
+    <ClInclude Include="knetwork.h">
+      <Filter>KerNetFilter</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

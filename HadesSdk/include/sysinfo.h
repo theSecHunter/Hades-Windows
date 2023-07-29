@@ -2,6 +2,7 @@
 #define _SYSINFO_H
 #include <Windows.h>
 #include <string>
+#include <vector>
 #include <memory>
 
 using namespace std;
@@ -780,5 +781,25 @@ typedef enum _MINI_COMMAND {
     IPS_IMAGEDLL
 }MIN_COMMAND;
 const int WM_IPS_PROCESS = WM_USER + 600;
+
+// Rule
+typedef struct _NetWorkRuleNode
+{
+    std::string strRuleName;
+    std::string strIpAddress;
+    std::string strProtocol;
+    std::vector<std::string> ports;
+    std::string strAction;
+    std::string strLevel;
+    void clear()
+    {
+        strRuleName = "";
+        strIpAddress = "";
+        strProtocol = "";
+        ports.clear();
+        strAction = "";
+        strLevel = "";
+    }
+}NetWorkRuleNode, * PNetWorkRuleNode;
 
 #endif // !_SYSINFO_H

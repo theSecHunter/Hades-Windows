@@ -1,10 +1,9 @@
 #ifndef _DEVCTRL_H
 #define _DEVCTRL_H
+#include <SingletonHandler.h>
 
-extern HANDLE g_deviceHandle;
 typedef USHORT ADDRESS_FAMILY;
 #define FWP_BYTE_ARRAY6_SIZE 6
-
 
 class DevctrlIoct
 {
@@ -22,6 +21,9 @@ public:
 	PVOID64 get_Driverhandler();
 	PVOID64 get_nfBufferPtr();
 
+public:
+	const HANDLE GetDrvHandle();
+
 private:
 	DWORD  m_dwthreadid = 0;
 	DWORD  m_dwthreadid1 = 0;
@@ -35,4 +37,5 @@ private:
 	int devctrl_writeio();
 };
 
+using SingletNetMonx = ustdex::Singleton<DevctrlIoct>;
 #endif // !_DEVCTRL_H

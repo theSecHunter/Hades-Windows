@@ -245,6 +245,7 @@
     <ClCompile Include="workqueue.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\HadesSdk\include\SingletonHandler.h" />
     <ClInclude Include="CodeTool.h" />
     <ClInclude Include="datalinkctx.h" />
     <ClInclude Include="devctrl.h" />
@@ -252,15 +253,19 @@
     <ClInclude Include="EventHandler.h" />
     <ClInclude Include="EventQueue.h" />
     <ClInclude Include="mempool.h" />
-    <ClInclude Include="nf_api.h" />
+    <ClInclude Include="NetApi.h" />
     <ClInclude Include="nfdriver.h" />
     <ClInclude Include="nfevents.h" />
     <ClInclude Include="ntbasic.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="stdinc.h" />
     <ClInclude Include="sync.h" />
     <ClInclude Include="tcpctx.h" />
     <ClInclude Include="threadpool.h" />
     <ClInclude Include="workqueue.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NetDrvlib.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

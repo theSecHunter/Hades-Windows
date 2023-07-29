@@ -28,9 +28,9 @@ typedef enum _NF_STATUS
 class NF_EventHandler
 {
 public:
-	virtual void establishedPacket(const char* buf, int len) = 0;
-	virtual void datalinkPacket(const char* buf, int len) = 0;
-	virtual void tcpredirectPacket(const char* buf, int len) = 0;
+	virtual void EstablishedPacket(const char* buf, int len) = 0;
+	virtual void DatalinkPacket(const char* buf, int len) = 0;
+	virtual void TcpredirectPacket(const char* buf, int len) = 0;
 
 	virtual void threadStart() = 0;
 	virtual void threadEnd() = 0;

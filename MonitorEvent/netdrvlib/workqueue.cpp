@@ -63,12 +63,12 @@ static void handleEventDispath(PNF_DATA pData)
 	case NF_ESTABLISHED_LAYER_PACKET:
 	{
 		// push established - event
-		g_pEventHandler->establishedPacket(pData->buffer, pData->bufferSize);
+		g_pEventHandler->EstablishedPacket(pData->buffer, pData->bufferSize);
 	}
 	break;
 	case NF_DATALINKMAC_LAYER_PACKET:
 	{
-		g_pEventHandler->datalinkPacket(pData->buffer, pData->bufferSize);
+		g_pEventHandler->DatalinkPacket(pData->buffer, pData->bufferSize);
 		// push datalink - event
 	}
 	break;

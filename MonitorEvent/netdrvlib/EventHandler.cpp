@@ -1,5 +1,5 @@
 #include <sysinfo.h>
-#include "nf_api.h"
+#include "NetApi.h"
 #include "nfevents.h"
 #include "EventHandler.h"
 #include "tcpctx.h"
@@ -28,7 +28,7 @@ static std::vector<int>			ids_destinationport;
 static std::vector<ULONGLONG>	ids_destinationaddress;
 static std::vector<ULONGLONG>	ids_destinationaddressport;
 
-void EventHandler::establishedPacket(const char* buf, int len)
+void EventHandler::EstablishedPacket(const char* buf, int len)
 {
 	NF_CALLOUT_FLOWESTABLISHED_INFO flowestablished_processinfo;
 	RtlSecureZeroMemory(&flowestablished_processinfo, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
@@ -76,7 +76,7 @@ void EventHandler::establishedPacket(const char* buf, int len)
 	OutputDebugString(wsinfo.data());
 }
 
-void EventHandler::datalinkPacket(const char* buf, int len)
+void EventHandler::DatalinkPacket(const char* buf, int len)
 {
 	NF_CALLOUT_MAC_INFO datalink_netinfo;
 	RtlSecureZeroMemory(&datalink_netinfo, sizeof(NF_CALLOUT_MAC_INFO));
@@ -88,7 +88,7 @@ void EventHandler::datalinkPacket(const char* buf, int len)
 	OutputDebugString(L"-------------------------------------");
 }
 
-void EventHandler::tcpredirectPacket(const char* buf, int len)
+void EventHandler::TcpredirectPacket(const char* buf, int len)
 {
 	PTCPCTX redirect_info;
 	RtlSecureZeroMemory(&redirect_info, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
@@ -128,10 +128,10 @@ void EventHandler::tcpredirectPacket(const char* buf, int len)
 	@ 参数3 协议
 	@ 参数4 数据指针
 */
-int nf_GetProcessInfo(UINT32* Locaaddripv4, unsigned long localport, int protocol, PVOID64 getbuffer)
+int NetGetProcessInfo(unsigned int* Locaaddripv4, unsigned long localport, int protocol, void* pGetbuffer)
 {
 	// -1 参数错误
-	if (!Locaaddripv4 && (localport <= 0) && !getbuffer && !protocol)
+	if (!Locaaddripv4 && (localport <= 0) && !pGetbuffer && !protocol)
 		return  -1;
 
 	switch (protocol)
@@ -147,7 +147,7 @@ int nf_GetProcessInfo(UINT32* Locaaddripv4, unsigned long localport, int protoco
 	try
 	{
 		PPROCESS_INFO processinf = NULL;
-		processinf = (PPROCESS_INFO)getbuffer;
+		processinf = (PPROCESS_INFO)pGetbuffer;
 		auto mapiter = g_flowestablished_map.find(localport);
 		// -3 find failuer not`t processinfo
 		if (mapiter == g_flowestablished_map.end())

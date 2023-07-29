@@ -130,16 +130,16 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x64\Debug</OutDir>
     <IntDir>$(Configuration)\</IntDir>
-    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\HadesSdk\ruleEngine\lib</LibraryPath>
+    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\HadesSdk\ruleEngine\lib;..\HadesSdk\netdrv\lib;$(LibraryPath)</LibraryPath>
     <TargetName>$(ProjectName)_d64</TargetName>
-    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include</IncludePath>
+    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include;..\HadesSdk\netdrv\include</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include</IncludePath>
+    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include;..\HadesSdk\netdrv\include</IncludePath>
     <ReferencePath>$(VC_ReferencesPath_x64);</ReferencePath>
     <OutDir>..\bin\x64\Release</OutDir>
-    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\HadesSdk\ruleEngine\lib</LibraryPath>
+    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\HadesSdk\ruleEngine\lib;..\HadesSdk\netdrv\lib</LibraryPath>
     <TargetName>$(ProjectName)64</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
@@ -174,7 +174,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>RuleEngineSvc_d.lib;libprotobufd.lib;libprotocd.lib;SysMonUserlib_d.lib;SysMonDrvlib_d.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RuleEngineSvc_d.lib;libprotobufd.lib;libprotocd.lib;SysMonUserlib_d.lib;SysMonDrvlib_d.lib;NetDrvlib_d.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -234,7 +234,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>RuleEngineSvc_d64.lib;libprotocd64.lib;libprotobufd64.lib;SysMonUserlib_d64.lib;SysMonDrvlib_d64.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NetDrvlib_d64.lib;RuleEngineSvc_d64.lib;libprotocd64.lib;libprotobufd64.lib;SysMonUserlib_d64.lib;SysMonDrvlib_d64.lib;NetDrvlib_d64.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
@@ -259,7 +259,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>RuleEngineSvc64.lib;libprotobuf64.lib;libprotoc64.lib;SysMonDrvlib64.lib;SysMonUserlib64.lib;Tdh.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NetDrvlib64.lib;RuleEngineSvc64.lib;libprotobuf64.lib;libprotoc64.lib;SysMonDrvlib64.lib;SysMonUserlib64.lib;Tdh.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
@@ -289,6 +289,7 @@
     <ClCompile Include="FileDetailReader.cpp" />
     <ClCompile Include="HlprMiniCom.cpp" />
     <ClCompile Include="kmsginterface.cpp" />
+    <ClCompile Include="knetwork.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="msgassist.cpp" />
     <ClCompile Include="msgloop.cpp" />
@@ -309,6 +310,7 @@
     <ClInclude Include="HlprMiniCom.h" />
     <ClInclude Include="kinterface.h" />
     <ClInclude Include="kmsginterface.h" />
+    <ClInclude Include="knetwork.h" />
     <ClInclude Include="msgassist.h" />
     <ClInclude Include="msgloop.h" />
     <ClInclude Include="NamedPipe.h" />

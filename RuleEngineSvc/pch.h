@@ -19,5 +19,6 @@
 #include <rapidjson/filewritestream.h>
 
 #include <Windows.h>
+#include <sysinfo.h>
 
 #endif //PCH_H

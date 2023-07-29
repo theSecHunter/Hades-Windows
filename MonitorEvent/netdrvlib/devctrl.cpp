@@ -1,8 +1,7 @@
 // Devctrl.cpp
 //		负责和驱动交互
-//		处理驱动传递过来的established_layer & mac_frame_layer 数据
+//		处理驱动传递过来的Established_layer & mac_frame_layer 数据
 #include <Windows.h>
-
 #include "sync.h"
 #include "devctrl.h"
 #include "nfevents.h"
@@ -117,8 +116,10 @@ int DevctrlIoct::devctrl_InitshareMem()
 	if (!DeviceIoControl(g_hDevice,
 		CTL_DEVCTRL_OPEN_SHAREMEM,
 		NULL, 0,
-		(LPVOID)&g_nfBuffers, sizeof(g_nfBuffers),
-		NULL, &ol))
+		(LPVOID)&g_nfBuffers,
+		sizeof(g_nfBuffers),
+		NULL,
+		&ol))
 	{
 		if (GetLastError() != ERROR_IO_PENDING)
 		{
@@ -202,4 +203,9 @@ int DevctrlIoct::devctrl_sendioct(const int ioctcode)
 int DevctrlIoct::devctrl_writeio()
 {
 	return 0;
+}
+
+const HANDLE DevctrlIoct::GetDrvHandle()
+{
+	return g_deviceHandle;
 }

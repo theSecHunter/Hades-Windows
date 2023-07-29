@@ -964,9 +964,7 @@ NTSTATUS callouts_addFilters()
 	return status;
 }
 
-NTSTATUS callouts_registerCallouts(
-	IN OUT void* deviceObject
-)
+NTSTATUS callouts_registerCallouts(IN OUT void* deviceObject)
 {
 	NTSTATUS status = STATUS_SUCCESS;
 
@@ -1080,9 +1078,7 @@ NTSTATUS callouts_registerCallouts(
 	return status;
 }
 
-NTSTATUS callout_init(
-	PDEVICE_OBJECT deviceObject
-)
+NTSTATUS callout_init(PDEVICE_OBJECT deviceObject)
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	DWORD dwStatus = 0;

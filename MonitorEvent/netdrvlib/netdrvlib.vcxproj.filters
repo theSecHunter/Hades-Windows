@@ -31,7 +31,7 @@
     <ClInclude Include="CodeTool.h">
       <Filter>Command</Filter>
     </ClInclude>
-    <ClInclude Include="nf_api.h">
+    <ClInclude Include="NetApi.h">
       <Filter>Interface</Filter>
     </ClInclude>
     <ClInclude Include="nfevents.h">
@@ -67,6 +67,10 @@
     <ClInclude Include="establishedctx.h">
       <Filter>EventHandler</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\HadesSdk\include\SingletonHandler.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="EventHandler">
@@ -87,5 +91,8 @@
     <Filter Include="Work">
       <UniqueIdentifier>{2d0f6135-7ac9-4247-8005-54ea8f570d34}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NetDrvlib.rc" />
   </ItemGroup>
 </Project>

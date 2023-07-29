@@ -3,6 +3,7 @@
 #include "devctrl.h"
 #include "workqueue.h"
 #include "EventHandler.h"
+#include "NetApi.h"
 
 #include <iostream>
 using namespace std;
@@ -347,7 +348,7 @@ DWORD GetServicesStatus(void)
 	return ssStatus.dwCurrentState;
 }
 
-int nf_DriverInstall()
+int NetDriverInstall()
 {
 	wstring PathAll = L"";
 	wstring DriverPath = L"";
@@ -376,10 +377,9 @@ int nf_DriverInstall()
 }
 
 //int main(void)
-int nf_Init(void) {
-	int status = 0;
-	DWORD nSeriverstatus = -1;
-	std::wstring pszCmd = (L"sc start " + g_DriverServerNameW).c_str();
+int NetInit(void) {
+	int status = 0; DWORD nSeriverstatus = -1;
+	const std::wstring pszCmd = (L"sc start " + g_DriverServerNameW).c_str();
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
 	OutputDebugString(L"Install Driver");
 
@@ -425,7 +425,7 @@ int nf_Init(void) {
 	default:
 	{
 		OutputDebugStringW(L"nf_driverInstall");
-		if (!nf_DriverInstall())
+		if (!NetDriverInstall())
 		{
 			return -1;
 		}
@@ -490,17 +490,18 @@ int nf_Init(void) {
 	return status;
 }
 
-int nf_SetRule(void) {
-	//
+int NetSetRule(void) {
+	
 	return 1;
 }
 
-int nf_Monitor(int code)
+int NetMonitor(int code)
 {
 	DWORD dSize = 0;
 	DWORD ioctcode = 0;
 
-	if (!g_deviceHandle)
+	const HANDLE hNetMonx = SingletNetMonx::instance()->GetDrvHandle();
+	if (!hNetMonx)
 		return -1;
 
 	switch (code)
@@ -514,8 +515,8 @@ int nf_Monitor(int code)
 	}
 
 	OutputDebugString(L"devctrl_sendioct entablMonitor");
-	BOOL status = DeviceIoControl(
-		g_deviceHandle,
+	const BOOL bStu = DeviceIoControl(
+		hNetMonx,
 		ioctcode,
 		NULL,
 		0,
@@ -524,10 +525,10 @@ int nf_Monitor(int code)
 		&dSize,
 		NULL
 	);
-	if (!status)
+	if (!bStu)
 	{
 		OutputDebugString(L"devctrl_sendioct Error End");
 		return -2;
 	}
-	return status;
+	return bStu;
 }

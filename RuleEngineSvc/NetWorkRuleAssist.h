@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 	// parsing config to
-	__declspec(dllexport) const bool ConfigNetWorkYamlRuleParsing(unsigned int& imods, std::string& strProcessNameList);
+	__declspec(dllexport) const bool WINAPI ConfigNetWorkYamlRuleParsing(NetWorkRuleNode& ruleNode);
 
 #ifdef __cplusplus
 }

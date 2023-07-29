@@ -1,7 +1,41 @@
 #include "pch.h"
+#include "utiltools.h"
 #include "NetWorkRuleAssist.h"
+#include <yaml-cpp/yaml.h>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <iostream>
 
-const bool ConfigNetWorkYamlRuleParsing(unsigned int& imods, std::string& strProcessNameList)
+static const std::string g_NetWorkConfigName = "networkRuleConfig.yaml";
+
+const bool ConfigNetWorkYamlRuleParsing(NetWorkRuleNode& ruleNode)
 {
+    try
+    {
+        if (!RuleEngineToos::InitDeviceDosPathToNtPath())
+            return false;
+        if (!RuleEngineToos::IsFile(g_NetWorkConfigName))
+            return false;
+        std::string strRet;
+        if (!RuleEngineToos::GetCurrentExePath(strRet))
+            return false;
+        strRet.append("\\config\\");
+        strRet.append(g_NetWorkConfigName.c_str());
+
+        std::ifstream fin;
+        fin.open(strRet.c_str());
+        YAML::Node config = YAML::Load(fin);
+
+        //YAML::Node config = YAML::LoadFile(strRet.c_str());
+        if (!config["address"].IsNull())
+            ruleNode.strIpAddress = config["server"].as<std::string>();
+        if (!config["ports"].IsNull())
+            ruleNode.ports = config["ports"].as<std::vector<string>>();
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
 	return true;
 }

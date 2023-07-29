@@ -181,12 +181,12 @@
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <OutDir>..\..\bin\</OutDir>
+    <OutDir>..\bin\x86\Debug</OutDir>
     <TargetName>hadesndr</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <OutDir>..\..\bin\</OutDir>
+    <OutDir>..\bin\x86\Release</OutDir>
     <TargetName>hadesndr</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
@@ -198,14 +198,14 @@
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <IntDir>$(Configuration)/$(ProjectName)/</IntDir>
-    <OutDir>..\..\bin\</OutDir>
+    <OutDir>..\bin\x64\Debug</OutDir>
     <TargetName>hadesndr</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <IntDir>$(Configuration)/$(ProjectName)/</IntDir>
-    <OutDir>..\..\bin\</OutDir>
+    <OutDir>..\bin\x64\Release</OutDir>
     <TargetName>hadesndr</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">

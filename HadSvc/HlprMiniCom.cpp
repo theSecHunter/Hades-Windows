@@ -53,7 +53,7 @@ static DWORD WINAPI ThreadMiniPortGetMsgNotify(LPVOID pData)
 HlprMiniPortIpc::HlprMiniPortIpc()
 {
 	// 线程回调都是静态全局/这里不单独写Init函数了
-	// 如果访问成员变量这里封装成函数调用，别要在构造起线程
+	// 如果访问成员变量这里封装成函数调用，别在构造起线程
 	DWORD threadid = 0;
 	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMiniPortConnectNotify, NULL, 0, &threadid);
 	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMiniPortGetMsgNotify, NULL, 0, &threadid);
@@ -75,18 +75,19 @@ bool HlprMiniPortIpc::SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, un
 	DWORD bytesReturned = 0;
 	DWORD hResult = 0;
 	unsigned int total = sizeof(COMMAND_MESSAGE) + buflen + 1;
-	auto InputBuffer = VirtualAlloc(NULL, total, MEM_RESERVE, PAGE_READWRITE);
+	auto InputBuffer = VirtualAlloc(NULL, total, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (!InputBuffer)
 		return false;
 
 	COMMAND_MESSAGE command_message;
-	//command_message.Command = MIN_COMMAND::SET_PROCESSNAME;
 	memcpy(InputBuffer, &command_message, sizeof(COMMAND_MESSAGE));
 	memcpy((void*)((DWORD64)InputBuffer + sizeof(COMMAND_MESSAGE)), rulebuffer, buflen);
 
 	if (g_hPort)
 	{
 		hResult = FilterSendMessage(g_hPort, InputBuffer, total, NULL, NULL, &bytesReturned);
+		if (InputBuffer)
+			VirtualFree(InputBuffer, total, MEM_RESERVE);
 		if (hResult != S_OK)
 		{
 			return hResult;
