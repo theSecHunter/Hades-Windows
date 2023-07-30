@@ -25,11 +25,9 @@ const bool ConfigNetWorkYamlRuleParsing(NetWorkRuleNode& ruleNode)
 
         std::ifstream fin;
         fin.open(strRet.c_str());
-        YAML::Node config = YAML::Load(fin);
-
-        //YAML::Node config = YAML::LoadFile(strRet.c_str());
+        YAML::Node config = YAML::LoadFile(strRet);
         if (!config["address"].IsNull())
-            ruleNode.strIpAddress = config["server"].as<std::string>();
+            ruleNode.strIpAddress = config["address"].as<std::string>();
         if (!config["ports"].IsNull())
             ruleNode.ports = config["ports"].as<std::vector<string>>();
     }

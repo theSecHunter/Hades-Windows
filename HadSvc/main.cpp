@@ -71,9 +71,7 @@ static DWORD WINAPI HadesAgentActiveCheckThread(LPVOID lpThreadParameter)
 
 int main(int argc, char* argv[])
 {
-	SingletonKNetWork::instance()->SetAllRule();
-	return 0;
-	// 允许单进程运行
+	// 单进程模式
 	const HANDLE hExit = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
 	if (hExit)
 		return 0;

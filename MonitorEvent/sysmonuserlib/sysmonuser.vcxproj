@@ -155,6 +155,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy ..\..\HadesSdk\sysmonuser\lib\$(ProjectName).dll ..\..\bin\x86\Debug\$(ProjectName).dll</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -172,6 +175,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy ..\..\HadesSdk\sysmonuser\lib\$(ProjectName).dll ..\..\bin\x86\Release\$(ProjectName).dll</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
     <ClCompile>
@@ -202,6 +208,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy ..\..\HadesSdk\sysmonuser\lib\$(ProjectName)_d64.dll ..\..\bin\x64\Debug\$(ProjectName)_d64.dll</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -220,6 +229,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy ..\..\HadesSdk\sysmonuser\lib\$(ProjectName)64.dll ..\..\bin\x64\Release\$(ProjectName)64.dll</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
     <ClCompile>
