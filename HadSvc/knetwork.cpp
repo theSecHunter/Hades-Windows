@@ -18,9 +18,8 @@ const bool KNetWork::NetDrvInit()
 
 void KNetWork::SetAllRule()
 {
-	NetWorkRuleNode NetRuleNode; NetRuleNode.clear();
+	std::vector<NetWorkRuleNode> NetRuleNode;
 	ConfigNetWorkYamlRuleParsing(NetRuleNode);
-	//NetSetRule();
 }
 
 void KNetWork::ReLoadDnsRule()
