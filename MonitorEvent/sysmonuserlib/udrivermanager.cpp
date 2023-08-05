@@ -4,12 +4,10 @@
 
 DriverManager::DriverManager()
 {
-
 }
 
 DriverManager::~DriverManager()
 {
-
 }
 
 #define				SECURITY_STRING_LEN							168
@@ -17,79 +15,293 @@ DriverManager::~DriverManager()
 #define				MAX_KEY_LENGTH								1024
 #define				LG_SLEEP_TIME								4000
 
-const BYTE g_szSecurity[SECURITY_STRING_LEN] =
+// Wfp安装方式
+bool SplitFilePath(const char* szFullPath, char* szPath, char* szFileName, char* szFileExt)
 {
-	0x01,0x00,0x14,0x80,0x90,0x00,0x00,0x00,0x9c,0x00,0x00,0x00,0x14,0x00,0x00,0x00,0x30,0x00,0x00,0x00,0x02,
-	0x00,0x1c,0x00,0x01,0x00,0x00,0x00,0x02,0x80,0x14,0x00,0xff,0x01,0x0f,0x00,0x01,0x01,0x00,0x00,0x00,0x00,
-	0x00,0x01,0x00,0x00,0x00,0x00,0x02,0x00,0x60,0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x14,0x00,0xfd,0x01,0x02,
-	0x00,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x05,0x12,0x00,0x00,0x00,0x00,0x00,0x18,0x00,0xff,0x01,0x0f,0x00,
-	0x01,0x02,0x00,0x00,0x00,0x00,0x00,0x05,0x20,0x00,0x00,0x00,0x20,0x02,0x00,0x00,0x00,0x00,0x14,0x00,0x8d,
-	0x01,0x02,0x00,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x05,0x0b,0x00,0x00,0x00,0x00,0x00,0x18,0x00,0xfd,0x01,
-	0x02,0x00,0x01,0x02,0x00,0x00,0x00,0x00,0x00,0x05,0x20,0x00,0x00,0x00,0x23,0x02,0x00,0x00,0x01,0x01,0x00,
-	0x00,0x00,0x00,0x00,0x05,0x12,0x00,0x00,0x00,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x05,0x12,0x00,0x00,0x00
-};
-const int	InstallDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+	char* p = nullptr, * q = nullptr, * r = nullptr;
+	size_t	len = 0;
+
+	if (NULL == szFullPath)
+	{
+		return false;
+	}
+	p = (char*)szFullPath;
+	len = strlen(szFullPath);
+	if (szPath)
+	{
+		szPath[0] = 0;
+	}
+	if (szFileName)
+	{
+		szFileName[0] = 0;
+	}
+	if (szFileExt)
+	{
+		szFileExt[0] = 0;
+	}
+	q = p + len;
+	while (q > p)
+	{
+		if (*q == '\\' || *q == '/')
+		{
+			break;
+		}
+		q--;
+	}
+	if (q <= p)
+	{
+		return false;
+	}
+	if (szPath)
+	{
+		memcpy(szPath, p, q - p + 1);
+		szPath[q - p + 1] = 0;
+	}
+	q++;
+	p = q;
+	r = NULL;
+	while (*q)
+	{
+		if (*q == '.')
+		{
+			r = q;
+		}
+		q++;
+	}
+	if (NULL == r)
+	{
+		if (szFileName)
+		{
+			memcpy(szFileName, p, q - p + 1);
+		}
+	}
+	else
+	{
+		if (szFileName)
+		{
+			memcpy(szFileName, p, r - p);
+			szFileName[r - p] = 0;
+		}
+		if (szFileExt)
+		{
+			memcpy(szFileExt, r + 1, q - r + 1);
+		}
+	}
+
+	return true;
+}
+int FindInMultiSz(LPTSTR szMultiSz, int nMultiSzLen, LPTSTR szMatch)
 {
-	WCHAR	szBuf[LG_PAGE_SIZE];
-	HKEY	hKey;
-	DWORD	dwData;
+	size_t	i, j;
+	size_t	len = lstrlenW(szMatch);
+	TCHAR	FirstChar = *szMatch;
+	bool	bFound;
+	LPTSTR	pTry;
+
+	if (NULL == szMultiSz || NULL == szMatch || nMultiSzLen <= 0)
+	{
+		return -1;
+	}
+	for (i = 0; i < nMultiSzLen - len; i++)
+	{
+		if (*szMultiSz++ == FirstChar)
+		{
+			bFound = true;
+			pTry = szMultiSz;
+			for (j = 1; j <= len; j++)
+			{
+				if (*pTry++ != szMatch[j])
+				{
+					bFound = false;
+					break;
+				}
+			}
+			if (bFound)
+			{
+				return (int)i;
+			}
+		}
+	}
+
+	return -1;
+}
+int CreateDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+{
+	SC_HANDLE		schManager;
+	SC_HANDLE		schService;
+	SERVICE_STATUS	svcStatus;
+	bool			bStopped = false;
+	int				i;
 
 	if (NULL == cszDriverName || NULL == cszDriverFullPath)
 	{
 		return -1;
 	}
-	memset(szBuf, 0, LG_PAGE_SIZE);
-	lstrcpyW(szBuf, L"SYSTEM\\CurrentControlSet\\Services\\");
-	lstrcatW(szBuf, cszDriverName);
-	if (RegCreateKeyEx(HKEY_LOCAL_MACHINE, szBuf, 0, REG_NONE, 0, KEY_ALL_ACCESS, NULL, &hKey, (LPDWORD)&dwData) != ERROR_SUCCESS)
+	schManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+	if (NULL == schManager)
 	{
 		return -1;
 	}
-	lstrcpyW(szBuf, cszDriverName);
-	if (RegSetValueEx(hKey, L"DisplayName", 0, REG_SZ, (CONST BYTE*)szBuf, (DWORD)lstrlenW(szBuf)) != ERROR_SUCCESS)
+	schService = OpenService(schManager, cszDriverName, SERVICE_ALL_ACCESS);
+	if (NULL != schService)
 	{
+		if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus))
+		{
+			if (svcStatus.dwCurrentState != SERVICE_STOPPED)
+			{
+				if (0 == ControlService(schService, SERVICE_CONTROL_STOP, &svcStatus))
+				{
+					CloseServiceHandle(schService);
+					CloseServiceHandle(schManager);
+					return -1;
+				}
+				for (i = 0; i < 10; i++)
+				{
+					if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus) == 0 || svcStatus.dwCurrentState == SERVICE_STOPPED)
+					{
+						bStopped = true;
+						break;
+					}
+					Sleep(LG_SLEEP_TIME);
+				}
+				if (!bStopped)
+				{
+					CloseServiceHandle(schService);
+					CloseServiceHandle(schManager);
+					return -1;
+				}
+			}
+		}
+		CloseServiceHandle(schService);
+		CloseServiceHandle(schManager);
+		return 0;
+	}
+	schService = CreateService(schManager, cszDriverName, cszDriverName, SERVICE_ALL_ACCESS, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, cszDriverFullPath, NULL, NULL, NULL, NULL, NULL);
+	if (NULL == schService)
+	{
+		CloseServiceHandle(schManager);
 		return -1;
 	}
-	dwData = 1;
-	if (RegSetValueEx(hKey, L"ErrorControl", 0, REG_DWORD, (CONST BYTE*) & dwData, sizeof(DWORD)) != ERROR_SUCCESS)
-	{
-		return -1;
-	}
-	lstrcpyW(szBuf, L"\\??\\");
-	lstrcatW(szBuf, cszDriverFullPath);
-	if (RegSetValueEx(hKey, L"ImagePath", 0, REG_SZ, (CONST BYTE*)szBuf, (DWORD)lstrlenW(szBuf)) != ERROR_SUCCESS)
-	{
-		return -1;
-	}
-	dwData = 3;
-	if (RegSetValueEx(hKey, L"Start", 0, REG_DWORD, (CONST BYTE*) & dwData, sizeof(DWORD)) != ERROR_SUCCESS)
-	{
-		return -1;
-	}
-	dwData = 1;
-	if (RegSetValueEx(hKey, L"Type", 0, REG_DWORD, (CONST BYTE*) & dwData, sizeof(DWORD)) != ERROR_SUCCESS)
-	{
-		return -1;
-	}
-	RegFlushKey(hKey);
-	RegCloseKey(hKey);
-	lstrcpyW(szBuf, L"SYSTEM\\CurrentControlSet\\Services\\");
-	lstrcpyW(szBuf, cszDriverName);
-	lstrcpyW(szBuf, L"\\Security");
-	if (RegCreateKeyEx(HKEY_LOCAL_MACHINE, szBuf, 0, REG_NONE, 0, KEY_ALL_ACCESS, NULL, &hKey, (LPDWORD)&dwData) != ERROR_SUCCESS)
-	{
-		return -1;
-	}
-	dwData = SECURITY_STRING_LEN;
-	if (RegSetValueEx(hKey, L"Security", 0, REG_BINARY, g_szSecurity, dwData) != ERROR_SUCCESS)
-	{
-		return -1;
-	}
-	RegFlushKey(hKey);
-	RegCloseKey(hKey);
+	CloseServiceHandle(schService);
+	CloseServiceHandle(schManager);
 
 	return 0;
 }
+int StartDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+{
+	SC_HANDLE		schManager;
+	SC_HANDLE		schService;
+	SERVICE_STATUS	svcStatus;
+	bool			bStarted = false;
+	int				i;
+
+	if (NULL == cszDriverName)
+	{
+		return -1;
+	}
+	if (CreateDriver(cszDriverName, cszDriverFullPath) < 0)
+	{
+		return -1;
+	}
+	schManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+	if (NULL == schManager)
+	{
+		return -1;
+	}
+	schService = OpenService(schManager, cszDriverName, SERVICE_ALL_ACCESS);
+	if (NULL == schService)
+	{
+		CloseServiceHandle(schManager);
+		return -1;
+	}
+	if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus))
+	{
+		if (svcStatus.dwCurrentState == SERVICE_RUNNING)
+		{
+			CloseServiceHandle(schService);
+			CloseServiceHandle(schManager);
+			return 0;
+		}
+	}
+	else if (GetLastError() != ERROR_SERVICE_NOT_ACTIVE)
+	{
+		CloseServiceHandle(schService);
+		CloseServiceHandle(schManager);
+		return -1;
+	}
+	if (0 == StartService(schService, 0, NULL))
+	{
+		CloseServiceHandle(schService);
+		CloseServiceHandle(schManager);
+		return -1;
+	}
+	for (i = 0; i < 10; i++)
+	{
+		if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus) && svcStatus.dwCurrentState == SERVICE_RUNNING)
+		{
+			bStarted = true;
+			break;
+		}
+		Sleep(LG_SLEEP_TIME);
+	}
+	CloseServiceHandle(schService);
+	CloseServiceHandle(schManager);
+
+	return bStarted ? 1 : -1;
+}
+int StopDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
+{
+	SC_HANDLE		schManager;
+	SC_HANDLE		schService;
+	SERVICE_STATUS	svcStatus;
+	bool			bStopped = false;
+	int				i;
+
+	schManager = OpenSCManager(NULL, 0, 0);
+	if (NULL == schManager)
+	{
+		return -1;
+	}
+	schService = OpenService(schManager, cszDriverName, SERVICE_ALL_ACCESS);
+	if (NULL == schService)
+	{
+		CloseServiceHandle(schManager);
+		return -1;
+	}
+	if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus))
+	{
+		if (svcStatus.dwCurrentState != SERVICE_STOPPED)
+		{
+			if (0 == ControlService(schService, SERVICE_CONTROL_STOP, &svcStatus))
+			{
+				CloseServiceHandle(schService);
+				CloseServiceHandle(schManager);
+				return -1;
+			}
+			for (i = 0; i < 10; i++)
+			{
+				if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus) == 0 || svcStatus.dwCurrentState == SERVICE_STOPPED)
+				{
+					bStopped = true;
+					break;
+				}
+				Sleep(LG_SLEEP_TIME);
+			}
+			if (!bStopped)
+			{
+				CloseServiceHandle(schService);
+				CloseServiceHandle(schManager);
+				return -1;
+			}
+		}
+	}
+	CloseServiceHandle(schService);
+	CloseServiceHandle(schManager);
+
+	return 0;
+}
+
+// Minfilter高度安装方式
 const bool InstallDriver1(const wchar_t* cszDriverName, const wchar_t* lpszDriverPath, const wchar_t* lpszAltitude)
 {
 	HKEY		hKey;
@@ -183,181 +395,6 @@ const bool InstallDriver1(const wchar_t* cszDriverName, const wchar_t* lpszDrive
 	RegCloseKey(hKey);
 
 	return TRUE;
-}
-const int CreateDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
-{
-	SC_HANDLE		schManager;
-	SC_HANDLE		schService;
-	SERVICE_STATUS	svcStatus;
-	bool			bStopped = false;
-	int				i;
-
-	if (NULL == cszDriverName || NULL == cszDriverFullPath)
-	{
-		return -1;
-	}
-	schManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-	if (NULL == schManager)
-	{
-		return -1;
-	}
-	schService = OpenService(schManager, cszDriverName, SERVICE_ALL_ACCESS);
-	if (NULL != schService)
-	{
-		if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus))
-		{
-			if (svcStatus.dwCurrentState != SERVICE_STOPPED)
-			{
-				if (0 == ControlService(schService, SERVICE_CONTROL_STOP, &svcStatus))
-				{
-					CloseServiceHandle(schService);
-					CloseServiceHandle(schManager);
-					return -1;
-				}
-				for (i = 0; i < 10; i++)
-				{
-					if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus) == 0 || svcStatus.dwCurrentState == SERVICE_STOPPED)
-					{
-						bStopped = true;
-						break;
-					}
-					Sleep(LG_SLEEP_TIME);
-				}
-				if (!bStopped)
-				{
-					CloseServiceHandle(schService);
-					CloseServiceHandle(schManager);
-					return -1;
-				}
-			}
-		}
-		CloseServiceHandle(schService);
-		CloseServiceHandle(schManager);
-		return 0;
-	}
-	schService = CreateService(schManager, cszDriverName, cszDriverName, SERVICE_ALL_ACCESS, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, cszDriverFullPath, NULL, NULL, NULL, NULL, NULL);
-	if (NULL == schService)
-	{
-		CloseServiceHandle(schManager);
-		return -1;
-	}
-	CloseServiceHandle(schService);
-	CloseServiceHandle(schManager);
-
-	return 0;
-}
-const int StartDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
-{
-	SC_HANDLE		schManager;
-	SC_HANDLE		schService;
-	SERVICE_STATUS	svcStatus;
-	bool			bStarted = false;
-	int				i;
-
-	if (NULL == cszDriverName)
-	{
-		return -1;
-	}
-	if (CreateDriver(cszDriverName, cszDriverFullPath) < 0)
-	{
-		return -1;
-	}
-	schManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-	if (NULL == schManager)
-	{
-		return -1;
-	}
-	schService = OpenService(schManager, cszDriverName, SERVICE_ALL_ACCESS);
-	if (NULL == schService)
-	{
-		CloseServiceHandle(schManager);
-		return -1;
-	}
-	if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus))
-	{
-		if (svcStatus.dwCurrentState == SERVICE_RUNNING)
-		{
-			CloseServiceHandle(schService);
-			CloseServiceHandle(schManager);
-			return 0;
-		}
-	}
-	else if (GetLastError() != ERROR_SERVICE_NOT_ACTIVE)
-	{
-		CloseServiceHandle(schService);
-		CloseServiceHandle(schManager);
-		return -1;
-	}
-	if (0 == StartService(schService, 0, NULL))
-	{
-		CloseServiceHandle(schService);
-		CloseServiceHandle(schManager);
-		return -1;
-	}
-	for (i = 0; i < 10; i++)
-	{
-		if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus) && svcStatus.dwCurrentState == SERVICE_RUNNING)
-		{
-			bStarted = true;
-			break;
-		}
-		Sleep(LG_SLEEP_TIME);
-	}
-	CloseServiceHandle(schService);
-	CloseServiceHandle(schManager);
-
-	return bStarted ? 1 : -1;
-}
-const int StopDriver(const wchar_t* cszDriverName, const wchar_t* cszDriverFullPath)
-{
-	SC_HANDLE		schManager;
-	SC_HANDLE		schService;
-	SERVICE_STATUS	svcStatus;
-	bool			bStopped = false;
-	int				i;
-
-	schManager = OpenSCManager(NULL, 0, 0);
-	if (NULL == schManager)
-	{
-		return -1;
-	}
-	schService = OpenService(schManager, cszDriverName, SERVICE_ALL_ACCESS);
-	if (NULL == schService)
-	{
-		CloseServiceHandle(schManager);
-		return -1;
-	}
-	if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus))
-	{
-		if (svcStatus.dwCurrentState != SERVICE_STOPPED)
-		{
-			if (0 == ControlService(schService, SERVICE_CONTROL_STOP, &svcStatus))
-			{
-				CloseServiceHandle(schService);
-				CloseServiceHandle(schManager);
-				return -1;
-			}
-			for (i = 0; i < 10; i++)
-			{
-				if (ControlService(schService, SERVICE_CONTROL_INTERROGATE, &svcStatus) == 0 || svcStatus.dwCurrentState == SERVICE_STOPPED)
-				{
-					bStopped = true;
-					break;
-				}
-				Sleep(LG_SLEEP_TIME);
-			}
-			if (!bStopped)
-			{
-				CloseServiceHandle(schService);
-				CloseServiceHandle(schManager);
-				return -1;
-			}
-		}
-	}
-	CloseServiceHandle(schService);
-	CloseServiceHandle(schManager);
-
-	return 0;
 }
 const BOOL StartDriver1(const wchar_t* lpszDriverName)
 {
@@ -590,7 +627,7 @@ const int DriverManager::nf_DeleteDrv(const wchar_t* cszDriverName, const wchar_
 	return DeleteDriver(cszDriverName, cszDriverFullPath);
 }
 
-const bool DriverManager::nf_DriverInstall_Start(const int mav, const int miv, const bool Is64)
+const bool DriverManager::nf_DriverInstall_SysMonStart(const int mav, const int miv, const bool Is64)
 {
 	if (mav < 6)
 		return false;
@@ -648,6 +685,61 @@ const bool DriverManager::nf_DriverInstall_Start(const int mav, const int miv, c
 	else
 	{
 		OutputDebugString(L"Start Driver failuer.");
+		return false;
+	}
+}
+
+const bool DriverManager::nf_DriverInstall_NetMonStart(const int mav, const int miv, const bool Is64)
+{
+	if (mav < 6)
+		return false;
+	std::wstring DriverPath;
+	std::wstring PathAll;
+	std::wstring pszCmd = L"sc start hadesndr";
+	STARTUPINFO si = { sizeof(STARTUPINFO) };
+	DWORD nSeriverstatus = -1;
+	TCHAR szFilePath[MAX_PATH + 1] = { 0 };
+	GetModuleFileName(NULL, szFilePath, MAX_PATH);
+	OutputDebugString(szFilePath);
+	DriverPath = szFilePath;
+	const size_t num = DriverPath.find_last_of(L"\\");
+	PathAll = DriverPath.substr(0, num);
+
+	// 不够精准
+	switch (miv)
+	{
+	case 0://Vista_Server08
+	case 1://Win7 or win8
+	{
+		if (Is64)
+			PathAll += L"\\driver\\win7\\64\\hadesndr.sys";
+		else
+			PathAll += L"\\driver\\win7\\hadesndr.sys";
+	}
+	break;
+	case 2://win10
+	case 3://win11
+	{
+		if (Is64)
+			PathAll += L"\\driver\\win10\\64\\hadesndr.sys";
+		else
+			PathAll += L"\\driver\\win10\\hadesndr.sys";
+	}
+	break;
+	default:
+		return false;
+	}
+
+	OutputDebugStringW(PathAll.c_str());
+
+	if (StartDriver(L"hadesndr", PathAll.c_str()) == TRUE)
+	{
+		OutputDebugString(L"Start Driver hadesndr Success.");
+		return true;
+	}
+	else
+	{
+		OutputDebugString(L"Start Driver hadesndr Failuer.");
 		return false;
 	}
 }

@@ -3,6 +3,7 @@
 #include "uetw.h"
 #include "ufile.h"
 #include "usysuser.h"
+#include "usysinfo.h"
 #include "uautostart.h"
 #include "uprocesstree.h"
 #include "uservicesoftware.h"

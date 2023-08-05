@@ -76,7 +76,6 @@ static void handleEventDispath(PNF_DATA pData)
 		// connobj_alloc(pData->id, (PNF_TCP_CONN_INFO)pData->buffer);
 		AutoUnlock unlock(g_cs);
 		g_eventQueue.push(pData);
-
 		//g_pEventHandler->tcpredirectPacket(pData->buffer, pData->bufferSize);
 	}
 	break;

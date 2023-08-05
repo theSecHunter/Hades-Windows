@@ -3,9 +3,11 @@
 
 extern "C"
 {
-	__declspec(dllexport) int NetInit(void);
-	__declspec(dllexport) int NetGetProcessInfo(UINT32* Locaaddripv4, unsigned long localport, int protocol, PVOID64 getbuffer);
-	__declspec(dllexport) int NetMonitor(int code);
+	__declspec(dllexport) int NetNdrInitEx(void);
+	__declspec(dllexport) int NetNdrCloseEx(void);
+	__declspec(dllexport) bool GetNetNdrStusEx(void);
+	__declspec(dllexport) int NetNdrGetProcessInfoEx(unsigned int* Locaaddripv4, unsigned long localport, int protocol, void* pGetbuffer);
+	__declspec(dllexport) int NetNdrMonitorEx(int code);
 }
 
 #endif

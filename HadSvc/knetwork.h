@@ -6,10 +6,12 @@ public:
 	KNetWork();
 	~KNetWork();
 
-	const bool NetDrvInit();
+	const bool NetNdrInit();
+	void NetNdrClose();
+	const bool GetNetNdrStus();
 
 public:
 	void SetAllRule();
 	void ReLoadDnsRule();
-	void ReLoadTcpConnectRule();
+	void ReLoadIpPortConnectRule();
 };

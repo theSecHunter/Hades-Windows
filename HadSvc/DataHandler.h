@@ -22,10 +22,14 @@ public:
 	// Sub Data Handle
 	void KerSublthreadProc();
 	void EtwSublthreadProc();
-	static DWORD WINAPI PTaskHandlerNotify(LPVOID lpThreadParameter);
+	bool PTaskHandlerNotify(const DWORD taskid);
 
 	// Set ExitEvent
 	void SetExitSvcEvent(HANDLE& hexitEvent);
+
+	// Check Drver
+	const bool DrvCheckStatus();
+	const bool NetCheckStatus();
 
 private:
 	typedef std::vector<HANDLE> tThreads;
@@ -35,3 +39,14 @@ private:
 
 	HANDLE m_jobAvailableEvnet_WriteTask = NULL;
 };
+
+typedef struct _THREADPA_PARAMETER_NODE
+{
+	int nTaskId;
+	DataHandler* pDataHandler;
+	void clear()
+	{
+		nTaskId = 0;
+		pDataHandler = nullptr;
+	}
+}THREADPA_PARAMETER_NODE;

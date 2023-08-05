@@ -423,7 +423,7 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	// cloes需要清理 - 关闭共享内存
 	devctrl_setmonitor(0);
 	establishedctx_clean();
-	datalinkctx_clean();
+	//datalinkctx_clean();
 	tcpctxctx_clean();
 	devctrl_clean();
 

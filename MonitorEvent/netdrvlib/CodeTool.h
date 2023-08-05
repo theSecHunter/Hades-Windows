@@ -8,9 +8,9 @@ using namespace std;
 #define				MAX_KEY_LENGTH								1024
 #define				LG_SLEEP_TIME								4000
 
-static const char g_DevSyLinkName[] = "\\??\\HadesWinNdr";
-static const std::string g_DriverServerNameA = "HandesNdr";
-static const std::wstring g_DriverServerNameW = L"HandesNdr";
+static const char g_DevSyLinkName[] = "\\??\\HadesNetMonx";
+static const std::string g_DriverServerNameA = "hadesndr";
+static const std::wstring g_DriverServerNameW = L"hadesndr";
 
 class MD5
 {

@@ -11,9 +11,19 @@ KNetWork::~KNetWork()
 {
 }
 
-const bool KNetWork::NetDrvInit()
+const bool KNetWork::NetNdrInit()
 {
-	return NetInit();
+	return NetNdrInitEx();
+}
+
+void KNetWork::NetNdrClose()
+{
+	NetNdrCloseEx();
+}
+
+const bool KNetWork::GetNetNdrStus()
+{
+	return GetNetNdrStusEx();
 }
 
 void KNetWork::SetAllRule()
@@ -26,7 +36,9 @@ void KNetWork::ReLoadDnsRule()
 {
 }
 
-void KNetWork::ReLoadTcpConnectRule()
+void KNetWork::ReLoadIpPortConnectRule()
 {
+	std::vector<NetWorkRuleNode> NetRuleNode;
+	ConfigNetWorkYamlRuleParsing(NetRuleNode);
 }
 

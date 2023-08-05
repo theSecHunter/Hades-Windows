@@ -24,8 +24,10 @@ static std::mutex			g_hadesStatuscs;
 static std::mutex			g_startprocesslock;
 
 // 驱动名
-const std::wstring			g_drverName = L"sysmondriver";
+static const std::wstring	g_drverName = L"sysmondriver";
+static const std::wstring	g_drverNdrName = L"hadesndr";
 
+// Socket
 static HpTcpSvc				g_tcpsvc;
 
 
@@ -79,7 +81,7 @@ static DWORD WINAPI StartIocpWorkNotify(LPVOID lpThreadParameter)
 }
 
 // 检测驱动是否安装
-bool DrvCheckStart()
+const bool DrvCheckStatus()
 {
 	std::wstring pszCmd = L"sc start sysmondriver";
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
@@ -124,27 +126,88 @@ bool DrvCheckStart()
 	}
 	break;
 	case 0x424:
-	{//仅未安装驱动的时候提醒
-		const int nret = MessageBox(NULL, L"开启内核采集需要安装驱动，系统并未安装\n示例驱动没有签名,请自行打签名或者关闭系统驱动签名认证安装.\n是否进行驱动安装开启内核态采集\n", L"提示", MB_OKCANCEL | MB_ICONWARNING);
-		if (nret == 1)
+	{
+		std::string strVerkerLinfo = "";
+		bool Is64 = false;
+		int verMajorVersion = 0;
+		int verMinorVersion = 0;
+		SingletonUSysBaseInfo::instance()->GetOSVersion(strVerkerLinfo, verMajorVersion, verMinorVersion, Is64);
+		if (!SingletonDriverManager::instance()->nf_DriverInstall_SysMonStart(verMajorVersion, verMinorVersion, Is64))
 		{
-			wchar_t output[MAX_PATH] = { 0, };
-			wsprintf(output, L"[Hades] SysMaver: %d SysMiver: %d", SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion);
-			OutputDebugStringW(output);
-
-			if (!SingletonDriverManager::instance()->nf_DriverInstall_Start(SYSTEMPUBLIC::sysattriinfo.verMajorVersion, SYSTEMPUBLIC::sysattriinfo.verMinorVersion, SYSTEMPUBLIC::sysattriinfo.Is64))
-			{
-				MessageBox(NULL, L"驱动安装失败，请您手动安装再次开启内核态采集", L"提示", MB_OKCANCEL);
-				return false;
-			}
-		}
-		else
+			MessageBox(NULL, L"驱动安装失败，请您手动安装再次开启内核态采集", L"提示", MB_OKCANCEL);
 			return false;
+		}
 	}
 	break;
 	default:
 		return false;
 	}
+
+	return true;
+}
+
+const bool NetCheckStatus()
+{
+	std::wstring pszCmd = L"sc start hadesndr";
+	STARTUPINFO si = { sizeof(STARTUPINFO) };
+	int nSeriverstatus = SingletonDriverManager::instance()->nf_GetServicesStatus(g_drverNdrName.c_str());
+	switch (nSeriverstatus)
+	{
+		// 正在运行
+	case SERVICE_CONTINUE_PENDING:
+	case SERVICE_RUNNING:
+	case SERVICE_START_PENDING:
+	{
+		OutputDebugString(L"Driver Running");
+		break;
+	}
+	break;
+	// 已安装 - 未运行
+	case SERVICE_STOPPED:
+	case SERVICE_STOP_PENDING:
+	{
+		GetStartupInfo(&si);
+		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+		si.wShowWindow = SW_HIDE;
+		// 启动命令行
+		PROCESS_INFORMATION pi;
+		if (CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
+		{
+			CloseHandle(pi.hProcess);
+			CloseHandle(pi.hThread);
+		}
+		Sleep(3000);
+		nSeriverstatus = SingletonDriverManager::instance()->nf_GetServicesStatus(g_drverNdrName.c_str());
+		if (SERVICE_RUNNING == nSeriverstatus)
+		{
+			OutputDebugString(L"sc Driver Running");
+			break;
+		}
+		else
+		{
+			OutputDebugString(L"sc Driver Install Failuer");
+			return false;
+		}
+	}
+	break;
+	case 0x424:
+	{
+		std::string strVerkerLinfo = "";
+		bool Is64 = false;
+		int verMajorVersion = 0;
+		int verMinorVersion = 0;
+		SingletonUSysBaseInfo::instance()->GetOSVersion(strVerkerLinfo, verMajorVersion, verMinorVersion, Is64);
+		if (!SingletonDriverManager::instance()->nf_DriverInstall_NetMonStart(verMajorVersion, verMinorVersion, Is64))
+		{
+			MessageBox(NULL, L"流量驱动安装失败，请您手动安装.", L"提示", MB_OKCANCEL);
+			return false;
+		}
+	}
+	break;
+	default:
+		return false;
+	}
+
 	return true;
 }
 
@@ -620,7 +683,8 @@ void MainWindow::FlushData()
 }
 static DWORD WINAPI ThreadFlush(LPVOID lpThreadParameter)
 {
-	(reinterpret_cast<MainWindow*>(lpThreadParameter))->FlushData();
+	if (lpThreadParameter)
+		(reinterpret_cast<MainWindow*>(lpThreadParameter))->FlushData();
 	return 0;
 }
 LRESULT MainWindow::OnTimer(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)

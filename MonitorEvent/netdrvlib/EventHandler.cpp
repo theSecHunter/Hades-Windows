@@ -128,7 +128,7 @@ void EventHandler::TcpredirectPacket(const char* buf, int len)
 	@ 参数3 协议
 	@ 参数4 数据指针
 */
-int NetGetProcessInfo(unsigned int* Locaaddripv4, unsigned long localport, int protocol, void* pGetbuffer)
+int NetNdrGetProcessInfoEx(unsigned int* Locaaddripv4, unsigned long localport, int protocol, void* pGetbuffer)
 {
 	// -1 参数错误
 	if (!Locaaddripv4 && (localport <= 0) && !pGetbuffer && !protocol)

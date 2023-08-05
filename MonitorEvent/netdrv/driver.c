@@ -26,8 +26,8 @@ NTSTATUS driver_init(
 	UNREFERENCED_PARAMETER(registryPath);
 	NTSTATUS status = STATUS_SUCCESS;
 
-	RtlInitUnicodeString(&u_devicename, L"\\Device\\WFPDark");
-	RtlInitUnicodeString(&u_devicesyslink, L"\\DosDevices\\WFPDark");
+	RtlInitUnicodeString(&u_devicename, L"\\Device\\HadesNetMonx");
+	RtlInitUnicodeString(&u_devicesyslink, L"\\DosDevices\\HadesNetMonx");
 
 	status = IoCreateDevice(driverObject,
 		0,
@@ -58,8 +58,6 @@ VOID driver_unload(IN PDRIVER_OBJECT driverObject)
 	UNREFERENCED_PARAMETER(driverObject);
 
 	KdPrint((DPREFIX"driverUnload\n"));
-
-	//DbgBreakPoint();
 
 	if (g_bfeStateSubscribeHandle)
 	{
@@ -96,7 +94,7 @@ NTSTATUS DriverEntry(
 	IN  PUNICODE_STRING registryPath
 )
 {
-	NTSTATUS status = STATUS_SUCCESS;
+	NTSTATUS nStatus = STATUS_SUCCESS;
 	int i = 0;
 
 	for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)
@@ -109,15 +107,15 @@ NTSTATUS DriverEntry(
 	do 
 	{
 		// Init driver 
-		status = driver_init(driverObject, registryPath);
-		if (!NT_SUCCESS(status))
+		nStatus = driver_init(driverObject, registryPath);
+		if (!NT_SUCCESS(nStatus))
 		{
-			return status;
+			return nStatus;
 		}
 
 		// Init dectrl 
-		status = devctrl_init();
-		if (!NT_SUCCESS(status))
+		nStatus = devctrl_init();
+		if (!NT_SUCCESS(nStatus))
 		{
 			if (g_deviceControl)
 			{
@@ -126,7 +124,7 @@ NTSTATUS DriverEntry(
 				g_deviceControl = NULL;
 			}
 			devctrl_free();
-			return status;
+			return nStatus;
 		}
 
 		// Init MAK Packet
@@ -136,14 +134,14 @@ NTSTATUS DriverEntry(
 		//	break;
 		//}
 
-		status = establishedctx_init();
-		if (!NT_SUCCESS(status))
+		nStatus = establishedctx_init();
+		if (!NT_SUCCESS(nStatus))
 		{
 			break;
 		}
 
-		status = tcpctxctx_init();
-		if (!NT_SUCCESS(status))
+		nStatus = tcpctxctx_init();
+		if (!NT_SUCCESS(nStatus))
 		{
 			break;
 		}
@@ -151,31 +149,31 @@ NTSTATUS DriverEntry(
 		// Init WFP Callout
 		if (FwpmBfeStateGet() == FWPM_SERVICE_RUNNING)
 		{
-			status = callout_init(g_deviceControl);
-			if (!NT_SUCCESS(status))
+			nStatus = callout_init(g_deviceControl);
+			if (!NT_SUCCESS(nStatus))
 			{
 				break;
 			}
 		}
 		else
 		{
-			status = FwpmBfeStateSubscribeChanges(
+			nStatus = FwpmBfeStateSubscribeChanges(
 				g_deviceControl,
 				bfeStateCallback,
 				NULL,
 				&g_bfeStateSubscribeHandle);
-			if (!NT_SUCCESS(status))
+			if (!NT_SUCCESS(nStatus))
 			{
 				KdPrint((DPREFIX"FwpmBfeStateSubscribeChanges\n"));
 				break;
 			}
 		}
-		return status;
+		return nStatus;
 	} while (FALSE);
 	
 	// Ê§°Ü
 	driver_free();
-	return status;
+	return nStatus;
 }
 
 VOID driver_free()
@@ -190,7 +188,7 @@ VOID driver_free()
 	devctrl_setmonitor(0);
 	callout_free();
 	devctrl_free();
-	datalinkctx_free();
+	//datalinkctx_free();
 	tcpctxctx_free();
 	establishedctx_free();
 };

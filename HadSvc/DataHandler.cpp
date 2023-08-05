@@ -12,7 +12,6 @@
 #include <atlstr.h>
 
 #include "DataHandler.h"
-#include "udrivermanager.h"
 #include "transfer.pb.h"
 #include "singGloal.h"
 #include "NamedPipe.h"
@@ -41,8 +40,8 @@ static std::shared_ptr<NamedPipe> g_namedpipe = nullptr;
 static std::shared_ptr<AnonymousPipe> g_anonymouspipe = nullptr;
 
 // Drivers
-static DriverManager g_DrvManager;
 static const std::wstring g_drverName = L"sysmondriver";
+static const std::wstring g_drverNdrName = L"hadesndr";
 
 void GetOSVersion(std::string& strOSVersion, int& verMajorVersion, int& verMinorVersion, bool& Is64)
 {
@@ -301,12 +300,11 @@ void GetOSVersion(std::string& strOSVersion, int& verMajorVersion, int& verMinor
     {
     }
 }
-// 检测驱动是否安装
-bool DrvCheckStart()
+
+// 检测安装驱动检测
+const bool DataHandler::DrvCheckStatus()
 {
-    std::wstring pszCmd = L"sc start sysmondriver";
-    STARTUPINFO si = { sizeof(STARTUPINFO) };
-    int nSeriverstatus = g_DrvManager.nf_GetServicesStatus(g_drverName.c_str());
+    int nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(g_drverName.c_str());
     switch (nSeriverstatus)
     {
         // 正在运行
@@ -322,18 +320,19 @@ bool DrvCheckStart()
     case SERVICE_STOPPED:
     case SERVICE_STOP_PENDING:
     {
+        PROCESS_INFORMATION pi;
+        std::wstring pszCmd = L"sc start sysmondriver";
+        STARTUPINFO si = { sizeof(STARTUPINFO) };
         GetStartupInfo(&si);
         si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
         si.wShowWindow = SW_HIDE;
-        // 启动命令行
-        PROCESS_INFORMATION pi;
         if (CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi)) 
         {
+            WaitForSingleObject(pi.hProcess, 3000);
             CloseHandle(pi.hProcess);
             CloseHandle(pi.hThread);
         }
-        Sleep(3000);
-        nSeriverstatus = g_DrvManager.nf_GetServicesStatus(g_drverName.c_str());
+        nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(g_drverName.c_str());
         if (SERVICE_RUNNING == nSeriverstatus)
         {
             OutputDebugString(L"sc Driver Running");
@@ -348,24 +347,79 @@ bool DrvCheckStart()
     break;
     case 0x424:
     {
-        // 仅未安装驱动的时候提醒
-        const int nret = MessageBox(NULL, L"开启内核采集需要安装驱动，系统并未安装\n示例驱动没有签名,请自行打签名或者关闭系统驱动签名认证安装.\n是否进行驱动安装开启内核态采集\n", L"提示", MB_OKCANCEL | MB_ICONWARNING);
-        if (nret == 1)
+        std::string strVerkerLinfo = "";
+        bool Is64 = false;
+        int verMajorVersion = 0;
+        int verMinorVersion = 0;
+        GetOSVersion(strVerkerLinfo, verMajorVersion, verMinorVersion, Is64);
+        if (!SingletonDrvManage::instance()->nf_DriverInstall_SysMonStart(verMajorVersion, verMinorVersion, Is64))
         {
-            wchar_t output[MAX_PATH] = { 0, };
-            std::string verkerlinfo;
-            int verMajorVersion;
-            int verMinorVersion;
-            bool Is64;
-            GetOSVersion(verkerlinfo, verMajorVersion, verMinorVersion, Is64);
-            if (!g_DrvManager.nf_DriverInstall_Start(verMajorVersion, verMinorVersion, Is64))
-            {
-                MessageBox(NULL, L"驱动安装失败，请您手动安装再次开启内核态采集", L"提示", MB_OKCANCEL);
-                return false;
-            }
+            MessageBox(NULL, L"驱动安装失败，请您手动安装再次开启内核态采集", L"提示", MB_OKCANCEL);
+            return false;
+        }
+    }
+    break;
+    default:
+        return false;
+    }
+
+    return true;
+}
+const bool DataHandler::NetCheckStatus()
+{
+    int nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(g_drverNdrName.c_str());
+    switch (nSeriverstatus)
+    {
+        // 正在运行
+    case SERVICE_CONTINUE_PENDING:
+    case SERVICE_RUNNING:
+    case SERVICE_START_PENDING:
+    {
+        OutputDebugString(L"Driver Running");
+        break;
+    }
+    break;
+    // 已安装 - 未运行
+    case SERVICE_STOPPED:
+    case SERVICE_STOP_PENDING:
+    {
+        PROCESS_INFORMATION pi;
+        std::wstring pszCmd = L"sc start hadesndr";
+        STARTUPINFO si = { sizeof(STARTUPINFO) };
+        GetStartupInfo(&si);
+        si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+        si.wShowWindow = SW_HIDE;
+        if (CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
+        {
+            WaitForSingleObject(pi.hProcess, 3000);
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+        }
+        nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(g_drverNdrName.c_str());
+        if (SERVICE_RUNNING == nSeriverstatus)
+        {
+            OutputDebugString(L"sc Driver Running");
+            break;
         }
         else
+        {
+            OutputDebugString(L"sc Driver Install Failuer");
             return false;
+        }
+    }
+    break;
+    case 0x424:
+    {
+        std::string strVerkerLinfo = "";
+        bool Is64 = false;
+        int verMajorVersion = 0;
+        int verMinorVersion = 0;
+        GetOSVersion(strVerkerLinfo, verMajorVersion, verMinorVersion, Is64);
+        if (!SingletonDrvManage::instance()->nf_DriverInstall_NetMonStart(verMajorVersion, verMinorVersion, Is64))
+        {
+            MessageBox(NULL, L"流量驱动安装失败，请您手动安装.", L"提示", MB_OKCANCEL);
+            return false;
+        }
     }
     break;
     default:
@@ -411,23 +465,19 @@ void DataHandler::SetExitSvcEvent(HANDLE & hexitEvent)
     g_ExitEvent = hexitEvent;
 }
 
-// Task Handler
-DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
+// Hboat Server Task Handler
+bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
 {
-    if (!lpThreadParameter || g_shutdown)
-        return 0;
-
     std::vector<std::string> task_array_data;
     task_array_data.clear();
 
-    // Driver Install Check 
-    const int taskid = (DWORD)lpThreadParameter;
     if ((403 <= taskid) && (406 >= taskid))
     {
-        if (!DrvCheckStart())
+        if (!DrvCheckStatus())
             return false;
+        NetCheckStatus();
     }
-        
+
     if (taskid == 188)
     {
         if (g_ExitEvent)
@@ -461,10 +511,10 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
         case 402:
         {// Etw采集关闭
             task_array_data.clear();
-            const auto uStatus =  SingletonUMon::instance()->GetEtwMonStatus();
+            const auto uStatus = SingletonUMon::instance()->GetEtwMonStatus();
             if (true == uStatus)
             {
-                 SingletonUMon::instance()->uMsg_EtwClose();
+                SingletonUMon::instance()->uMsg_EtwClose();
                 task_array_data.push_back("Success");
             }
         }
@@ -616,10 +666,36 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
             task_array_data.push_back("Success");
         }
         break;
+        case 411:
+        {// 网络主防开启
+            if (SingletonDataHandler::instance()->NetCheckStatus()) {
+                if (!SingletonKNetWork::instance()->GetNetNdrStus())
+                    SingletonKNetWork::instance()->NetNdrInit();
+            }      
+        }
+        break;
+        case 412:
+        {// 网络主防关闭
+            if (SingletonDataHandler::instance()->NetCheckStatus()) {
+                if (SingletonKNetWork::instance()->GetNetNdrStus())
+                    SingletonKNetWork::instance()->NetNdrClose();
+            }
+        }
+        break;
+        case 413:
+        {// 网路规则重载
+            task_array_data.clear();
+            OutputDebugString(L"[HadesSvc] ReLoadIpPortConnectRule Send Enable KernelMonitor Command");
+            SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
+            OutputDebugString(L"[HadesSvc] ReLoadIpPortConnectRule Enable KernelMonitor Success");
+            task_array_data.push_back("Success");
+        }
+        break;
         default:
             task_array_data.clear();
             return 0;
         }
+
     }
 
     // Write Pip
@@ -656,8 +732,21 @@ DWORD WINAPI DataHandler::PTaskHandlerNotify(LPVOID lpThreadParameter)
     }
 
     task_array_data.clear();
+
     return 0;
 }
+static DWORD WINAPI PTaskHandlerThread(LPVOID lpThreadParameter)
+{
+    if (!lpThreadParameter || g_shutdown)
+        return 0;
+    THREADPA_PARAMETER_NODE* pthreadPara = reinterpret_cast<THREADPA_PARAMETER_NODE*>(lpThreadParameter);
+    if (!pthreadPara)
+        return 0;
+    if (pthreadPara->pDataHandler)
+        pthreadPara->pDataHandler->PTaskHandlerNotify(pthreadPara->nTaskId);
+    return 0;
+}
+
 // Recv Task
 void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_t size)
 {
@@ -669,21 +758,29 @@ void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_
         // 匿名管道不确定因素多，插件下发Task MaxLen <= 1024
         if (isize <= 0 && isize >= 1024)
             return;
+        THREADPA_PARAMETER_NODE threadPara;
+        threadPara.clear();
         // 反序列化成Task
         protocol::Task pTask;
         pTask.ParseFromString((char*)(data.get() + 0x4));
-        const int taskid = pTask.data_type();
-        QueueUserWorkItem(DataHandler::PTaskHandlerNotify, (LPVOID)taskid, WT_EXECUTEDEFAULT);
+        threadPara.nTaskId = pTask.data_type();
+        threadPara.pDataHandler = this;
+        QueueUserWorkItem(PTaskHandlerThread, (LPVOID)&threadPara, WT_EXECUTEDEFAULT);
     }
     catch (const std::exception&)
     {
         return;
     }  
 }
+
 // Debug interface
 void DataHandler::DebugTaskInterface(const int taskid)
 {
-    QueueUserWorkItem(DataHandler::PTaskHandlerNotify, (PVOID)taskid, WT_EXECUTEDEFAULT);
+    THREADPA_PARAMETER_NODE threadPara;
+    threadPara.clear();
+    threadPara.nTaskId = taskid;
+    threadPara.pDataHandler = this;
+    QueueUserWorkItem(PTaskHandlerThread, (LPVOID)&threadPara, WT_EXECUTEDEFAULT);
 }
 
 // 内核数据ConSumer
@@ -724,6 +821,12 @@ void DataHandler::KerSublthreadProc()
         } while (false);
     } while (!g_shutdown);
 }
+static unsigned WINAPI _KerSubthreadProc(void* pData)
+{
+    if (pData)
+        (reinterpret_cast<DataHandler*>(pData))->KerSublthreadProc();
+    return 0;
+}
 // Etw数据ConSumer
 void DataHandler::EtwSublthreadProc()
 {
@@ -762,18 +865,10 @@ void DataHandler::EtwSublthreadProc()
         } while (false);
     } while (!g_shutdown);
 }
-static unsigned WINAPI _KerSubthreadProc(void* pData)
-{
-    if (!pData)
-        return 0;
-    (reinterpret_cast<DataHandler*>(pData))->KerSublthreadProc();
-    return 0;
-}
 static unsigned WINAPI _EtwSubthreadProc(void* pData)
 {
-    if (!pData)
-        return 0;
-    (reinterpret_cast<DataHandler*>(pData))->EtwSublthreadProc();
+    if (pData)
+        (reinterpret_cast<DataHandler*>(pData))->EtwSublthreadProc();
     return 0;
 }
 
