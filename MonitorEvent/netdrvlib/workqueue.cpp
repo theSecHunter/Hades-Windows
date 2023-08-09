@@ -4,6 +4,7 @@
 #include "nfdriver.h"
 #include "workqueue.h"
 #include "singGlobal.h"
+#include "tcpctx.h"
 
 const int TCP_TIMEOUT_CHECK_PERIOD = 5 * 1000;
 
@@ -14,7 +15,7 @@ static NF_EventHandler*		g_pEventHandler = NULL;
 static AutoCriticalSection	g_cs;
 static DWORD				g_nThreads = 1;
 
-static AutoHandle*			g_workhDevice = NULL;
+static HANDLE				g_hWorkhDevice = NULL;
 static NF_BUFFERS*			g_workBuffer = NULL;
 
 #include "EventQueue.h"
@@ -22,17 +23,17 @@ static NF_BUFFERS*			g_workBuffer = NULL;
 static EventQueue<NFEvent>		g_eventQueue;
 static EventQueue<NFEventOut>	g_eventQueueOut;
 
-static AutoEventHandle		g_workThreadStartedEvent;
-static AutoEventHandle		g_workThreadStoppedEvent;
+static AutoEventHandle			g_workThreadStartedEvent;
+static AutoEventHandle			g_workThreadStoppedEvent;
 
-bool nf_InitWorkQueue(PVOID64 Eventhandle)
+const bool InitWorkQueue(PVOID64 Eventhandle)
 {
 	bool status = false;
 	// 获取驱动句柄
 	do {
 
-		g_workhDevice = (AutoHandle*)SingletNetMonx::instance()->get_Driverhandler();
-		if (!g_workhDevice || !(*g_workhDevice))
+		g_hWorkhDevice = SingletNetMonx::instance()->get_Driverhandler();
+		if (NULL == g_hWorkhDevice)
 			break;
 
 		// 获取共享内存buffer
@@ -50,7 +51,8 @@ bool nf_InitWorkQueue(PVOID64 Eventhandle)
 	return status;
 }
 
-static void handleEventDispath(PNF_DATA pData)
+// ReadFile Driver Buffer
+static void OnReadHandleEventDispath(PNF_DATA pData)
 {
 	AutoLock lock(g_cs);
 
@@ -73,17 +75,25 @@ static void handleEventDispath(PNF_DATA pData)
 	break;
 	case NF_TCPREDIRECT_LAYER_PACKET:
 	{
-		// connobj_alloc(pData->id, (PNF_TCP_CONN_INFO)pData->buffer);
-		AutoUnlock unlock(g_cs);
-		g_eventQueue.push(pData);
-		//g_pEventHandler->tcpredirectPacket(pData->buffer, pData->bufferSize);
+		if (pData->bufferSize) {
+			g_pEventHandler->TcpredirectPacket(pData->buffer, pData->bufferSize);
+			PNF_DATA pDataCopy = (PNF_DATA)mp_alloc(sizeof(NF_DATA) - 1 + sizeof(NF_TCP_CONN_INFO));
+			if (!pDataCopy)
+			{
+				return;
+			}
+			pDataCopy->id = pData->id;
+			pDataCopy->code = NF_TCP_CONNECT_REQUEST;
+			pDataCopy->bufferSize = sizeof(NF_TCP_CONN_INFO);
+			memcpy(pDataCopy->buffer, &pData->buffer, sizeof(NF_TCP_CONN_INFO));
+			SingletNetMonx::instance()->devctrl_writeio(pDataCopy);
+			mp_free(pDataCopy);
+		}
 	}
 	break;
 	}
 }
-
-// ReadFile Driver Buffer
-DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
+DWORD WINAPI ReadWorkThread(LPVOID lpThreadParameter)
 {
 	OVERLAPPED ol;
 	PNF_DATA pData = NULL;
@@ -96,7 +106,7 @@ DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 	int i = 0;
 
 	OutputDebugString(L"Entry WorkThread");
-
+	mempool_init();
 	SetEvent(g_workThreadStartedEvent);
 	g_eventQueue.init(g_nThreads);
 	g_eventQueueOut.init(1);
@@ -114,7 +124,7 @@ DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 			RtlSecureZeroMemory(&ol, sizeof(ol));
 			ol.hEvent = g_ioEvent;
 
-			if (!ReadFile(*g_workhDevice, &rr, sizeof(rr), NULL, &ol))
+			if (!ReadFile(g_hWorkhDevice, &rr, sizeof(rr), NULL, &ol))
 			{
 				if (GetLastError() != ERROR_IO_PENDING)
 				{
@@ -151,7 +161,7 @@ DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 					goto finish;
 				}
 
-				if (!GetOverlappedResult(*g_workhDevice, &ol, &readBytes, FALSE))
+				if (!GetOverlappedResult(g_hWorkhDevice, &ol, &readBytes, FALSE))
 				{
 					goto finish;
 				}
@@ -168,10 +178,11 @@ DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 			pData = (PNF_DATA)(*g_workBuffer).inBuf;
 			while (readBytes >= (sizeof(NF_DATA) - 1))
 			{
-				handleEventDispath(pData);
+				OnReadHandleEventDispath(pData);
 
 				if ((pData->code == NF_DATALINKMAC_LAYER_PACKET ||
-					pData->code == NF_ESTABLISHED_LAYER_PACKET) &&
+					pData->code == NF_ESTABLISHED_LAYER_PACKET ||
+					pData->code == NF_TCPREDIRECT_LAYER_PACKET) &&
 					pData->bufferSize < 1400)
 				{
 					abortBatch = true;
@@ -194,12 +205,11 @@ DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 		g_eventQueue.processEvents();
 		g_eventQueue.wait(8000);
 		g_eventQueueOut.wait(64000);
-
 	}
 
 finish:
-	if (g_workhDevice)
-		CancelIo(*g_workhDevice);
+	if (g_hWorkhDevice)
+		CancelIo(g_hWorkhDevice);
 	g_eventQueue.free();
 	g_eventQueueOut.free();
 	SetEvent(g_workThreadStoppedEvent);

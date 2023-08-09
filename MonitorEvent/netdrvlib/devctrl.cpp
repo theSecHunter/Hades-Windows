@@ -3,28 +3,23 @@
 //		处理驱动传递过来的Established_layer & mac_frame_layer 数据
 #include <Windows.h>
 #include "sync.h"
-#include "devctrl.h"
 #include "nfevents.h"
 #include "nfdriver.h"
 #include "workqueue.h"
+#include "devctrl.h"
 
-static HANDLE				g_deviceHandle = NULL;
+static HANDLE				g_hDeviceHandle = NULL;
 static NF_BUFFERS			g_nfBuffers;
 static AutoHandle			g_hDevice;
-static AutoHandle			g_hDevice_work;
-static char					g_driverName[MAX_PATH] = { 0 };
 
-PVOID64 DevctrlIoct::get_Driverhandler()
+static AutoEventHandle		g_stopEvent;
+static AutoEventHandle		g_ioPostEvent;
+static AutoEventHandle		g_ioEvent;
+static AutoCriticalSection	g_csPost;
+
+HANDLE DevctrlIoct::get_Driverhandler()
 {
-	if (g_deviceHandle == INVALID_HANDLE_VALUE)
-	{
-		return NULL;
-	}
-	else
-	{
-		g_hDevice_work.Attach(g_deviceHandle);
-	}
-	return &g_hDevice_work;
+	return (g_hDeviceHandle != NULL) ? g_hDeviceHandle : NULL;
 }
 
 PVOID64 DevctrlIoct::get_nfBufferPtr()
@@ -46,7 +41,7 @@ int DevctrlIoct::devctrl_init()
 	m_threadobjhandler = NULL;
 	m_alpcthreadobjhandler = NULL;
 	m_dwthreadid = 0;
-	g_deviceHandle = NULL;
+	g_hDeviceHandle = NULL;
 	return 1;
 }
 
@@ -56,7 +51,7 @@ int DevctrlIoct::devctrl_workthread()
 	m_threadobjhandler = CreateThread(
 		NULL, 
 		0, 
-		nf_workThread,
+		ReadWorkThread,
 		0, 
 		0, 
 		&m_dwthreadid
@@ -85,23 +80,16 @@ int DevctrlIoct::devctrl_opendeviceSylink(const char* devSylinkName)
 		return -1;
 
 	m_devhandler = hDevice;
-	g_deviceHandle = hDevice;
+	g_hDeviceHandle = hDevice;
+	g_hDevice.Attach(m_devhandler);
 	return 1;
 }
 
 int DevctrlIoct::devctrl_InitshareMem()
 {
-	// AutoLock lock(m_cs);
-
 	if (m_devhandler == INVALID_HANDLE_VALUE)
 	{
 		return NF_STATUS_FAIL;
-	}
-	else
-	{
-		OutputDebugString(L"Attach m_devhandler Success");
-		g_hDevice.Attach(m_devhandler);
-		strncpy_s(g_driverName, "wfpdriver", sizeof(g_driverName));
 	}
 
 	DWORD dwBytesReturned = 0;
@@ -113,7 +101,8 @@ int DevctrlIoct::devctrl_InitshareMem()
 	RtlZeroMemory(&ol, sizeof(ol));
 	ol.hEvent = hEvent;
 
-	if (!DeviceIoControl(g_hDevice,
+	if (!DeviceIoControl(
+		g_hDevice,
 		CTL_DEVCTRL_OPEN_SHAREMEM,
 		NULL, 0,
 		(LPVOID)&g_nfBuffers,
@@ -200,12 +189,60 @@ int DevctrlIoct::devctrl_sendioct(const int ioctcode)
 	return 1;
 }
 
-int DevctrlIoct::devctrl_writeio()
+int DevctrlIoct::devctrl_writeio(PNF_DATA pData)
 {
-	return 0;
-}
+	OVERLAPPED ol;
+	DWORD dwRes;
+	DWORD dwWritten = 0;
+	HANDLE events[] = { g_ioPostEvent, g_stopEvent };
+	NF_READ_RESULT rr;
 
-const HANDLE DevctrlIoct::GetDrvHandle()
-{
-	return g_deviceHandle;
+	rr.length = sizeof(NF_DATA) + pData->bufferSize - 1;
+	if (rr.length > g_nfBuffers.outBufLen)
+	{
+		return NF_STATUS_IO_ERROR;
+	}
+	if (g_hDevice == INVALID_HANDLE_VALUE || !g_nfBuffers.outBuf)
+		return NF_STATUS_NOT_INITIALIZED;
+
+	AutoLock lock(g_csPost);
+	RtlCopyMemory((void*)g_nfBuffers.outBuf, pData, (size_t)rr.length);
+	RtlSecureZeroMemory(&ol, sizeof(ol));
+	ol.hEvent = g_ioPostEvent;
+	if (!WriteFile(g_hDevice, &rr, sizeof(rr), NULL, &ol))
+	{
+		if (GetLastError() != ERROR_IO_PENDING)
+			return NF_STATUS_IO_ERROR;
+	}
+
+	// Wait for completion
+	for (;;)
+	{
+		dwRes = WaitForMultipleObjects(
+			sizeof(events) / sizeof(events[0]),
+			events,
+			FALSE,
+			INFINITE);
+
+		if (dwRes != WAIT_OBJECT_0)
+		{
+			CancelIo(g_hDevice);
+			return NF_STATUS_FAIL;
+		}
+
+		dwRes = WaitForSingleObject(g_stopEvent, 0);
+		if (dwRes == WAIT_OBJECT_0)
+		{
+			CancelIo(g_hDevice);
+			return NF_STATUS_FAIL;
+		}
+
+		if (!GetOverlappedResult(g_hDevice, &ol, &dwWritten, FALSE))
+		{
+			return NF_STATUS_FAIL;
+		}
+
+		break;
+	}
+	return (dwWritten) ? NF_STATUS_SUCCESS : NF_STATUS_FAIL;
 }

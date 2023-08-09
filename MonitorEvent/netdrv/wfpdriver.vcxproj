@@ -236,7 +236,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <PreprocessorDefinitions>_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);NDIS_SUPPORT_NDIS6</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_NTDDI;_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);NDIS_SUPPORT_NDIS6</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -248,7 +248,7 @@
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);NDIS_SUPPORT_NDIS6</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_NTDDI;_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);NDIS_SUPPORT_NDIS6</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -281,6 +281,7 @@
     <ClInclude Include="hashtable.h" />
     <ClInclude Include="ntdefines.h" />
     <ClInclude Include="public.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="tcpctx.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
@@ -293,6 +294,9 @@
     <ClCompile Include="hashtable.c" />
     <ClCompile Include="tcpctx.c" />
     <ClCompile Include="util.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NetDrv.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

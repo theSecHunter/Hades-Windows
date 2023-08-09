@@ -34,6 +34,7 @@ static UINT32	g_calloutId_ale_connectredirect_v6;
 static GUID		g_sublayerGuid;
 static HANDLE	g_engineHandle = NULL;
 
+// extern
 BOOLEAN g_monitorflag = FALSE;
 BOOLEAN g_redirectflag = FALSE;
 
@@ -197,7 +198,7 @@ VOID helper_callout_classFn_mac(
 	UNREFERENCED_PARAMETER(flowContext);
 	UNREFERENCED_PARAMETER(classifyContext);
 
-	PNF_CALLOUT_MAC_INFO pdatalink_info = NULL;
+	PNF_CALLOUT_MAC_INFO pCalloutMacDataInfo = NULL;
 	// NET_BUFFER_LIST* pNetBufferList = NULL;
 
 	KLOCK_QUEUE_HANDLE lh;
@@ -236,18 +237,18 @@ VOID helper_callout_classFn_mac(
 	}
 	}
 
-	pdatalink_info = ExAllocateFromNPagedLookasideList(&g_callouts_datalinkPacktsList);
-	if (!pdatalink_info)
+	pCalloutMacDataInfo = ExAllocateFromNPagedLookasideList(&g_callouts_datalinkPacktsList);
+	if (!pCalloutMacDataInfo)
 	{
 		status = STATUS_NO_MEMORY;
 		goto Exit;
 	}
 
-	RtlSecureZeroMemory(pdatalink_info, sizeof(NF_CALLOUT_MAC_INFO));
+	RtlSecureZeroMemory(pCalloutMacDataInfo, sizeof(NF_CALLOUT_MAC_INFO));
 	
 	// DbgBreakPoint();
 
-	pdatalink_info->addressFamily =
+	pCalloutMacDataInfo->addressFamily =
 		(inFixedValues->layerId == FWPS_LAYER_INBOUND_MAC_FRAME_ETHERNET) ? 1 : 2;
 
 	DWORD FWPS_FIELD_IN_OUTBOUND_MAC_LOCAL_ADDRESS = 0;
@@ -273,15 +274,15 @@ VOID helper_callout_classFn_mac(
 	}
 	// Mac Packet  Emtpy
 	RtlCopyMemory(
-		pdatalink_info->mac_info.pSourceAddress,
+		pCalloutMacDataInfo->mac_info.pSourceAddress,
 		inFixedValues->incomingValue[FWPS_FIELD_IN_OUTBOUND_MAC_LOCAL_ADDRESS].value.byteArray6,
 		sizeof(FWP_BYTE_ARRAY6)
 	);
-	RtlCopyMemory(pdatalink_info->mac_info.pDestinationAddress,
+	RtlCopyMemory(pCalloutMacDataInfo->mac_info.pDestinationAddress,
 		inFixedValues->incomingValue[FWPS_FIELD_IN_OUTBOUND_MAC_REMOTE_ADDRESS].value.byteArray6,
 		sizeof(FWP_BYTE_ARRAY6)
 	);
-	pdatalink_info->mac_info.type = inFixedValues->incomingValue[FWPS_FIELD_IN_OUTBOUND_MAC_FRAME_ETHERNET_ETHER_TYPE].value.int16;
+	pCalloutMacDataInfo->mac_info.type = inFixedValues->incomingValue[FWPS_FIELD_IN_OUTBOUND_MAC_FRAME_ETHERNET_ETHER_TYPE].value.int16;
 
 	do
 	{
@@ -300,11 +301,11 @@ VOID helper_callout_classFn_mac(
 			break;
 		if (pIPHeader->version == 4)
 		{
-			pdatalink_info->ipv4LocalAddr =
+			pCalloutMacDataInfo->ipv4LocalAddr =
 				RtlUlongByteSwap(pIPHeader->pSourceAddress);
-			pdatalink_info->ipv4toRemoteAddr =
+			pCalloutMacDataInfo->ipv4toRemoteAddr =
 				RtlUlongByteSwap(pIPHeader->pDestinationAddress);
-			pdatalink_info->protocol = pIPHeader->protocol;
+			pCalloutMacDataInfo->protocol = pIPHeader->protocol;
 
 			ipHeaderSize = pIPHeader->headerLength * 4;
 
@@ -317,8 +318,8 @@ VOID helper_callout_classFn_mac(
 				TCP_HEADER* pTcpHeader = (PTCP_HEADER)NdisGetDataBuffer(netBuffer, sizeof(TCP_HEADER), NULL, sizeof(UINT16), 0);
 				if (pTcpHeader)
 				{
-					pdatalink_info->toLocalPort = pTcpHeader->sourcePort;
-					pdatalink_info->toRemotePort = pTcpHeader->destinationPort;
+					pCalloutMacDataInfo->toLocalPort = pTcpHeader->sourcePort;
+					pCalloutMacDataInfo->toRemotePort = pTcpHeader->destinationPort;
 				}
 				NdisRetreatNetBufferDataStart(netBuffer, ipHeaderSize, 0, NULL);
 			};
@@ -329,8 +330,8 @@ VOID helper_callout_classFn_mac(
 				UDP_HEADER* pUdpHeader = (PUDP_HEADER)NdisGetDataBuffer(netBuffer, sizeof(UDP_HEADER), 0, 1, 0);
 				if (pUdpHeader)
 				{
-					pdatalink_info->toLocalPort = pUdpHeader->sourcePort;
-					pdatalink_info->toRemotePort = pUdpHeader->destinationPort;
+					pCalloutMacDataInfo->toLocalPort = pUdpHeader->sourcePort;
+					pCalloutMacDataInfo->toRemotePort = pUdpHeader->destinationPort;
 				}
 				NdisRetreatNetBufferDataStart(netBuffer, ipHeaderSize, 0, NULL);
 			}
@@ -351,18 +352,18 @@ VOID helper_callout_classFn_mac(
 	/*
 		Mac Buffer Save
 	*/
-	pdatalink_info->code = NF_DATALINK_PACKET;
+	pCalloutMacDataInfo->code = NF_DATALINKMAC_LAYER_PACKET;
 
 	// push_data to datalink --> devctrl --> read I/O complate to r3
-	datalinkctx_pushdata(pdatalink_info, sizeof(NF_CALLOUT_MAC_INFO));
+	datalinkctx_pushdata(pCalloutMacDataInfo, sizeof(NF_CALLOUT_MAC_INFO));
 
 Exit:
 
-	if (pdatalink_info)
+	if (pCalloutMacDataInfo)
 	{
 		sl_lock(&g_callouts_datalinkspinlock, &lh);
-		ExFreeToNPagedLookasideList(&g_callouts_datalinkPacktsList, pdatalink_info);
-		pdatalink_info = NULL;
+		ExFreeToNPagedLookasideList(&g_callouts_datalinkPacktsList, pCalloutMacDataInfo);
+		pCalloutMacDataInfo = NULL;
 		sl_unlock(&lh);
 	}
 
@@ -438,15 +439,9 @@ VOID helper_callout_classFn_connectredirect(
 	OUT FWPS_CLASSIFY_OUT* classifyOut)
 {
 	UNREFERENCED_PARAMETER(flowContext);
-	if (FALSE == g_redirectflag || FALSE == g_monitorflag)
-	{
-		classifyOut->actionType = FWP_ACTION_PERMIT;
-		return;
-	}
 
 	if ((classifyOut->rights & FWPS_RIGHT_ACTION_WRITE) == 0)
 	{
-		// classifyOut->actionType = FWP_ACTION_PERMIT;
 		return;
 	}
 
@@ -458,8 +453,15 @@ VOID helper_callout_classFn_connectredirect(
 		return;
 	}
 
-	NTSTATUS status = STATUS_SUCCESS;
+	/*FALSE == g_redirectflag ||*/
+	if (FALSE == g_monitorflag)
+	{
+		classifyOut->actionType = FWP_ACTION_PERMIT;
+		return;
+	}
+
 	PTCPCTX pTcpCtx = NULL;
+	NTSTATUS status = STATUS_SUCCESS;
 
 	// 申请结构体保存数据
 	pTcpCtx = tcpctxctx_packallocatectx();
@@ -468,10 +470,9 @@ VOID helper_callout_classFn_connectredirect(
 		classifyOut->actionType = FWP_ACTION_PERMIT;
 		return;
 	}
-	RtlSecureZeroMemory(pTcpCtx, sizeof(TCPCTX));
 	if (inFixedValues->layerId == FWPS_LAYER_ALE_CONNECT_REDIRECT_V4)
 	{
-		struct sockaddr_in* pAddr;
+		struct sockaddr_in* pAddr = NULL;
 
 		pTcpCtx->layerId = FWPS_LAYER_STREAM_V4;
 		pTcpCtx->sendCalloutId = 0;
@@ -587,37 +588,40 @@ VOID helper_callout_classFn_connectredirect(
 				inFixedValues->incomingValue[FWPS_FIELD_ALE_CONNECT_REDIRECT_V6_ALE_APP_ID].value.byteBlob->data + offset,
 				len);
 		}
-
 	}
 
 	/*
 	*	保存IP端口和进程数据
 	*/
 	pTcpCtx->processId = inMetaValues->processId;
-	pTcpCtx->processPathSize = inMetaValues->processPath->size;
-	RtlCopyMemory(pTcpCtx->processPath, inMetaValues->processPath->data, inMetaValues->processPath->size);
+	if (inMetaValues->processPath && inMetaValues->processPath->size) {
+		pTcpCtx->processPathSize = inMetaValues->processPath->size;
+		RtlCopyMemory(pTcpCtx->processPath, inMetaValues->processPath->data, inMetaValues->processPath->size);
+	}
 
 	/*
 	* 保存重注所需要的数据
 	*/
-	memcpy(&pTcpCtx->redirectInfo.classifyOut, classifyOut, sizeof(FWPS_CLASSIFY_OUT));
-	pTcpCtx->transportEndpointHandle = inMetaValues->transportEndpointHandle;
-	pTcpCtx->redirectInfo.filterId = filter->filterId;
+	if (classifyOut) {
+		RtlCopyMemory(&pTcpCtx->redirectInfo.classifyOut, classifyOut, sizeof(FWPS_CLASSIFY_OUT));
+		pTcpCtx->transportEndpointHandle = inMetaValues->transportEndpointHandle;
+		pTcpCtx->redirectInfo.filterId = filter->filterId;
+	}
 
+	// Craete Inject Handle
 #ifdef USE_NTDDI
 #if (NTDDI_VERSION >= NTDDI_WIN8)
 	status = FwpsRedirectHandleCreate(&g_providerGuid, 0, &pTcpCtx->redirectInfo.redirectHandle);
 	if (status != STATUS_SUCCESS)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
-		LogOutputEx(bGame, 0x400, DPREFIX"%d-connectRedirectCallout FwpsRedirectHandleCreate failed-%I64u,%x\n", inMetaValues->processId, pTcpCtx->id, status);
-		KdPrint((DPREFIX"callouts_connectRedirectCallout FwpsRedirectHandleCreate failed, status=%x\n", status));
-		break;
+		return;
 	}
 #endif
 #endif
 
-	FwpsAcquireClassifyHandle((void*)classifyContext,
+	FwpsAcquireClassifyHandle(
+		(void*)classifyContext,
 		0,
 		&(pTcpCtx->redirectInfo.classifyHandle)
 	);
@@ -627,7 +631,8 @@ VOID helper_callout_classFn_connectredirect(
 		goto Exit;
 	}
 
-	status = _FwpsPendClassify0(pTcpCtx->redirectInfo.classifyHandle,
+	status = _FwpsPendClassify0(
+		pTcpCtx->redirectInfo.classifyHandle,
 		filter->filterId,
 		0,
 		&pTcpCtx->redirectInfo.classifyOut);
@@ -641,7 +646,7 @@ VOID helper_callout_classFn_connectredirect(
 	pTcpCtx->redirectInfo.isPended = TRUE;
 
 	// 插入 句柄map
-	add_tcpHandle(&pTcpCtx->transportEndpointHandle);
+	add_tcpHandle(pTcpCtx);
 	status = push_tcpRedirectinfo(pTcpCtx, sizeof(TCPCTX));
 	if (!NT_SUCCESS(status))
 	{
@@ -650,12 +655,12 @@ VOID helper_callout_classFn_connectredirect(
 
 	classifyOut->actionType = FWP_ACTION_BLOCK;
 	classifyOut->rights &= ~FWPS_RIGHT_ACTION_WRITE;
-
 	return;
 
 Exit:
 
 	classifyOut->actionType = FWP_ACTION_PERMIT;
+	status = STATUS_UNSUCCESSFUL;
 }
 
 NTSTATUS helper_callout_notifyFn_connectredirect(
@@ -897,8 +902,8 @@ NTSTATUS callouts_addFilters()
 			&FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6,
 			&subLayer
 		);
-		if (!NT_SUCCESS(status))
-			break;
+		//if (!NT_SUCCESS(status))
+		//	break;
 		
 		//status = callout_addDataLinkMacFilter(
 		//	&g_calloutGuid_inbound_mac_etherent,
@@ -918,17 +923,17 @@ NTSTATUS callouts_addFilters()
 		//if (!NT_SUCCESS(status))
 		//	break;
 
-		//status = callout_addFlowEstablishedFilter(
-		//	&g_calloutGuid_ale_connectredirect_v4,
-		//	&FWPM_LAYER_ALE_CONNECT_REDIRECT_V4,
-		//	&subLayer
-		//);
+		status = callout_addFlowEstablishedFilter(
+			&g_calloutGuid_ale_connectredirect_v4,
+			&FWPM_LAYER_ALE_CONNECT_REDIRECT_V4,
+			&subLayer
+		);
 
-		//status = callout_addFlowEstablishedFilter(
-		//	&g_calloutGuid_ale_connectredirect_v6,
-		//	&FWPM_LAYER_ALE_CONNECT_REDIRECT_V6,
-		//	&subLayer
-		//);
+		status = callout_addFlowEstablishedFilter(
+			&g_calloutGuid_ale_connectredirect_v6,
+			&FWPM_LAYER_ALE_CONNECT_REDIRECT_V6,
+			&subLayer
+		);
 	
 		//// FWPM_LAYER_INBOUND_MAC_FRAME_ETHERNET
 		//status = callout_addDataLinkMacFilter(

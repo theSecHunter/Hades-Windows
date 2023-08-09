@@ -1,3 +1,4 @@
+#include <WS2tcpip.h>
 #include <sysinfo.h>
 #include "NetApi.h"
 #include "nfevents.h"
@@ -9,6 +10,8 @@
 #include <mutex>
 #include <map>
 #include <vector>
+
+#pragma comment(lib, "Ws2_32.lib")
 
 typedef struct _PROCESS_INFO
 {
@@ -90,36 +93,49 @@ void EventHandler::DatalinkPacket(const char* buf, int len)
 
 void EventHandler::TcpredirectPacket(const char* buf, int len)
 {
-	PTCPCTX redirect_info;
-	RtlSecureZeroMemory(&redirect_info, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
-	RtlCopyMemory(&redirect_info, buf, len);
+	PNF_TCP_CONN_INFO pTcpConnectInfo = NULL;
+	pTcpConnectInfo = (PNF_TCP_CONN_INFO)buf;
+	if (!pTcpConnectInfo)
+		return;
 
 	/*
 		1 - 单要素：目標 port 或者 ip
 		2 - 双要素：目标ip:port
 		3 - 重定向标志位 - 暂时不开启
 	*/
-	size_t i = 0;
-	// if (redirect_info.addressFamily == AF_INET)
+	sockaddr_in* const pAddr = (sockaddr_in*)pTcpConnectInfo->remoteAddress;
+	if (!pAddr)
+		return;
+	if ((pAddr->sin_family != AF_INET) && (pAddr->sin_family != AF_INET6))
 	{
-		switch (0)
-		{
-		case 1:
-		{
-		}
-		break;
-		case 2:
-		{
-
-		}
-		break;
-		default:
-			break;
-		}
+		return;
 	}
 
-	// 连接重注回去
+	bool bIp6 = false; DWORD dwIp = 0; WORD wPort = 0; std::string strIpv6Addr = "";
+	if (pAddr->sin_family == AF_INET6)
+	{
+		const sockaddr_in6* pAddr6 = (sockaddr_in6*)pAddr;
+		if (!pAddr6)
+			return;
+		char sIp[INET6_ADDRSTRLEN] = { 0 };
+		inet_ntop(AF_INET6, &pAddr6->sin6_addr, sIp, INET6_ADDRSTRLEN);
+		strIpv6Addr = sIp;
+		dwIp = 1; wPort = ntohs(pAddr6->sin6_port); bIp6 = true;
+	}
+	else
+	{
+		dwIp = pAddr->sin_addr.S_un.S_addr;
+		wPort = ntohs(pAddr->sin_port);
+	}
 
+	std::string sIp = "";
+	if (bIp6) {
+		sIp = strIpv6Addr.c_str();
+	}
+	else
+	{
+		sIp = inet_ntoa(*(IN_ADDR*)&dwIp);
+	}
 }
 
 /*
@@ -146,19 +162,20 @@ int NetNdrGetProcessInfoEx(unsigned int* Locaaddripv4, unsigned long localport, 
 
 	try
 	{
-		PPROCESS_INFO processinf = NULL;
-		processinf = (PPROCESS_INFO)pGetbuffer;
 		auto mapiter = g_flowestablished_map.find(localport);
 		// -3 find failuer not`t processinfo
 		if (mapiter == g_flowestablished_map.end())
-			return -3;
-		processinf->processId = mapiter->second.processId;
-		//RtlCopyMemory(processinf->processPath, mapiter->second.processPath, mapiter->second.processPathSize);
-
-		WCHAR ntPath[MAX_PATH] = { 0 };
-		CodeTool::DeviceDosPathToNtPath(mapiter->second.processPath, ntPath);
-		RtlCopyMemory(processinf->processPath, ntPath, sizeof(ntPath));
-		return 1;
+			return -2;
+		PPROCESS_INFO processinf = NULL;
+		processinf = (PPROCESS_INFO)pGetbuffer;
+		if (processinf) {
+			processinf->processId = mapiter->second.processId;
+			WCHAR ntPath[MAX_PATH] = { 0 };
+			CodeTool::DeviceDosPathToNtPath(mapiter->second.processPath, ntPath);
+			RtlCopyMemory(processinf->processPath, ntPath, sizeof(ntPath));
+			return 1;
+		}
+		return -3;
 	}
 	catch (const std::exception&)
 	{

@@ -12,6 +12,7 @@ typedef struct _HASH_TABLE_ENTRY
 	HASH_ID		id;
 	struct _HASH_TABLE_ENTRY* pNext;
 } HASH_TABLE_ENTRY, * PHASH_TABLE_ENTRY;
+
 typedef struct FWPS_CLASSIFY_OUT0_
 {
 	FWP_ACTION_TYPE actionType;
@@ -21,6 +22,7 @@ typedef struct FWPS_CLASSIFY_OUT0_
 	UINT32 flags;
 	UINT32 reserved;
 } 	FWPS_CLASSIFY_OUT0;
+
 typedef struct _REDIRECT_INFO
 {
 	UINT64				classifyHandle;
@@ -34,15 +36,32 @@ typedef struct _REDIRECT_INFO
 #endif 
 #endif
 } REDIRECT_INFO, * PREDIRECT_INFO;
+
 typedef enum _UMT_FILTERING_STATE
 {
 	UMFS_NONE,
 	UMFS_DISABLE,
 	UMFS_DISABLED
 } UMT_FILTERING_STATE;
+
+typedef struct _NF_TCP_CONN_INFO
+{
+	unsigned long	filteringFlag;	// See NF_FILTERING_FLAG
+	unsigned long	pflag;
+	unsigned long	processId;		// Process identifier
+	unsigned char	direction;		// See NF_DIRECTION
+	unsigned short	ip_family;		// AF_INET for IPv4 and AF_INET6 for IPv6
+
+	// Local address as sockaddr_in for IPv4 and sockaddr_in6 for IPv6
+	unsigned char	localAddress[NF_MAX_ADDRESS_LENGTH];
+
+	// Remote address as sockaddr_in for IPv4 and sockaddr_in6 for IPv6
+	unsigned char	remoteAddress[NF_MAX_ADDRESS_LENGTH];
+} NF_TCP_CONN_INFO, * PNF_TCP_CONN_INFO;
+
 typedef struct _TCPCTX
 {
-	LIST_ENTRY entry;
+	LIST_ENTRY	entry;
 	LIST_ENTRY	injectQueueEntry; // Inject queue list entry
 
 	LIST_ENTRY	pendedPackets;	// List of queued packets
@@ -127,9 +146,9 @@ typedef struct _TCPCTX
 
 	wchar_t			processName[MAX_PATH];
 
-	ULONG		refCount;		// Reference counter
+	ULONG			refCount;		// Reference counter
 
-	KSPIN_LOCK	lock;			// Context spinlock
+	KSPIN_LOCK		lock;			// Context spinlock
 } TCPCTX, * PTCPCTX;
 
 #endif // !_TCPCTX_H

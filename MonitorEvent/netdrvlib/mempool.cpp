@@ -63,7 +63,7 @@ void mempool_free()
 
 void* mp_alloc(unsigned int size, int align)
 {
-	PMEM_BUFFER pMemBuffer;
+	PMEM_BUFFER pMemBuffer = nullptr;
 	if (size == 0)
 		return NULL;
 

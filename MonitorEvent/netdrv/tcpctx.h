@@ -8,12 +8,13 @@
 
 typedef unsigned __int64 uint64_t;
 
-typedef struct _NF_TCPCTX_BUFFER
+typedef struct _NF_TCP_BUFFER
 {
 	LIST_ENTRY			pEntry;
+	// TCPCTX
 	char*				dataBuffer;
 	ULONG				dataLength;
-}NF_TCPCTX_BUFFER, * PNF_TCPCTX_BUFFER;
+}NF_TCP_BUFFER, * PNF_TCP_BUFFER;
 
 typedef struct _NF_TCPCTX_DATA
 {
@@ -34,7 +35,6 @@ typedef UNALIGNED struct _NF_TCP_CONN_INFO
 
 	// Remote address as sockaddr_in for IPv4 and sockaddr_in6 for IPv6
 	unsigned char	remoteAddress[NF_MAX_ADDRESS_LENGTH];
-
 } NF_TCP_CONN_INFO, * PNF_TCP_CONN_INFO;
 
 typedef enum _UMT_FILTERING_STATE
@@ -60,7 +60,7 @@ typedef struct _REDIRECT_INFO
 
 typedef struct _TCPCTX
 {
-	LIST_ENTRY entry;
+	LIST_ENTRY	entry;
 	LIST_ENTRY	injectQueueEntry; // Inject queue list entry
 
 	LIST_ENTRY	pendedPackets;	// List of queued packets
@@ -145,9 +145,9 @@ typedef struct _TCPCTX
 
 	wchar_t			processName[MAX_PATH];
 
-	ULONG		refCount;		// Reference counter
+	ULONG			refCount;		// Reference counter
 
-	KSPIN_LOCK	lock;			// Context spinlock
+	KSPIN_LOCK		lock;			// Context spinlock
 } TCPCTX, * PTCPCTX;
 
 void add_tcpHandle(PTCPCTX ptcpctx);
@@ -162,7 +162,7 @@ VOID tcpctx_release(PTCPCTX pTcpCtx);
 
 NF_TCPCTX_DATA* tcpctx_get();
 NTSTATUS tcpctxctx_init();
-VOID tcpctxctx_packfree(PNF_TCPCTX_BUFFER pPacket);
+VOID tcpctxctx_packfree(PNF_TCP_BUFFER pPacket);
 VOID tcpctxctx_clean();
 VOID tcpctxctx_free();
 

@@ -41,7 +41,7 @@ int NetNdrInitEx(void) {
 
 		static EventHandler cEventHandle;
 		// 必须在 devctrl_workthread 之前初始化 Work Queue
-		nf_InitWorkQueue((PVOID64)&cEventHandle);
+		InitWorkQueue((PVOID64)&cEventHandle);
 
 		ntStus = SingletNetMonx::instance()->devctrl_workthread();
 		if (0 > ntStus)
@@ -63,7 +63,7 @@ int NetNdrInitEx(void) {
 	return ntStus;
 }
 
-int NetNdrCloseEx(void)
+void NetNdrCloseEx(void)
 {
 	g_bInitStus = false;
 	SingletNetMonx::instance()->devctrl_clean();
@@ -84,7 +84,7 @@ int NetNdrMonitorEx(int code)
 	DWORD dSize = 0;
 	DWORD ioctcode = 0;
 
-	const HANDLE hNetMonx = SingletNetMonx::instance()->GetDrvHandle();
+	const HANDLE hNetMonx = SingletNetMonx::instance()->get_Driverhandler();
 	if (!hNetMonx)
 		return -1;
 

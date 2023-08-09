@@ -1,7 +1,6 @@
 #include "public.h"
 #include "hashtable.h"
 
-
 PHASH_TABLE hash_table_new(unsigned int size)
 {
 	unsigned int memsize;
@@ -16,7 +15,7 @@ PHASH_TABLE hash_table_new(unsigned int size)
 	if (!pTable)
 		return NULL;
 
-	memset(pTable, 0, memsize);
+	RtlSecureZeroMemory(pTable, memsize);
 
 	pTable->size = size;
 

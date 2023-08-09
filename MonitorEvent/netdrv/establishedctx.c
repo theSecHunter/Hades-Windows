@@ -2,8 +2,8 @@
 #include "devctrl.h"
 #include "establishedctx.h"
 
-static NPAGED_LOOKASIDE_LIST	g_establishedList;
 static NF_FLOWESTABLISHED_DATA	g_flowesobj;
+static NPAGED_LOOKASIDE_LIST	g_establishedList;
 
 NTSTATUS establishedctx_init()
 {
@@ -28,15 +28,16 @@ NTSTATUS establishedctx_init()
 VOID establishedctx_clean()
 {
 	KLOCK_QUEUE_HANDLE lh;
-	PNF_FLOWESTABLISHED_BUFFER p_flowdata = NULL;
+	PNF_FLOWESTABLISHED_BUFFER pFlowData = NULL;
+
 	sl_lock(&g_flowesobj.lock, &lh);
 	while (!IsListEmpty(&g_flowesobj.pendedPackets))
 	{
-		p_flowdata = (PNF_FLOWESTABLISHED_BUFFER)RemoveHeadList(&g_flowesobj.pendedPackets);
-		if (p_flowdata) {
+		pFlowData = (PNF_FLOWESTABLISHED_BUFFER)RemoveHeadList(&g_flowesobj.pendedPackets);
+		if (pFlowData) {
 			sl_unlock(&lh);
-			establishedctx_packfree(p_flowdata);
-			p_flowdata = NULL;
+			establishedctx_packfree(pFlowData);
+			pFlowData = NULL;
 			sl_lock(&g_flowesobj.lock, &lh);
 		}
 	}
@@ -54,63 +55,58 @@ NF_FLOWESTABLISHED_BUFFER* establishedctx_packallocte(int lens)
 	if (lens < 0)
 		return NULL;
 
-	PNF_FLOWESTABLISHED_BUFFER pNfdatalink = NULL;
-	pNfdatalink = (PNF_FLOWESTABLISHED_BUFFER)ExAllocateFromNPagedLookasideList(&g_establishedList);
-	if (!pNfdatalink)
-		return FALSE;
+	PNF_FLOWESTABLISHED_BUFFER pEsTabData = NULL;
+	pEsTabData = (PNF_FLOWESTABLISHED_BUFFER)ExAllocateFromNPagedLookasideList(&g_establishedList);
+	if (!pEsTabData)
+		return NULL;
 
-	memset(pNfdatalink, 0, sizeof(NF_FLOWESTABLISHED_BUFFER));
+	RtlSecureZeroMemory(pEsTabData, sizeof(NF_FLOWESTABLISHED_BUFFER));
 
 	if (lens > 0)
 	{
-		pNfdatalink->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, 'DPLC');
-		if (!pNfdatalink->dataBuffer)
+		pEsTabData->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, 'DPLC');
+		if (!pEsTabData->dataBuffer)
 		{
-			ExFreeToNPagedLookasideList(&g_establishedList, pNfdatalink);
-			return FALSE;
+			ExFreeToNPagedLookasideList(&g_establishedList, pEsTabData);
+			return NULL;
 		}
 	}
-	return pNfdatalink;
+	return pEsTabData;
 }
 
-VOID establishedctx_packfree(
-	PNF_FLOWESTABLISHED_BUFFER pPacket
-)
+VOID establishedctx_packfree(PNF_FLOWESTABLISHED_BUFFER pPacket)
 {
-	if (pPacket->dataBuffer)
+	if (pPacket && pPacket->dataBuffer)
 	{
 		free_np(pPacket->dataBuffer);
 		pPacket->dataBuffer = NULL;
 	}
-	ExFreeToNPagedLookasideList(&g_establishedList, pPacket);
+	if (pPacket)
+		ExFreeToNPagedLookasideList(&g_establishedList, pPacket);
 }
 
-NTSTATUS establishedctx_pushflowestablishedctx(
-	PVOID64 pBuffer, 
-	int lens
-)
+NTSTATUS establishedctx_pushflowestablishedctx(PVOID64 pBuffer, int lens)
 {
 	KLOCK_QUEUE_HANDLE lh;
-	NTSTATUS status = STATUS_SUCCESS;
-	PNF_FLOWESTABLISHED_BUFFER flowbuf = NULL;
+	PNF_FLOWESTABLISHED_BUFFER pFlowPacket = NULL;
 
 	if (!pBuffer && (lens < 1))
-		return FALSE;
-
-	flowbuf = establishedctx_packallocte(lens);
-	if (!flowbuf)
 		return STATUS_UNSUCCESSFUL;
 
-	flowbuf->dataLength = lens;
-	RtlCopyMemory(flowbuf->dataBuffer, pBuffer, lens);
+	pFlowPacket = establishedctx_packallocte(lens);
+	if (!pFlowPacket || !pFlowPacket->dataBuffer)
+		return STATUS_UNSUCCESSFUL;
+
+	pFlowPacket->dataLength = lens;
+	RtlCopyMemory(pFlowPacket->dataBuffer, pBuffer, lens);
 
 	sl_lock(&g_flowesobj.lock, &lh);
-	InsertHeadList(&g_flowesobj.pendedPackets, &flowbuf->pEntry);
+	InsertHeadList(&g_flowesobj.pendedPackets, &pFlowPacket->pEntry);
 	sl_unlock(&lh);
 
-	devctrl_pushEventQueryLisy(NF_FLOWCTX_PACKET);
+	devctrl_pushEventQueryLisy(NF_ESTABLISHED_LAYER_PACKET);
 
-	return status;
+	return STATUS_SUCCESS;
 }
 
 NF_FLOWESTABLISHED_DATA* establishedctx_get()

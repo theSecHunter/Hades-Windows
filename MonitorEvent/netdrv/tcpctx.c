@@ -14,6 +14,8 @@ static __int64					g_nextTcpCtxId;
 static NPAGED_LOOKASIDE_LIST	g_tcpCtxLAList;
 static NPAGED_LOOKASIDE_LIST	g_packetsLAList;
 
+static BOOLEAN		g_initialized = FALSE;
+
 typedef struct _NF_PACKET
 {
 	LIST_ENTRY			entry;
@@ -26,16 +28,15 @@ typedef struct _NF_PACKET
 } NF_PACKET, * PNF_PACKET;
 
 // 申请缓冲及消息队列结构
-PNF_TCPCTX_BUFFER tcpctxctx_packallocate(int lens)
+PNF_TCP_BUFFER tcpctxctx_packallocate(int lens)
 {
 	if (lens < 0)
 		return NULL;
-	PNF_TCPCTX_BUFFER pTcpctx = NULL;
+	PNF_TCP_BUFFER pTcpctx = NULL;
 	pTcpctx = ExAllocateFromNPagedLookasideList(&g_tcpctxPacketsList);
 	if (!pTcpctx)
-		return FALSE;
-
-	memset(pTcpctx, 0, sizeof(NF_TCPCTX_BUFFER));
+		return NULL;
+	RtlSecureZeroMemory(pTcpctx, sizeof(PNF_TCP_BUFFER));
 
 	if (lens > 0)
 	{
@@ -43,46 +44,43 @@ PNF_TCPCTX_BUFFER tcpctxctx_packallocate(int lens)
 		if (!pTcpctx->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_tcpctxPacketsList, pTcpctx);
-			return FALSE;
+			return NULL;
 		}
 	}
 	return pTcpctx;
 }
-VOID tcpctxctx_packfree(PNF_TCPCTX_BUFFER pPacket)
+VOID tcpctxctx_packfree(PNF_TCP_BUFFER pPacket)
 {
-	if (pPacket->dataBuffer)
+	if (pPacket && pPacket->dataBuffer)
 	{
 		free_np(pPacket->dataBuffer);
 		pPacket->dataBuffer = NULL;
 	}
-	ExFreeToNPagedLookasideList(&g_tcpctxPacketsList, pPacket);
+	if (pPacket)
+		ExFreeToNPagedLookasideList(&g_tcpctxPacketsList, pPacket);
 }
 NTSTATUS push_tcpRedirectinfo(PVOID64 packet, int lens)
 {
-	NTSTATUS status = STATUS_SUCCESS;
 	KLOCK_QUEUE_HANDLE lh;
-	PNF_TCPCTX_BUFFER ptcpctxinfo = NULL;
+	PNF_TCP_BUFFER pTcpCtxInfo = NULL;
 
 	if (!packet && (lens < 1))
-		return FALSE;
+		return STATUS_UNSUCCESSFUL;
 
 	// Allocate 
-	ptcpctxinfo = tcpctxctx_packallocate(lens);
-	if (!ptcpctxinfo)
-	{
-		return FALSE;
-	}
+	pTcpCtxInfo = tcpctxctx_packallocate(lens);
+	if (!pTcpCtxInfo || !pTcpCtxInfo->dataBuffer)
+		return STATUS_UNSUCCESSFUL;
 
-	ptcpctxinfo->dataLength = lens;
-	RtlCopyMemory(ptcpctxinfo->dataBuffer, packet, lens);
+	pTcpCtxInfo->dataLength = lens;
+	RtlCopyMemory(pTcpCtxInfo->dataBuffer, packet, lens);
 
 	sl_lock(&g_tcpctx_data.lock, &lh);
-	InsertHeadList(&g_tcpctx_data.pendedPackets, &ptcpctxinfo->pEntry);
+	InsertHeadList(&g_tcpctx_data.pendedPackets, &pTcpCtxInfo->pEntry);
 	sl_unlock(&lh);
 
-	devctrl_pushEventQueryLisy(NF_TCPREDIRECTCONNECT_PACKET);
-
-	return status;
+	devctrl_pushEventQueryLisy(NF_TCPREDIRECT_LAYER_PACKET);
+	return STATUS_SUCCESS;
 }
 
 // 申请ctx结构体结构
@@ -90,10 +88,11 @@ PTCPCTX tcpctxctx_packallocatectx()
 {
 	KLOCK_QUEUE_HANDLE lh;
 	PTCPCTX pTcpCtx = NULL;
+
 	pTcpCtx = ExAllocateFromNPagedLookasideList(&g_tcpCtxLAList);
 	if (!pTcpCtx)
 		return FALSE;
-	memset(pTcpCtx, 0, sizeof(TCPCTX));
+	RtlSecureZeroMemory(pTcpCtx, sizeof(TCPCTX));
 
 	sl_init(&pTcpCtx->lock);
 	pTcpCtx->refCount = 1;
@@ -135,7 +134,6 @@ void tcpctx_purgeRedirectInfo(PTCPCTX pTcpCtx)
 		}
 #endif
 #endif
-
 		FwpsReleaseClassifyHandle(classifyHandle);
 	}
 }
@@ -351,7 +349,7 @@ NTSTATUS tcpctxctx_init()
 		NULL,
 		NULL,
 		0,
-		sizeof(NF_TCPCTX_BUFFER),
+		sizeof(NF_TCP_BUFFER),
 		MEM_TAG_NETWORK,
 		0
 	);
@@ -381,17 +379,33 @@ NTSTATUS tcpctxctx_init()
 	sl_init(&g_tcpctx_data.lock);
 	InitializeListHead(&g_tcpctx_data.pendedPackets);
 
+	g_phtTcpCtxById = hash_table_new(DEFAULT_HASH_SIZE);
+	if (!g_phtTcpCtxById)
+	{
+		return FALSE;
+	}
+
+	g_phtTcpCtxByHandle = hash_table_new(DEFAULT_HASH_SIZE);
+	if (!g_phtTcpCtxByHandle)
+	{
+		return FALSE;
+	}
+
+	g_nextTcpCtxId = 1;
+
+	g_initialized = TRUE;
+
 	return status;
 }
 VOID tcpctxctx_clean()
 {
 	KLOCK_QUEUE_HANDLE lh;
-	PNF_TCPCTX_BUFFER pTcpCtx;
+	PNF_TCP_BUFFER pTcpCtx;
 
 	sl_lock(&g_tcpctx_data.lock, &lh);
 	while (!IsListEmpty(&g_tcpctx_data.pendedPackets))
 	{
-		pTcpCtx = (PNF_TCPCTX_BUFFER)RemoveHeadList(&g_tcpctx_data.pendedPackets);
+		pTcpCtx = (PNF_TCP_BUFFER)RemoveHeadList(&g_tcpctx_data.pendedPackets);
 		sl_unlock(&lh);
 		tcpctxctx_packfree(pTcpCtx);
 		pTcpCtx = NULL;
@@ -425,9 +439,7 @@ VOID tcpctxctx_free()
 	ExDeleteNPagedLookasideList(&g_tcpctxPacketsList);
 }
 
-/*
-	散列表操作
-*/
+// Hash
 PTCPCTX tcpctx_find(UINT64 id)
 {
 	PTCPCTX pTcpCtx = NULL;
@@ -445,6 +457,7 @@ PTCPCTX tcpctx_find(UINT64 id)
 
 	return pTcpCtx;
 }
+
 PTCPCTX tcpctx_findByHandle(UINT64 handle)
 {
 	PTCPCTX pTcpCtx = NULL;
@@ -462,6 +475,7 @@ PTCPCTX tcpctx_findByHandle(UINT64 handle)
 
 	return pTcpCtx;
 }
+
 void add_tcpHandle(PTCPCTX ptcpctx)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -470,6 +484,7 @@ void add_tcpHandle(PTCPCTX ptcpctx)
 	ht_add_entry(g_phtTcpCtxByHandle, (PHASH_TABLE_ENTRY)&ptcpctx->transportEndpointHandle);
 	sl_unlock(&lh);
 }
+
 void remove_tcpHandle(PTCPCTX ptcpctx)
 {
 	KLOCK_QUEUE_HANDLE lh;

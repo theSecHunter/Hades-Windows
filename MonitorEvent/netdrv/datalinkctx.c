@@ -1,12 +1,10 @@
 #include "public.h"
 #include "datalinkctx.h"
-
 #include <ws2def.h>
-
 #include "devctrl.h"
 
-static NPAGED_LOOKASIDE_LIST	g_dataLinkPacketsList;
 static NF_DATALINK_DATA			g_datalink_data;
+static NPAGED_LOOKASIDE_LIST	g_dataLinkPacketsList;
 
 NF_DATALINK_DATA* datalink_get()
 {
@@ -32,72 +30,63 @@ NTSTATUS datalinkctx_init()
 	return status;
 }
 
-PNF_DATALINK_BUFFER datalinkctx_packallocate(
-	int lens
-)
+PNF_DATALINK_BUFFER datalinkctx_packallocate(int lens)
 {
 	if (lens < 0)
 		return NULL;
-	PNF_DATALINK_BUFFER pNfdatalink = NULL;
-	pNfdatalink = ExAllocateFromNPagedLookasideList(&g_dataLinkPacketsList);
-	if (!pNfdatalink)
-		return FALSE;
 
-	memset(pNfdatalink, 0, sizeof(NF_DATALINK_BUFFER));
+	PNF_DATALINK_BUFFER pDataLink = NULL;
+	pDataLink = ExAllocateFromNPagedLookasideList(&g_dataLinkPacketsList);
+	if (!pDataLink)
+		return NULL;
 
+	RtlSecureZeroMemory(pDataLink, sizeof(NF_DATALINK_BUFFER));
 	if (lens > 0)
 	{
-		pNfdatalink->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, 'DPLC');
-		if (!pNfdatalink->dataBuffer)
+		pDataLink->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, 'DPLC');
+		if (!pDataLink->dataBuffer)
 		{
-			ExFreeToNPagedLookasideList(&g_dataLinkPacketsList, pNfdatalink);
-			return FALSE;
+			ExFreeToNPagedLookasideList(&g_dataLinkPacketsList, pDataLink);
+			return NULL;
 		}
 	}
-	return pNfdatalink;
+	return pDataLink;
 }
 
-VOID datalinkctx_packfree(
-	PNF_DATALINK_BUFFER pPacket
-)
+VOID datalinkctx_packfree(PNF_DATALINK_BUFFER pPacket)
 {
-	if (pPacket->dataBuffer)
+	if (pPacket && pPacket->dataBuffer)
 	{
 		free_np(pPacket->dataBuffer);
 		pPacket->dataBuffer = NULL;
 	}
-	ExFreeToNPagedLookasideList(&g_dataLinkPacketsList, pPacket);
+	if (pPacket)
+		ExFreeToNPagedLookasideList(&g_dataLinkPacketsList, pPacket);
 }
 
-NTSTATUS datalinkctx_pushdata(
-	PVOID64 packet,
-	int lens
-)
+NTSTATUS datalinkctx_pushdata(PVOID64 packet, int lens)
 {
-	NTSTATUS status = STATUS_SUCCESS;
 	KLOCK_QUEUE_HANDLE lh;
-	PNF_DATALINK_BUFFER pdatalinkinfo = NULL;
+	PNF_DATALINK_BUFFER pDataLinkInfo = NULL;
 
 	if (!packet && (lens < 1))
-		return FALSE;
+		return STATUS_UNSUCCESSFUL;
 
 	// Allocate 
-	pdatalinkinfo = datalinkctx_packallocate(lens);
-	if (!pdatalinkinfo)
-	{
-		return FALSE;
-	}
+	pDataLinkInfo = datalinkctx_packallocate(lens);
+	if (!pDataLinkInfo || !pDataLinkInfo->dataBuffer)
+		return STATUS_UNSUCCESSFUL;
 
-	pdatalinkinfo->dataLength = lens;
-	RtlCopyMemory(pdatalinkinfo->dataBuffer, packet, lens);
+	pDataLinkInfo->dataLength = lens;
+	RtlCopyMemory(pDataLinkInfo->dataBuffer, packet, lens);
 
 	sl_lock(&g_datalink_data.lock, &lh);
-	InsertHeadList(&g_datalink_data.pendedPackets, &pdatalinkinfo->pEntry);
+	InsertHeadList(&g_datalink_data.pendedPackets, &pDataLinkInfo->pEntry);
 	sl_unlock(&lh);
 
-	devctrl_pushEventQueryLisy(NF_DATALINK_PACKET);
+	devctrl_pushEventQueryLisy(NF_DATALINKMAC_LAYER_PACKET);
 
-	return status;
+	return STATUS_SUCCESS;
 }
 
 VOID datalinkctx_clean()

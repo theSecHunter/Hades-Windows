@@ -26,6 +26,16 @@ typedef enum _NF_FILTERING_FLAG
 	NF_CONTROL_FLOW = 512,			// Use the flow limit rules even without NF_FILTER flag
 } NF_FILTERING_FLAG;
 
+typedef enum _NF_DATA_CODE
+{
+	NF_DATALINKMAC_LAYER_PACKET = 1,	// 
+	NF_ESTABLISHED_LAYER_PACKET,		// 
+	NF_TCPREDIRECT_LAYER_PACKET,		// Tcp Connect Packet
+
+
+	NF_TCP_CONNECT_REQUEST,				// Outgoing TCP connect request
+}NF_DATA_CODE;
+
 typedef enum _PROCESS_FLAG
 {
 	PF_TCP_FILTER = 1,
@@ -191,10 +201,10 @@ typedef struct _NF_IP_PACKET_OPTIONS
 **/
 typedef struct _NF_DATA
 {
-	int				code;
-	int				id;
-	unsigned long	bufferSize;
-	char 			buffer[1];
+	int					code;
+	unsigned __int64	id;
+	unsigned long		bufferSize;
+	char 				buffer[1];
 } NF_DATA, * PNF_DATA;
 
 typedef  struct _NF_BUFFERS

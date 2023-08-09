@@ -14,10 +14,10 @@ typedef struct _NF_CALLOUT_FLOWESTABLISHED_INFO
 #pragma warning(pop)
 	UINT16 toLocalPort;
 
-	UINT8 protocol;
-	UINT64 flowId;
-	UINT16 layerId;
-	UINT32 calloutId;
+	UINT8	protocol;
+	UINT64	flowId;
+	UINT16	layerId;
+	UINT32	calloutId;
 	UINT64	transportEndpointHandle;
 
 #pragma warning(push)

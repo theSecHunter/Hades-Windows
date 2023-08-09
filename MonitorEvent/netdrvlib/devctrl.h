@@ -17,11 +17,10 @@ public:
 	void devctrl_clean();
 	int devctrl_InitshareMem();
 	int devctrl_OnMonitor();
-	PVOID64 get_Driverhandler();
+	HANDLE get_Driverhandler();
 	PVOID64 get_nfBufferPtr();
-
-public:
-	const HANDLE GetDrvHandle();
+	// Write Packet Data
+	int devctrl_writeio(PNF_DATA pData);
 
 private:
 	DWORD  m_dwthreadid = 0;
@@ -31,8 +30,7 @@ private:
 	HANDLE m_alpcthreadobjhandler = NULL;
 	HANDLE m_listthreadobjhandler = NULL;
 
-	// ·¢ËÍ¿ØÖÆÂë
+	// Send Control Code
 	int devctrl_sendioct(const int ioctcode);
-	int devctrl_writeio();
 };
 #endif // !_DEVCTRL_H
