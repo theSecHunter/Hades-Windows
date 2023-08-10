@@ -26,31 +26,6 @@ static EventQueue<NFEventOut>	g_eventQueueOut;
 static AutoEventHandle			g_workThreadStartedEvent;
 static AutoEventHandle			g_workThreadStoppedEvent;
 
-const bool InitWorkQueue(PVOID64 Eventhandle)
-{
-	bool status = false;
-	// 获取驱动句柄
-	do {
-
-		g_hWorkhDevice = SingletNetMonx::instance()->get_Driverhandler();
-		if (NULL == g_hWorkhDevice)
-			break;
-
-		// 获取共享内存buffer
-		g_workBuffer = (NF_BUFFERS*)SingletNetMonx::instance()->get_nfBufferPtr();
-		if (!g_workBuffer || !(*g_workBuffer).inBufLen || !(*g_workBuffer).outBufLen)
-			break;
-
-		// 获取事件句柄
-		g_pEventHandler = (NF_EventHandler*)Eventhandle;
-		if (!g_pEventHandler)
-			break;
-
-		status = true;
-	} while (false);
-	return status;
-}
-
 // ReadFile Driver Buffer
 static void OnReadHandleEventDispath(PNF_DATA pData)
 {
@@ -77,22 +52,47 @@ static void OnReadHandleEventDispath(PNF_DATA pData)
 	{
 		if (pData->bufferSize) {
 			g_pEventHandler->TcpredirectPacket(pData->buffer, pData->bufferSize);
-			PNF_DATA pDataCopy = (PNF_DATA)mp_alloc(sizeof(NF_DATA) - 1 + sizeof(NF_TCP_CONN_INFO));
-			if (!pDataCopy)
+			PNF_DATA pDataCopy = (PNF_DATA)mempool::mp_alloc(sizeof(NF_DATA) - 1 + sizeof(NF_TCP_CONN_INFO));
+			if (pDataCopy)
 			{
-				return;
+				pDataCopy->id = pData->id;
+				pDataCopy->code = NF_TCP_CONNECT_REQUEST;
+				pDataCopy->bufferSize = sizeof(NF_TCP_CONN_INFO);
+				memcpy(pDataCopy->buffer, &pData->buffer, sizeof(NF_TCP_CONN_INFO));
+				SingletNetMonx::instance()->devctrl_writeio(pDataCopy);
+				mempool::mp_free(pDataCopy);
 			}
-			pDataCopy->id = pData->id;
-			pDataCopy->code = NF_TCP_CONNECT_REQUEST;
-			pDataCopy->bufferSize = sizeof(NF_TCP_CONN_INFO);
-			memcpy(pDataCopy->buffer, &pData->buffer, sizeof(NF_TCP_CONN_INFO));
-			SingletNetMonx::instance()->devctrl_writeio(pDataCopy);
-			mp_free(pDataCopy);
 		}
 	}
 	break;
 	}
 }
+
+const bool InitWorkQueue(PVOID64 Eventhandle)
+{
+	bool status = false;
+	// 获取驱动句柄
+	do {
+
+		g_hWorkhDevice = SingletNetMonx::instance()->get_Driverhandler();
+		if (NULL == g_hWorkhDevice)
+			break;
+
+		// 获取共享内存buffer
+		g_workBuffer = (NF_BUFFERS*)SingletNetMonx::instance()->get_nfBufferPtr();
+		if (!g_workBuffer || !(*g_workBuffer).inBufLen || !(*g_workBuffer).outBufLen)
+			break;
+
+		// 获取事件句柄
+		g_pEventHandler = (NF_EventHandler*)Eventhandle;
+		if (!g_pEventHandler)
+			break;
+
+		status = true;
+	} while (false);
+	return status;
+}
+
 DWORD WINAPI ReadWorkThread(LPVOID lpThreadParameter)
 {
 	OVERLAPPED ol;
@@ -106,7 +106,7 @@ DWORD WINAPI ReadWorkThread(LPVOID lpThreadParameter)
 	int i = 0;
 
 	OutputDebugString(L"Entry WorkThread");
-	mempool_init();
+	mempool::mempools_init();
 	SetEvent(g_workThreadStartedEvent);
 	g_eventQueue.init(g_nThreads);
 	g_eventQueueOut.init(1);

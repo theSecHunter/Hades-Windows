@@ -92,6 +92,21 @@ typedef enum _NF_DATA_CODE
 
 #pragma pack(push, 1)
 
+typedef enum _NF_FILTERING_FLAG
+{
+    NF_ALLOW = 0,		// Allow the activity without filtering transmitted packets
+    NF_BLOCK = 1,		// Block the activity
+    NF_FILTER = 2,		// Filter the transmitted packets
+    NF_SUSPENDED = 4,	// Suspend receives from server and sends from client
+    NF_OFFLINE = 8,		// Emulate establishing a TCP connection with remote server
+    NF_INDICATE_CONNECT_REQUESTS = 16, // Indicate outgoing connect requests to API
+    NF_DISABLE_REDIRECT_PROTECTION = 32, // Disable blocking indicating connect requests for outgoing connections of local proxies
+    NF_PEND_CONNECT_REQUEST = 64,	// Pend outgoing connect request to complete it later using nf_complete(TCP|UDP)ConnectRequest
+    NF_FILTER_AS_IP_PACKETS = 128,	// Indicate the traffic as IP packets via ipSend/ipReceive
+    NF_READONLY = 256,				// Don't block the IP packets and indicate them to ipSend/ipReceive only for monitoring
+    NF_CONTROL_FLOW = 512,			// Use the flow limit rules even without NF_FILTER flag
+} NF_FILTERING_FLAG;
+
 typedef UNALIGNED struct _NF_DATA
 {
     int					code;

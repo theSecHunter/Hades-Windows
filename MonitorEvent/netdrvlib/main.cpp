@@ -1,17 +1,15 @@
 #include <Windows.h>
-#include "CodeTool.h"
 #include "workqueue.h"
 #include "EventHandler.h"
 #include "NetApi.h"
 #include "singGlobal.h"
-
+#include "CodeTool.h"
 #include <iostream>
 using namespace std;
 
 // 初始化状态
 static bool g_bInitStus = false;
 
-//int main(void)
 int NetNdrInitEx(void) {
 	// Init devctrl
 	int ntStus = SingletNetMonx::instance()->devctrl_init();
@@ -39,8 +37,8 @@ int NetNdrInitEx(void) {
 			break;
 		}
 
+		// devctrl_workthread 之前初始化 Work Queue
 		static EventHandler cEventHandle;
-		// 必须在 devctrl_workthread 之前初始化 Work Queue
 		InitWorkQueue((PVOID64)&cEventHandle);
 
 		ntStus = SingletNetMonx::instance()->devctrl_workthread();
@@ -65,18 +63,20 @@ int NetNdrInitEx(void) {
 
 void NetNdrCloseEx(void)
 {
-	g_bInitStus = false;
-	SingletNetMonx::instance()->devctrl_clean();
+	try
+	{
+		g_bInitStus = false;
+		SingletNetMonx::instance()->devctrl_clean();
+		NetNdrRuleClear();
+	}
+	catch (const std::exception&)
+	{
+	}
 }
 
 bool GetNetNdrStusEx(void)
 {
 	return g_bInitStus;
-}
-
-int NetNdrSetRuleEx(void) {
-	
-	return 1;
 }
 
 int NetNdrMonitorEx(int code)
@@ -115,4 +115,54 @@ int NetNdrMonitorEx(int code)
 		return -2;
 	}
 	return bStu;
+}
+
+void NetNdrSetDenyRule(const char* cRuleName, const char* cIpAddress, const char* cProtocol, const char* cPortArray, const char* cAction)
+{
+	DENY_RULE denyRule; 
+	denyRule.clear();
+	denyRule.strRuleName = cRuleName;
+	denyRule.strIpAddress = cIpAddress;
+	denyRule.strProtocol = cProtocol;
+	denyRule.strPorts = cPortArray;
+	{
+		std::string strPort = denyRule.strPorts;
+		char* vector_port = strtok((char*)strPort.c_str(), "|");
+		if (vector_port) {
+			while (vector_port != NULL)
+			{
+				denyRule.vecPorts.push_back(vector_port);
+				vector_port = strtok(NULL, "|");
+			}
+		}
+	}
+	denyRule.strAction = cAction;
+	SingletonNetRule::instance()->SetDenyRule(denyRule);
+}
+
+void NetNdrSetConnectRule(const char* cRuleName, const char* cRedirectIp, const char* cProtocol, const char* cProcessName)
+{
+	TCPCONNECT_RULE tConnectRule;
+	tConnectRule.clear();
+	tConnectRule.strRuleName = cRuleName;
+	tConnectRule.strRedirectIp = cRedirectIp;
+	tConnectRule.strProtocol = cProtocol;
+	tConnectRule.strProcessName = cProcessName;
+	{
+		std::string strProcessName = tConnectRule.strProcessName;
+		char* vector_name= strtok((char*)strProcessName.c_str(), "|");
+		if (vector_name) {
+			while (vector_name != NULL)
+			{
+				tConnectRule.vecProcessName.push_back(vector_name);
+				vector_name = strtok(NULL, "|");
+			}
+		}
+	}
+	SingletonNetRule::instance()->SetTcpConnectRule(tConnectRule);
+}
+
+void NetNdrRuleClear(void)
+{
+	SingletonNetRule::instance()->NetRuleClear();
 }

@@ -15,14 +15,14 @@
       <Filter>Work</Filter>
     </ClCompile>
     <ClCompile Include="mempool.cpp">
-      <Filter>Base</Filter>
+      <Filter>Command</Filter>
+    </ClCompile>
+    <ClCompile Include="NetRule.cpp">
+      <Filter>Rule</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="threadpool.h">
-      <Filter>Base</Filter>
-    </ClInclude>
-    <ClInclude Include="mempool.h">
       <Filter>Base</Filter>
     </ClInclude>
     <ClInclude Include="EventHandler.h">
@@ -40,9 +40,6 @@
     <ClInclude Include="devctrl.h">
       <Filter>DevCtrl</Filter>
     </ClInclude>
-    <ClInclude Include="EventQueue.h">
-      <Filter>Base</Filter>
-    </ClInclude>
     <ClInclude Include="sync.h">
       <Filter>Base</Filter>
     </ClInclude>
@@ -58,21 +55,30 @@
     <ClInclude Include="workqueue.h">
       <Filter>Work</Filter>
     </ClInclude>
-    <ClInclude Include="tcpctx.h">
-      <Filter>EventHandler</Filter>
-    </ClInclude>
-    <ClInclude Include="datalinkctx.h">
-      <Filter>EventHandler</Filter>
-    </ClInclude>
-    <ClInclude Include="establishedctx.h">
-      <Filter>EventHandler</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\HadesSdk\include\SingletonHandler.h">
       <Filter>Base</Filter>
     </ClInclude>
     <ClInclude Include="resource.h" />
     <ClInclude Include="singGlobal.h">
       <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="EventQueue.h">
+      <Filter>EventHandler</Filter>
+    </ClInclude>
+    <ClInclude Include="tcpctx.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="establishedctx.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="datalinkctx.h">
+      <Filter>Net</Filter>
+    </ClInclude>
+    <ClInclude Include="mempool.h">
+      <Filter>Command</Filter>
+    </ClInclude>
+    <ClInclude Include="NetRule.h">
+      <Filter>Rule</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -93,6 +99,12 @@
     </Filter>
     <Filter Include="Work">
       <UniqueIdentifier>{2d0f6135-7ac9-4247-8005-54ea8f570d34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Net">
+      <UniqueIdentifier>{958779f5-d286-4fdf-a303-46bdf4a7e036}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Rule">
+      <UniqueIdentifier>{f0366d1b-c841-480a-b13c-d3fb2f832c32}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

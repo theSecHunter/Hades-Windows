@@ -836,3 +836,8 @@ const bool CodeTool::DeviceDosPathToNtPath(wchar_t* pszDosPath, wchar_t* pszNtPa
 	lstrcpyW(pszNtPath, pszDosPath);
 	return FALSE;
 }
+
+const int CodeTool::SplitString(LPCTSTR lpszString, std::vector<std::string>& vecSubStrings, TCHAR cSeparator)
+{
+	return 0;
+}

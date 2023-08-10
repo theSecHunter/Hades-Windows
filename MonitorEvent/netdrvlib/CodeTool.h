@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include <string>
 
 using namespace std;
@@ -77,6 +78,7 @@ public:
 	static void ReadRegistryValue(HKEY key, std::wstring path, std::wstring name, std::wstring& value);
 
 	static const bool IsFileDir(LPCTSTR lpFilePath);
+	static const int SplitString(LPCTSTR lpszString, std::vector<std::string>& vecSubStrings, TCHAR cSeparator);
 	static const bool CGetCurrentDirectory(std::string& strDirpath);
 	static const bool DeviceDosPathToNtPath(wchar_t* pszDosPath, wchar_t* pszNtPath);
 	static void DeleteDir(LPCTSTR lpDirPath, wstring& wstrContent);

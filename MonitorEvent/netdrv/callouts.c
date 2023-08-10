@@ -55,9 +55,35 @@ typedef enum _NF_DIRECTION
 #define NFSDK_RECV_SUBLAYER_NAME L"Dark Recv Sublayer"
 #define NFSDK_PROVIDER_NAME L"Dark Provider"
 
-/*	=============================================
-				callouts callbacks
-	============================================= */
+// OutPut
+void DbgPrintAddress(int ipFamily, void* addr, char* name, UINT64 id)
+{
+	if (ipFamily == AF_INET)
+	{
+		struct sockaddr_in* pAddr = (struct sockaddr_in*)addr;
+
+		KdPrint((DPREFIX"DbgPrintAddress[%I64u] %s=%x:%d\n",
+			id, name, pAddr->sin_addr.s_addr, htons(pAddr->sin_port)));
+	}
+	else
+	{
+		struct sockaddr_in6* pAddr = (struct sockaddr_in6*)addr;
+
+		KdPrint((DPREFIX"DbgPrintAddress[%I64u] %s=[%x:%x:%x:%x:%x:%x:%x:%x]:%d\n",
+			id, name,
+			pAddr->sin6_addr.u.Word[0],
+			pAddr->sin6_addr.u.Word[1],
+			pAddr->sin6_addr.u.Word[2],
+			pAddr->sin6_addr.u.Word[3],
+			pAddr->sin6_addr.u.Word[4],
+			pAddr->sin6_addr.u.Word[5],
+			pAddr->sin6_addr.u.Word[6],
+			pAddr->sin6_addr.u.Word[7],
+			htons(pAddr->sin6_port)));
+	}
+}
+
+// Callouts Established Callbacks
 VOID helper_callout_classFn_flowEstablished(
 	_In_ const FWPS_INCOMING_VALUES0* inFixedValues,
 	_In_ const FWPS_INCOMING_METADATA_VALUES0* inMetaValues,
@@ -184,6 +210,7 @@ NTSTATUS helper_callout_notifyFn_flowEstablished(
 	return status;
 }
 
+// Callouts DataLinkMac Callbacks
 VOID helper_callout_classFn_mac(
 	_In_ const FWPS_INCOMING_VALUES* inFixedValues,
 	_In_ const FWPS_INCOMING_METADATA_VALUES* inMetaValues,
@@ -394,33 +421,6 @@ VOID helper_callout_deleteFn_mac(
 	UNREFERENCED_PARAMETER(flowContext);
 }
 
-void DbgPrintAddress(int ipFamily, void* addr, char* name, UINT64 id)
-{
-	if (ipFamily == AF_INET)
-	{
-		struct sockaddr_in* pAddr = (struct sockaddr_in*)addr;
-
-		KdPrint((DPREFIX"DbgPrintAddress[%I64u] %s=%x:%d\n",
-			id, name, pAddr->sin_addr.s_addr, htons(pAddr->sin_port)));
-	}
-	else
-	{
-		struct sockaddr_in6* pAddr = (struct sockaddr_in6*)addr;
-
-		KdPrint((DPREFIX"DbgPrintAddress[%I64u] %s=[%x:%x:%x:%x:%x:%x:%x:%x]:%d\n",
-			id, name,
-			pAddr->sin6_addr.u.Word[0],
-			pAddr->sin6_addr.u.Word[1],
-			pAddr->sin6_addr.u.Word[2],
-			pAddr->sin6_addr.u.Word[3],
-			pAddr->sin6_addr.u.Word[4],
-			pAddr->sin6_addr.u.Word[5],
-			pAddr->sin6_addr.u.Word[6],
-			pAddr->sin6_addr.u.Word[7],
-			htons(pAddr->sin6_port)));
-	}
-}
-
 typedef NTSTATUS (NTAPI* t_FwpsPendClassify0)(
 	UINT64 classifyHandle,
 	UINT64 filterId,
@@ -429,6 +429,7 @@ typedef NTSTATUS (NTAPI* t_FwpsPendClassify0)(
 	);
 static t_FwpsPendClassify0 _FwpsPendClassify0 = FwpsPendClassify0;
 
+// Callouts TCP Connect Callbacks
 VOID helper_callout_classFn_connectredirect(
 	IN const FWPS_INCOMING_VALUES* inFixedValues,
 	IN const FWPS_INCOMING_METADATA_VALUES* inMetaValues,
@@ -676,9 +677,7 @@ NTSTATUS helper_callout_notifyFn_connectredirect(
 	return status;
 }
 
-/*	=============================================
-				callouts Ctrl
-	============================================= */
+// Callouts Ctrl Manage
 NTSTATUS helper_callout_registerCallout(
 	IN OUT void* deviceObject,
 	IN  FWPS_CALLOUT_CLASSIFY_FN classifyFunction,

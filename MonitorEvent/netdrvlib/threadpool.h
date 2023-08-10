@@ -107,13 +107,13 @@ protected:
 	void threadProc()
 	{
 		HANDLE handles[] = { m_jobAvailableEvent, m_stopEvent };
-		ThreadJob * pJob;
+		ThreadJob* pJob = nullptr;
 
 		m_pJobSource->threadStarted();
 
 		for (;;)
 		{
-			DWORD res = WaitForMultipleObjects(2, handles, FALSE, INFINITE);
+			const DWORD res = WaitForMultipleObjects(2, handles, FALSE, INFINITE);
 			
 			if (res == (WAIT_OBJECT_0+1))
 				break;

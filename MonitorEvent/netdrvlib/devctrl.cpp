@@ -141,20 +141,23 @@ int DevctrlIoct::devctrl_waitSingeObject()
 
 void DevctrlIoct::devctrl_clean()
 {
-	// Send Driver Clean
-	// devctrl_sendioct();
-
-	if (m_devhandler)
+	try
 	{
-		CloseHandle(m_devhandler);
-		m_devhandler = NULL;
+		if (m_devhandler)
+		{
+			CloseHandle(m_devhandler);
+			m_devhandler = NULL;
+		}
+
+		if (m_threadobjhandler)
+		{
+			TerminateThread(m_threadobjhandler, 0);
+			CloseHandle(m_threadobjhandler);
+			m_threadobjhandler = NULL;
+		}
 	}
-
-	if (m_threadobjhandler)
+	catch (...)
 	{
-		TerminateThread(m_threadobjhandler, 0);
-		CloseHandle(m_threadobjhandler);
-		m_threadobjhandler = NULL;
 	}
 }
 

@@ -108,6 +108,11 @@ public:
 	unsigned long	m_flags;
 };
 
+struct EventListItem
+{
+	ENDPOINT_ID		id;
+	eEndpointType	type;
+};
 template <class EventType>
 class EventQueue : public ThreadJobSource
 {
@@ -198,14 +203,68 @@ public:
 		}
 	}
 
-	virtual ThreadJob * getNextJob()
+	virtual ThreadJob* getNextJob()
 	{
 		AutoLock lock(m_cs);
 
-		EventType * pEvent = NULL;
+		EventType* pEvent = NULL;
 		tEventFlags::iterator itf;
+		tEventList::iterator it;
 		int flags = 0;
+		
+		for (it = m_eventList.begin(); it != m_eventList.end();)
+		{
+			if (it->type == ET_TCP)
+			{
+				if (m_busyTCPEndpoints.find(it->id) != m_busyTCPEndpoints.end())
+				{
+					it++;
+					continue;
+				}
 
+				itf = m_tcpEventFlags.find(it->id);
+				if (itf == m_tcpEventFlags.end())
+				{
+					it = m_eventList.erase(it);
+					continue;
+				}
+				flags = itf->second;
+				m_tcpEventFlags.erase(itf);
+				m_busyTCPEndpoints.insert(it->id);
+			}
+			else
+				if (it->type == ET_UDP)
+				{
+					if (m_busyUDPEndpoints.find(it->id) != m_busyUDPEndpoints.end())
+					{
+						it++;
+						continue;
+					}
+
+					itf = m_udpEventFlags.find(it->id);
+					if (itf == m_udpEventFlags.end())
+					{
+						it = m_eventList.erase(it);
+						continue;
+					}
+
+					flags = itf->second;
+					m_udpEventFlags.erase(itf);
+					m_busyUDPEndpoints.insert(it->id);
+				}
+
+			void* p = mempool::mp_alloc(sizeof(EventType));
+			if (!p)
+			{
+				return NULL;
+			}
+
+			pEvent = new(p) EventType(it->type, it->id, flags);
+
+			m_eventList.erase(it);
+
+			return pEvent;
+		}
 		return NULL;
 	}
 
@@ -213,7 +272,7 @@ public:
 	{
 		AutoLock lock(m_cs);
 
-		EventType * pEvent = (EventType*)pJob;
+		EventType* pEvent = (EventType*)pJob;
 
 		if (pEvent->m_et == ET_TCP)
 		{
@@ -224,7 +283,7 @@ public:
 			m_busyUDPEndpoints.erase(pEvent->m_id);
 		}
 
-		mp_free(pEvent);
+		mempool::mp_free(pEvent);
 		SetEvent(m_jobCompletedEvent);
 
 		if (!m_pending && !m_eventList.empty())
@@ -244,12 +303,6 @@ public:
 	}
 
 private:
-	struct EventListItem
-	{
-		ENDPOINT_ID		id;
-		eEndpointType	type;
-	};
-
 	typedef std::list<EventListItem> tEventList;
 	tEventList m_eventList;
 

@@ -24,6 +24,7 @@
     <ProjectGuid>{98d1bc6b-8c1b-44c9-a737-cb10588f61b9}</ProjectGuid>
     <RootNamespace>RuleEngineSvc</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>RuleEnginelib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

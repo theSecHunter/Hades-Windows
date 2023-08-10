@@ -357,7 +357,6 @@ ULONG devctrl_processTcpConnect(PNF_DATA pData)
 		{
 			addrLen = sizeof(struct sockaddr_in6);
 		}
-		DbgBreakPoint();
 		if ((memcmp(pTcpCtx->remoteAddr, pInfo->remoteAddress, addrLen) != 0))
 		{
 			if (pData)
@@ -380,7 +379,15 @@ ULONG devctrl_processTcpConnect(PNF_DATA pData)
 					0);
 			}
 		}
-		pTcpCtx->redirectInfo.classifyOut.actionType = FWP_ACTION_PERMIT;
+
+		if (pTcpCtx->filteringFlag & NF_BLOCK)
+		{
+			pTcpCtx->redirectInfo.classifyOut.actionType = FWP_ACTION_BLOCK;
+		}
+		else
+		{
+			pTcpCtx->redirectInfo.classifyOut.actionType = FWP_ACTION_PERMIT;
+		}
 		tcpctx_purgeRedirectInfo(pTcpCtx);
 	}
 	tcpctx_release(pTcpCtx);

@@ -11,7 +11,6 @@ public:
 	const bool GetNetNdrStus();
 
 public:
-	void SetAllRule();
 	void ReLoadDnsRule();
 	void ReLoadIpPortConnectRule();
 };

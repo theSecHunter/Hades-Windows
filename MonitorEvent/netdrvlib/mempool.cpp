@@ -1,6 +1,8 @@
 #include "stdinc.h"
 #include "mempool.h"
 
+using namespace mempool;
+
 #define MAX_POOLS		100
 #define MAX_POOL_SIZE	100
 
@@ -26,13 +28,13 @@ static MEM_POOL mem_pools[MAX_POOLS];
 static int nPools = 0;
 static __SPIN_LOCK mem_pools_lock;
 
-void mempool_init()
+void mempool::mempools_init()
 {
 	nPools = 0;
 	sl_init(&mem_pools_lock);
 }
 
-void mempool_free()
+void mempool::mempools_free()
 {
 	PMEM_BUFFER pMemBuffer, pNext;
 	int i;
@@ -61,9 +63,11 @@ void mempool_free()
 	sl_free(&mem_pools_lock);
 }
 
-void* mp_alloc(unsigned int size, int align)
+void* mempool::mp_alloc(unsigned int size, int align)
 {
-	PMEM_BUFFER pMemBuffer = nullptr;
+	PMEM_BUFFER pMemBuffer;
+	int			i;
+
 	if (size == 0)
 		return NULL;
 
@@ -72,16 +76,12 @@ void* mp_alloc(unsigned int size, int align)
 		size = ((size / align) + 1) * align;
 	}
 
-	int i = 0;
-
 	sl_lock(&mem_pools_lock);
 
-	for (i = 0; i < nPools; ++i)
+	for (i = 0; i < nPools; i++)
 	{
-		// 大小是否一致
 		if (mem_pools[i].buffer_size == size)
 		{
-			//
 			if (mem_pools[i].pFreeBuffers)
 			{
 				pMemBuffer = mem_pools[i].pFreeBuffers;
@@ -109,21 +109,21 @@ void* mp_alloc(unsigned int size, int align)
 	pMemBuffer->size = size;
 
 	return pMemBuffer->buffer;
-
 }
 
-void mp_free(void* buffer, unsigned int maxPoolSize)
+void mempool::mp_free(void* buffer, unsigned int maxPoolSize)
 {
-	PMEM_BUFFER pMemBuffer;
+	PMEM_BUFFER pMemBuffer = nullptr;
 	int	i;
 
 	if (!buffer)
 		return;
 
 	pMemBuffer = (PMEM_BUFFER)((char*)buffer - (char*)(&((PMEM_BUFFER)0)->buffer));
-	
-	sl_lock(&mem_pools_lock);
+	if (!pMemBuffer)
+		return;
 
+	sl_lock(&mem_pools_lock);
 	for (i = 0; i < nPools; i++)
 	{
 		if (mem_pools[i].buffer_size == pMemBuffer->size)
@@ -145,8 +145,11 @@ void mp_free(void* buffer, unsigned int maxPoolSize)
 			{
 				free_np(pMemBuffer);
 			}
-		}
 
+			sl_unlock(&mem_pools_lock);
+
+			return;
+		}
 	}
 
 	if (nPools < MAX_POOLS)

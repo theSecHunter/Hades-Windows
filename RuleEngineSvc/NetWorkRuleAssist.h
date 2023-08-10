@@ -4,29 +4,55 @@
 
 typedef struct _NetWorkRuleNode
 {
-    std::string strRuleName;
-    std::string strIpAddress;
-    std::string strProtocol;
-    std::vector<std::string> ports;
-    std::string strAction;
-    std::string strLevel;
+    char strRuleName[256];
+    char strProtocol[10];
+    char strAction[10];
+    char strLevel[10];
+}NetWorkRuleNode, * PNetWorkRuleNode;
+
+typedef struct _DENY_RULE : NetWorkRuleNode
+{
+    char strIpAddress[24];
+    char strPorts[10];
     void clear()
     {
-        strRuleName = "";
-        strIpAddress = "";
-        strProtocol = "";
-        ports.clear();
-        strAction = "";
-        strLevel = "";
+        memset(strRuleName, 0, sizeof(strRuleName));
+        memset(strProtocol, 0, sizeof(strProtocol));
+        memset(strAction, 0, sizeof(strAction));
+        memset(strLevel, 0, sizeof(strLevel));
+
+        memset(strIpAddress, 0, sizeof(strIpAddress));
+        memset(strPorts, 0, sizeof(strPorts));
     }
-}NetWorkRuleNode, * PNetWorkRuleNode;
+}DENY_RULE, *PDENY_RULE;
+
+typedef struct _TCPCONNECT_RULE : NetWorkRuleNode
+{
+    char strProcessName[4096];
+    char strRedirectIp[24];
+    void clear()
+    {
+        memset(strRuleName, 0, sizeof(strRuleName));
+        memset(strProtocol, 0, sizeof(strProtocol));
+        memset(strAction, 0, sizeof(strAction));
+        memset(strLevel, 0, sizeof(strLevel));
+
+        memset(strProcessName, 0, sizeof(strProcessName));
+        memset(strRedirectIp, 0, sizeof(strRedirectIp));
+    }
+}TCPCONNECT_RULE, * PTCPCONNECT_RULE;
+
+//typedef struct _NetRuleNode
+//{
+//    std::vector<DENY_RULE> vecDeny;
+//    std::vector<TCPCONNECT_RULE> vecConnect;
+//}NetRuleNode, * PNetRuleNode;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-	// parsing config to
-	__declspec(dllexport) const bool ConfigNetWorkYamlRuleParsing(std::vector<NetWorkRuleNode>& vecRuleNode);
+    __declspec(dllexport) const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, TCPCONNECT_RULE* const pConnectRule, int* pConnetCounter);
 
 #ifdef __cplusplus
 }

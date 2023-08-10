@@ -471,10 +471,12 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
     std::vector<std::string> task_array_data;
     task_array_data.clear();
 
-    if ((403 <= taskid) && (406 >= taskid))
+    if ((taskid >= 403) && (taskid <= 410))
     {
         if (!DrvCheckStatus())
             return false;
+    }
+    else if ((taskid >= 411) && (taskid <= 413)) {
         NetCheckStatus();
     }
 
@@ -671,6 +673,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
             if (SingletonDataHandler::instance()->NetCheckStatus()) {
                 if (!SingletonKNetWork::instance()->GetNetNdrStus())
                     SingletonKNetWork::instance()->NetNdrInit();
+                SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
             }      
         }
         break;

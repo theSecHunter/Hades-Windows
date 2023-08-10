@@ -4,8 +4,8 @@
 #include "nfevents.h"
 #include "EventHandler.h"
 #include "tcpctx.h"
-#include "establishedctx.h"
 #include "datalinkctx.h"
+#include "establishedctx.h"
 #include "CodeTool.h"
 #include <mutex>
 #include <map>
@@ -13,23 +13,7 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
-typedef struct _PROCESS_INFO
-{
-	UINT64 processId;
-	WCHAR  processPath[MAX_PATH * 2];
-	void clear()
-	{
-		processId = 0;
-		RtlSecureZeroMemory(processPath, sizeof(processPath));
-	}
-}PROCESS_INFO, * PPROCESS_INFO;
-
-static std::mutex g_mutx;
-static std::map<int, NF_CALLOUT_FLOWESTABLISHED_INFO> g_flowestablished_map;
-
-static std::vector<int>			ids_destinationport;
-static std::vector<ULONGLONG>	ids_destinationaddress;
-static std::vector<ULONGLONG>	ids_destinationaddressport;
+static bool bLog = false;
 
 void EventHandler::EstablishedPacket(const char* buf, int len)
 {
@@ -37,46 +21,22 @@ void EventHandler::EstablishedPacket(const char* buf, int len)
 	RtlSecureZeroMemory(&flowestablished_processinfo, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
 	RtlCopyMemory(&flowestablished_processinfo, buf, len);
 
-	/*
-		TCP - UDP 不同协议相同端口将覆盖，因为需求不需要保存所有的包
-	*/
-	DWORD keyLocalPort = flowestablished_processinfo.toLocalPort;
-	switch (flowestablished_processinfo.protocol)
-	{
-	case IPPROTO_TCP:
-		keyLocalPort += 1000000;
-		break;
-	case IPPROTO_UDP:
-		keyLocalPort += 2000000;
-		break;
-	default:
-	{
-		OutputDebugString(L"Other Protocol Erro");
+	if (bLog) {
+		std::string strInfo = "";
+		CHAR info[MAX_PATH] = { 0, };
+		if (flowestablished_processinfo.addressFamily == AF_INET) {
+			const std::string strLAddr = inet_ntoa(*(IN_ADDR*)&flowestablished_processinfo.ipv4LocalAddr);
+			const std::string strRAddr = inet_ntoa(*(IN_ADDR*)&flowestablished_processinfo.ipv4toRemoteAddr);
+			sprintf(info, "[HadesNetMon] Locate: 0x%s:%d -> remote: 0x%s:%d type: %d", \
+				strLAddr.c_str(), flowestablished_processinfo.toLocalPort, \
+				strRAddr.c_str(), flowestablished_processinfo.toRemotePort, \
+				flowestablished_processinfo.protocol
+			);
+			strInfo = info;
+			strInfo.append(" ProcessPath ").append(CodeTool::WStr2Str(flowestablished_processinfo.processPath));
+			OutputDebugStringA(strInfo.c_str());
+		}
 	}
-	}
-	g_mutx.lock();
-	g_flowestablished_map[keyLocalPort] = flowestablished_processinfo;
-	g_mutx.unlock();
-
-	//// test api 测试是否可以从map获取数据
-	//PROCESS_INFO processinfo = { 0, };
-	//nf_getprocessinfo(&flowestablished_processinfo.ipv4LocalAddr, flowestablished_processinfo.toLocalPort, flowestablished_processinfo.protocol, &processinfo);
-	//processinfo.processId;
-	//processinfo.processPath;
-
-	// test path
-	std::wstring wsinfo;
-	WCHAR info[MAX_PATH] = { 0, };
-	// swprintf(str, 100, L"%ls%d is %d", L"The half of ", 80, 80 / 2);
-	swprintf(info, MAX_PATH, L"Locate: 0x%d:%d -> remote: 0x%d:%d type: %d", \
-		flowestablished_processinfo.ipv4LocalAddr, flowestablished_processinfo.toLocalPort, \
-		flowestablished_processinfo.ipv4toRemoteAddr, flowestablished_processinfo.toRemotePort, \
-		flowestablished_processinfo.protocol
-	);
-	wsinfo = flowestablished_processinfo.processPath;
-	wsinfo += L"\r\n";
-	wsinfo += info;
-	OutputDebugString(wsinfo.data());
 }
 
 void EventHandler::DatalinkPacket(const char* buf, int len)
@@ -85,101 +45,103 @@ void EventHandler::DatalinkPacket(const char* buf, int len)
 	RtlSecureZeroMemory(&datalink_netinfo, sizeof(NF_CALLOUT_MAC_INFO));
 	RtlCopyMemory(&datalink_netinfo, buf, len);
 
-	OutputDebugString(L"-------------------------------------");
-	OutputDebugStringA((LPCSTR)datalink_netinfo.mac_info.pSourceAddress);
-	OutputDebugStringA((LPCSTR)datalink_netinfo.mac_info.pDestinationAddress);
-	OutputDebugString(L"-------------------------------------");
+	if (bLog) {
+		std::string strInfo = "";
+		CHAR info[MAX_PATH] = { 0, };
+		if (datalink_netinfo.addressFamily == AF_INET) {
+			const std::string strSrcAddr = (LPCSTR)datalink_netinfo.mac_info.pSourceAddress;
+			const std::string strRAddr = (LPCSTR)datalink_netinfo.mac_info.pDestinationAddress;
+			OutputDebugStringA(("[HadesNetMon] MacInfo Src " + strSrcAddr + " Dest" + strRAddr).c_str());
+		}
+	}
 }
 
 void EventHandler::TcpredirectPacket(const char* buf, int len)
 {
-	PNF_TCP_CONN_INFO pTcpConnectInfo = NULL;
+	PNF_TCP_CONN_INFO pTcpConnectInfo = nullptr;
 	pTcpConnectInfo = (PNF_TCP_CONN_INFO)buf;
 	if (!pTcpConnectInfo)
 		return;
 
-	/*
-		1 - 单要素：目標 port 或者 ip
-		2 - 双要素：目标ip:port
-		3 - 重定向标志位 - 暂时不开启
-	*/
-	sockaddr_in* const pAddr = (sockaddr_in*)pTcpConnectInfo->remoteAddress;
-	if (!pAddr)
+	if ((pTcpConnectInfo->ip_family != AF_INET) && (pTcpConnectInfo->ip_family != AF_INET6))
 		return;
-	if ((pAddr->sin_family != AF_INET) && (pAddr->sin_family != AF_INET6))
-	{
-		return;
-	}
 
-	bool bIp6 = false; DWORD dwIp = 0; WORD wPort = 0; std::string strIpv6Addr = "";
-	if (pAddr->sin_family == AF_INET6)
-	{
-		const sockaddr_in6* pAddr6 = (sockaddr_in6*)pAddr;
-		if (!pAddr6)
-			return;
-		char sIp[INET6_ADDRSTRLEN] = { 0 };
-		inet_ntop(AF_INET6, &pAddr6->sin6_addr, sIp, INET6_ADDRSTRLEN);
-		strIpv6Addr = sIp;
-		dwIp = 1; wPort = ntohs(pAddr6->sin6_port); bIp6 = true;
+	bool bIp6 = false;
+	// Local
+	sockaddr_in* const pLocalAddr = (sockaddr_in*)pTcpConnectInfo->localAddress;
+	if (!pLocalAddr)
+		return;
+	DWORD dwLIp = 0; WORD wLPort = 0; std::string strLIpv6Addr = "";
+	// Remote
+	sockaddr_in* const pRemoteAddr = (sockaddr_in*)pTcpConnectInfo->remoteAddress;
+	if (!pRemoteAddr)
+		return;
+	DWORD dwRIp = 0; WORD wRPort = 0; std::string strRIpv6Addr = "";
+
+	if (pTcpConnectInfo->ip_family == AF_INET6) {
+		do
+		{
+			// Local
+			const sockaddr_in6* pAddr6 = (sockaddr_in6*)pLocalAddr;
+			if (!pAddr6)
+				break;
+			char sIp[INET6_ADDRSTRLEN] = { 0 };
+			inet_ntop(AF_INET6, &pAddr6->sin6_addr, sIp, INET6_ADDRSTRLEN);
+			strLIpv6Addr = sIp;
+			dwLIp = 1; wLPort = ntohs(pAddr6->sin6_port);
+		} while (false);
+
+		do
+		{
+			// Remote
+			const sockaddr_in6* pAddr6 = (sockaddr_in6*)pRemoteAddr;
+			if (!pAddr6)
+				break;
+			char sIp[INET6_ADDRSTRLEN] = { 0 };
+			inet_ntop(AF_INET6, &pAddr6->sin6_addr, sIp, INET6_ADDRSTRLEN);
+			strRIpv6Addr = sIp;
+			dwRIp = 1; wRPort = ntohs(pAddr6->sin6_port);
+		} while (false);
+		bIp6 = true;
 	}
 	else
 	{
-		dwIp = pAddr->sin_addr.S_un.S_addr;
-		wPort = ntohs(pAddr->sin_port);
+		// Local
+		dwLIp = pLocalAddr->sin_addr.S_un.S_addr;
+		wLPort = ntohs(pLocalAddr->sin_port);
+
+		// Remote
+		dwRIp = pRemoteAddr->sin_addr.S_un.S_addr;
+		wRPort = ntohs(pRemoteAddr->sin_port);
 	}
 
-	std::string sIp = "";
+	// Local
+	std::string sLIp = "";
 	if (bIp6) {
-		sIp = strIpv6Addr.c_str();
+		sLIp = strLIpv6Addr.c_str();
 	}
 	else
 	{
-		sIp = inet_ntoa(*(IN_ADDR*)&dwIp);
-	}
-}
-
-/*
-	@ 参数1 ipv4 address
-	@ 参数2 本地端口
-	@ 参数3 协议
-	@ 参数4 数据指针
-*/
-int NetNdrGetProcessInfoEx(unsigned int* Locaaddripv4, unsigned long localport, int protocol, void* pGetbuffer)
-{
-	// -1 参数错误
-	if (!Locaaddripv4 && (localport <= 0) && !pGetbuffer && !protocol)
-		return  -1;
-
-	switch (protocol)
-	{
-	case IPPROTO_TCP:
-		localport += 1000000;
-		break;
-	case IPPROTO_UDP:
-		localport += 2000000;
-		break;
+		sLIp = inet_ntoa(*(IN_ADDR*)&dwLIp);
 	}
 
-	try
-	{
-		auto mapiter = g_flowestablished_map.find(localport);
-		// -3 find failuer not`t processinfo
-		if (mapiter == g_flowestablished_map.end())
-			return -2;
-		PPROCESS_INFO processinf = NULL;
-		processinf = (PPROCESS_INFO)pGetbuffer;
-		if (processinf) {
-			processinf->processId = mapiter->second.processId;
-			WCHAR ntPath[MAX_PATH] = { 0 };
-			CodeTool::DeviceDosPathToNtPath(mapiter->second.processPath, ntPath);
-			RtlCopyMemory(processinf->processPath, ntPath, sizeof(ntPath));
-			return 1;
-		}
-		return -3;
+	// Remote
+	std::string sRIp = "";
+	if (bIp6) {
+		sRIp = strRIpv6Addr.c_str();
 	}
-	catch (const std::exception&)
+	else
 	{
-		// 异常
-		return -4;
+		sRIp = inet_ntoa(*(IN_ADDR*)&dwRIp);
 	}
+
+	// Log
+	if(bLog)
+	{
+		const std::string strOutPut = ("[HadesNetMon] Tcp Connect Pid " + to_string(pTcpConnectInfo->processId) + " SrcIp " + sLIp + ":" + to_string(wLPort) + " DstIp " + sRIp + ":" + to_string(wRPort)).c_str();
+		OutputDebugStringA(strOutPut.c_str());
+	}
+
+	// Rule yaml
+	//pTcpConnectInfo->filteringFlag = NF_BLOCK;
 }
