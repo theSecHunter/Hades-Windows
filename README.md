@@ -291,7 +291,7 @@ egress:
     #ports:         # empty means all ports.
     #  - 80
     #  - 8079-8080
-    processname: "tcptest.exe|2.exe"    # empty means all process.
+    processname: "tcptest.exe|2.exe"
     redirectip: "192.168.0.106"         # redirect to ipaddrss
     redirectport: "88"                  # redirect to port
     action: REDIRECT
