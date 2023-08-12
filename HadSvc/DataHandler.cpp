@@ -668,6 +668,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
             task_array_data.push_back("Success");
         }
         break;
+#ifndef WIN32
         case 411:
         {// ÍøÂçÖ÷·À¿ªÆô
             SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
@@ -694,6 +695,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
             task_array_data.push_back("Success");
         }
         break;
+#endif
         default:
             task_array_data.clear();
             return 0;

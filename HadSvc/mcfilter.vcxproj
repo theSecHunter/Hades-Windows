@@ -289,7 +289,10 @@
     <ClCompile Include="FileDetailReader.cpp" />
     <ClCompile Include="HlprMiniCom.cpp" />
     <ClCompile Include="kmsginterface.cpp" />
-    <ClCompile Include="knetwork.cpp" />
+    <ClCompile Include="knetwork.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="msgassist.cpp" />
     <ClCompile Include="msgloop.cpp" />
@@ -310,7 +313,10 @@
     <ClInclude Include="HlprMiniCom.h" />
     <ClInclude Include="kinterface.h" />
     <ClInclude Include="kmsginterface.h" />
-    <ClInclude Include="knetwork.h" />
+    <ClInclude Include="knetwork.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="msgassist.h" />
     <ClInclude Include="msgloop.h" />
     <ClInclude Include="NamedPipe.h" />

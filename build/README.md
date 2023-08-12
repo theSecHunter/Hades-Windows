@@ -12,7 +12,9 @@ vs2017：编译Windows XP，Visual Studio 2017 or Visual Studio 2019 - (v141_xp)
 
 XP 使用 SDK v120_xp:Duilib + HadesControl，编译构建过程友好(设置静态mfc)，界面x86编译可成功.
 
-Win7更高版本推荐使用vs2017/vs2019(包括驱动)
+Win7更高版本推荐使用vs2017/vs2019(包括驱动) 
+
+Win32 x86编译，去掉依赖NetDrvlib工程.
 
 vs2019：编译win7/win8/win10/win11  Visual Studio 2019 (SDK_142) 
 
