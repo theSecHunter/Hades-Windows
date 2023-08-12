@@ -357,7 +357,8 @@ ULONG devctrl_processTcpConnect(PNF_DATA pData)
 		{
 			addrLen = sizeof(struct sockaddr_in6);
 		}
-		if ((memcmp(pTcpCtx->remoteAddr, pInfo->remoteAddress, addrLen) != 0))
+		if ((memcmp(pTcpCtx->remoteAddr, pInfo->remoteAddress, addrLen) != 0) ||
+			(pTcpCtx->filteringFlag & NF_BLOCK))
 		{
 			if (pData)
 				KdPrint((DPREFIX"devctrl_processTcpConnect[%I64u]: redirection\n", pData->id));
@@ -367,7 +368,10 @@ ULONG devctrl_processTcpConnect(PNF_DATA pData)
 				(PVOID*)&pConnectRequest,
 				&pTcpCtx->redirectInfo.classifyOut);
 			if (NT_SUCCESS(status) && pConnectRequest)  {
-				memcpy(&pConnectRequest->remoteAddressAndPort, pInfo->remoteAddress, NF_MAX_ADDRESS_LENGTH);
+				if (pTcpCtx->filteringFlag & NF_BLOCK)
+					RtlSecureZeroMemory(&pConnectRequest->remoteAddressAndPort, NF_MAX_ADDRESS_LENGTH);
+				else
+					memcpy(&pConnectRequest->remoteAddressAndPort, pInfo->remoteAddress, NF_MAX_ADDRESS_LENGTH);
 				pConnectRequest->localRedirectTargetPID = pInfo->processId;
 #ifdef USE_NTDDI
 #if (NTDDI_VERSION >= NTDDI_WIN8)

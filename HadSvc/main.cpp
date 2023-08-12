@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
 		SingletonUMon::instance()->uMsg_EtwInit();
 	}
 
-	// 等待AgentEvent Exit
+	// WaitFor AgentEvent Exit
 	WaitForSingleObject(g_SvcExitEvent, INFINITE);
 	if (g_SvcExitEvent) {
 		CloseHandle(g_SvcExitEvent);

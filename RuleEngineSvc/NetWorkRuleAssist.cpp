@@ -9,7 +9,7 @@
 
 static const std::string g_NetWorkConfigName = "networkRuleConfig.yaml";
 
-const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, TCPCONNECT_RULE* const pConnectRule, int* pConnetCounter)
+const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, TCPCONNECT_RULE* const pConnectRule, int* pConnetCounter, const int iMaxCounter)
 {
     try
     {
@@ -39,9 +39,7 @@ const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCo
                     strAction = iter["action"].as<std::string>();
                 else
                     continue;
-                if (strAction == "DENY") {
-                    if (*pDenyCounter >= 100)
-                        continue;
+                if ((strAction == "DENY") && (*pDenyCounter < iMaxCounter)) {
                     strcpy(pDenyRule[*pDenyCounter].strAction, strAction.c_str());
                     if (!iter["name"].IsNull() && iter["name"].IsScalar())
                         strcpy(pDenyRule[*pDenyCounter].strRuleName, iter["name"].as<std::string>().c_str());
@@ -66,12 +64,10 @@ const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCo
                     }
                     *pDenyCounter += 1;
                 }
-                else if (strAction == "REDIRECT") {
-                    if (*pConnetCounter >= 100)
-                        continue;
+                else if ((strAction == "REDIRECT") && (*pConnetCounter < iMaxCounter)) {
                     strcpy(pConnectRule[*pConnetCounter].strAction, strAction.c_str());
                     if (!iter["name"].IsNull() && iter["name"].IsScalar())
-                        strcpy(pConnectRule[*pConnetCounter].strAction, iter["name"].as<std::string>().c_str());
+                        strcpy(pConnectRule[*pConnetCounter].strRuleName, iter["name"].as<std::string>().c_str());
                     if (!iter["protocol"].IsNull() && iter["protocol"].IsScalar())
                         strcpy(pConnectRule[*pConnetCounter].strProtocol, iter["protocol"].as<std::string>().c_str());
                     if (!iter["level"].IsNull() && iter["level"].IsScalar())
@@ -80,6 +76,8 @@ const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCo
                         strcpy(pConnectRule[*pConnetCounter].strProcessName, iter["processname"].as<std::string>().c_str());
                     if (!iter["redirectip"].IsNull() && iter["redirectip"].IsScalar())
                         strcpy(pConnectRule[*pConnetCounter].strRedirectIp, iter["redirectip"].as<std::string>().c_str());
+                    if (!iter["redirectport"].IsNull() && iter["redirectport"].IsScalar())
+                        pConnectRule[*pConnetCounter].RedrectPort = atoi(iter["redirectport"].as<std::string>().c_str());
                     *pConnetCounter += 1;
                 }
             }

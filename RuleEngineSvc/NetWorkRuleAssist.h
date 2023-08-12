@@ -24,10 +24,11 @@ typedef struct _DENY_RULE : NetWorkRuleNode
         memset(strIpAddress, 0, sizeof(strIpAddress));
         memset(strPorts, 0, sizeof(strPorts));
     }
-}DENY_RULE, *PDENY_RULE;
+}DENY_RULE, * PDENY_RULE;
 
 typedef struct _TCPCONNECT_RULE : NetWorkRuleNode
 {
+    int  RedrectPort;
     char strProcessName[4096];
     char strRedirectIp[24];
     void clear()
@@ -37,22 +38,17 @@ typedef struct _TCPCONNECT_RULE : NetWorkRuleNode
         memset(strAction, 0, sizeof(strAction));
         memset(strLevel, 0, sizeof(strLevel));
 
+        RedrectPort = 0;
         memset(strProcessName, 0, sizeof(strProcessName));
         memset(strRedirectIp, 0, sizeof(strRedirectIp));
     }
 }TCPCONNECT_RULE, * PTCPCONNECT_RULE;
 
-//typedef struct _NetRuleNode
-//{
-//    std::vector<DENY_RULE> vecDeny;
-//    std::vector<TCPCONNECT_RULE> vecConnect;
-//}NetRuleNode, * PNetRuleNode;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    __declspec(dllexport) const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, TCPCONNECT_RULE* const pConnectRule, int* pConnetCounter);
+    __declspec(dllexport) const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, TCPCONNECT_RULE* const pConnectRule, int* pConnetCounter, const int iMaxCounter);
 
 #ifdef __cplusplus
 }

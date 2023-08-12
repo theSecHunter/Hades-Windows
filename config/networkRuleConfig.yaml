@@ -7,3 +7,15 @@ egress:
       - 8079-8080
     action: DENY  # DENY/LOG
     level: INFO
+
+  - name: "test_tcp_redirect"
+    #address: ""
+    protocol: TCP   # TCP
+    #ports:         # empty means all ports.
+    #  - 80
+    #  - 8079-8080
+    processname: "1.exe|2.exe"    # empty means all process.
+    redirectip: "192.168.188.188" # redirect to ipaddrss
+    redirectport: "88"            # redirect to port
+    action: REDIRECT
+    level: INFO

@@ -140,13 +140,14 @@ void NetNdrSetDenyRule(const char* cRuleName, const char* cIpAddress, const char
 	SingletonNetRule::instance()->SetDenyRule(denyRule);
 }
 
-void NetNdrSetConnectRule(const char* cRuleName, const char* cRedirectIp, const char* cProtocol, const char* cProcessName)
+void NetNdrSetConnectRule(const char* cRuleName, const char* cRedirectIp, const int iRedrectPort, const char* cProtocol, const char* cProcessName) 
 {
 	TCPCONNECT_RULE tConnectRule;
 	tConnectRule.clear();
 	tConnectRule.strRuleName = cRuleName;
 	tConnectRule.strRedirectIp = cRedirectIp;
 	tConnectRule.strProtocol = cProtocol;
+	tConnectRule.iRedirectPort = iRedrectPort;
 	tConnectRule.strProcessName = cProcessName;
 	{
 		std::string strProcessName = tConnectRule.strProcessName;

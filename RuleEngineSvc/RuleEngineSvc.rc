@@ -51,7 +51,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 23,7,29,1
+ FILEVERSION 23,8,12,1
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -67,13 +67,10 @@ BEGIN
     BEGIN
         BLOCK "080404b0"
         BEGIN
-            VALUE "CompanyName", "TODO: <公司名>"
-            VALUE "FileDescription", "TODO: <文件说明>"
-            VALUE "FileVersion", "23.7.29.1"
+            VALUE "FileVersion", "23.8.12.1"
             VALUE "InternalName", "RuleEngi.dll"
             VALUE "LegalCopyright", "Copyright (C) 2023"
             VALUE "OriginalFilename", "RuleEngi.dll"
-            VALUE "ProductName", "TODO: <产品名>"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END

@@ -145,6 +145,7 @@ GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboa
 | 进程拦截|  自定义进程 | 完成| 基于回调 | |
 | 注册表拦截|  自定义注册表 | 完成| 基于回调 | |
 | 目录保护|  目录和子目录/文件 | 完成| 基于MiniFilter| |
+| 流量拦截/重定向|  TCP | 完成| 基于WFP| |
 | - |  | | |
 | 注入检测 |  CreteRemote/内存 | 进行中| 基于回调 | https://bbs.pediy.com/thread-193437.htm <br> https://github.com/huoji120/CobaltStrikeDetected/ |
 
@@ -249,6 +250,54 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 
 **See Code: grpc.h grpc.cpp**
 
+#### Minifilter v3.0
+
+| 任务                                                         | 优先级 |状态|
+| ------------------------------------------------------------ | ------ |------|
+| 文件备份： 进程文件落地隔离，脚本命令和IE下载文件备份.<br>不局限于curl/cmd/powershell/vbs/js等形式. | 中  |待定|
+| 勒索病毒行为检测：minifilter监控, 诱饵 + 访问控制 + 行为判定 |  高 |待定|
+
+#### WFP v2.0
+
+| 网络层        | 描述            |
+| :------------ | :-------------- |
+| Established层 | ProcessInfo     |
+| 传输层        | TCP - UDP       |
+| 网络层        | IP              |
+| 数据链路层    | OS >= Windows10 |
+
+**v2.0基于WFP流量隔离**
+| 任务                                                         | 优先级 |状态|
+| ------------------------------------------------------------ | ------ |------|
+| 进程/IP:PORT Deny和Redirect |  高 |完成|
+| DNS访问控制               | 高     |待定|
+
+Yaml配置流量规则, 目前只支持TCP 拦截和重定向, 重定向可指定进程, 详细请看egress示例, Dndy优先级大于Redirect.
+
+```
+egress:
+  - name: "eguard_egress_test_project"
+    address: "192.168.0.1/24"
+    protocol: TCP # ALL/TCP/UDP
+    ports:        # empty means all ports. 32(single port like 80), 16(range like 8079-8080)
+      - 80
+      - 8079-8080
+    action: DENY  # DENY/LOG
+    level: INFO
+
+  - name: "test_tcp_redirect"
+    #address: ""
+    protocol: TCP   # TCP
+    #ports:         # empty means all ports.
+    #  - 80
+    #  - 8079-8080
+    processname: "tcptest.exe|2.exe"    # empty means all process.
+    redirectip: "192.168.0.106"         # redirect to ipaddrss
+    redirectport: "88"                  # redirect to port
+    action: REDIRECT
+    level: INFO
+```
+
 ### 规划：
 
 #### v2.x
@@ -263,50 +312,14 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 |v2.3.4| 进程保护 | 高 |完成|
 |v2.3.4| 注册表键值保护 | 高 |完成|
 |v2.3.5| 目录访问保护|高 |完成|
+|v2.3.6| 流量拦截/重定向|高 |TCP完成|
 |- |  |  | |
-|v2.3.6| 注入拦截|高 |进行中|
+|v2.3.7| 注入拦截|高 |进行中|
 |v2.3.7| 内核回调枚举|高 |进行中|
-|v2.3.8| 内核钩子检测|高 |进行中|
+|v2.3.7| 内核钩子检测|高 |进行中|
 |- |  |  | |
 |v2.x| ETW GUID LOG方式注册，非"NT KERNEL LOG"，复杂环境注册冲突被覆盖 | 中     |待定|
 
-
-**从v3.0开始，流量和文件不局限于监控分析，有更多的玩法扩展。**
-
-#### Minifilter v3.x
-
-| 任务                                                         | 优先级 |状态|
-| ------------------------------------------------------------ | ------ |------|
-| 文件备份： 进程文件落地隔离，脚本命令和IE下载文件备份.<br>不局限于curl/cmd/powershell/vbs/js等形式. | 中  |待定|
-| 勒索病毒行为检测：minifilter监控, 诱饵 + 访问控制 + 行为判定 |  高 |待定|
-
-#### WFP v3.x
-
-| 网络层        | 描述            |
-| :------------ | :-------------- |
-| Established层 | ProcessInfo     |
-| 传输层        | TCP - UDP       |
-| 网络层        | IP              |
-| 数据链路层    | OS >= Windows10 |
-
-**v3.0基于WFP流量隔离**
-| 任务                                                         | 优先级 |状态|
-| ------------------------------------------------------------ | ------ |------|
-| 进程/IP:PORT重定向和bypass,win自带防火墙也可以 |  中  |待定|
-| DNS访问控制               | 高     |待定|
-
-Json配置流量规则(未生效):
-
-```
-(流量规则)
-Json:
- {
- Bypass:
-	1 - 单要素：目标 port 或者 ip 
-	2 - 双要素：目标 ip:port  
-	3 - 重定向标志位 - 暂时不开启(流量隔离)
- }
-```
 &emsp;&emsp;**致力于稳定健壮深度，插件形式提供lib/dll集成至Windows终端三方产品，提升软件的安全能力和质量。**
 
 ### 历史版本：

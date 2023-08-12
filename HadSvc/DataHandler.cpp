@@ -670,10 +670,10 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
         break;
         case 411:
         {// ÍøÂçÖ÷·À¿ªÆô
+            SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
             if (SingletonDataHandler::instance()->NetCheckStatus()) {
                 if (!SingletonKNetWork::instance()->GetNetNdrStus())
                     SingletonKNetWork::instance()->NetNdrInit();
-                SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
             }      
         }
         break;

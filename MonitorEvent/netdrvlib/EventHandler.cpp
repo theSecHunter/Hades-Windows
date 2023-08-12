@@ -6,10 +6,12 @@
 #include "tcpctx.h"
 #include "datalinkctx.h"
 #include "establishedctx.h"
+#include "singGlobal.h"
 #include "CodeTool.h"
 #include <mutex>
 #include <map>
 #include <vector>
+#include <Psapi.h>
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -66,6 +68,16 @@ void EventHandler::TcpredirectPacket(const char* buf, int len)
 	if ((pTcpConnectInfo->ip_family != AF_INET) && (pTcpConnectInfo->ip_family != AF_INET6))
 		return;
 
+	// [+] 下个版本会直接内核带上来ProcessName
+	std::string strProcessName = "";
+	const HANDLE processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pTcpConnectInfo->processId);
+	if (processHandle) {
+		char cProcName[MAX_PATH] = { 0 };
+		GetModuleBaseNameA(processHandle, NULL, cProcName, MAX_PATH);
+		strProcessName = cProcName;
+		CloseHandle(processHandle);
+	}
+
 	bool bIp6 = false;
 	// Local
 	sockaddr_in* const pLocalAddr = (sockaddr_in*)pTcpConnectInfo->localAddress;
@@ -88,7 +100,7 @@ void EventHandler::TcpredirectPacket(const char* buf, int len)
 			char sIp[INET6_ADDRSTRLEN] = { 0 };
 			inet_ntop(AF_INET6, &pAddr6->sin6_addr, sIp, INET6_ADDRSTRLEN);
 			strLIpv6Addr = sIp;
-			dwLIp = 1; wLPort = ntohs(pAddr6->sin6_port);
+			wLPort = ntohs(pAddr6->sin6_port);
 		} while (false);
 
 		do
@@ -100,7 +112,7 @@ void EventHandler::TcpredirectPacket(const char* buf, int len)
 			char sIp[INET6_ADDRSTRLEN] = { 0 };
 			inet_ntop(AF_INET6, &pAddr6->sin6_addr, sIp, INET6_ADDRSTRLEN);
 			strRIpv6Addr = sIp;
-			dwRIp = 1; wRPort = ntohs(pAddr6->sin6_port);
+			wRPort = ntohs(pAddr6->sin6_port);
 		} while (false);
 		bIp6 = true;
 	}
@@ -142,6 +154,45 @@ void EventHandler::TcpredirectPacket(const char* buf, int len)
 		OutputDebugStringA(strOutPut.c_str());
 	}
 
-	// Rule yaml
-	//pTcpConnectInfo->filteringFlag = NF_BLOCK;
+	try
+	{
+		// Rule yaml
+		if (SingletonNetRule::instance()->FilterConnect(sRIp.c_str(), wRPort)) {
+			if (bLog)
+				OutputDebugStringA("[HadesNetMon] Tcp NF_BLOCK ");
+			pTcpConnectInfo->filteringFlag = (unsigned long)NF_BLOCK;
+			return;
+		}
+
+		std::string strRediRectIp = ""; int nRedirectPort = 0;
+		if (!strProcessName.empty() && SingletonNetRule::instance()->RedirectTcpConnect(strProcessName, sRIp.c_str(), wRPort, strRediRectIp, nRedirectPort)) { 
+			if (pTcpConnectInfo->ip_family == AF_INET)
+			{
+				sockaddr_in addr;
+				RtlSecureZeroMemory(&addr, sizeof(addr));
+				addr.sin_family = AF_INET;
+				addr.sin_addr.S_un.S_addr = inet_addr(strRediRectIp.c_str());
+				addr.sin_port = htons(nRedirectPort);
+				memcpy(pTcpConnectInfo->remoteAddress, &addr, sizeof(addr));
+			}
+			else
+			{
+				sockaddr_in6 addr;
+				RtlSecureZeroMemory(&addr, sizeof(addr));
+				addr.sin6_family = AF_INET6;
+				inet_pton(AF_INET6, strRediRectIp.c_str(), &addr.sin6_addr.u);
+				addr.sin6_port = htons(nRedirectPort);
+				memcpy(pTcpConnectInfo->remoteAddress, &addr, sizeof(addr));
+			}
+			pTcpConnectInfo->processId = GetCurrentProcessId();
+			if (bLog)
+				OutputDebugStringA(("[HadesNetMon] Tcp Redirect to PorxyServer: " + strRediRectIp + ":" + to_string(nRedirectPort)).c_str());
+			return;
+		}
+	}
+	catch (const std::exception&)
+	{
+
+	}
+	return;
 }

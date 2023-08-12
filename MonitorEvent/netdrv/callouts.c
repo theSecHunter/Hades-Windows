@@ -89,7 +89,7 @@ VOID helper_callout_classFn_flowEstablished(
 	_In_ const FWPS_INCOMING_METADATA_VALUES0* inMetaValues,
 	_Inout_opt_ void* layerData,
 	_In_opt_ const void* classifyContext,
-	_In_ const FWPS_FILTER3* filter,
+	_In_ const FWPS_FILTER* filter,
 	_In_ UINT64 flowContext,
 	_Inout_ FWPS_CLASSIFY_OUT0* classifyOut
 	)
@@ -200,7 +200,7 @@ Exit:
 NTSTATUS helper_callout_notifyFn_flowEstablished(
 	_In_ FWPS_CALLOUT_NOTIFY_TYPE notifyType,
 	_In_ const GUID* filterKey,
-	_Inout_ FWPS_FILTER3* filter
+	_Inout_ FWPS_FILTER* filter
 	)
 {
 	NTSTATUS status = STATUS_SUCCESS;
@@ -224,7 +224,8 @@ VOID helper_callout_classFn_mac(
 	UNREFERENCED_PARAMETER(filter);
 	UNREFERENCED_PARAMETER(flowContext);
 	UNREFERENCED_PARAMETER(classifyContext);
-
+#ifdef USE_NTDDI
+#if (NTDDI_VERSION >= NTDDI_WIN8)
 	PNF_CALLOUT_MAC_INFO pCalloutMacDataInfo = NULL;
 	// NET_BUFFER_LIST* pNetBufferList = NULL;
 
@@ -393,7 +394,8 @@ Exit:
 		pCalloutMacDataInfo = NULL;
 		sl_unlock(&lh);
 	}
-
+#endif
+#endif
 	classifyOut->actionType = FWP_ACTION_PERMIT;
 }
 
@@ -776,6 +778,8 @@ NTSTATUS callout_addDataLinkMacFilter(
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
+#ifdef USE_NTDDI
+#if (NTDDI_VERSION >= NTDDI_WIN8)
 	FWPM_CALLOUT0 fwpcallout0;
 	RtlSecureZeroMemory(&fwpcallout0, sizeof(FWPM_CALLOUT0));
 
@@ -854,7 +858,8 @@ NTSTATUS callout_addDataLinkMacFilter(
 		}
 
 	} while (FALSE);
-
+#endif
+#endif
 	return status;
 }
 
