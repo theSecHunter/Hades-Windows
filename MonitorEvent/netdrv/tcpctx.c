@@ -8,7 +8,8 @@ static KSPIN_LOCK	g_slTcpCtx;
 static PHASH_TABLE	g_phtTcpCtxById = NULL;
 static PHASH_TABLE	g_phtTcpCtxByHandle = NULL;
 
-static NPAGED_LOOKASIDE_LIST	g_tcpctxPacketsList;
+static NPAGED_LOOKASIDE_LIST	g_tcpctxPacketsBufList;
+
 static NF_TCPCTX_DATA			g_tcpctx_data;
 static __int64					g_nextTcpCtxId;
 static NPAGED_LOOKASIDE_LIST	g_tcpCtxLAList;
@@ -18,38 +19,38 @@ static BOOLEAN		g_initialized = FALSE;
 
 typedef struct _NF_PACKET
 {
-	LIST_ENTRY			entry;
-	PTCPCTX				pTcpCtx;
-	UINT32				calloutId;
-	BOOLEAN				isClone;
-	FWPS_STREAM_DATA	streamData;			// Packet data
-	char*				flatStreamData;		// Flat buffer for large packets
-	UINT64				flatStreamOffset;	// Current offset in flatStreamData
+    LIST_ENTRY			entry;
+    PTCPCTX				pTcpCtx;
+    UINT32				calloutId;
+    BOOLEAN				isClone;
+    FWPS_STREAM_DATA	streamData;			// Packet data
+    char*               flatStreamData;		// Flat buffer for large packets
+    UINT64				flatStreamOffset;	// Current offset in flatStreamData
 } NF_PACKET, * PNF_PACKET;
 
 // 申请缓冲及消息队列结构
-PNF_TCP_BUFFER tcpctxctx_packallocate(int lens)
+PNF_TCP_BUFFER tcpctx_packallocate(int lens)
 {
 	if (lens < 0)
 		return NULL;
 	PNF_TCP_BUFFER pTcpctx = NULL;
-	pTcpctx = ExAllocateFromNPagedLookasideList(&g_tcpctxPacketsList);
+	pTcpctx = ExAllocateFromNPagedLookasideList(&g_tcpctxPacketsBufList);
 	if (!pTcpctx)
 		return NULL;
-	RtlSecureZeroMemory(pTcpctx, sizeof(PNF_TCP_BUFFER));
+	RtlSecureZeroMemory(pTcpctx, sizeof(NF_TCP_BUFFER));
 
 	if (lens > 0)
 	{
 		pTcpctx->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, 'TCLC');
 		if (!pTcpctx->dataBuffer)
 		{
-			ExFreeToNPagedLookasideList(&g_tcpctxPacketsList, pTcpctx);
+			ExFreeToNPagedLookasideList(&g_tcpctxPacketsBufList, pTcpctx);
 			return NULL;
 		}
 	}
 	return pTcpctx;
 }
-VOID tcpctxctx_packfree(PNF_TCP_BUFFER pPacket)
+VOID tcpctx_packfree(PNF_TCP_BUFFER pPacket)
 {
 	if (pPacket && pPacket->dataBuffer)
 	{
@@ -57,7 +58,7 @@ VOID tcpctxctx_packfree(PNF_TCP_BUFFER pPacket)
 		pPacket->dataBuffer = NULL;
 	}
 	if (pPacket)
-		ExFreeToNPagedLookasideList(&g_tcpctxPacketsList, pPacket);
+		ExFreeToNPagedLookasideList(&g_tcpctxPacketsBufList, pPacket);
 }
 NTSTATUS push_tcpRedirectinfo(PVOID64 packet, int lens)
 {
@@ -68,7 +69,7 @@ NTSTATUS push_tcpRedirectinfo(PVOID64 packet, int lens)
 		return STATUS_UNSUCCESSFUL;
 
 	// Allocate 
-	pTcpCtxInfo = tcpctxctx_packallocate(lens);
+	pTcpCtxInfo = tcpctx_packallocate(lens);
 	if (!pTcpCtxInfo || !pTcpCtxInfo->dataBuffer)
 		return STATUS_UNSUCCESSFUL;
 
@@ -84,14 +85,14 @@ NTSTATUS push_tcpRedirectinfo(PVOID64 packet, int lens)
 }
 
 // 申请ctx结构体结构
-PTCPCTX tcpctxctx_packallocatectx()
+PTCPCTX tcpctx_packallocatectx()
 {
 	KLOCK_QUEUE_HANDLE lh;
 	PTCPCTX pTcpCtx = NULL;
 
 	pTcpCtx = ExAllocateFromNPagedLookasideList(&g_tcpCtxLAList);
 	if (!pTcpCtx)
-		return FALSE;
+		return NULL;
 	RtlSecureZeroMemory(pTcpCtx, sizeof(TCPCTX));
 
 	sl_init(&pTcpCtx->lock);
@@ -181,8 +182,6 @@ VOID tcpctx_release(PTCPCTX pTcpCtx)
 
 void tcpctx_freePacket(PNF_PACKET pPacket)
 {
-	KdPrint((DPREFIX"tcpctx_freePacket %I64x\n", (unsigned __int64)pPacket));
-
 	if (pPacket->streamData.netBufferListChain)
 	{
 		if (pPacket->isClone)
@@ -217,14 +216,9 @@ void tcpctx_cleanupFlows()
 	NF_PACKET* pPacket;
 	LIST_ENTRY packets;
 
-	KdPrint((DPREFIX"tcpctx_cleanupFlows\n"));
-
 	InitializeListHead(&packets);
-
 	sl_lock(&g_slTcpCtx, &lh);
-
 	pTcpCtx = (PTCPCTX)g_lTcpCtx.Flink;
-
 	while (pTcpCtx != (PTCPCTX)&g_lTcpCtx)
 	{
 		sl_lock(&pTcpCtx->lock, &lhp);
@@ -232,19 +226,15 @@ void tcpctx_cleanupFlows()
 		{
 			pPacket = (PNF_PACKET)RemoveHeadList(&pTcpCtx->pendedPackets);
 			InsertTailList(&packets, &pPacket->entry);
-			KdPrint((DPREFIX"tcpctx_cleanupFlows packet in TCPCTX %I64u\n", pTcpCtx->id));
 		}
 		while (!IsListEmpty(&pTcpCtx->injectPackets))
 		{
 			pPacket = (PNF_PACKET)RemoveHeadList(&pTcpCtx->injectPackets);
 			InsertTailList(&packets, &pPacket->entry);
-			KdPrint((DPREFIX"tcpctx_cleanupFlows reinject packet in TCPCTX %I64u\n", pTcpCtx->id));
 		}
 		sl_unlock(&lhp);
-
 		pTcpCtx = (PTCPCTX)pTcpCtx->entry.Flink;
 	}
-
 	sl_unlock(&lh);
 
 	while (!IsListEmpty(&packets))
@@ -259,22 +249,13 @@ void tcpctx_removeFromFlows()
 	PTCPCTX pTcpCtx;
 	NTSTATUS status;
 
-	KdPrint((DPREFIX"tcpctx_removeFromFlows\n"));
-
 	tcpctx_cleanupFlows();
-
 	sl_lock(&g_slTcpCtx, &lh);
-
 	while (!IsListEmpty(&g_lTcpCtx))
 	{
 		pTcpCtx = (PTCPCTX)RemoveHeadList(&g_lTcpCtx);
-
 		InitializeListHead(&pTcpCtx->entry);
-
-		KdPrint((DPREFIX"tcpctx_removeFromFlows(): TCPCTX [%I64d]\n", pTcpCtx->id));
-
 		pTcpCtx->refCount++;
-
 		sl_unlock(&lh);
 
 		status = FwpsFlowRemoveContext(pTcpCtx->flowHandle,
@@ -311,7 +292,6 @@ void tcpctx_removeFromFlows()
 
 		sl_lock(&g_slTcpCtx, &lh);
 	}
-
 	sl_unlock(&lh);
 }
 void tcpctx_releaseFlows()
@@ -319,10 +299,8 @@ void tcpctx_releaseFlows()
 	KLOCK_QUEUE_HANDLE lh;
 	PTCPCTX pTcpCtx;
 
-	KdPrint((DPREFIX"tcpctx_releaseFlows\n"));
 
 	sl_lock(&g_slTcpCtx, &lh);
-
 	while (!IsListEmpty(&g_lTcpCtx))
 	{
 		pTcpCtx = (PTCPCTX)g_lTcpCtx.Flink;
@@ -333,24 +311,23 @@ void tcpctx_releaseFlows()
 
 		sl_lock(&g_slTcpCtx, &lh);
 	}
-
 	sl_unlock(&lh);
 }
 
-NF_TCPCTX_DATA* tcpctx_get()
+NF_TCPCTX_DATA* tcpctx_Get()
 {
 	return &g_tcpctx_data;
 }
-NTSTATUS tcpctxctx_init()
+NTSTATUS tcpctx_init()
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	ExInitializeNPagedLookasideList(
-		&g_tcpctxPacketsList,
+		&g_tcpctxPacketsBufList,
 		NULL,
 		NULL,
 		0,
 		sizeof(NF_TCP_BUFFER),
-		MEM_TAG_NETWORK,
+		MEM_TAG_TCP_DATA,
 		0
 	);
 
@@ -397,17 +374,17 @@ NTSTATUS tcpctxctx_init()
 
 	return status;
 }
-VOID tcpctxctx_clean()
+VOID tcpctx_clean()
 {
 	KLOCK_QUEUE_HANDLE lh;
-	PNF_TCP_BUFFER pTcpCtx;
+	PNF_TCP_BUFFER pTcpCtx = NULL;
 
 	sl_lock(&g_tcpctx_data.lock, &lh);
 	while (!IsListEmpty(&g_tcpctx_data.pendedPackets))
 	{
 		pTcpCtx = (PNF_TCP_BUFFER)RemoveHeadList(&g_tcpctx_data.pendedPackets);
 		sl_unlock(&lh);
-		tcpctxctx_packfree(pTcpCtx);
+		tcpctx_packfree(pTcpCtx);
 		pTcpCtx = NULL;
 		sl_lock(&g_tcpctx_data.lock, &lh);
 	}
@@ -415,12 +392,11 @@ VOID tcpctxctx_clean()
 
 	tcpctx_removeFromFlows();
 	devctrl_sleep(1000);
-
 	tcpctx_releaseFlows();
 }
-VOID tcpctxctx_free()
+VOID tcpctx_free()
 {
-	tcpctxctx_clean();
+	tcpctx_clean();
 
 	if (g_phtTcpCtxById)
 	{
@@ -436,7 +412,7 @@ VOID tcpctxctx_free()
 
 	ExDeleteNPagedLookasideList(&g_tcpCtxLAList);
 	ExDeleteNPagedLookasideList(&g_packetsLAList);
-	ExDeleteNPagedLookasideList(&g_tcpctxPacketsList);
+	ExDeleteNPagedLookasideList(&g_tcpctxPacketsBufList);
 }
 
 // Hash
@@ -457,7 +433,6 @@ PTCPCTX tcpctx_find(UINT64 id)
 
 	return pTcpCtx;
 }
-
 PTCPCTX tcpctx_findByHandle(UINT64 handle)
 {
 	PTCPCTX pTcpCtx = NULL;
@@ -475,7 +450,6 @@ PTCPCTX tcpctx_findByHandle(UINT64 handle)
 
 	return pTcpCtx;
 }
-
 void add_tcpHandle(PTCPCTX ptcpctx)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -484,7 +458,6 @@ void add_tcpHandle(PTCPCTX ptcpctx)
 	ht_add_entry(g_phtTcpCtxByHandle, (PHASH_TABLE_ENTRY)&ptcpctx->transportEndpointHandle);
 	sl_unlock(&lh);
 }
-
 void remove_tcpHandle(PTCPCTX ptcpctx)
 {
 	KLOCK_QUEUE_HANDLE lh;

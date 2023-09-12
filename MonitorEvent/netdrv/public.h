@@ -80,6 +80,11 @@
 extern DWORD g_dwLogLevel;
 extern BOOLEAN g_monitorflag;
 
+#define NF_MAX_ADDRESS_LENGTH		28
+#define NF_MAX_IP_ADDRESS_LENGTH	16
+
+typedef unsigned __int64 uint64_t;
+
 typedef enum _NF_DATA_CODE
 {
     NF_DATALINKMAC_LAYER_PACKET = 1,	// 
@@ -88,6 +93,8 @@ typedef enum _NF_DATA_CODE
 
 
     NF_TCP_CONNECT_REQUEST,				// Outgoing TCP connect request
+    NF_TCP_UDP_SEND,                    // Udp Send Packet
+    NF_TCP_UDP_RECV                     // Udp Recv Packet
 }NF_DATA_CODE;
 
 #pragma pack(push, 1)

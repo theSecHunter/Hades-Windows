@@ -6,10 +6,8 @@
 #include "datalinkctx.h"
 #include "establishedctx.h"
 #include "tcpctx.h"
+#include "udpctx.h"
 #include "callouts.h"
-
-#define NF_TCP_PACKET_BUF_SIZE 8192
-#define NF_UDP_PACKET_BUF_SIZE 2 * 65536
 
 typedef struct _SHARED_MEMORY
 {
@@ -38,10 +36,15 @@ static KEVENT						g_threadIoEvent;
 static SHARED_MEMORY g_inBuf;
 static SHARED_MEMORY g_outBuf;
 
-// Inject Handle
+// Tcp Inject Handle
 static HANDLE g_injectionHandle = NULL;
+// IP NetWork
 static HANDLE g_netInjectionHandleV4 = NULL;
 static HANDLE g_netInjectionHandleV6 = NULL;
+// Udp Inject Handle
+static HANDLE g_udpInjectionHandle = NULL;
+static HANDLE g_udpNwInjectionHandleV4 = NULL;
+static HANDLE g_udpNwInjectionHandleV6 = NULL;
 
 typedef struct _NF_QUEUE_ENTRY
 {
@@ -324,7 +327,24 @@ NTSTATUS devctrl_read(PIRP irp, PIO_STACK_LOCATION irpSp)
 	return status;
 }
 
-
+ULONG devctrl_processUdpSend(PNF_DATA pData)
+{
+	return 0;
+}
+ULONG devctrl_processUdpRecv(PNF_DATA pData)
+{
+	return 0;
+}
+ULONG devctrl_processUdpHandler(const NF_DATA_CODE nfCode, PNF_DATA pData)
+{
+	if (nfCode == NF_TCP_UDP_SEND) {
+		return devctrl_processUdpSend(pData);
+	}
+	else if (nfCode == NF_TCP_UDP_RECV) {
+		return devctrl_processUdpRecv(pData);
+	}
+	return 0;
+}
 ULONG devctrl_processTcpConnect(PNF_DATA pData)
 {
 	PTCPCTX				pTcpCtx = NULL;
@@ -360,9 +380,8 @@ ULONG devctrl_processTcpConnect(PNF_DATA pData)
 		if ((memcmp(pTcpCtx->remoteAddr, pInfo->remoteAddress, addrLen) != 0) ||
 			(pTcpCtx->filteringFlag & NF_BLOCK))
 		{
-			if (pData)
-				KdPrint((DPREFIX"devctrl_processTcpConnect[%I64u]: redirection\n", pData->id));
-			status = FwpsAcquireWritableLayerDataPointer(pTcpCtx->redirectInfo.classifyHandle,
+			status = FwpsAcquireWritableLayerDataPointer(
+				pTcpCtx->redirectInfo.classifyHandle,
 				pTcpCtx->redirectInfo.filterId,
 				0,
 				(PVOID*)&pConnectRequest,
@@ -412,10 +431,10 @@ ULONG devctrl_processRequest(ULONG bufferSize)
 	switch (pData->code)
 	{
 	case NF_TCP_CONNECT_REQUEST:
-	{
 		return devctrl_processTcpConnect(pData);
-	}
-	break;
+	case NF_TCP_UDP_SEND:
+	case NF_TCP_UDP_RECV:
+		return devctrl_processUdpHandler(pData->code, pData);
 	default:
 		break;
 	}
@@ -452,7 +471,8 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	devctrl_setmonitor(0);
 	establishedctx_clean();
 	//datalinkctx_clean();
-	tcpctxctx_clean();
+	tcpctx_clean();
+	udpctx_clean();
 	devctrl_clean();
 
 	devctrl_freeSharedMemory(&g_inBuf);
@@ -644,6 +664,34 @@ NTSTATUS devctrl_init()
 		{
 			break;
 		}
+
+		// udp
+		status = FwpsInjectionHandleCreate(
+			AF_UNSPEC,
+			FWPS_INJECTION_TYPE_TRANSPORT,	// ´«Êä
+			&g_udpInjectionHandle);
+		if (!NT_SUCCESS(status))
+		{
+			break;
+		}
+		status = FwpsInjectionHandleCreate(
+			AF_INET,
+			FWPS_INJECTION_TYPE_NETWORK,
+			&g_udpNwInjectionHandleV4);
+		if (!NT_SUCCESS(status))
+		{
+			break;
+		}
+
+		// udp6
+		status = FwpsInjectionHandleCreate(
+			AF_INET6,
+			FWPS_INJECTION_TYPE_NETWORK,
+			&g_udpNwInjectionHandleV6);
+		if (!NT_SUCCESS(status))
+		{
+			break;
+		}
 	} while (0);
 
 	return status;
@@ -746,6 +794,19 @@ VOID devctrl_free()
 	if (g_netInjectionHandleV6 != NULL) {
 		FwpsInjectionHandleDestroy(g_netInjectionHandleV6);
 		g_netInjectionHandleV6 = NULL;
+	}
+	if (g_udpInjectionHandle != NULL)
+	{
+		FwpsInjectionHandleDestroy(g_udpInjectionHandle);
+		g_udpInjectionHandle = NULL;
+	}
+	if (g_udpNwInjectionHandleV4 != NULL) {
+		FwpsInjectionHandleDestroy(g_udpNwInjectionHandleV4);
+		g_udpNwInjectionHandleV4 = NULL;
+	}
+	if (g_udpNwInjectionHandleV6 != NULL) {
+		FwpsInjectionHandleDestroy(g_udpNwInjectionHandleV6);
+		g_udpNwInjectionHandleV6 = NULL;
 	}
 
 	return;
@@ -951,7 +1012,7 @@ NTSTATUS devtrl_popTcpRedirectConnectData(UINT64* pOffset)
 	PNF_DATA			pData = NULL;
 	UINT64				dataSize = 0;
 
-	pTcpCtxData = tcpctx_get();
+	pTcpCtxData = tcpctx_Get();
 	if (!pTcpCtxData)
 		return STATUS_UNSUCCESSFUL;
 
@@ -999,7 +1060,7 @@ NTSTATUS devtrl_popTcpRedirectConnectData(UINT64* pOffset)
 	{
 		if (NT_SUCCESS(status))
 		{
-			tcpctxctx_packfree(pEntry);
+			tcpctx_packfree(pEntry);
 		}
 		else
 		{
@@ -1333,4 +1394,18 @@ void devctrl_injectThread(IN PVOID StartContext)
 	}
 
 	PsTerminateSystemThread(STATUS_SUCCESS);
+}
+
+
+HANDLE	devctrl_GetUdpInjectionHandle()
+{
+	return g_udpInjectionHandle;
+}
+HANDLE	devctrl_GetUdpNwV4InjectionHandle()
+{
+	return g_udpNwInjectionHandleV4;
+}
+HANDLE	devctrl_GetUdpNwV6InjectionHandle()
+{
+	return g_udpNwInjectionHandleV6;
 }

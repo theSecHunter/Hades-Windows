@@ -4,6 +4,7 @@
 #include "datalinkctx.h"
 #include "establishedctx.h"
 #include "tcpctx.h"
+#include "udpctx.h"
 #include "callouts.h"
 
 #include <fwpmk.h>
@@ -95,8 +96,8 @@ NTSTATUS DriverEntry(
 )
 {
 	NTSTATUS nStatus = STATUS_SUCCESS;
-	int i = 0;
 
+	int i = 0;
 	for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)
 	{
 		driverObject->MajorFunction[i] = (PDRIVER_DISPATCH)devctrl_dispatch;
@@ -140,7 +141,13 @@ NTSTATUS DriverEntry(
 			break;
 		}
 
-		nStatus = tcpctxctx_init();
+		nStatus = tcpctx_init();
+		if (!NT_SUCCESS(nStatus))
+		{
+			break;
+		}
+
+		nStatus = udpctx_init();
 		if (!NT_SUCCESS(nStatus))
 		{
 			break;
@@ -189,6 +196,7 @@ VOID driver_free()
 	callout_free();
 	devctrl_free();
 	//datalinkctx_free();
-	tcpctxctx_free();
+	tcpctx_free();
+	udpctx_free();
 	establishedctx_free();
 };

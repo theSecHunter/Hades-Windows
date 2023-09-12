@@ -77,7 +77,8 @@
     <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>KMDF</DriverType>
-    <DriverTargetPlatform>Universal</DriverTargetPlatform>
+    <DriverTargetPlatform>
+    </DriverTargetPlatform>
     <SpectreMitigation>false</SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'" Label="Configuration">
@@ -283,6 +284,7 @@
     <ClInclude Include="public.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="tcpctx.h" />
+    <ClInclude Include="udpctx.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -293,6 +295,7 @@
     <ClCompile Include="establishedctx.c" />
     <ClCompile Include="hashtable.c" />
     <ClCompile Include="tcpctx.c" />
+    <ClCompile Include="udpctx.c" />
     <ClCompile Include="util.c" />
   </ItemGroup>
   <ItemGroup>

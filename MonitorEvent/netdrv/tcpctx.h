@@ -3,11 +3,6 @@
 
 #include "hashtable.h"
 
-#define NF_MAX_ADDRESS_LENGTH		28
-#define NF_MAX_IP_ADDRESS_LENGTH	16
-
-typedef unsigned __int64 uint64_t;
-
 typedef struct _NF_TCP_BUFFER
 {
 	LIST_ENTRY			pEntry;
@@ -157,13 +152,13 @@ void tcpctx_purgeRedirectInfo(PTCPCTX pTcpCtx);
 
 NTSTATUS push_tcpRedirectinfo(PVOID64 packet, int lens);
 
-PTCPCTX tcpctxctx_packallocatectx();
+PTCPCTX tcpctx_packallocatectx();
 VOID tcpctx_release(PTCPCTX pTcpCtx);
 
-NF_TCPCTX_DATA* tcpctx_get();
-NTSTATUS tcpctxctx_init();
-VOID tcpctxctx_packfree(PNF_TCP_BUFFER pPacket);
-VOID tcpctxctx_clean();
-VOID tcpctxctx_free();
+NF_TCPCTX_DATA* tcpctx_Get();
+NTSTATUS tcpctx_init();
+VOID tcpctx_packfree(PNF_TCP_BUFFER pPacket);
+VOID tcpctx_clean();
+VOID tcpctx_free();
 
 #endif // !_TCPHEAD_H
