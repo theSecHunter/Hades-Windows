@@ -475,7 +475,7 @@ VOID helper_callout_classFn_connectredirect(
 	PTCPCTX pTcpCtx = NULL;
 	NTSTATUS status = STATUS_SUCCESS;
 
-	// 申请结构体保存数据
+	// 申请结构体保存数据 - 重注TCP以后再释放
 	pTcpCtx = tcpctx_packallocatectx();
 	if (pTcpCtx == NULL)
 	{
@@ -655,8 +655,10 @@ VOID helper_callout_classFn_connectredirect(
 	// 设置为阻塞将该连接block
 	pTcpCtx->redirectInfo.isPended = TRUE;
 
-	// 插入 句柄map
+	// 加入hash,重注后使用
 	add_tcpHandle(pTcpCtx);
+
+	// 上抛应用层
 	status = push_tcpRedirectinfo(pTcpCtx, sizeof(TCPCTX));
 	if (!NT_SUCCESS(status))
 	{
@@ -687,6 +689,53 @@ NTSTATUS helper_callout_notifyFn_connectredirect(
 }
 
 // Callouts UDP DataGram 
+static BOOLEAN callouts_copyBuffer(const FWPS_INCOMING_METADATA_VALUES* inMetaValues, NET_BUFFER* netBuffer, BOOLEAN isSend, PNF_UDP_PACKET pPacket, ULONG dataLength)
+{
+	void* buf = NULL;
+	BOOLEAN result = TRUE;
+
+	if (!isSend)
+	{
+		NdisRetreatNetBufferDataStart(
+			netBuffer,
+			inMetaValues->transportHeaderSize,
+			0,
+			NULL
+		);
+	}
+
+	buf = NdisGetDataBuffer(
+		netBuffer,
+		dataLength,
+		pPacket->dataBuffer,
+		1,
+		0);
+
+	if (buf != NULL)
+	{
+		if (buf != (pPacket->dataBuffer))
+		{
+			memcpy(pPacket->dataBuffer, buf, dataLength);
+		}
+	}
+	else
+	{
+		result = FALSE;
+	}
+
+	if (!isSend)
+	{
+		NdisAdvanceNetBufferDataStart(
+			netBuffer,
+			inMetaValues->transportHeaderSize,
+			FALSE,
+			NULL
+		);
+	}
+
+	return result;
+}
+
 BOOLEAN helper_callout_pushUdpPacket(
 	const FWPS_INCOMING_VALUES* inFixedValues,
 	const FWPS_INCOMING_METADATA_VALUES* inMetaValues,
@@ -715,8 +764,29 @@ BOOLEAN helper_callout_pushUdpPacket(
 		pUdpCtx->pendedRecvBytes += uDataLens;
 	sl_unlock(&lh);
 
+	// Packet padding
+	NTSTATUS nStu = STATUS_UNSUCCESSFUL;
+	NF_UDP_PACKET* pPacket = udp_packetAllocatData();
+	do
+	{
+		if (!pPacket)
+			break;
 
-
+		if (!callouts_copyBuffer(inMetaValues, netBuffer, isSend, pPacket, uDataLens))
+			break;
+		
+		// push send
+		nStu = push_udpPacketinfo(pPacket, sizeof(NF_UDP_PACKET), isSend);
+	} while (1);
+	if (!NT_SUCCESS(nStu)) {
+		if (pPacket) {
+			udp_freePacketData(pPacket);
+			pPacket = NULL;
+		}
+		return FALSE;
+	}
+	else
+		return TRUE;
 }
 
 VOID helper_callout_classFn_udpCallout(
@@ -878,8 +948,6 @@ VOID helper_callout_classFn_udpCallout(
 			pUdpCtx->calloutId = g_calloutId_datagram_v6;
 			pUdpCtx->ipProto = inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_IP_PROTOCOL].value.uint8;
 			pUdpCtx->ip_family = AF_INET6;
-			isSend = (FWP_DIRECTION_OUTBOUND ==
-				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_DIRECTION].value.uint32);
 
 			// Local
 			{
@@ -934,13 +1002,15 @@ VOID helper_callout_classFn_udpCallout(
 			}
 		}
 
-		if (netBuffer == NULL)
-		{
-			classifyOut->actionType = FWP_ACTION_BLOCK;
-			classifyOut->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
-			classifyOut->rights ^= FWPS_RIGHT_ACTION_WRITE;
-		}
+		//if (netBuffer == NULL)
+		//{
+		//	classifyOut->actionType = FWP_ACTION_BLOCK;
+		//	classifyOut->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
+		//	classifyOut->rights ^= FWPS_RIGHT_ACTION_WRITE;
+		//}
 	}
+	// test permit
+	classifyOut->actionType = FWP_ACTION_PERMIT;
 	if (pUdpCtx) {
 		udpctx_free(pUdpCtx);
 		pUdpCtx = NULL;

@@ -65,6 +65,10 @@ static void OnReadHandleEventDispath(PNF_DATA pData)
 		}
 	}
 	break;
+	case NF_UDP_SEND:
+		break;
+	case NF_UDP_RECV:
+		break;
 	}
 }
 
@@ -182,7 +186,9 @@ DWORD WINAPI ReadWorkThread(LPVOID lpThreadParameter)
 
 				if ((pData->code == NF_DATALINKMAC_LAYER_PACKET ||
 					pData->code == NF_ESTABLISHED_LAYER_PACKET ||
-					pData->code == NF_TCPREDIRECT_LAYER_PACKET) &&
+					pData->code == NF_TCPREDIRECT_LAYER_PACKET ||
+					pData->code == NF_UDP_SEND ||
+					pData->code == NF_UDP_RECV) &&
 					pData->bufferSize < 1400)
 				{
 					abortBatch = true;

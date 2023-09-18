@@ -60,7 +60,7 @@ VOID tcpctx_packfree(PNF_TCP_BUFFER pPacket)
 	if (pPacket)
 		ExFreeToNPagedLookasideList(&g_tcpctxPacketsBufList, pPacket);
 }
-NTSTATUS push_tcpRedirectinfo(PVOID64 packet, int lens)
+NTSTATUS push_tcpRedirectinfo(PVOID packet, int lens)
 {
 	KLOCK_QUEUE_HANDLE lh;
 	PNF_TCP_BUFFER pTcpCtxInfo = NULL;
@@ -384,8 +384,10 @@ VOID tcpctx_clean()
 	{
 		pTcpCtx = (PNF_TCP_BUFFER)RemoveHeadList(&g_tcpctx_data.pendedPackets);
 		sl_unlock(&lh);
-		tcpctx_packfree(pTcpCtx);
-		pTcpCtx = NULL;
+		if (pTcpCtx) {
+			tcpctx_packfree(pTcpCtx);
+			pTcpCtx = NULL;
+		}
 		sl_lock(&g_tcpctx_data.lock, &lh);
 	}
 	sl_unlock(&lh);

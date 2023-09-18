@@ -337,10 +337,10 @@ ULONG devctrl_processUdpRecv(PNF_DATA pData)
 }
 ULONG devctrl_processUdpHandler(const NF_DATA_CODE nfCode, PNF_DATA pData)
 {
-	if (nfCode == NF_TCP_UDP_SEND) {
+	if (nfCode == NF_UDP_SEND) {
 		return devctrl_processUdpSend(pData);
 	}
-	else if (nfCode == NF_TCP_UDP_RECV) {
+	else if (nfCode == NF_UDP_RECV) {
 		return devctrl_processUdpRecv(pData);
 	}
 	return 0;
@@ -432,8 +432,8 @@ ULONG devctrl_processRequest(ULONG bufferSize)
 	{
 	case NF_TCP_CONNECT_REQUEST:
 		return devctrl_processTcpConnect(pData);
-	case NF_TCP_UDP_SEND:
-	case NF_TCP_UDP_RECV:
+	case NF_UDP_SEND:
+	case NF_UDP_RECV:
 		return devctrl_processUdpHandler(pData->code, pData);
 	default:
 		break;
@@ -849,6 +849,8 @@ NTSTATUS devctrl_pushEventQueryLisy(int code)
 	case NF_DATALINKMAC_LAYER_PACKET:
 	case NF_ESTABLISHED_LAYER_PACKET:
 	case NF_TCPREDIRECT_LAYER_PACKET:
+	case NF_UDP_SEND:
+	case NF_UDP_RECV:
 	{
 		pQuery = (PNF_QUEUE_ENTRY)ExAllocateFromNPagedLookasideList(&g_IoQueryList);
 		if (!pQuery)
@@ -914,7 +916,7 @@ NTSTATUS devtrl_popDataLinkData(UINT64* pOffset)
 		pData->bufferSize = pEntry->dataLength;
 
 		if (pEntry->dataBuffer) {
-			memcpy(pData->buffer, pEntry->dataBuffer, pEntry->dataLength);
+			RtlCopyMemory(pData->buffer, pEntry->dataBuffer, pEntry->dataLength);
 		}
 		
 		*pOffset += dataSize;
@@ -971,11 +973,11 @@ NTSTATUS devtrl_popFlowestablishedData(UINT64* pOffset)
 		pData = (PNF_DATA)((char*)g_inBuf.kernelVa + *pOffset);
 
 		pData->code = NF_ESTABLISHED_LAYER_PACKET;
-		pData->id = 520;
+		pData->id = 0;
 		pData->bufferSize = pEntry->dataLength;
 
 		if (pEntry->dataBuffer) {
-			memcpy(pData->buffer, pEntry->dataBuffer, pEntry->dataLength);
+			RtlCopyMemory(pData->buffer, pEntry->dataBuffer, pEntry->dataLength);
 		}
 
 		*pOffset += dataSize;
@@ -1044,8 +1046,8 @@ NTSTATUS devtrl_popTcpRedirectConnectData(UINT64* pOffset)
 			pConnectInfo->processId = pTcpCtxNode->processId;
 			pConnectInfo->direction = pTcpCtxNode->direction;
 			pConnectInfo->ip_family = pTcpCtxNode->ip_family;
-			memcpy(pConnectInfo->localAddress, pTcpCtxNode->localAddr, NF_MAX_ADDRESS_LENGTH);
-			memcpy(pConnectInfo->remoteAddress, pTcpCtxNode->remoteAddr, NF_MAX_ADDRESS_LENGTH);
+			RtlCopyMemory(pConnectInfo->localAddress, pTcpCtxNode->localAddr, NF_MAX_ADDRESS_LENGTH);
+			RtlCopyMemory(pConnectInfo->remoteAddress, pTcpCtxNode->remoteAddr, NF_MAX_ADDRESS_LENGTH);
 			*pOffset += dataSize;
 		}
 		else
@@ -1066,6 +1068,62 @@ NTSTATUS devtrl_popTcpRedirectConnectData(UINT64* pOffset)
 		{
 			sl_lock(&pTcpCtxData->lock, &lh);
 			InsertHeadList(&pTcpCtxData->pendedPackets, &pEntry->pEntry);
+			sl_unlock(&lh);
+		}
+	}
+	return status;
+}
+NTSTATUS devtrl_popUdpPacketData(UINT64* pOffset, const int nCode) 
+{
+	NTSTATUS			status = STATUS_SUCCESS;
+	PNF_UDPPEND_PACKET	pUdpPendData = NULL;
+	PNF_UDP_BUFFER		pEntry = NULL;
+
+	KLOCK_QUEUE_HANDLE	lh;
+	PNF_DATA			pData = NULL;
+	UINT64				dataSize = 0;
+
+	pUdpPendData = udpctx_Get();
+	if (!pUdpPendData)
+		return STATUS_UNSUCCESSFUL;
+
+	sl_lock(&pUdpPendData->lock, &lh);
+	while (!IsListEmpty(&pUdpPendData->pendedPackets))
+	{
+		pEntry = (PNF_UDP_BUFFER)RemoveHeadList(&pUdpPendData->pendedPackets);
+		dataSize = sizeof(NF_DATA) - 1 + sizeof(NF_UDP_PACKET);
+		if ((g_inBuf.bufferLength - *pOffset - 1) < dataSize) {
+			status = STATUS_NO_MEMORY;
+			break;
+		}
+
+		pData = (PNF_DATA)((char*)g_inBuf.kernelVa + *pOffset);
+		if (!pData) {
+			status = STATUS_UNSUCCESSFUL;
+			break;
+		}
+
+		pData->code = nCode;
+		pData->bufferSize = sizeof(NF_UDP_PACKET);
+		if (!pEntry->dataBuffer) {
+			status = STATUS_UNSUCCESSFUL;
+			break;
+		}
+		RtlCopyMemory(pData->buffer, pEntry->dataBuffer, pEntry->dataLength);
+		*pOffset += dataSize;
+	}
+	sl_unlock(&lh);
+
+	if (pEntry)
+	{
+		if (NT_SUCCESS(status))
+		{
+			udp_freebuf(pEntry, 0);
+		}
+		else
+		{
+			sl_lock(&pUdpPendData->lock, &lh);
+			InsertHeadList(&pUdpPendData->pendedPackets, &pEntry->pEntry);
 			sl_unlock(&lh);
 		}
 	}
@@ -1104,6 +1162,12 @@ UINT64 devctrl_fillBuffer()
 		case NF_TCPREDIRECT_LAYER_PACKET:
 		{
 			status = devtrl_popTcpRedirectConnectData(&offset);
+		}
+		break;
+		case NF_UDP_SEND:
+		case NF_UDP_RECV:
+		{
+			status = devtrl_popUdpPacketData(&offset, pEntry->code);
 		}
 		break;
 		default:

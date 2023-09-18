@@ -1,8 +1,11 @@
 #include "public.h"
+#include "devctrl.h"
 #include "udpctx.h"
 
 static NF_UDPPEND_PACKET		g_udp_pendPacket;
 static NPAGED_LOOKASIDE_LIST	g_udpctxPacketsBufList;
+
+static NPAGED_LOOKASIDE_LIST	g_udpPacketDataList;
 
 static __int64					g_nextUdpCtxId;
 static NPAGED_LOOKASIDE_LIST	g_udpCtxList;
@@ -23,21 +26,27 @@ NF_UDP_BUFFER* const udp_packAllocatebuf(const int lens) {
 		return NULL;
 	RtlSecureZeroMemory(pUcpctx, sizeof(NF_UDP_BUFFER));
 
-	if (lens > 0)
+	// ≤ª–Ë“™…Í«ÎdataBuffer
+	if (lens <= 0) {
+		pUcpctx->dataBuffer = NULL;
+		return pUcpctx;
+	}
+
+	pUcpctx->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, 'UDPF');
+	if (!pUcpctx->dataBuffer)
 	{
-		pUcpctx->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, 'UDPF');
-		if (!pUcpctx->dataBuffer)
-		{
-			ExFreeToNPagedLookasideList(&g_udpctxPacketsBufList, pUcpctx);
-			return NULL;
-		}
+		ExFreeToNPagedLookasideList(&g_udpctxPacketsBufList, pUcpctx);
+		return NULL;
 	}
 	return pUcpctx;
 }
-VOID udp_freebuf(PNF_UDP_BUFFER pPacket){
+VOID udp_freebuf(PNF_UDP_BUFFER pPacket, const int lens){
 	if (pPacket && pPacket->dataBuffer)
 	{
-		free_np(pPacket->dataBuffer);
+		if (lens <= 0)
+			ExFreeToNPagedLookasideList(&g_udpPacketDataList, pPacket->dataBuffer);
+		else
+			free_np(pPacket->dataBuffer);
 		pPacket->dataBuffer = NULL;
 	}
 	if (pPacket)
@@ -103,6 +112,41 @@ VOID udpctx_freeCtx(PUDPCTX pUdpCtx) {
 	ExFreeToNPagedLookasideList(&g_udpCtxList, pUdpCtx);
 }
 
+// packetData
+NF_UDP_PACKET* const udp_packetAllocatData()
+{
+	return ExAllocateFromNPagedLookasideList(&g_udpPacketDataList);
+}
+VOID udp_freePacketData(NF_UDP_PACKET* const pPacket)
+{
+	if (pPacket)
+		ExFreeToNPagedLookasideList(&g_udpPacketDataList, pPacket);
+}
+
+NTSTATUS push_udpPacketinfo(PVOID packet, int lens, BOOLEAN isSend)
+{
+	KLOCK_QUEUE_HANDLE lh;
+	PNF_UDP_BUFFER pUdpCtxInfo = NULL;
+
+	if (!packet && (lens < 1))
+		return STATUS_UNSUCCESSFUL;
+
+	// Allocate 
+	pUdpCtxInfo = udp_packAllocatebuf(0);
+	if (!pUdpCtxInfo || !pUdpCtxInfo->dataBuffer)
+		return STATUS_UNSUCCESSFUL;
+
+	pUdpCtxInfo->dataLength = lens;
+	pUdpCtxInfo->dataBuffer = packet;
+
+	sl_lock(&g_udp_pendPacket.lock, &lh);
+	InsertHeadList(&g_udp_pendPacket.pendedPackets, &pUdpCtxInfo->pEntry);
+	sl_unlock(&lh);
+
+	devctrl_pushEventQueryLisy((isSend == TRUE) ? NF_UDP_SEND : NF_UDP_RECV);
+	return STATUS_SUCCESS;
+}
+
 NTSTATUS udpctx_init() {
 	NTSTATUS status = STATUS_SUCCESS;
 	ExInitializeNPagedLookasideList(
@@ -125,8 +169,15 @@ NTSTATUS udpctx_init() {
 		0
 	);
 
-	//sl_init(&g_slTcpCtx);
-	//InitializeListHead(&g_lTcpCtx);
+	ExInitializeNPagedLookasideList(
+		&g_udpPacketDataList,
+		NULL,
+		NULL,
+		0,
+		sizeof(NF_UDP_PACKET),
+		MEM_TAG_UDP_PACKET,
+		0
+	);
 
 	sl_init(&g_udp_pendPacket.lock);
 	InitializeListHead(&g_udp_pendPacket.pendedPackets);
@@ -153,11 +204,11 @@ VOID udpctx_clean() {
 	while (!IsListEmpty(&g_udp_pendPacket.pendedPackets))
 	{
 		pUdpBuffer = (PNF_UDP_BUFFER)RemoveHeadList(&g_udp_pendPacket.pendedPackets);
+		sl_unlock(&lh);
 		if (pUdpBuffer) {
-			sl_unlock(&lh);
-			udp_freebuf(pUdpBuffer);
+			udp_freebuf(pUdpBuffer, 0);
+			pUdpBuffer = NULL;
 		}
-		pUdpBuffer = NULL;
 		sl_lock(&g_udp_pendPacket.lock, &lh);
 	}
 	sl_unlock(&lh);
@@ -178,6 +229,7 @@ VOID udpctx_free() {
 	}
 
 	ExDeleteNPagedLookasideList(&g_udpCtxList);
+	ExDeleteNPagedLookasideList(&g_udpPacketDataList);
 	ExDeleteNPagedLookasideList(&g_udpctxPacketsBufList);
 }
 

@@ -16,6 +16,33 @@ typedef struct _NF_UDPCTX_DATA
 	KSPIN_LOCK		lock;				// Context spinlock
 }NF_UDPPEND_PACKET, * PNF_UDPPEND_PACKET;
 
+#pragma pack(push, 1)
+
+typedef struct _NF_UDP_PACKET_OPTIONS
+{
+	COMPARTMENT_ID		compartmentId;
+	UINT64				endpointHandle;
+	SCOPE_ID			remoteScopeId;
+	IF_INDEX			interfaceIndex;
+	IF_INDEX			subInterfaceIndex;
+	ULONG				controlDataLength;
+	UINT32				transportHeaderLength;
+	unsigned char		localAddr[NF_MAX_ADDRESS_LENGTH];
+} NF_UDP_PACKET_OPTIONS, * PNF_UDP_PACKET_OPTIONS;
+
+#pragma pack(pop)
+
+typedef struct _NF_UDP_PACKET
+{
+	LIST_ENTRY			entry;
+	unsigned char		remoteAddr[NF_MAX_ADDRESS_LENGTH];
+	NF_UDP_PACKET_OPTIONS	options;
+	WSACMSGHDR* controlData;
+	char* dataBuffer;
+	ULONG					dataLength;
+	FWPS_TRANSPORT_SEND_PARAMS0 sendArgs;
+} NF_UDP_PACKET, * PNF_UDP_PACKET;
+
 typedef struct _UDPCTX
 {
 	LIST_ENTRY			entry;
@@ -84,7 +111,12 @@ UDPCTX* const udpctx_packetAllocatCtx();
 VOID udpctx_freeCtx(PUDPCTX pUdpCtx);
 
 NF_UDP_BUFFER* const udp_packAllocatebuf(const int lens);
-VOID udp_freebuf(PNF_UDP_BUFFER pPacket);
+VOID udp_freebuf(PNF_UDP_BUFFER pPacket, const int lens);
+
+NF_UDP_PACKET* const udp_packetAllocatData();
+VOID udp_freePacketData(NF_UDP_PACKET* const pPacket);
+
+NTSTATUS push_udpPacketinfo(PVOID packet, int lens, BOOLEAN isSend);
 
 PUDPCTX udpctx_find(UINT64 id);
 PUDPCTX udpctx_findByHandle(UINT64 handle);

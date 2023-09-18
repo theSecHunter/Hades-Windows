@@ -93,8 +93,8 @@ typedef enum _NF_DATA_CODE
 
 
     NF_TCP_CONNECT_REQUEST,				// Outgoing TCP connect request
-    NF_TCP_UDP_SEND,                    // Udp Send Packet
-    NF_TCP_UDP_RECV                     // Udp Recv Packet
+    NF_UDP_SEND,                        // Udp Send Packet
+    NF_UDP_RECV                         // Udp Recv Packet
 }NF_DATA_CODE;
 
 #pragma pack(push, 1)
