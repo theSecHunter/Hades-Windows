@@ -272,7 +272,7 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 | 进程/IP:PORT Deny和Redirect |  高 |完成|
 | DNS访问控制               | 高     |待定|
 
-Yaml配置流量规则, 目前只支持TCP 拦截和重定向, 重定向可指定进程, 详细请看egress示例, Dndy优先级大于Redirect.
+Yaml配置流量规则, 目前只支持TCP 拦截和重定向, 重定向可指定进程, 详细请看egress示例, Deny优先级大于Redirect.
 
 ```
 egress:
@@ -291,7 +291,7 @@ egress:
     #ports:         # empty means all ports.
     #  - 80
     #  - 8079-8080
-    processname: "tcptest.exe|2.exe"    # empty means all process.
+    processname: "tcptest.exe|2.exe"
     redirectip: "192.168.0.106"         # redirect to ipaddrss
     redirectport: "88"                  # redirect to port
     action: REDIRECT
@@ -312,7 +312,7 @@ egress:
 |v2.3.4| 进程保护 | 高 |完成|
 |v2.3.4| 注册表键值保护 | 高 |完成|
 |v2.3.5| 目录访问保护|高 |完成|
-|v2.3.6| 流量拦截/重定向|高 |TCP完成|
+|v2.3.6| TCP流量拦截/重定向|高 |完成|
 |- |  |  | |
 |v2.3.7| 注入拦截|高 |进行中|
 |v2.3.7| 内核回调枚举|高 |进行中|
