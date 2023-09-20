@@ -98,7 +98,7 @@ int NetNdrMonitorEx(int code)
 		break;
 	}
 
-	OutputDebugString(L"devctrl_sendioct entablMonitor");
+	OutputDebugString(L"[HadesNetMon] devctrl_sendioct entablMonitor");
 	const BOOL bStu = DeviceIoControl(
 		hNetMonx,
 		ioctcode,
@@ -111,7 +111,7 @@ int NetNdrMonitorEx(int code)
 	);
 	if (!bStu)
 	{
-		OutputDebugString(L"devctrl_sendioct Error End");
+		OutputDebugString(L"[HadesNetMon] devctrl_sendioct Error End");
 		return -2;
 	}
 	return bStu;

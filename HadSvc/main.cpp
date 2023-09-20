@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 		return 0;
 
 	// Check HadesAgent Process
-#ifdef _WIN64
+#ifdef _X64
 	if (!IsProcessExist(L"HadesAgent64.exe"))
 #else
 	if (!IsProcessExist(L"HadesAgent.exe"))
@@ -140,6 +140,15 @@ int main(int argc, char* argv[])
 	if (true == gpip_send && true == etw_mon) {
 		SingletonUMon::instance()->uMsg_EtwInit();
 	}
+
+//@ NetWork Test
+//#ifdef _X64
+//	SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
+//	if (SingletonDataHandler::instance()->NetCheckStatus()) {
+//		if (!SingletonKNetWork::instance()->GetNetNdrStus())
+//			SingletonKNetWork::instance()->NetNdrInit();
+//	}
+//#endif
 
 	// WaitFor AgentEvent Exit
 	WaitForSingleObject(g_SvcExitEvent, INFINITE);

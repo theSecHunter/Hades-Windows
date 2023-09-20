@@ -356,7 +356,7 @@ ULONG devctrl_processTcpConnect(PNF_DATA pData)
 	if (!pInfo)
 		return 0;
 
-	pTcpCtx = tcpctx_find(pData->id);
+	pTcpCtx = tcp_find(pData->id);
 	if (!pTcpCtx)
 	{
 		return 0;
@@ -411,9 +411,9 @@ ULONG devctrl_processTcpConnect(PNF_DATA pData)
 		{
 			pTcpCtx->redirectInfo.classifyOut.actionType = FWP_ACTION_PERMIT;
 		}
-		tcpctx_purgeRedirectInfo(pTcpCtx);
+		tcp_purgeRedirectInfo(pTcpCtx);
 	}
-	tcpctx_release(pTcpCtx);
+	tcp_release(pTcpCtx);
 	return sizeof(NF_DATA) - 1;
 }
 // write packet from r3
@@ -471,8 +471,8 @@ NTSTATUS devctrl_close(PIRP irp, PIO_STACK_LOCATION irpSp)
 	devctrl_setmonitor(0);
 	establishedctx_clean();
 	//datalinkctx_clean();
-	tcpctx_clean();
-	udpctx_clean();
+	tcp_clean();
+	udp_clean();
 	devctrl_clean();
 
 	devctrl_freeSharedMemory(&g_inBuf);
@@ -1014,7 +1014,7 @@ NTSTATUS devtrl_popTcpRedirectConnectData(UINT64* pOffset)
 	PNF_DATA			pData = NULL;
 	UINT64				dataSize = 0;
 
-	pTcpCtxData = tcpctx_Get();
+	pTcpCtxData = tcp_Get();
 	if (!pTcpCtxData)
 		return STATUS_UNSUCCESSFUL;
 
@@ -1062,7 +1062,7 @@ NTSTATUS devtrl_popTcpRedirectConnectData(UINT64* pOffset)
 	{
 		if (NT_SUCCESS(status))
 		{
-			tcpctx_packfree(pEntry);
+			tcp_packfree(pEntry);
 		}
 		else
 		{
@@ -1083,7 +1083,7 @@ NTSTATUS devtrl_popUdpPacketData(UINT64* pOffset, const int nCode)
 	PNF_DATA			pData = NULL;
 	UINT64				dataSize = 0;
 
-	pUdpPendData = udpctx_Get();
+	pUdpPendData = udp_Get();
 	if (!pUdpPendData)
 		return STATUS_UNSUCCESSFUL;
 
@@ -1109,8 +1109,9 @@ NTSTATUS devtrl_popUdpPacketData(UINT64* pOffset, const int nCode)
 			status = STATUS_UNSUCCESSFUL;
 			break;
 		}
-		RtlCopyMemory(pData->buffer, pEntry->dataBuffer, pEntry->dataLength);
-		*pOffset += dataSize;
+		//RtlCopyMemory(pData->buffer, pEntry->dataBuffer, pEntry->dataLength);
+		//*pOffset += dataSize;
+		break;
 	}
 	sl_unlock(&lh);
 
@@ -1430,7 +1431,7 @@ void devctrl_injectReads()
 		//devctrl_tcpInjectPackets(pTcpCtx);
 
 		if (pTcpCtx) {
-			tcpctx_release(pTcpCtx);
+			tcp_release(pTcpCtx);
 			pTcpCtx = NULL;
 		}
 	}

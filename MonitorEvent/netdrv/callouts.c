@@ -476,7 +476,7 @@ VOID helper_callout_classFn_connectredirect(
 	NTSTATUS status = STATUS_SUCCESS;
 
 	// 申请结构体保存数据 - 重注TCP以后再释放
-	pTcpCtx = tcpctx_packallocatectx();
+	pTcpCtx = tcp_packallocatectx();
 	if (pTcpCtx == NULL)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
@@ -766,27 +766,102 @@ BOOLEAN helper_callout_pushUdpPacket(
 
 	// Packet padding
 	NTSTATUS nStu = STATUS_UNSUCCESSFUL;
-	NF_UDP_PACKET* pPacket = udp_packetAllocatData();
+	NF_UDP_PACKET* pPacket = udp_packetAllocatData(uDataLens);
 	do
 	{
 		if (!pPacket)
 			break;
 
+		pPacket->dataLength = uDataLens;
+		// Options
+		pPacket->options.compartmentId = (COMPARTMENT_ID)inMetaValues->compartmentId;
+		pPacket->options.transportHeaderLength = inMetaValues->transportHeaderSize;
+		pPacket->options.endpointHandle = inMetaValues->transportEndpointHandle;
+		if (FWPS_IS_METADATA_FIELD_PRESENT(inMetaValues, FWPS_METADATA_FIELD_REMOTE_SCOPE_ID))
+			pPacket->options.remoteScopeId = inMetaValues->remoteScopeId;
+		memcpy(&pPacket->options.localAddr, &pUdpCtx->localAddr, NF_MAX_ADDRESS_LENGTH);
+		
+		if (isSend)
+		{
+			if (FWPS_IS_METADATA_FIELD_PRESENT(
+				inMetaValues,
+				FWPS_METADATA_FIELD_TRANSPORT_CONTROL_DATA))
+			{
+				ASSERT(inMetaValues->controlDataLength > 0);
+
+#pragma warning(push)
+#pragma warning(disable: 28197) 
+				pPacket->controlData = (WSACMSGHDR*)
+					ExAllocatePoolWithTag(NonPagedPool, inMetaValues->controlDataLength, MEM_TAG_UDP_DATA);
+#pragma warning(pop)
+
+				if (pPacket->controlData != NULL)
+				{
+					memcpy(pPacket->controlData,
+						inMetaValues->controlData,
+						inMetaValues->controlDataLength);
+
+					pPacket->options.controlDataLength = inMetaValues->controlDataLength;
+				}
+			}
+		}
+
 		if (!callouts_copyBuffer(inMetaValues, netBuffer, isSend, pPacket, uDataLens))
 			break;
 		
+		if (inFixedValues->layerId == FWPS_LAYER_DATAGRAM_DATA_V4)
+		{
+			struct sockaddr_in* pAddr;
+
+			pAddr = (struct sockaddr_in*)pPacket->remoteAddr;
+			pAddr->sin_family = AF_INET;
+			pAddr->sin_addr.S_un.S_addr =
+				htonl(inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_IP_REMOTE_ADDRESS].value.uint32);
+			pAddr->sin_port =
+				htons(inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_IP_REMOTE_PORT].value.uint16);
+
+			pPacket->options.interfaceIndex =
+				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_INTERFACE_INDEX].value.uint32;
+			pPacket->options.subInterfaceIndex =
+				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_SUB_INTERFACE_INDEX].value.uint32;
+		}
+		else
+		{
+			struct sockaddr_in6* pAddr;
+
+			pAddr = (struct sockaddr_in6*)pPacket->remoteAddr;
+			pAddr->sin6_family = AF_INET6;
+			memcpy(&pAddr->sin6_addr,
+				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_IP_REMOTE_ADDRESS].value.byteArray16->byteArray16,
+				NF_MAX_IP_ADDRESS_LENGTH);
+			pAddr->sin6_port =
+				htons(inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_IP_REMOTE_PORT].value.uint16);
+
+			pPacket->options.interfaceIndex =
+				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_INTERFACE_INDEX].value.uint32;
+			pPacket->options.subInterfaceIndex =
+				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_SUB_INTERFACE_INDEX].value.uint32;
+		}
 		// push send
-		nStu = push_udpPacketinfo(pPacket, sizeof(NF_UDP_PACKET), isSend);
+		// nStu = push_udpPacketinfo(pPacket, sizeof(NF_UDP_PACKET), isSend);
+		break;
 	} while (1);
-	if (!NT_SUCCESS(nStu)) {
+	if (NT_SUCCESS(nStu)) {
+		return TRUE;
+	}
+	else {
+		sl_lock(&pUdpCtx->lock, &lh);
+		if (isSend)
+			pUdpCtx->pendedSendBytes -= uDataLens;
+		else
+			pUdpCtx->pendedRecvBytes -= uDataLens;
+		sl_unlock(&lh);
 		if (pPacket) {
 			udp_freePacketData(pPacket);
 			pPacket = NULL;
 		}
-		return FALSE;
 	}
-	else
-		return TRUE;
+	return FALSE;
 }
 
 VOID helper_callout_classFn_udpCallout(
@@ -834,9 +909,9 @@ VOID helper_callout_classFn_udpCallout(
 	}
 
 	UDPCTX* pUdpCtx = NULL;
-	pUdpCtx = udpctx_findByHandle(inMetaValues->transportEndpointHandle);
+	pUdpCtx = udp_findByHandle(inMetaValues->transportEndpointHandle);
 	if (!pUdpCtx) {
-		pUdpCtx = udpctx_packetAllocatCtx();
+		pUdpCtx = udp_packetAllocatCtx();
 		if (!pUdpCtx) {
 			classifyOut->actionType = FWP_ACTION_PERMIT;
 			return;
@@ -995,8 +1070,7 @@ VOID helper_callout_classFn_udpCallout(
 			netBuffer = NET_BUFFER_NEXT_NB(netBuffer))
 		{
 			// Send UdpPacket to R3
-			if (!helper_callout_pushUdpPacket(inFixedValues, inMetaValues, pUdpCtx, netBuffer, isSend))
-			{
+			if (!helper_callout_pushUdpPacket(inFixedValues, inMetaValues, pUdpCtx, netBuffer, isSend)) {
 				classifyOut->actionType = FWP_ACTION_PERMIT;
 				break;
 			}
@@ -1008,11 +1082,14 @@ VOID helper_callout_classFn_udpCallout(
 		//	classifyOut->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
 		//	classifyOut->rights ^= FWPS_RIGHT_ACTION_WRITE;
 		//}
+
+		break;
 	}
+
 	// test permit
 	classifyOut->actionType = FWP_ACTION_PERMIT;
 	if (pUdpCtx) {
-		udpctx_free(pUdpCtx);
+		udp_freeCtx(pUdpCtx);
 		pUdpCtx = NULL;
 	}
 }

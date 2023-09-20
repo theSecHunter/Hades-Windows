@@ -173,7 +173,7 @@ int DevctrlIoct::devctrl_sendioct(const int ioctcode)
 	if (!m_devhandler)
 		return -1;
 
-	OutputDebugString(L"devctrl_sendioct entablMonitor");
+	OutputDebugString(L"[HadesNetMon] devctrl_sendioct entablMonitor");
 	BOOL status = DeviceIoControl(
 		m_devhandler,
 		ioctcode,
@@ -186,7 +186,7 @@ int DevctrlIoct::devctrl_sendioct(const int ioctcode)
 	);
 	if (!status)
 	{
-		OutputDebugString(L"devctrl_sendioct Error End");
+		OutputDebugString(L"[HadesNetMon] devctrl_sendioct Error End");
 		return -2;
 	}	
 	return 1;

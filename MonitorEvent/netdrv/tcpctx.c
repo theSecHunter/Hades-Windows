@@ -29,7 +29,7 @@ typedef struct _NF_PACKET
 } NF_PACKET, * PNF_PACKET;
 
 // 申请缓冲及消息队列结构
-PNF_TCP_BUFFER tcpctx_packallocate(int lens)
+PNF_TCP_BUFFER tcp_packallocate(int lens)
 {
 	if (lens < 0)
 		return NULL;
@@ -50,7 +50,7 @@ PNF_TCP_BUFFER tcpctx_packallocate(int lens)
 	}
 	return pTcpctx;
 }
-VOID tcpctx_packfree(PNF_TCP_BUFFER pPacket)
+VOID tcp_packfree(PNF_TCP_BUFFER pPacket)
 {
 	if (pPacket && pPacket->dataBuffer)
 	{
@@ -69,7 +69,7 @@ NTSTATUS push_tcpRedirectinfo(PVOID packet, int lens)
 		return STATUS_UNSUCCESSFUL;
 
 	// Allocate 
-	pTcpCtxInfo = tcpctx_packallocate(lens);
+	pTcpCtxInfo = tcp_packallocate(lens);
 	if (!pTcpCtxInfo || !pTcpCtxInfo->dataBuffer)
 		return STATUS_UNSUCCESSFUL;
 
@@ -85,7 +85,7 @@ NTSTATUS push_tcpRedirectinfo(PVOID packet, int lens)
 }
 
 // 申请ctx结构体结构
-PTCPCTX tcpctx_packallocatectx()
+PTCPCTX tcp_packallocatectx()
 {
 	KLOCK_QUEUE_HANDLE lh;
 	PTCPCTX pTcpCtx = NULL;
@@ -109,7 +109,7 @@ PTCPCTX tcpctx_packallocatectx()
 
 	return pTcpCtx;
 }
-void tcpctx_purgeRedirectInfo(PTCPCTX pTcpCtx)
+void tcp_purgeRedirectInfo(PTCPCTX pTcpCtx)
 {
 	UINT64 classifyHandle = pTcpCtx->redirectInfo.classifyHandle;
 
@@ -138,7 +138,7 @@ void tcpctx_purgeRedirectInfo(PTCPCTX pTcpCtx)
 		FwpsReleaseClassifyHandle(classifyHandle);
 	}
 }
-VOID tcpctx_release(PTCPCTX pTcpCtx)
+VOID tcp_release(PTCPCTX pTcpCtx)
 {
 	KLOCK_QUEUE_HANDLE lh;
 
@@ -175,12 +175,12 @@ VOID tcpctx_release(PTCPCTX pTcpCtx)
 		KdPrint((DPREFIX"tcpctx_release orphan TCPCTX %I64u in inject queue\n", pTcpCtx->id));
 	}
 
-	tcpctx_purgeRedirectInfo(pTcpCtx);
+	tcp_purgeRedirectInfo(pTcpCtx);
 
 	ExFreeToNPagedLookasideList(&g_tcpCtxLAList, pTcpCtx);
 }
 
-void tcpctx_freePacket(PNF_PACKET pPacket)
+void tcp_freePacket(PNF_PACKET pPacket)
 {
 	if (pPacket->streamData.netBufferListChain)
 	{
@@ -209,11 +209,11 @@ void tcpctx_freePacket(PNF_PACKET pPacket)
 	ExFreeToNPagedLookasideList( &g_packetsLAList, pPacket );
 }
 
-void tcpctx_cleanupFlows()
+void tcp_cleanupFlows()
 {
 	KLOCK_QUEUE_HANDLE lh, lhp;
-	PTCPCTX pTcpCtx;
-	NF_PACKET* pPacket;
+	PTCPCTX pTcpCtx = NULL;
+	NF_PACKET* pPacket = NULL;
 	LIST_ENTRY packets;
 
 	InitializeListHead(&packets);
@@ -240,16 +240,16 @@ void tcpctx_cleanupFlows()
 	while (!IsListEmpty(&packets))
 	{
 		pPacket = (PNF_PACKET)RemoveHeadList(&packets);
-		tcpctx_freePacket(pPacket);
+		tcp_freePacket(pPacket);
 	}
 }
-void tcpctx_removeFromFlows()
+void tcp_removeFromFlows()
 {
 	KLOCK_QUEUE_HANDLE lh;
-	PTCPCTX pTcpCtx;
+	PTCPCTX pTcpCtx = NULL;
 	NTSTATUS status;
 
-	tcpctx_cleanupFlows();
+	tcp_cleanupFlows();
 	sl_lock(&g_slTcpCtx, &lh);
 	while (!IsListEmpty(&g_lTcpCtx))
 	{
@@ -285,19 +285,19 @@ void tcpctx_removeFromFlows()
 
 		if (pTcpCtx->transportEndpointHandle != 0)
 		{
-			tcpctx_release(pTcpCtx);
+			tcp_release(pTcpCtx);
 		}
 
-		tcpctx_release(pTcpCtx);
+		tcp_release(pTcpCtx);
 
 		sl_lock(&g_slTcpCtx, &lh);
 	}
 	sl_unlock(&lh);
 }
-void tcpctx_releaseFlows()
+void tcp_releaseFlows()
 {
 	KLOCK_QUEUE_HANDLE lh;
-	PTCPCTX pTcpCtx;
+	PTCPCTX pTcpCtx = NULL;
 
 
 	sl_lock(&g_slTcpCtx, &lh);
@@ -307,18 +307,18 @@ void tcpctx_releaseFlows()
 
 		sl_unlock(&lh);
 
-		tcpctx_release(pTcpCtx);
+		tcp_release(pTcpCtx);
 
 		sl_lock(&g_slTcpCtx, &lh);
 	}
 	sl_unlock(&lh);
 }
 
-NF_TCPCTX_DATA* tcpctx_Get()
+NF_TCPCTX_DATA* tcp_Get()
 {
 	return &g_tcpctx_data;
 }
-NTSTATUS tcpctx_init()
+NTSTATUS tcp_init()
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	ExInitializeNPagedLookasideList(
@@ -374,7 +374,7 @@ NTSTATUS tcpctx_init()
 
 	return status;
 }
-VOID tcpctx_clean()
+VOID tcp_clean()
 {
 	KLOCK_QUEUE_HANDLE lh;
 	PNF_TCP_BUFFER pTcpCtx = NULL;
@@ -385,20 +385,20 @@ VOID tcpctx_clean()
 		pTcpCtx = (PNF_TCP_BUFFER)RemoveHeadList(&g_tcpctx_data.pendedPackets);
 		sl_unlock(&lh);
 		if (pTcpCtx) {
-			tcpctx_packfree(pTcpCtx);
+			tcp_packfree(pTcpCtx);
 			pTcpCtx = NULL;
 		}
 		sl_lock(&g_tcpctx_data.lock, &lh);
 	}
 	sl_unlock(&lh);
 
-	tcpctx_removeFromFlows();
+	tcp_removeFromFlows();
 	devctrl_sleep(1000);
-	tcpctx_releaseFlows();
+	tcp_releaseFlows();
 }
-VOID tcpctx_free()
+VOID tcp_free()
 {
-	tcpctx_clean();
+	tcp_clean();
 
 	if (g_phtTcpCtxById)
 	{
@@ -418,7 +418,7 @@ VOID tcpctx_free()
 }
 
 // Hash
-PTCPCTX tcpctx_find(UINT64 id)
+PTCPCTX tcp_find(UINT64 id)
 {
 	PTCPCTX pTcpCtx = NULL;
 	PHASH_TABLE_ENTRY phte;
@@ -435,7 +435,7 @@ PTCPCTX tcpctx_find(UINT64 id)
 
 	return pTcpCtx;
 }
-PTCPCTX tcpctx_findByHandle(UINT64 handle)
+PTCPCTX tcp_findByHandle(UINT64 handle)
 {
 	PTCPCTX pTcpCtx = NULL;
 	PHASH_TABLE_ENTRY phte;

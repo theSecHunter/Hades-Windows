@@ -52,23 +52,31 @@ static void OnReadHandleEventDispath(PNF_DATA pData)
 	{
 		if (pData->bufferSize) {
 			g_pEventHandler->TcpredirectPacket(pData->buffer, pData->bufferSize);
-			PNF_DATA pDataCopy = (PNF_DATA)mempool::mp_alloc(sizeof(NF_DATA) - 1 + sizeof(NF_TCP_CONN_INFO));
-			if (pDataCopy)
+			PNF_DATA pRediRectData = (PNF_DATA)mempool::mp_alloc(sizeof(NF_DATA) - 1 + sizeof(NF_TCP_CONN_INFO));
+			if (pRediRectData)
 			{
-				pDataCopy->id = pData->id;
-				pDataCopy->code = NF_TCP_CONNECT_REQUEST;
-				pDataCopy->bufferSize = sizeof(NF_TCP_CONN_INFO);
-				memcpy(pDataCopy->buffer, &pData->buffer, sizeof(NF_TCP_CONN_INFO));
-				SingletNetMonx::instance()->devctrl_writeio(pDataCopy);
-				mempool::mp_free(pDataCopy);
+				pRediRectData->id = pData->id;
+				pRediRectData->code = NF_TCP_CONNECT_REQUEST;
+				pRediRectData->bufferSize = sizeof(NF_TCP_CONN_INFO);
+				memcpy(pRediRectData->buffer, &pData->buffer, sizeof(NF_TCP_CONN_INFO));
+				SingletNetMonx::instance()->devctrl_writeio(pRediRectData);
+				mempool::mp_free(pRediRectData);
 			}
 		}
 	}
 	break;
 	case NF_UDP_SEND:
-		break;
+	{
+		const std::wstring pOutPut = L"[HadesNetMon] NF_UDP_SEND";
+		OutputDebugString(pOutPut.c_str());
+	}
+	break;
 	case NF_UDP_RECV:
-		break;
+	{
+		const std::wstring pOutPut = L"[HadesNetMon] NF_UDP_RECV";
+		OutputDebugString(pOutPut.c_str());
+	}
+	break;
 	}
 }
 
@@ -109,7 +117,7 @@ DWORD WINAPI ReadWorkThread(LPVOID lpThreadParameter)
 	bool abortBatch = false;
 	int i = 0;
 
-	OutputDebugString(L"Entry WorkThread");
+	OutputDebugString(L"[HadesNetMon] Entry WorkThread");
 	mempool::mempools_init();
 	SetEvent(g_workThreadStartedEvent);
 	g_eventQueue.init(g_nThreads);
@@ -132,7 +140,7 @@ DWORD WINAPI ReadWorkThread(LPVOID lpThreadParameter)
 			{
 				if (GetLastError() != ERROR_IO_PENDING)
 				{
-					OutputDebugString(L"ReadFile Error!");
+					OutputDebugString(L"[HadesNetMon] ReadFile Error!");
 					goto finish;
 				}
 			}
@@ -220,6 +228,6 @@ finish:
 	g_eventQueueOut.free();
 	SetEvent(g_workThreadStoppedEvent);
 
-	OutputDebugString(L"ReadFile Thread Exit");
+	OutputDebugString(L"[HadesNetMon] ReadFile Thread Exit");
 	return 0;
 }

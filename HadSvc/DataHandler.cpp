@@ -375,7 +375,7 @@ const bool DataHandler::NetCheckStatus()
     case SERVICE_RUNNING:
     case SERVICE_START_PENDING:
     {
-        OutputDebugString(L"Driver Running");
+        OutputDebugString(L"[HadesNetMon] Driver Running");
         break;
     }
     break;
@@ -384,7 +384,7 @@ const bool DataHandler::NetCheckStatus()
     case SERVICE_STOP_PENDING:
     {
         PROCESS_INFORMATION pi;
-        std::wstring pszCmd = L"sc start hadesndr";
+        std::wstring pszCmd = L"[HadesNetMon] sc start hadesndr";
         STARTUPINFO si = { sizeof(STARTUPINFO) };
         GetStartupInfo(&si);
         si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
@@ -398,12 +398,12 @@ const bool DataHandler::NetCheckStatus()
         nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(g_drverNdrName.c_str());
         if (SERVICE_RUNNING == nSeriverstatus)
         {
-            OutputDebugString(L"sc Driver Running");
+            OutputDebugString(L"[HadesNetMon] sc Driver Running");
             break;
         }
         else
         {
-            OutputDebugString(L"sc Driver Install Failuer");
+            OutputDebugString(L"[HadesNetMon] sc Driver Install Failuer");
             return false;
         }
     }
@@ -668,7 +668,8 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
             task_array_data.push_back("Success");
         }
         break;
-#ifndef WIN32
+
+#ifdef _X64
         case 411:
         {// ÍøÂçÖ÷·À¿ªÆô
             SingletonKNetWork::instance()->ReLoadIpPortConnectRule();

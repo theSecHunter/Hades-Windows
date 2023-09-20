@@ -147,18 +147,18 @@ typedef struct _TCPCTX
 
 void add_tcpHandle(PTCPCTX ptcpctx);
 void remove_tcpHandle(PTCPCTX ptcpctx);
-PTCPCTX tcpctx_find(UINT64 id);
-void tcpctx_purgeRedirectInfo(PTCPCTX pTcpCtx);
+PTCPCTX tcp_find(UINT64 id);
+void tcp_purgeRedirectInfo(PTCPCTX pTcpCtx);
 
 NTSTATUS push_tcpRedirectinfo(PVOID packet, int lens);
 
-PTCPCTX tcpctx_packallocatectx();
-VOID tcpctx_release(PTCPCTX pTcpCtx);
+PTCPCTX tcp_packallocatectx();
+VOID tcp_release(PTCPCTX pTcpCtx);
 
-NF_TCPCTX_DATA* tcpctx_Get();
-NTSTATUS tcpctx_init();
-VOID tcpctx_packfree(PNF_TCP_BUFFER pPacket);
-VOID tcpctx_clean();
-VOID tcpctx_free();
+NF_TCPCTX_DATA* tcp_Get();
+NTSTATUS tcp_init();
+VOID tcp_packfree(PNF_TCP_BUFFER pPacket);
+VOID tcp_clean();
+VOID tcp_free();
 
 #endif // !_TCPHEAD_H

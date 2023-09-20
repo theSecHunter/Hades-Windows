@@ -141,13 +141,13 @@ NTSTATUS DriverEntry(
 			break;
 		}
 
-		nStatus = tcpctx_init();
+		nStatus = tcp_init();
 		if (!NT_SUCCESS(nStatus))
 		{
 			break;
 		}
 
-		nStatus = udpctx_init();
+		nStatus = udp_init();
 		if (!NT_SUCCESS(nStatus))
 		{
 			break;
@@ -196,7 +196,7 @@ VOID driver_free()
 	callout_free();
 	devctrl_free();
 	//datalinkctx_free();
-	tcpctx_free();
-	udpctx_free();
+	tcp_free();
+	udp_free();
 	establishedctx_free();
 };

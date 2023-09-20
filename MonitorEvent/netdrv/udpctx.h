@@ -102,23 +102,23 @@ typedef struct _UDPCTX
 	KSPIN_LOCK		lock;				// Context spinlock
 }UDPCTX, *PUDPCTX;
 
-NTSTATUS udpctx_init();
-NF_UDPPEND_PACKET* const udpctx_Get();
-VOID udpctx_clean();
-VOID udpctx_free();
+NTSTATUS udp_init();
+NF_UDPPEND_PACKET* const udp_Get();
+VOID udp_clean();
+VOID udp_free();
 
-UDPCTX* const udpctx_packetAllocatCtx();
-VOID udpctx_freeCtx(PUDPCTX pUdpCtx);
+UDPCTX* const udp_packetAllocatCtx();
+VOID udp_freeCtx(PUDPCTX pUdpCtx);
 
 NF_UDP_BUFFER* const udp_packAllocatebuf(const int lens);
 VOID udp_freebuf(PNF_UDP_BUFFER pPacket, const int lens);
 
-NF_UDP_PACKET* const udp_packetAllocatData();
+NF_UDP_PACKET* const udp_packetAllocatData(const int lens);
 VOID udp_freePacketData(NF_UDP_PACKET* const pPacket);
 
 NTSTATUS push_udpPacketinfo(PVOID packet, int lens, BOOLEAN isSend);
 
-PUDPCTX udpctx_find(UINT64 id);
-PUDPCTX udpctx_findByHandle(UINT64 handle);
+PUDPCTX udp_find(UINT64 id);
+PUDPCTX udp_findByHandle(UINT64 handle);
 void remove_udpHandle(PUDPCTX pudpctx);
 #endif

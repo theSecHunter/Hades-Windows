@@ -1,14 +1,14 @@
 #pragma once
 #include "kmsginterface.h"
 #include "umsginterface.h"
-#ifndef WIN32
+#ifdef _X64
 #include "knetwork.h"
 #endif
 #include "DataHandler.h"
 #include <udrivermanager.h>
 #include <SingletonHandler.h>
 
-#ifndef WIN32
+#ifdef _X64
 using SingletonKNetWork = ustdex::Singleton<KNetWork>;
 #endif
 using SingletonDataHandler = ustdex::Singleton<DataHandler>;
