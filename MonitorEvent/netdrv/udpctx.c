@@ -136,7 +136,7 @@ VOID udp_freePacketData(NF_UDP_PACKET* const pPacket)
 			ExFreePoolWithTag(pPacket->dataBuffer, MEM_TAG_UDP_DATA_COPY);
 			pPacket->dataBuffer = NULL;
 		}
-		if (pPacket->controlData && pPacket->options.controlDataLength) {
+		if (pPacket->controlData) {
 			ExFreePoolWithTag(pPacket->controlData, MEM_TAG_UDP_DATA);
 			pPacket->controlData = NULL;
 		}
@@ -147,21 +147,21 @@ VOID udp_freePacketData(NF_UDP_PACKET* const pPacket)
 NTSTATUS push_udpPacketinfo(PVOID packet, int lens, BOOLEAN isSend)
 {
 	KLOCK_QUEUE_HANDLE lh;
-	PNF_UDP_BUFFER pUdpCtxInfo = NULL;
+	PNF_UDP_BUFFER pUDPBuffer = NULL;
 
 	if (!packet && (lens < 1))
 		return STATUS_UNSUCCESSFUL;
 
 	// Allocate 
-	pUdpCtxInfo = udp_packAllocatebuf(0);
-	if (!pUdpCtxInfo || !pUdpCtxInfo->dataBuffer)
+	pUDPBuffer = udp_packAllocatebuf(0);
+	if (!pUDPBuffer)
 		return STATUS_UNSUCCESSFUL;
 
-	pUdpCtxInfo->dataLength = lens;
-	pUdpCtxInfo->dataBuffer = packet;
+	pUDPBuffer->dataLength = lens;
+	pUDPBuffer->dataBuffer = packet;
 
 	sl_lock(&g_udp_pendPacket.lock, &lh);
-	InsertHeadList(&g_udp_pendPacket.pendedPackets, &pUdpCtxInfo->pEntry);
+	InsertHeadList(&g_udp_pendPacket.pendedPackets, &pUDPBuffer->pEntry);
 	sl_unlock(&lh);
 
 	devctrl_pushEventQueryLisy((isSend == TRUE) ? NF_UDP_SEND : NF_UDP_RECV);

@@ -50,7 +50,7 @@ static void OnReadHandleEventDispath(PNF_DATA pData)
 	break;
 	case NF_TCPREDIRECT_LAYER_PACKET:
 	{
-		if (pData->bufferSize) {
+		if (pData->buffer && pData->bufferSize) {
 			g_pEventHandler->TcpredirectPacket(pData->buffer, pData->bufferSize);
 			PNF_DATA pRediRectData = (PNF_DATA)mempool::mp_alloc(sizeof(NF_DATA) - 1 + sizeof(NF_TCP_CONN_INFO));
 			if (pRediRectData)
@@ -67,14 +67,14 @@ static void OnReadHandleEventDispath(PNF_DATA pData)
 	break;
 	case NF_UDP_SEND:
 	{
-		const std::wstring pOutPut = L"[HadesNetMon] NF_UDP_SEND";
-		OutputDebugString(pOutPut.c_str());
+		if (pData->buffer && pData->bufferSize)
+			g_pEventHandler->UdpSend(pData->id, pData->buffer, pData->bufferSize);
 	}
 	break;
 	case NF_UDP_RECV:
 	{
-		const std::wstring pOutPut = L"[HadesNetMon] NF_UDP_RECV";
-		OutputDebugString(pOutPut.c_str());
+		if (pData->buffer && pData->bufferSize)
+			g_pEventHandler->UdpRecv(pData->id, pData->buffer, pData->bufferSize);
 	}
 	break;
 	}

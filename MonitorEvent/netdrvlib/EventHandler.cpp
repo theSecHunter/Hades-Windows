@@ -12,10 +12,30 @@
 #include <map>
 #include <vector>
 #include <Psapi.h>
+#include <ifdef.h>
 
 #pragma comment(lib, "Ws2_32.lib")
 
+// UDP Packet Option
+#pragma pack(push, 1)
+typedef struct _NF_UDP_PACKET_OPTIONS
+{
+	COMPARTMENT_ID		compartmentId;
+	UINT64				endpointHandle;
+	SCOPE_ID			remoteScopeId;
+	IF_INDEX			interfaceIndex;
+	IF_INDEX			subInterfaceIndex;
+	ULONG				controlDataLength;
+	UINT32				transportHeaderLength;
+	unsigned char		localAddr[NF_MAX_ADDRESS_LENGTH];
+} NF_UDP_PACKET_OPTIONS, * PNF_UDP_PACKET_OPTIONS;
+#pragma pack(pop)
+
+#ifdef _DEBUG
+static bool bLog = true;
+#else
 static bool bLog = false;
+#endif
 
 void EventHandler::EstablishedPacket(const char* buf, int len)
 {
@@ -195,4 +215,140 @@ void EventHandler::TcpredirectPacket(const char* buf, int len)
 
 	}
 	return;
+}
+
+void EventHandler::UdpSend(const int id, const char* buf, int len)
+{
+	do
+	{
+		// Option
+		PNF_UDP_PACKET_OPTIONS pOption = (PNF_UDP_PACKET_OPTIONS)buf;
+		if (!pOption)
+			break;
+		
+		// LocalAddr
+		char* pLocalAddr = nullptr;
+		pLocalAddr = (char*)pOption->localAddr;
+		if (!pLocalAddr)
+			break;
+
+		// RemoteAdrr
+		char* pRemoteAddr = nullptr;
+		pRemoteAddr = (char*)(buf + sizeof(NF_UDP_PACKET_OPTIONS));
+		if (!pRemoteAddr)
+			break;
+
+		// Data
+		const int DataLens = len - sizeof(NF_DATA) - sizeof(NF_UDP_PACKET_OPTIONS) + NF_MAX_ADDRESS_LENGTH;
+		char* pPacketData = nullptr;
+		pPacketData = (char*)(buf + sizeof(NF_UDP_PACKET_OPTIONS) + NF_MAX_ADDRESS_LENGTH);
+		if (!pPacketData)
+			break;
+
+		sockaddr_in const* pRAddr = (sockaddr_in*)pRemoteAddr;
+		if (!pRAddr)
+			break;
+		if ((pRAddr->sin_family != AF_INET) && (pRAddr->sin_family != AF_INET6))
+			break;
+
+		WORD wPort = 0; DWORD dwIp = 0; bool bIp6 = false; std::string strIpv6Addr = "";
+		if (pRAddr->sin_family == AF_INET6)
+		{
+			sockaddr_in6* const pAddr6 = (sockaddr_in6*)pRAddr;
+			if (pAddr6) {
+				char sIp[INET6_ADDRSTRLEN] = { 0 };
+				inet_ntop(AF_INET6, &pAddr6->sin6_addr, sIp, INET6_ADDRSTRLEN);
+				strIpv6Addr = sIp;
+			}
+			wPort = ntohs(pAddr6->sin6_port);
+			bIp6 = true;
+		}
+		else
+		{
+			dwIp = pRAddr->sin_addr.S_un.S_addr;
+			wPort = ntohs(pRAddr->sin_port);
+		}
+		std::string sIp = "";
+		if (bIp6) {
+			sIp = strIpv6Addr.c_str();
+		}
+		else
+		{
+			sIp = inet_ntoa(*(IN_ADDR*)&dwIp);
+		}
+		if (bLog) {
+			std::string pOutPut = "[HadesNetMon] udp Send Id ";
+			pOutPut.append(std::to_string(id));
+			pOutPut.append(" RemoteAddr ").append(sIp).append(":").append(std::to_string(wPort));
+			OutputDebugStringA(pOutPut.c_str());
+		}
+	} while (false);
+}
+
+void EventHandler::UdpRecv(const int id, const char* buf, int len)
+{
+	do
+	{
+		// Option
+		PNF_UDP_PACKET_OPTIONS pOption = (PNF_UDP_PACKET_OPTIONS)buf;
+		if (!pOption)
+			break;
+
+		// LocalAddr
+		char* pLocalAddr = nullptr;
+		pLocalAddr = (char*)pOption->localAddr;
+		if (!pLocalAddr)
+			break;
+
+		// RemoteAdrr
+		char* pRemoteAddr = nullptr;
+		pRemoteAddr = (char*)(buf + sizeof(NF_UDP_PACKET_OPTIONS));
+		if (!pRemoteAddr)
+			break;
+
+		// Data
+		const int DataLens = len - sizeof(NF_DATA) - sizeof(NF_UDP_PACKET_OPTIONS) + NF_MAX_ADDRESS_LENGTH;
+		char* pPacketData = nullptr;
+		pPacketData = (char*)(buf + sizeof(NF_UDP_PACKET_OPTIONS) + NF_MAX_ADDRESS_LENGTH);
+		if (!pPacketData)
+			break;
+
+		sockaddr_in const* pRAddr = (sockaddr_in*)pRemoteAddr;
+		if (!pRAddr)
+			break;
+		if ((pRAddr->sin_family != AF_INET) && (pRAddr->sin_family != AF_INET6))
+			break;
+
+		WORD wPort = 0; DWORD dwIp = 0; bool bIp6 = false; std::string strIpv6Addr = "";
+		if (pRAddr->sin_family == AF_INET6)
+		{
+			sockaddr_in6* const pAddr6 = (sockaddr_in6*)pRAddr;
+			if (pAddr6) {
+				char sIp[INET6_ADDRSTRLEN] = { 0 };
+				inet_ntop(AF_INET6, &pAddr6->sin6_addr, sIp, INET6_ADDRSTRLEN);
+				strIpv6Addr = sIp;
+			}
+			wPort = ntohs(pAddr6->sin6_port);
+			bIp6 = true;
+		}
+		else
+		{
+			dwIp = pRAddr->sin_addr.S_un.S_addr;
+			wPort = ntohs(pRAddr->sin_port);
+		}
+		std::string sIp = "";
+		if (bIp6) {
+			sIp = strIpv6Addr.c_str();
+		}
+		else
+		{
+			sIp = inet_ntoa(*(IN_ADDR*)&dwIp);
+		}
+		if (bLog) {
+			std::string pOutPut = "[HadesNetMon] udp Recv id ";
+			pOutPut.append(std::to_string(id));
+			pOutPut.append(" RemoteAddr ").append(sIp).append(":").append(std::to_string(wPort));
+			OutputDebugStringA(pOutPut.c_str());
+		}
+	} while (false);
 }

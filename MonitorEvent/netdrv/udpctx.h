@@ -35,6 +35,7 @@ typedef struct _NF_UDP_PACKET_OPTIONS
 typedef struct _NF_UDP_PACKET
 {
 	LIST_ENTRY			entry;
+	UINT64				id;
 	unsigned char		remoteAddr[NF_MAX_ADDRESS_LENGTH];
 	NF_UDP_PACKET_OPTIONS	options;
 	WSACMSGHDR* controlData;

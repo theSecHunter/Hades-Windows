@@ -772,6 +772,7 @@ BOOLEAN helper_callout_pushUdpPacket(
 		if (!pPacket)
 			break;
 
+		pPacket->id = pUdpCtx->id;
 		pPacket->dataLength = uDataLens;
 		// Options
 		pPacket->options.compartmentId = (COMPARTMENT_ID)inMetaValues->compartmentId;
@@ -843,7 +844,7 @@ BOOLEAN helper_callout_pushUdpPacket(
 				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_SUB_INTERFACE_INDEX].value.uint32;
 		}
 		// push send
-		// nStu = push_udpPacketinfo(pPacket, sizeof(NF_UDP_PACKET), isSend);
+		nStu = push_udpPacketinfo(pPacket, sizeof(NF_UDP_PACKET), isSend);
 		break;
 	} while (1);
 	if (NT_SUCCESS(nStu)) {
