@@ -278,24 +278,29 @@ Yaml配置流量规则, 目前只支持TCP 拦截和重定向, 重定向可指�
 egress:
   - name: "eguard_egress_test_project"
     address: "192.168.0.1/24"
-    protocol: TCP # ALL/TCP/UDP
-    ports:        # empty means all ports. 32(single port like 80), 16(range like 8079-8080)
+    protocol: ALL                                         # ALL/TCP/UDP
+    ports:                                                # empty means all ports. 32(single port like 80), 16(range like 8079-8080)
       - 80
       - 8079-8080
-    action: DENY  # DENY/LOG
+    action: DENY                                          # DENY/LOG
     level: INFO
 
   - name: "test_tcp_redirect"
-    #address: ""
-    protocol: TCP   # TCP
-    #ports:         # empty means all ports.
-    #  - 80
-    #  - 8079-8080
-    processname: "tcptest.exe|2.exe"
-    redirectip: "192.168.0.106"         # redirect to ipaddrss
-    redirectport: "88"                  # redirect to port
+    protocol: TCP                                         # TCP/UDP
+    processname: "network.exe|cmd.exe|powershell.exe"     # empty means all process.
+    redirectip: "192.168.0.106"                           # Redirect to ipaddrss
+    redirectport: "88"                                    # Redirect to port
     action: REDIRECT
     level: INFO
+
+  - name: "test_udp_redirect"
+    protocol: UDP                                         # TCP/UDP
+    processname: "network.exe|cmd.exe|powershell.exe"     # empty means all process.
+    redirectip: "192.168.0.106"                           # Redirect to ipaddrss
+    redirectport: "66"                                    # Redirect to port
+    action: REDIRECT
+    level: INFO
+    
 ```
 
 ### 规划：

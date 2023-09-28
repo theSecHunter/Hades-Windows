@@ -16,6 +16,38 @@ static LIST_ENTRY				g_lUdpCtx;
 static PHASH_TABLE				g_phtUdpCtxById = NULL;
 static PHASH_TABLE				g_phtUdpCtxByHandle = NULL;
 
+// packetData
+NF_UDP_PACKET* const udp_packetAllocatData(const int lens)
+{
+	NF_UDP_PACKET* const pUdpPacket = ExAllocateFromNPagedLookasideList(&g_udpPacketDataList);
+	if (pUdpPacket) {
+		RtlSecureZeroMemory(pUdpPacket, sizeof(NF_UDP_PACKET));
+		if (lens) {
+			pUdpPacket->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, MEM_TAG_UDP_DATA_COPY);
+			if (!pUdpPacket->dataBuffer) {
+				ExFreeToNPagedLookasideList(&g_udpPacketDataList, pUdpPacket);
+				return NULL;
+			}
+		}
+		return pUdpPacket;
+	}
+	return NULL;
+}
+VOID udp_freePacketData(NF_UDP_PACKET* const pPacket)
+{
+	if (pPacket) {
+		if (pPacket->dataBuffer) {
+			ExFreePoolWithTag(pPacket->dataBuffer, MEM_TAG_UDP_DATA_COPY);
+			pPacket->dataBuffer = NULL;
+		}
+		if (pPacket->controlData) {
+			ExFreePoolWithTag(pPacket->controlData, MEM_TAG_UDP_DATA);
+			pPacket->controlData = NULL;
+		}
+		ExFreeToNPagedLookasideList(&g_udpPacketDataList, pPacket);
+	}
+}
+
 // buf
 NF_UDP_BUFFER* const udp_packAllocatebuf(const int lens) {
 	if (lens < 0)
@@ -27,7 +59,7 @@ NF_UDP_BUFFER* const udp_packAllocatebuf(const int lens) {
 	RtlSecureZeroMemory(pUcpctx, sizeof(NF_UDP_BUFFER));
 
 	// ²»ÐèÒªÉêÇëdataBuffer
-	if (lens <= 0) {
+	if (lens == 0) {
 		pUcpctx->dataBuffer = NULL;
 		return pUcpctx;
 	}
@@ -43,7 +75,7 @@ NF_UDP_BUFFER* const udp_packAllocatebuf(const int lens) {
 VOID udp_freebuf(PNF_UDP_BUFFER pPacket, const int lens){
 	if (pPacket && pPacket->dataBuffer)
 	{
-		if (lens <= 0)
+		if (lens == 0)
 			udp_freePacketData(pPacket->dataBuffer);
 		else
 			free_np(pPacket->dataBuffer);
@@ -74,6 +106,43 @@ UDPCTX* const udp_packetAllocatCtx(){
 	InsertTailList(&g_lUdpCtx, &pUdpCtx->entry);
 	sl_unlock(&lh);
 
+	return pUdpCtx;
+}
+UDPCTX* const udp_packetAllocatCtxHandle(UINT64 transportEndpointHandle)
+{
+	KLOCK_QUEUE_HANDLE lh;
+	PUDPCTX pUdpCtx = NULL;
+
+	if (!transportEndpointHandle)
+		return NULL;
+
+	pUdpCtx = (PUDPCTX)ExAllocateFromNPagedLookasideList(&g_udpCtxList);
+	if (!pUdpCtx)
+		return NULL;
+
+	memset(pUdpCtx, 0, sizeof(UDPCTX));
+
+	sl_init(&pUdpCtx->lock);
+	pUdpCtx->refCount = 1;
+
+	InitializeListHead(&pUdpCtx->pendedSendPackets);
+	InitializeListHead(&pUdpCtx->pendedRecvPackets);
+
+	pUdpCtx->transportEndpointHandle = transportEndpointHandle;
+
+	sl_lock(&g_slUdpCtx, &lh);
+
+	pUdpCtx->id = g_nextUdpCtxId++;
+
+	KdPrint((DPREFIX"udpctx_alloc id=[%I64u]\n", pUdpCtx->id));
+
+	ht_add_entry(g_phtUdpCtxByHandle, (PHASH_TABLE_ENTRY)&pUdpCtx->transportEndpointHandle);
+	ht_add_entry(g_phtUdpCtxById, (PHASH_TABLE_ENTRY)&pUdpCtx->id);
+
+	InsertTailList(&g_lUdpCtx, &pUdpCtx->entry);
+
+	sl_unlock(&lh);
+	
 	return pUdpCtx;
 }
 VOID udp_freeCtx(PUDPCTX pUdpCtx) {
@@ -112,44 +181,12 @@ VOID udp_freeCtx(PUDPCTX pUdpCtx) {
 	ExFreeToNPagedLookasideList(&g_udpCtxList, pUdpCtx);
 }
 
-// packetData
-NF_UDP_PACKET* const udp_packetAllocatData(const int lens)
-{
-	NF_UDP_PACKET* const pUdpPacket = ExAllocateFromNPagedLookasideList(&g_udpPacketDataList);
-	if (pUdpPacket) {
-		RtlSecureZeroMemory(pUdpPacket, sizeof(NF_UDP_PACKET));
-		if (lens) {
-			pUdpPacket->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, MEM_TAG_UDP_DATA_COPY);
-			if (!pUdpPacket->dataBuffer) {
-				ExFreeToNPagedLookasideList(&g_udpPacketDataList, pUdpPacket);
-				return NULL;
-			}
-		}
-		return pUdpPacket;
-	}
-	return NULL;
-}
-VOID udp_freePacketData(NF_UDP_PACKET* const pPacket)
-{
-	if (pPacket) {
-		if (pPacket->dataBuffer) {
-			ExFreePoolWithTag(pPacket->dataBuffer, MEM_TAG_UDP_DATA_COPY);
-			pPacket->dataBuffer = NULL;
-		}
-		if (pPacket->controlData) {
-			ExFreePoolWithTag(pPacket->controlData, MEM_TAG_UDP_DATA);
-			pPacket->controlData = NULL;
-		}
-		ExFreeToNPagedLookasideList(&g_udpPacketDataList, pPacket);
-	}
-}
-
 NTSTATUS push_udpPacketinfo(PVOID packet, int lens, BOOLEAN isSend)
 {
 	KLOCK_QUEUE_HANDLE lh;
 	PNF_UDP_BUFFER pUDPBuffer = NULL;
 
-	if (!packet && (lens < 1))
+	if (!packet || (lens < 1))
 		return STATUS_UNSUCCESSFUL;
 
 	// Allocate 

@@ -217,13 +217,13 @@ void NetRule::SetDenyRule(const DENY_RULE& vecDeny)
 	m_vecDenyRule.push_back(vecDeny);
 }
 
-void NetRule::SetTcpConnectRule(const TCPCONNECT_RULE& vecConnect)
+void NetRule::SetRediRectRule(const REDIRECT_RULE& vecConnect)
 {
 	std::unique_lock<std::mutex> lock(m_ruleRediRectMtx);
-	m_vecRedirectConnectRule.push_back(vecConnect);
+	m_vecRedirectRule.push_back(vecConnect);
 }
 
-const bool NetRule::FilterConnect(const std::string strIpaddr, const int iPort)
+const bool NetRule::FilterConnect(const std::string strIpaddr, const int iPort, std::string strProtocol)
 {
 	std::unique_lock<std::mutex> lock(m_ruleDenyMtx);
 	if (m_vecDenyRule.empty())
@@ -231,6 +231,8 @@ const bool NetRule::FilterConnect(const std::string strIpaddr, const int iPort)
 	bool bFilter = false; bool bHit = false;
 	const std::string strRPort = std::to_string(iPort);
 	for (const auto iter : m_vecDenyRule) {
+		if ((iter.strProtocol != "ALL") || (iter.strProtocol != strProtocol))
+			continue;
 		bHit = false;
 		// 1: Filter Port
 		for (const auto iterPort : iter.vecPorts) {
@@ -251,6 +253,9 @@ const bool NetRule::FilterConnect(const std::string strIpaddr, const int iPort)
 				}
 			}
 		}
+		// empty means all ports
+		if (iter.vecPorts.empty())
+			bHit = true;
 		if (false == bHit)
 			continue;
 		// 2: Filter Ip
@@ -264,13 +269,21 @@ const bool NetRule::FilterConnect(const std::string strIpaddr, const int iPort)
 	return bFilter;
 }
 
-const bool NetRule::RedirectTcpConnect(const std::string strProcessName, const std::string strIpaddr, const int iPort, std::string& strRediRectIp, int& iRedrectPort)
+const bool NetRule::FilterRedirect(const std::string strProcessName, const std::string strIpaddr, const int iPort, std::string& strRediRectIp, int& iRedrectPort, std::string strProtocol) 
 {
-	// 暂时只有进程, 不做目标ip:port的粒度
+	// 仅支持进程, ip:port粒度不支持
 	std::unique_lock<std::mutex> lock(m_ruleRediRectMtx);
-	if (m_vecRedirectConnectRule.empty())
+	if (m_vecRedirectRule.empty())
 		return false;
-	for (const auto iter : m_vecRedirectConnectRule) {
+	for (const auto iter : m_vecRedirectRule) {
+		if (iter.strProtocol != strProtocol)
+			continue;
+		// empty means all process.
+		if (iter.vecProcessName.empty()) {
+			strRediRectIp = iter.strRedirectIp;
+			iRedrectPort = iter.iRedirectPort;
+			return true;
+		}
 		for (const auto iterNode : iter.vecProcessName) {
 			if (strProcessName == iterNode) {
 				strRediRectIp = iter.strRedirectIp;
@@ -291,6 +304,6 @@ void NetRule::NetRuleClear()
 
 	{
 		std::unique_lock<std::mutex> lock(m_ruleRediRectMtx);
-		m_vecRedirectConnectRule.clear();
+		m_vecRedirectRule.clear();
 	}
 }

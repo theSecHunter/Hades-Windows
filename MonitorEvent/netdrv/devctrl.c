@@ -920,7 +920,7 @@ NTSTATUS devtrl_popDataLinkData(UINT64* pOffset)
 		}
 		
 		*pOffset += dataSize;
-
+		status = STATUS_SUCCESS;
 	} while (FALSE);
 
 	sl_unlock(&lh);
@@ -982,6 +982,7 @@ NTSTATUS devtrl_popFlowestablishedData(UINT64* pOffset)
 
 		*pOffset += dataSize;
 
+		status = STATUS_SUCCESS;
 		break;
 	}
 
@@ -1049,6 +1050,7 @@ NTSTATUS devtrl_popTcpRedirectConnectData(UINT64* pOffset)
 			RtlCopyMemory(pConnectInfo->localAddress, pTcpCtxNode->localAddr, NF_MAX_ADDRESS_LENGTH);
 			RtlCopyMemory(pConnectInfo->remoteAddress, pTcpCtxNode->remoteAddr, NF_MAX_ADDRESS_LENGTH);
 			*pOffset += dataSize;
+			status = STATUS_SUCCESS;
 		}
 		else
 		{
@@ -1092,13 +1094,13 @@ NTSTATUS devtrl_popUdpPacketData(UINT64* pOffset, const int nCode)
 	{
 		pEntry = (PNF_UDP_BUFFER)RemoveHeadList(&pUdpPendData->pendedPackets);
 		if (!pEntry || !pEntry->dataBuffer || !pEntry->dataLength) {
-			status = STATUS_NO_MEMORY;
+			status = STATUS_UNSUCCESSFUL;
 			break;
 		}
 
 		PNF_UDP_PACKET pPacket = (PNF_UDP_PACKET)pEntry->dataBuffer;
 		if(!pPacket) {
-			status = STATUS_NO_MEMORY;
+			status = STATUS_UNSUCCESSFUL;
 			break;
 		}
 
@@ -1111,24 +1113,27 @@ NTSTATUS devtrl_popUdpPacketData(UINT64* pOffset, const int nCode)
 
 		pData = (PNF_DATA)((char*)g_inBuf.kernelVa + *pOffset);
 		if (!pData) {
-			status = STATUS_UNSUCCESSFUL;
+			status = STATUS_NO_MEMORY;
 			break;
 		}
 
 		pData->id = pPacket->id;
 		pData->code = nCode;
-		pData->bufferSize = dataSize;
+		pData->bufferSize = sizeof(NF_UDP_PACKET_OPTIONS) + NF_MAX_ADDRESS_LENGTH + pPacket->dataLength;
 
 		// Copy Option
-		RtlCopyMemory(pData->buffer, &pPacket->options, sizeof(NF_UDP_PACKET_OPTIONS));
+		memcpy(pData->buffer, &pPacket->options, sizeof(NF_UDP_PACKET_OPTIONS));
 
 		// Copy RemoteAddr
-		RtlCopyMemory(pData->buffer + sizeof(NF_UDP_PACKET_OPTIONS), pPacket->remoteAddr, NF_MAX_ADDRESS_LENGTH);
+		memcpy(pData->buffer + sizeof(NF_UDP_PACKET_OPTIONS), pPacket->remoteAddr, NF_MAX_ADDRESS_LENGTH);
 
 		// Copy UDPData | dataSize - (NF_DATA + OPTION + REMOTEADDR)
-		RtlCopyMemory(pData->buffer + sizeof(NF_UDP_PACKET_OPTIONS) + NF_MAX_ADDRESS_LENGTH, pPacket->dataBuffer, pPacket->dataLength);
+		if (pPacket->dataBuffer && pPacket->dataLength)
+			memcpy(pData->buffer + sizeof(NF_UDP_PACKET_OPTIONS) + NF_MAX_ADDRESS_LENGTH, pPacket->dataBuffer, pPacket->dataLength);
 
 		*pOffset += dataSize;
+
+		status = STATUS_SUCCESS;
 		break;
 	}
 	sl_unlock(&lh);

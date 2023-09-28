@@ -140,27 +140,27 @@ void NetNdrSetDenyRule(const char* cRuleName, const char* cIpAddress, const char
 	SingletonNetRule::instance()->SetDenyRule(denyRule);
 }
 
-void NetNdrSetConnectRule(const char* cRuleName, const char* cRedirectIp, const int iRedrectPort, const char* cProtocol, const char* cProcessName) 
+void NetNdrSetRediRectRule(const char* cRuleName, const char* cRedirectIp, const int iRedrectPort, const char* cProtocol, const char* cProcessName)
 {
-	TCPCONNECT_RULE tConnectRule;
-	tConnectRule.clear();
-	tConnectRule.strRuleName = cRuleName;
-	tConnectRule.strRedirectIp = cRedirectIp;
-	tConnectRule.strProtocol = cProtocol;
-	tConnectRule.iRedirectPort = iRedrectPort;
-	tConnectRule.strProcessName = cProcessName;
+	REDIRECT_RULE tRediRectRule;
+	tRediRectRule.clear();
+	tRediRectRule.strRuleName = cRuleName;
+	tRediRectRule.strRedirectIp = cRedirectIp;
+	tRediRectRule.strProtocol = cProtocol;
+	tRediRectRule.iRedirectPort = iRedrectPort;
+	tRediRectRule.strProcessName = cProcessName;
 	{
-		std::string strProcessName = tConnectRule.strProcessName;
+		std::string strProcessName = tRediRectRule.strProcessName;
 		char* vector_name= strtok((char*)strProcessName.c_str(), "|");
 		if (vector_name) {
 			while (vector_name != NULL)
 			{
-				tConnectRule.vecProcessName.push_back(vector_name);
+				tRediRectRule.vecProcessName.push_back(vector_name);
 				vector_name = strtok(NULL, "|");
 			}
 		}
 	}
-	SingletonNetRule::instance()->SetTcpConnectRule(tConnectRule);
+	SingletonNetRule::instance()->SetRediRectRule(tRediRectRule);
 }
 
 void NetNdrRuleClear(void)

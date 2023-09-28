@@ -26,7 +26,7 @@ typedef struct _DENY_RULE : NetWorkRuleNode
     }
 }DENY_RULE, * PDENY_RULE;
 
-typedef struct _TCPCONNECT_RULE : NetWorkRuleNode
+typedef struct _REDIRECT_RULE : NetWorkRuleNode
 {
     int  RedrectPort;
     char strProcessName[4096];
@@ -42,13 +42,13 @@ typedef struct _TCPCONNECT_RULE : NetWorkRuleNode
         memset(strProcessName, 0, sizeof(strProcessName));
         memset(strRedirectIp, 0, sizeof(strRedirectIp));
     }
-}TCPCONNECT_RULE, * PTCPCONNECT_RULE;
+}REDIRECT_RULE, * PREDIRECT_RULE;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    __declspec(dllexport) const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, TCPCONNECT_RULE* const pConnectRule, int* pConnetCounter, const int iMaxCounter);
+    __declspec(dllexport) const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, REDIRECT_RULE* const pConnectRule, int* pConnetCounter, const int iMaxCounter);
 
 #ifdef __cplusplus
 }

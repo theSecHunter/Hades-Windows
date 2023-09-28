@@ -28,7 +28,7 @@ typedef struct _DENY_RULE : NetWorkRuleNode
     }
 }DENY_RULE, * PDENY_RULE;
 
-typedef struct _TCPCONNECT_RULE : NetWorkRuleNode
+typedef struct _REDIRECT_RULE : NetWorkRuleNode
 {
     std::string strProcessName;
     std::vector<std::string> vecProcessName;
@@ -45,12 +45,12 @@ typedef struct _TCPCONNECT_RULE : NetWorkRuleNode
         strProcessName = "";
         vecProcessName.clear();
     }
-}TCPCONNECT_RULE, * PTCPCONNECT_RULE;
+}REDIRECT_RULE, * PREDIRECT_RULE;
 
 typedef struct _NetRuleNode
 {
     std::vector<DENY_RULE> vecDeny;
-    std::vector<TCPCONNECT_RULE> vecConnect;
+    std::vector<REDIRECT_RULE> vecRedirect;
 }NetRuleNode, * PNetRuleNode;
 
 class NetRule
@@ -61,13 +61,13 @@ public:
 
     
     void SetDenyRule(const DENY_RULE& vecDeny);
-	void SetTcpConnectRule(const TCPCONNECT_RULE& vecConnect);
+	void SetRediRectRule(const REDIRECT_RULE& vecConnect);
 
     // Tcp/Udp Conenct Filter
-    const bool FilterConnect(const std::string strIpaddr, const int iPort);
+    const bool FilterConnect(const std::string strIpaddr, const int iPort, std::string strProtocol);
 
     // Tcp RediRect to ProxyServer
-    const bool RedirectTcpConnect(const std::string strProcessName, const std::string strIpaddr, const int iPort, std::string& strRediRectIp, int& iRedrectPort);
+    const bool FilterRedirect(const std::string strProcessName, const std::string strIpaddr, const int iPort, std::string& strRediRectIp, int& iRedrectPort, std::string strProtocol);
 
 	void NetRuleClear();
 
@@ -76,5 +76,5 @@ private:
     std::vector<DENY_RULE> m_vecDenyRule;
 
     std::mutex  m_ruleRediRectMtx;
-    std::vector<TCPCONNECT_RULE> m_vecRedirectConnectRule;
+    std::vector<REDIRECT_RULE> m_vecRedirectRule;
 };

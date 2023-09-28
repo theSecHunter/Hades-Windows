@@ -36,14 +36,14 @@ void KNetWork::ReLoadDnsRule()
 void KNetWork::ReLoadIpPortConnectRule()
 {
 	PDENY_RULE pDenyRule = nullptr;
-	PTCPCONNECT_RULE pConnectRule = nullptr;
+	PREDIRECT_RULE pConnectRule = nullptr;
 	pDenyRule = (PDENY_RULE)new DENY_RULE[g_MaxRuleCounter];
-	pConnectRule = (PTCPCONNECT_RULE)new TCPCONNECT_RULE[g_MaxRuleCounter];
+	pConnectRule = (PREDIRECT_RULE)new REDIRECT_RULE[g_MaxRuleCounter];
 
 	if (!pDenyRule || !pConnectRule)
 		return;
 	RtlSecureZeroMemory(pDenyRule, sizeof(DENY_RULE) * g_MaxRuleCounter);
-	RtlSecureZeroMemory(pConnectRule, sizeof(TCPCONNECT_RULE) * g_MaxRuleCounter);
+	RtlSecureZeroMemory(pConnectRule, sizeof(PREDIRECT_RULE) * g_MaxRuleCounter);
 
 	int iDenyCounter = 0;	int iConnectCounter = 0;
 	ConfigNetWorkYamlRuleParsing(pDenyRule, &iDenyCounter, pConnectRule, &iConnectCounter, g_MaxRuleCounter);
@@ -60,7 +60,7 @@ void KNetWork::ReLoadIpPortConnectRule()
 	// REDIRECT
 	{
 		for (int i = 0; i < iConnectCounter; ++i)
-			NetNdrSetConnectRule(pConnectRule[i].strRuleName, pConnectRule[i].strRedirectIp, pConnectRule[i].RedrectPort, pConnectRule[i].strProtocol, pConnectRule[i].strProcessName);
+			NetNdrSetRediRectRule(pConnectRule[i].strRuleName, pConnectRule[i].strRedirectIp, pConnectRule[i].RedrectPort, pConnectRule[i].strProtocol, pConnectRule[i].strProcessName);
 	}
 
 	if (pDenyRule) {

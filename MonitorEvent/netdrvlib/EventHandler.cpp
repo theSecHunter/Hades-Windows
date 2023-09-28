@@ -20,6 +20,8 @@
 #pragma pack(push, 1)
 typedef struct _NF_UDP_PACKET_OPTIONS
 {
+	unsigned long		processId;
+	unsigned long		pflag;
 	COMPARTMENT_ID		compartmentId;
 	UINT64				endpointHandle;
 	SCOPE_ID			remoteScopeId;
@@ -177,7 +179,7 @@ void EventHandler::TcpredirectPacket(const char* buf, int len)
 	try
 	{
 		// Rule yaml
-		if (SingletonNetRule::instance()->FilterConnect(sRIp.c_str(), wRPort)) {
+		if (SingletonNetRule::instance()->FilterConnect(sRIp.c_str(), wRPort, "TCP")) {
 			if (bLog)
 				OutputDebugStringA("[HadesNetMon] Tcp NF_BLOCK ");
 			pTcpConnectInfo->filteringFlag = (unsigned long)NF_BLOCK;
@@ -185,7 +187,7 @@ void EventHandler::TcpredirectPacket(const char* buf, int len)
 		}
 
 		std::string strRediRectIp = ""; int nRedirectPort = 0;
-		if (!strProcessName.empty() && SingletonNetRule::instance()->RedirectTcpConnect(strProcessName, sRIp.c_str(), wRPort, strRediRectIp, nRedirectPort)) { 
+		if (!strProcessName.empty() && SingletonNetRule::instance()->FilterRedirect(strProcessName, sRIp.c_str(), wRPort, strRediRectIp, nRedirectPort, "TCP")) {
 			if (pTcpConnectInfo->ip_family == AF_INET)
 			{
 				sockaddr_in addr;
@@ -212,7 +214,6 @@ void EventHandler::TcpredirectPacket(const char* buf, int len)
 	}
 	catch (const std::exception&)
 	{
-
 	}
 	return;
 }
@@ -226,6 +227,17 @@ void EventHandler::UdpSend(const int id, const char* buf, int len)
 		if (!pOption)
 			break;
 		
+		const int nPID = pOption->processId;
+
+		std::string strProcessName = "";
+		const HANDLE processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pOption->processId);
+		if (processHandle) {
+			char cProcName[MAX_PATH] = { 0 };
+			GetModuleBaseNameA(processHandle, NULL, cProcName, MAX_PATH);
+			strProcessName = cProcName;
+			CloseHandle(processHandle);
+		}
+
 		// LocalAddr
 		char* pLocalAddr = nullptr;
 		pLocalAddr = (char*)pOption->localAddr;
@@ -251,7 +263,7 @@ void EventHandler::UdpSend(const int id, const char* buf, int len)
 		if ((pRAddr->sin_family != AF_INET) && (pRAddr->sin_family != AF_INET6))
 			break;
 
-		WORD wPort = 0; DWORD dwIp = 0; bool bIp6 = false; std::string strIpv6Addr = "";
+		WORD wRPort = 0; DWORD dwRIp = 0; bool bIp6 = false; std::string strIpv6Addr = "";
 		if (pRAddr->sin_family == AF_INET6)
 		{
 			sockaddr_in6* const pAddr6 = (sockaddr_in6*)pRAddr;
@@ -260,27 +272,67 @@ void EventHandler::UdpSend(const int id, const char* buf, int len)
 				inet_ntop(AF_INET6, &pAddr6->sin6_addr, sIp, INET6_ADDRSTRLEN);
 				strIpv6Addr = sIp;
 			}
-			wPort = ntohs(pAddr6->sin6_port);
+			wRPort = ntohs(pAddr6->sin6_port);
 			bIp6 = true;
 		}
 		else
 		{
-			dwIp = pRAddr->sin_addr.S_un.S_addr;
-			wPort = ntohs(pRAddr->sin_port);
+			dwRIp = pRAddr->sin_addr.S_un.S_addr;
+			wRPort = ntohs(pRAddr->sin_port);
 		}
-		std::string sIp = "";
+		std::string sRIp = "";
 		if (bIp6) {
-			sIp = strIpv6Addr.c_str();
+			sRIp = strIpv6Addr.c_str();
 		}
 		else
 		{
-			sIp = inet_ntoa(*(IN_ADDR*)&dwIp);
+			sRIp = inet_ntoa(*(IN_ADDR*)&dwRIp);
 		}
 		if (bLog) {
 			std::string pOutPut = "[HadesNetMon] udp Send Id ";
 			pOutPut.append(std::to_string(id));
-			pOutPut.append(" RemoteAddr ").append(sIp).append(":").append(std::to_string(wPort));
+			pOutPut.append(" pid ");
+			pOutPut.append(std::to_string(nPID));
+			pOutPut.append(" RemoteAddr ").append(sRIp).append(":").append(std::to_string(dwRIp));
 			OutputDebugStringA(pOutPut.c_str());
+		}
+		try
+		{
+			// Rule yaml
+			if (SingletonNetRule::instance()->FilterConnect(sRIp.c_str(), wRPort, "UDP")) {
+				if (bLog)
+					OutputDebugStringA("[HadesNetMon] Udp NF_BLOCK ");
+				break;
+			}
+
+			std::string strRediRectIp = ""; int nRedirectPort = 0;
+			if (!strProcessName.empty() && SingletonNetRule::instance()->FilterRedirect(strProcessName, sRIp.c_str(), wRPort, strRediRectIp, nRedirectPort, "UDP")) {
+				if (pRAddr->sin_family == AF_INET)
+				{
+					sockaddr_in addr;
+					RtlSecureZeroMemory(&addr, sizeof(addr));
+					addr.sin_family = AF_INET;
+					addr.sin_addr.S_un.S_addr = inet_addr(strRediRectIp.c_str());
+					addr.sin_port = htons(nRedirectPort);
+					memcpy((char*)pRemoteAddr, &addr, sizeof(addr));
+				}
+				else
+				{
+					sockaddr_in6 addr;
+					RtlSecureZeroMemory(&addr, sizeof(addr));
+					addr.sin6_family = AF_INET6;
+					inet_pton(AF_INET6, strRediRectIp.c_str(), &addr.sin6_addr.u);
+					addr.sin6_port = htons(nRedirectPort);
+					memcpy((char*)pRemoteAddr, &addr, sizeof(addr));
+				}
+				pOption->processId = GetCurrentProcessId();
+				if (bLog)
+					OutputDebugStringA(("[HadesNetMon] Udp Redirect to PorxyServer: " + strRediRectIp + ":" + to_string(nRedirectPort)).c_str());
+				break;
+			}
+		}
+		catch (const std::exception&)
+		{
 		}
 	} while (false);
 }
@@ -293,6 +345,8 @@ void EventHandler::UdpRecv(const int id, const char* buf, int len)
 		PNF_UDP_PACKET_OPTIONS pOption = (PNF_UDP_PACKET_OPTIONS)buf;
 		if (!pOption)
 			break;
+
+		const int nPID = pOption->processId;
 
 		// LocalAddr
 		char* pLocalAddr = nullptr;
@@ -347,6 +401,8 @@ void EventHandler::UdpRecv(const int id, const char* buf, int len)
 		if (bLog) {
 			std::string pOutPut = "[HadesNetMon] udp Recv id ";
 			pOutPut.append(std::to_string(id));
+			pOutPut.append(" pid ");
+			pOutPut.append(std::to_string(nPID));
 			pOutPut.append(" RemoteAddr ").append(sIp).append(":").append(std::to_string(wPort));
 			OutputDebugStringA(pOutPut.c_str());
 		}

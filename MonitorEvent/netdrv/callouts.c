@@ -119,6 +119,104 @@ VOID helper_callout_classFn_flowEstablished(
 		return;
 	}
 
+	// Udp Create Ctx
+	//if (inMetaValues->transportEndpointHandle) {
+	//	{
+	//		PUDPCTX* const pUdpCtx = udp_findByHandle(inMetaValues->transportEndpointHandle);
+	//		if (pUdpCtx)
+	//			udp_freeCtx(pUdpCtx);
+	//	}
+	//	do
+	//	{
+	//		PUDPCTX pUdpCtx = udp_packetAllocatCtxHandle(inMetaValues->transportEndpointHandle);
+	//		if (!pUdpCtx)
+	//			break;
+
+	//		pUdpCtx->closed = FALSE;
+	//		pUdpCtx->processId = (ULONG)inMetaValues->processId;
+
+	//		if (inFixedValues->layerId == FWPS_LAYER_ALE_FLOW_ESTABLISHED_V4)
+	//		{
+	//			struct sockaddr_in* pAddr = NULL;
+
+	//			pUdpCtx->layerId = FWPS_LAYER_DATAGRAM_DATA_V4;
+	//			pUdpCtx->calloutId = g_calloutId_datagram_v4;
+	//			pUdpCtx->ipProto = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_PROTOCOL].value.uint8;
+	//			pUdpCtx->ip_family = AF_INET;
+
+	//			// Local
+	//			pAddr = (struct sockaddr_in*)pUdpCtx->localAddr;
+	//			pAddr->sin_family = AF_INET;
+	//			pAddr->sin_addr.S_un.S_addr =
+	//				htonl(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_ADDRESS].value.uint32);
+	//			pAddr->sin_port =
+	//				htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_PORT].value.uint16);
+
+	//			// processName
+	//			if (inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_ALE_APP_ID].value.byteBlob)
+	//			{
+	//				int offset, len;
+
+	//				len = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_ALE_APP_ID].value.byteBlob->size;
+	//				if (len > sizeof(pUdpCtx->processName) - 2)
+	//				{
+	//					offset = len - (sizeof(pUdpCtx->processName) - 2);
+	//					len = sizeof(pUdpCtx->processName) - 2;
+	//				}
+	//				else
+	//				{
+	//					offset = 0;
+	//				}
+	//				memcpy(pUdpCtx->processName,
+	//					inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_ALE_APP_ID].value.byteBlob->data + offset,
+	//					len);
+	//			}
+	//		}
+	//		else if (inFixedValues->layerId == FWPS_LAYER_ALE_FLOW_ESTABLISHED_V6)
+	//		{
+	//			struct sockaddr_in6* pAddr = NULL;
+	//			pUdpCtx->layerId = FWPS_LAYER_DATAGRAM_DATA_V6;
+	//			pUdpCtx->calloutId = g_calloutId_datagram_v4;
+	//			pUdpCtx->ipProto = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_PROTOCOL].value.uint8;
+	//			pUdpCtx->ip_family = AF_INET6;
+
+	//			// Local
+	//			pAddr = (struct sockaddr_in6*)pUdpCtx->localAddr;
+	//			pAddr->sin6_family = AF_INET6;
+	//			memcpy(&pAddr->sin6_addr,
+	//				inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_ADDRESS].value.byteArray16->byteArray16,
+	//				NF_MAX_IP_ADDRESS_LENGTH);
+	//			pAddr->sin6_port =
+	//				htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_PORT].value.uint16);
+
+	//			if (FWPS_IS_METADATA_FIELD_PRESENT(inMetaValues, FWPS_METADATA_FIELD_REMOTE_SCOPE_ID))
+	//			{
+	//				pAddr->sin6_scope_id = inMetaValues->remoteScopeId.Value;
+	//			}
+
+	//			// processName
+	//			if (inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_ALE_APP_ID].value.byteBlob)
+	//			{
+	//				int offset, len;
+
+	//				len = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_ALE_APP_ID].value.byteBlob->size;
+	//				if (len > sizeof(pUdpCtx->processName) - 2)
+	//				{
+	//					offset = len - (sizeof(pUdpCtx->processName) - 2);
+	//					len = sizeof(pUdpCtx->processName) - 2;
+	//				}
+	//				else
+	//				{
+	//					offset = 0;
+	//				}
+	//				memcpy(pUdpCtx->processName,
+	//					inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_ALE_APP_ID].value.byteBlob->data + offset,
+	//					len);
+	//			}
+	//		}
+	//	} while (FALSE);
+	//}
+
 	sl_lock(&g_callouts_flowspinlock, &lh);
 	flowContextLocal = (PNF_CALLOUT_FLOWESTABLISHED_INFO)ExAllocateFromNPagedLookasideList(&g_callouts_flowCtxPacketsLAList);
 	sl_unlock(&lh);
@@ -280,8 +378,6 @@ VOID helper_callout_classFn_mac(
 
 	RtlSecureZeroMemory(pCalloutMacDataInfo, sizeof(NF_CALLOUT_MAC_INFO));
 	
-	// DbgBreakPoint();
-
 	pCalloutMacDataInfo->addressFamily =
 		(inFixedValues->layerId == FWPS_LAYER_INBOUND_MAC_FRAME_ETHERNET) ? 1 : 2;
 
@@ -775,6 +871,8 @@ BOOLEAN helper_callout_pushUdpPacket(
 		pPacket->id = pUdpCtx->id;
 		pPacket->dataLength = uDataLens;
 		// Options
+		pPacket->options.pflag = pUdpCtx->filteringFlag;
+		pPacket->options.processId = pUdpCtx->processId;
 		pPacket->options.compartmentId = (COMPARTMENT_ID)inMetaValues->compartmentId;
 		pPacket->options.transportHeaderLength = inMetaValues->transportHeaderSize;
 		pPacket->options.endpointHandle = inMetaValues->transportEndpointHandle;
@@ -812,36 +910,38 @@ BOOLEAN helper_callout_pushUdpPacket(
 		
 		if (inFixedValues->layerId == FWPS_LAYER_DATAGRAM_DATA_V4)
 		{
-			struct sockaddr_in* pAddr;
-
+			struct sockaddr_in* pAddr = NULL;
 			pAddr = (struct sockaddr_in*)pPacket->remoteAddr;
-			pAddr->sin_family = AF_INET;
-			pAddr->sin_addr.S_un.S_addr =
-				htonl(inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_IP_REMOTE_ADDRESS].value.uint32);
-			pAddr->sin_port =
-				htons(inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_IP_REMOTE_PORT].value.uint16);
+			if (pAddr) {
+				pAddr->sin_family = AF_INET;
+				pAddr->sin_addr.S_un.S_addr =
+					htonl(inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_IP_REMOTE_ADDRESS].value.uint32);
+				pAddr->sin_port =
+					htons(inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_IP_REMOTE_PORT].value.uint16);
 
-			pPacket->options.interfaceIndex =
-				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_INTERFACE_INDEX].value.uint32;
-			pPacket->options.subInterfaceIndex =
-				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_SUB_INTERFACE_INDEX].value.uint32;
+				pPacket->options.interfaceIndex =
+					inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_INTERFACE_INDEX].value.uint32;
+				pPacket->options.subInterfaceIndex =
+					inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V4_SUB_INTERFACE_INDEX].value.uint32;
+			}
 		}
 		else
 		{
-			struct sockaddr_in6* pAddr;
-
+			struct sockaddr_in6* pAddr = NULL;
 			pAddr = (struct sockaddr_in6*)pPacket->remoteAddr;
-			pAddr->sin6_family = AF_INET6;
-			memcpy(&pAddr->sin6_addr,
-				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_IP_REMOTE_ADDRESS].value.byteArray16->byteArray16,
-				NF_MAX_IP_ADDRESS_LENGTH);
-			pAddr->sin6_port =
-				htons(inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_IP_REMOTE_PORT].value.uint16);
+			if (pAddr) {
+				pAddr->sin6_family = AF_INET6;
+				memcpy(&pAddr->sin6_addr,
+					inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_IP_REMOTE_ADDRESS].value.byteArray16->byteArray16,
+					NF_MAX_IP_ADDRESS_LENGTH);
+				pAddr->sin6_port =
+					htons(inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_IP_REMOTE_PORT].value.uint16);
 
-			pPacket->options.interfaceIndex =
-				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_INTERFACE_INDEX].value.uint32;
-			pPacket->options.subInterfaceIndex =
-				inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_SUB_INTERFACE_INDEX].value.uint32;
+				pPacket->options.interfaceIndex =
+					inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_INTERFACE_INDEX].value.uint32;
+				pPacket->options.subInterfaceIndex =
+					inFixedValues->incomingValue[FWPS_FIELD_DATAGRAM_DATA_V6_SUB_INTERFACE_INDEX].value.uint32;
+			}
 		}
 		// push send
 		nStu = push_udpPacketinfo(pPacket, sizeof(NF_UDP_PACKET), isSend);
@@ -917,10 +1017,9 @@ VOID helper_callout_classFn_udpCallout(
 			classifyOut->actionType = FWP_ACTION_PERMIT;
 			return;
 		}
+		pUdpCtx->closed = FALSE;
+		pUdpCtx->processId = (ULONG)inMetaValues->processId;
 	}
-
-	pUdpCtx->closed = FALSE;
-	pUdpCtx->processId = (ULONG)inMetaValues->processId;
 
 	// Filter Transport Inject
 	packetStu = FwpsQueryPacketInjectionState0(

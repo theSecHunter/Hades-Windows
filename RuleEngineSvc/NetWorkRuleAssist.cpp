@@ -9,7 +9,7 @@
 
 static const std::string g_NetWorkConfigName = "networkRuleConfig.yaml";
 
-const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, TCPCONNECT_RULE* const pConnectRule, int* pConnetCounter, const int iMaxCounter)
+const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, REDIRECT_RULE* const pConnectRule, int* pConnetCounter, const int iMaxCounter)
 {
     try
     {

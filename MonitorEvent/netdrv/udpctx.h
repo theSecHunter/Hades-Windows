@@ -20,6 +20,8 @@ typedef struct _NF_UDPCTX_DATA
 
 typedef struct _NF_UDP_PACKET_OPTIONS
 {
+	unsigned long		processId;
+	unsigned long		pflag;
 	COMPARTMENT_ID		compartmentId;
 	UINT64				endpointHandle;
 	SCOPE_ID			remoteScopeId;
@@ -109,6 +111,7 @@ VOID udp_clean();
 VOID udp_free();
 
 UDPCTX* const udp_packetAllocatCtx();
+UDPCTX* const udp_packetAllocatCtxHandle(UINT64 transportEndpointHandle);
 VOID udp_freeCtx(PUDPCTX pUdpCtx);
 
 NF_UDP_BUFFER* const udp_packAllocatebuf(const int lens);

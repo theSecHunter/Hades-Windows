@@ -10,7 +10,7 @@ extern "C"
 
 	__declspec(dllexport) void	NetNdrRuleClear(void);
 	__declspec(dllexport) void	NetNdrSetDenyRule(const char* cRuleName, const char* cIpAddress, const char* cProtocol, const char* cPortArray, const char* cAction);
-	__declspec(dllexport) void	NetNdrSetConnectRule(const char* cRuleName, const char* cRedirectIp, const int iRedrectPort, const char* cProtocol, const char* cProcessName);
+	__declspec(dllexport) void	NetNdrSetRediRectRule(const char* cRuleName, const char* cRedirectIp, const int iRedrectPort, const char* cProtocol, const char* cProcessName);
 }
 
 #endif
