@@ -347,3 +347,7 @@ Input `Hades` to get the QR code
 <img src="https://github.com/knownsec/404StarLink-Project/raw/master/logo.png" width="30%">
 
 Hades has joined [404Starlink](https://github.com/knownsec/404StarLink)
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/theSecHunter/Hades-Windows.svg)](https://starchart.cc/theSecHunter/Hades-Windows)
