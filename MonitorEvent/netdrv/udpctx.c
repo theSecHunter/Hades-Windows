@@ -86,28 +86,6 @@ VOID udp_freebuf(PNF_UDP_BUFFER pPacket, const int lens){
 }
 
 // ctx
-UDPCTX* const udp_packetAllocatCtx(){
-	UDPCTX* const pUdpCtx = ExAllocateFromLookasideListEx(&g_udpCtxList);
-	if (!pUdpCtx)
-		return NULL;
-	RtlSecureZeroMemory(pUdpCtx, sizeof(UDPCTX));
-
-	sl_init(&pUdpCtx->lock);
-	pUdpCtx->refCount = 1;
-
-	InitializeListHead(&pUdpCtx->pendedSendPackets);
-	InitializeListHead(&pUdpCtx->pendedRecvPackets);
-	InitializeListHead(&pUdpCtx->auxEntry);
-
-	KLOCK_QUEUE_HANDLE lh;
-	sl_lock(&g_slUdpCtx, &lh);
-	pUdpCtx->id = g_nextUdpCtxId++;
-	ht_add_entry(g_phtUdpCtxById, (PHASH_TABLE_ENTRY)&pUdpCtx->id);
-	InsertTailList(&g_lUdpCtx, &pUdpCtx->entry);
-	sl_unlock(&lh);
-
-	return pUdpCtx;
-}
 UDPCTX* const udp_packetAllocatCtxHandle(UINT64 transportEndpointHandle)
 {
 	KLOCK_QUEUE_HANDLE lh;
@@ -119,28 +97,20 @@ UDPCTX* const udp_packetAllocatCtxHandle(UINT64 transportEndpointHandle)
 	pUdpCtx = (PUDPCTX)ExAllocateFromNPagedLookasideList(&g_udpCtxList);
 	if (!pUdpCtx)
 		return NULL;
-
-	memset(pUdpCtx, 0, sizeof(UDPCTX));
+	RtlSecureZeroMemory(pUdpCtx, sizeof(UDPCTX));
 
 	sl_init(&pUdpCtx->lock);
-	pUdpCtx->refCount = 1;
-
+	// 初始化引用2
+	pUdpCtx->refCount = 2;
 	InitializeListHead(&pUdpCtx->pendedSendPackets);
 	InitializeListHead(&pUdpCtx->pendedRecvPackets);
-
 	pUdpCtx->transportEndpointHandle = transportEndpointHandle;
 
 	sl_lock(&g_slUdpCtx, &lh);
-
 	pUdpCtx->id = g_nextUdpCtxId++;
-
-	KdPrint((DPREFIX"udpctx_alloc id=[%I64u]\n", pUdpCtx->id));
-
 	ht_add_entry(g_phtUdpCtxByHandle, (PHASH_TABLE_ENTRY)&pUdpCtx->transportEndpointHandle);
 	ht_add_entry(g_phtUdpCtxById, (PHASH_TABLE_ENTRY)&pUdpCtx->id);
-
 	InsertTailList(&g_lUdpCtx, &pUdpCtx->entry);
-
 	sl_unlock(&lh);
 	
 	return pUdpCtx;

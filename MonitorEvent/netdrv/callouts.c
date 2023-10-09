@@ -14,27 +14,44 @@
 #include <guiddef.h>
 
 static GUID		g_providerGuid;
-static GUID		g_calloutGuid_flow_established_v4;
-static GUID		g_calloutGuid_flow_established_v6;
+// ESTABLISHED
+static GUID		g_calloutGuid_flow_tcp_established_v4;
+static GUID		g_calloutGuid_flow_tcp_established_v6;
+static GUID		g_calloutGuid_flow_udp_established_v4;
+static GUID		g_calloutGuid_flow_udp_established_v6;
+// ALE Connect
 static GUID		g_calloutGuid_ale_connectredirect_v4;
 static GUID		g_calloutGuid_ale_connectredirect_v6;
+static GUID		g_calloutGuid_ale_udp_connectredirect_v4;
+static GUID		g_calloutGuid_ale_udp_connectredirect_v6;
+// UDP DataGRAM 
 static GUID		g_calloutGuid_datagram_v4;
 static GUID		g_calloutGuid_datagram_v6;
+// UDP Close
+static GUID		g_calloutGuid_udp_close_v4;
+static GUID		g_calloutGuid_udp_close_v6;
+// MAC 
 static GUID		g_calloutGuid_inbound_mac_etherent;
 static GUID		g_calloutGuid_outbound_mac_etherent;
 static GUID		g_calloutGuid_inbound_mac_native;
 static GUID		g_calloutGuid_outbound_mac_native;
 
-static UINT32	g_calloutId_flow_established_v4;
-static UINT32	g_calloutId_flow_established_v6;
+static UINT32	g_calloutId_flow_tcp_established_v4;
+static UINT32	g_calloutId_flow_tcp_established_v6;
+static UINT32	g_calloutId_flow_udp_established_v4;
+static UINT32	g_calloutId_flow_udp_established_v6;
 static UINT32	g_calloutId_inbound_mac_etherent;
 static UINT32	g_calloutId_outbound_mac_etherent;
 static UINT32	g_calloutId_inbound_mac_native;
 static UINT32	g_calloutId_outbound_mac_native;
 static UINT32	g_calloutId_ale_connectredirect_v4;
 static UINT32	g_calloutId_ale_connectredirect_v6;
+static UINT32	g_calloutId_ale_udp_connectredirect_v4;
+static UINT32	g_calloutId_ale_udp_connectredirect_v6;
 static UINT32	g_calloutId_datagram_v4;
 static UINT32	g_calloutId_datagram_v6;
+static UINT32	g_calloutId_udpclose_v4;
+static UINT32	g_calloutId_udpclose_v6;
 
 static GUID		g_sublayerGuid;
 static HANDLE	g_engineHandle = NULL;
@@ -89,8 +106,8 @@ inline void DbgPrintAddress(int ipFamily, void* addr, char* name, UINT64 id)
 	}
 }
 
-// Callouts Established Callbacks
-VOID helper_callout_classFn_flowEstablished(
+// Callouts Established TCP Callbacks
+VOID helper_callout_classFn_TCPFflowEstablished(
 	_In_ const FWPS_INCOMING_VALUES0* inFixedValues,
 	_In_ const FWPS_INCOMING_METADATA_VALUES0* inMetaValues,
 	_Inout_opt_ void* layerData,
@@ -118,105 +135,7 @@ VOID helper_callout_classFn_flowEstablished(
 		}
 		return;
 	}
-
-	// Udp Create Ctx
-	//if (inMetaValues->transportEndpointHandle) {
-	//	{
-	//		PUDPCTX* const pUdpCtx = udp_findByHandle(inMetaValues->transportEndpointHandle);
-	//		if (pUdpCtx)
-	//			udp_freeCtx(pUdpCtx);
-	//	}
-	//	do
-	//	{
-	//		PUDPCTX pUdpCtx = udp_packetAllocatCtxHandle(inMetaValues->transportEndpointHandle);
-	//		if (!pUdpCtx)
-	//			break;
-
-	//		pUdpCtx->closed = FALSE;
-	//		pUdpCtx->processId = (ULONG)inMetaValues->processId;
-
-	//		if (inFixedValues->layerId == FWPS_LAYER_ALE_FLOW_ESTABLISHED_V4)
-	//		{
-	//			struct sockaddr_in* pAddr = NULL;
-
-	//			pUdpCtx->layerId = FWPS_LAYER_DATAGRAM_DATA_V4;
-	//			pUdpCtx->calloutId = g_calloutId_datagram_v4;
-	//			pUdpCtx->ipProto = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_PROTOCOL].value.uint8;
-	//			pUdpCtx->ip_family = AF_INET;
-
-	//			// Local
-	//			pAddr = (struct sockaddr_in*)pUdpCtx->localAddr;
-	//			pAddr->sin_family = AF_INET;
-	//			pAddr->sin_addr.S_un.S_addr =
-	//				htonl(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_ADDRESS].value.uint32);
-	//			pAddr->sin_port =
-	//				htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_PORT].value.uint16);
-
-	//			// processName
-	//			if (inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_ALE_APP_ID].value.byteBlob)
-	//			{
-	//				int offset, len;
-
-	//				len = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_ALE_APP_ID].value.byteBlob->size;
-	//				if (len > sizeof(pUdpCtx->processName) - 2)
-	//				{
-	//					offset = len - (sizeof(pUdpCtx->processName) - 2);
-	//					len = sizeof(pUdpCtx->processName) - 2;
-	//				}
-	//				else
-	//				{
-	//					offset = 0;
-	//				}
-	//				memcpy(pUdpCtx->processName,
-	//					inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_ALE_APP_ID].value.byteBlob->data + offset,
-	//					len);
-	//			}
-	//		}
-	//		else if (inFixedValues->layerId == FWPS_LAYER_ALE_FLOW_ESTABLISHED_V6)
-	//		{
-	//			struct sockaddr_in6* pAddr = NULL;
-	//			pUdpCtx->layerId = FWPS_LAYER_DATAGRAM_DATA_V6;
-	//			pUdpCtx->calloutId = g_calloutId_datagram_v4;
-	//			pUdpCtx->ipProto = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_PROTOCOL].value.uint8;
-	//			pUdpCtx->ip_family = AF_INET6;
-
-	//			// Local
-	//			pAddr = (struct sockaddr_in6*)pUdpCtx->localAddr;
-	//			pAddr->sin6_family = AF_INET6;
-	//			memcpy(&pAddr->sin6_addr,
-	//				inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_ADDRESS].value.byteArray16->byteArray16,
-	//				NF_MAX_IP_ADDRESS_LENGTH);
-	//			pAddr->sin6_port =
-	//				htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_PORT].value.uint16);
-
-	//			if (FWPS_IS_METADATA_FIELD_PRESENT(inMetaValues, FWPS_METADATA_FIELD_REMOTE_SCOPE_ID))
-	//			{
-	//				pAddr->sin6_scope_id = inMetaValues->remoteScopeId.Value;
-	//			}
-
-	//			// processName
-	//			if (inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_ALE_APP_ID].value.byteBlob)
-	//			{
-	//				int offset, len;
-
-	//				len = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_ALE_APP_ID].value.byteBlob->size;
-	//				if (len > sizeof(pUdpCtx->processName) - 2)
-	//				{
-	//					offset = len - (sizeof(pUdpCtx->processName) - 2);
-	//					len = sizeof(pUdpCtx->processName) - 2;
-	//				}
-	//				else
-	//				{
-	//					offset = 0;
-	//				}
-	//				memcpy(pUdpCtx->processName,
-	//					inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_ALE_APP_ID].value.byteBlob->data + offset,
-	//					len);
-	//			}
-	//		}
-	//	} while (FALSE);
-	//}
-
+	
 	sl_lock(&g_callouts_flowspinlock, &lh);
 	flowContextLocal = (PNF_CALLOUT_FLOWESTABLISHED_INFO)ExAllocateFromNPagedLookasideList(&g_callouts_flowCtxPacketsLAList);
 	sl_unlock(&lh);
@@ -230,6 +149,226 @@ VOID helper_callout_classFn_flowEstablished(
 	flowContextLocal->refCount = 1;
 	// 家族协议
 	flowContextLocal->addressFamily= 
+		(inFixedValues->layerId == FWPS_LAYER_ALE_FLOW_ESTABLISHED_V4) ? AF_INET : AF_INET6;
+
+	flowContextLocal->flowId = inMetaValues->flowHandle;
+	flowContextLocal->layerId = FWPS_LAYER_OUTBOUND_MAC_FRAME_ETHERNET;
+	flowContextLocal->calloutId = &g_calloutId_outbound_mac_etherent;
+
+	if (flowContextLocal->addressFamily == AF_INET)
+	{
+		flowContextLocal->ipv4LocalAddr =
+			RtlUlongByteSwap(
+				inFixedValues->incomingValue\
+				[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_ADDRESS].value.uint32
+			);
+		flowContextLocal->ipv4toRemoteAddr =
+			RtlUlongByteSwap(
+				inFixedValues->incomingValue\
+				[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_REMOTE_ADDRESS].value.uint32
+			);
+		flowContextLocal->protocol =
+			inFixedValues->incomingValue\
+			[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_PROTOCOL].value.uint8;
+		flowContextLocal->toLocalPort =
+			inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_PORT].value.uint16;
+		flowContextLocal->toRemotePort =
+			inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_REMOTE_PORT].value.uint16;
+	}
+	else
+	{
+		RtlCopyMemory(
+			(UINT8*)&flowContextLocal->localAddr,
+			inFixedValues->incomingValue\
+			[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_ADDRESS].value.byteArray16->byteArray16,
+			16
+		);
+		RtlCopyMemory(
+			(UINT8*)&flowContextLocal->RemoteAddr,
+			inFixedValues->incomingValue\
+			[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_REMOTE_ADDRESS].value.byteArray16->byteArray16,
+			16
+		);
+		flowContextLocal->protocol =
+			inFixedValues->incomingValue\
+			[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_PROTOCOL].value.uint8;
+		flowContextLocal->toLocalPort =
+			inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_PORT].value.uint16;
+		flowContextLocal->toRemotePort =
+			inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_REMOTE_PORT].value.uint16;
+	}
+
+	flowContextLocal->processId = inMetaValues->processId;
+	flowContextLocal->processPathSize = inMetaValues->processPath->size;
+	RtlCopyMemory(flowContextLocal->processPath, inMetaValues->processPath->data, inMetaValues->processPath->size);
+
+	establishedctx_pushflowestablishedctx(flowContextLocal, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
+
+Exit:
+	if (flowContextLocal)
+	{
+		sl_lock(&g_callouts_flowspinlock, &lh);
+		ExFreeToNPagedLookasideList(&g_callouts_flowCtxPacketsLAList, flowContextLocal);
+		flowContextLocal = NULL;
+		sl_unlock(&lh);
+	}
+
+	classifyOut->actionType = FWP_ACTION_PERMIT;
+	if (filter->flags & FWPS_FILTER_FLAG_CLEAR_ACTION_RIGHT)
+	{
+		classifyOut->flags &= ~FWPS_RIGHT_ACTION_WRITE;
+	}
+}
+
+// Callouts Established UDP Callbacks
+VOID helper_callout_classFn_UDPflowEstablished(
+	_In_ const FWPS_INCOMING_VALUES0* inFixedValues,
+	_In_ const FWPS_INCOMING_METADATA_VALUES0* inMetaValues,
+	_Inout_opt_ void* layerData,
+	_In_opt_ const void* classifyContext,
+	_In_ const FWPS_FILTER* filter,
+	_In_ UINT64 flowContext,
+	_Inout_ FWPS_CLASSIFY_OUT0* classifyOut
+)
+{
+	UNREFERENCED_PARAMETER(layerData);
+	UNREFERENCED_PARAMETER(flowContext);
+	UNREFERENCED_PARAMETER(classifyContext);
+
+	NTSTATUS status = STATUS_SUCCESS;
+	KLOCK_QUEUE_HANDLE lh;
+	PNF_CALLOUT_FLOWESTABLISHED_INFO flowContextLocal = NULL;
+
+	// 关闭监控的时候，不做任何操作
+	if (g_monitorflag == FALSE)
+	{
+		classifyOut->actionType = FWP_ACTION_PERMIT;
+		if (filter->flags & FWPS_FILTER_FLAG_CLEAR_ACTION_RIGHT)
+		{
+			classifyOut->flags &= ~FWPS_RIGHT_ACTION_WRITE;
+		}
+		return;
+	}
+
+	// Udp Create Ctx
+	if (inMetaValues->transportEndpointHandle) {
+		PUDPCTX pUdpCtx = NULL;
+		pUdpCtx = udp_findByHandle(inMetaValues->transportEndpointHandle);
+		if (pUdpCtx) {
+			udp_freeCtx(pUdpCtx);
+		}
+		else {
+			pUdpCtx = udp_packetAllocatCtxHandle(inMetaValues->transportEndpointHandle);
+			do
+			{
+				if (!pUdpCtx)
+					break;
+				
+				pUdpCtx->closed = FALSE;
+				pUdpCtx->processId = (ULONG)inMetaValues->processId;
+
+				if (inFixedValues->layerId == FWPS_LAYER_ALE_FLOW_ESTABLISHED_V4)
+				{
+					struct sockaddr_in* pAddr = NULL;
+
+					pUdpCtx->layerId = FWPS_LAYER_DATAGRAM_DATA_V4;
+					pUdpCtx->calloutId = g_calloutId_datagram_v4;
+					pUdpCtx->ipProto = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_PROTOCOL].value.uint8;
+					pUdpCtx->ip_family = AF_INET;
+
+					// Local
+					pAddr = (struct sockaddr_in*)pUdpCtx->localAddr;
+					pAddr->sin_family = AF_INET;
+					pAddr->sin_addr.S_un.S_addr =
+						htonl(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_ADDRESS].value.uint32);
+					pAddr->sin_port =
+						htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_PORT].value.uint16);
+
+					// processName
+					if (inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_ALE_APP_ID].value.byteBlob)
+					{
+						int offset, len;
+
+						len = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_ALE_APP_ID].value.byteBlob->size;
+						if (len > sizeof(pUdpCtx->processName) - 2)
+						{
+							offset = len - (sizeof(pUdpCtx->processName) - 2);
+							len = sizeof(pUdpCtx->processName) - 2;
+						}
+						else
+						{
+							offset = 0;
+						}
+						memcpy(pUdpCtx->processName,
+							inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_ALE_APP_ID].value.byteBlob->data + offset,
+							len);
+					}
+				}
+				else if (inFixedValues->layerId == FWPS_LAYER_ALE_FLOW_ESTABLISHED_V6)
+				{
+					struct sockaddr_in6* pAddr = NULL;
+					pUdpCtx->layerId = FWPS_LAYER_DATAGRAM_DATA_V6;
+					pUdpCtx->calloutId = g_calloutId_datagram_v4;
+					pUdpCtx->ipProto = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_PROTOCOL].value.uint8;
+					pUdpCtx->ip_family = AF_INET6;
+
+					// Local
+					pAddr = (struct sockaddr_in6*)pUdpCtx->localAddr;
+					pAddr->sin6_family = AF_INET6;
+					memcpy(&pAddr->sin6_addr,
+						inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_ADDRESS].value.byteArray16->byteArray16,
+						NF_MAX_IP_ADDRESS_LENGTH);
+					pAddr->sin6_port =
+						htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_PORT].value.uint16);
+
+					if (FWPS_IS_METADATA_FIELD_PRESENT(inMetaValues, FWPS_METADATA_FIELD_REMOTE_SCOPE_ID))
+					{
+						pAddr->sin6_scope_id = inMetaValues->remoteScopeId.Value;
+					}
+
+					// processName
+					if (inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_ALE_APP_ID].value.byteBlob)
+					{
+						int offset, len;
+
+						len = inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_ALE_APP_ID].value.byteBlob->size;
+						if (len > sizeof(pUdpCtx->processName) - 2)
+						{
+							offset = len - (sizeof(pUdpCtx->processName) - 2);
+							len = sizeof(pUdpCtx->processName) - 2;
+						}
+						else
+						{
+							offset = 0;
+						}
+						memcpy(pUdpCtx->processName,
+							inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_ALE_APP_ID].value.byteBlob->data + offset,
+							len);
+					}
+
+					// reference -1
+					{
+						udp_freeCtx(pUdpCtx);
+						pUdpCtx = NULL;
+					}
+				}
+			} while (FALSE);
+		}
+	}
+
+	sl_lock(&g_callouts_flowspinlock, &lh);
+	flowContextLocal = (PNF_CALLOUT_FLOWESTABLISHED_INFO)ExAllocateFromNPagedLookasideList(&g_callouts_flowCtxPacketsLAList);
+	sl_unlock(&lh);
+	if (flowContextLocal == NULL)
+	{
+		status = STATUS_NO_MEMORY;
+		goto Exit;
+	}
+	RtlSecureZeroMemory(flowContextLocal, sizeof(NF_CALLOUT_FLOWESTABLISHED_INFO));
+
+	flowContextLocal->refCount = 1;
+	// 家族协议
+	flowContextLocal->addressFamily =
 		(inFixedValues->layerId == FWPS_LAYER_ALE_FLOW_ESTABLISHED_V4) ? AF_INET : AF_INET6;
 
 	flowContextLocal->flowId = inMetaValues->flowHandle;
@@ -561,7 +700,6 @@ VOID helper_callout_classFn_connectredirect(
 		return;
 	}
 
-	/*FALSE == g_redirectflag ||*/
 	if (FALSE == g_monitorflag)
 	{
 		classifyOut->actionType = FWP_ACTION_PERMIT;
@@ -1012,12 +1150,13 @@ VOID helper_callout_classFn_udpCallout(
 	UDPCTX* pUdpCtx = NULL;
 	pUdpCtx = udp_findByHandle(inMetaValues->transportEndpointHandle);
 	if (!pUdpCtx) {
-		pUdpCtx = udp_packetAllocatCtx();
+		pUdpCtx = udp_packetAllocatCtxHandle(inMetaValues->transportEndpointHandle);
 		if (!pUdpCtx) {
 			classifyOut->actionType = FWP_ACTION_PERMIT;
 			return;
 		}
 		pUdpCtx->closed = FALSE;
+		// Invain & process path invain
 		pUdpCtx->processId = (ULONG)inMetaValues->processId;
 	}
 
@@ -1188,6 +1327,7 @@ VOID helper_callout_classFn_udpCallout(
 
 	// test permit
 	classifyOut->actionType = FWP_ACTION_PERMIT;
+	// reference -1
 	if (pUdpCtx) {
 		udp_freeCtx(pUdpCtx);
 		pUdpCtx = NULL;
@@ -1204,6 +1344,43 @@ NTSTATUS helper_callout_notifyFn_udpCallout(
 	UNREFERENCED_PARAMETER(filter);
 	return STATUS_SUCCESS;
 }
+
+// Callouts UDP Close
+VOID helper_callout_endpointClosureUdpCallout(
+	IN const FWPS_INCOMING_VALUES* inFixedValues,
+	IN const FWPS_INCOMING_METADATA_VALUES* inMetaValues,
+	IN VOID* packet,
+	IN const void* classifyContext,
+	IN const FWPS_FILTER* filter,
+	IN UINT64 flowContext,
+	OUT FWPS_CLASSIFY_OUT* classifyOut)
+{
+	UNREFERENCED_PARAMETER(inFixedValues);
+	UNREFERENCED_PARAMETER(packet);
+	UNREFERENCED_PARAMETER(classifyContext);
+	UNREFERENCED_PARAMETER(filter);
+	UNREFERENCED_PARAMETER(flowContext);
+	PUDPCTX pUdpCtx = NULL;
+	pUdpCtx = udp_findByHandle(inMetaValues->transportEndpointHandle);
+	if (pUdpCtx)
+	{
+		udp_freeCtx(pUdpCtx);
+		udp_freeCtx(pUdpCtx);
+		pUdpCtx = NULL;
+	}
+}
+
+NTSTATUS helper_callout_endpointClosureUdpNotify(
+	IN  FWPS_CALLOUT_NOTIFY_TYPE        notifyType,
+	IN  const GUID* filterKey,
+	IN  const FWPS_FILTER* filter)
+{
+	UNREFERENCED_PARAMETER(notifyType);
+	UNREFERENCED_PARAMETER(filterKey);
+	UNREFERENCED_PARAMETER(filter);
+	return STATUS_SUCCESS;
+}
+
 
 // Callouts Ctrl Manage
 NTSTATUS helper_callout_registerCallout(
@@ -1230,7 +1407,7 @@ NTSTATUS helper_callout_registerCallout(
 	return status;
 }
 
-NTSTATUS callout_addFlowEstablishedFilter(
+NTSTATUS callout_addTCPFlowEstablishedFilter(
 	const GUID* calloutKey, 
 	const GUID* layer, 
 	FWPM_SUBLAYER* subLayer)
@@ -1250,8 +1427,8 @@ NTSTATUS callout_addFlowEstablishedFilter(
 
 	do
 	{
-		displayData.name = L"Data Flow Established";
-		displayData.description = L"Flow Established Callouts";
+		displayData.name = L"TCP Data Flow Established";
+		displayData.description = L"TCP Flow Established Callouts";
 
 		fwpcallout0.displayData = displayData;
 		fwpcallout0.applicableLayer = *layer;
@@ -1266,8 +1443,8 @@ NTSTATUS callout_addFlowEstablishedFilter(
 		fwpfilter.layerKey = *layer;
 		fwpfilter.action.calloutKey = *calloutKey;
 		fwpfilter.action.type = FWP_ACTION_CALLOUT_TERMINATING;
-		fwpfilter.displayData.name = L"Flow Established Callout";
-		fwpfilter.displayData.description = L"Flow Established Callout";
+		fwpfilter.displayData.name = L"TCP Flow Established Callout";
+		fwpfilter.displayData.description = L"TCP Flow Established Callout";
 		fwpfilter.weight.type = FWP_EMPTY;
 
 		// tcp
@@ -1276,14 +1453,64 @@ NTSTATUS callout_addFlowEstablishedFilter(
 		filterConditions[0].fieldKey = FWPM_CONDITION_IP_PROTOCOL;
 		filterConditions[0].matchType = FWP_MATCH_EQUAL;
 
-		// udp
-		filterConditions[1].conditionValue.type = FWP_UINT8;
-		filterConditions[1].conditionValue.uint8 = IPPROTO_UDP;
-		filterConditions[1].fieldKey = FWPM_CONDITION_IP_PROTOCOL;
-		filterConditions[1].matchType = FWP_MATCH_EQUAL;
-		
 		fwpfilter.filterCondition = filterConditions;
-		fwpfilter.numFilterConditions = 2;
+		fwpfilter.numFilterConditions = 1;
+
+		status = FwpmFilterAdd(g_engineHandle, &fwpfilter, NULL, NULL);
+
+	} while (FALSE);
+
+	return status;
+}
+
+NTSTATUS callout_addUDPFlowEstablishedFilter(
+	const GUID* calloutKey,
+	const GUID* layer,
+	FWPM_SUBLAYER* subLayer)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	FWPM_CALLOUT0 fwpcallout0;
+	RtlSecureZeroMemory(&fwpcallout0, sizeof(FWPM_CALLOUT0));
+
+	FWPM_FILTER fwpfilter;
+	RtlSecureZeroMemory(&fwpfilter, sizeof(FWPM_FILTER));
+
+	FWPM_DISPLAY_DATA displayData;
+	RtlSecureZeroMemory(&displayData, sizeof(FWPM_DISPLAY_DATA));
+
+	FWPM_FILTER_CONDITION filterConditions[3];
+	RtlSecureZeroMemory(&filterConditions, sizeof(filterConditions));
+
+	do
+	{
+		displayData.name = L"UDP Data Flow Established";
+		displayData.description = L"UDP Flow Established Callouts";
+
+		fwpcallout0.displayData = displayData;
+		fwpcallout0.applicableLayer = *layer;
+		fwpcallout0.calloutKey = *calloutKey;
+		fwpcallout0.flags = 0;
+
+		status = FwpmCalloutAdd(g_engineHandle, &fwpcallout0, NULL, NULL);
+		if (!NT_SUCCESS(status))
+			break;
+
+		fwpfilter.subLayerKey = subLayer->subLayerKey;
+		fwpfilter.layerKey = *layer;
+		fwpfilter.action.calloutKey = *calloutKey;
+		fwpfilter.action.type = FWP_ACTION_CALLOUT_TERMINATING;
+		fwpfilter.displayData.name = L"UDP Flow Established Callout";
+		fwpfilter.displayData.description = L"UDP Flow Established Callout";
+		fwpfilter.weight.type = FWP_EMPTY;
+
+		// udp
+		filterConditions[0].conditionValue.type = FWP_UINT8;
+		filterConditions[0].conditionValue.uint8 = IPPROTO_UDP;
+		filterConditions[0].fieldKey = FWPM_CONDITION_IP_PROTOCOL;
+		filterConditions[0].matchType = FWP_MATCH_EQUAL;
+
+		fwpfilter.filterCondition = filterConditions;
+		fwpfilter.numFilterConditions = 1;
 
 		status = FwpmFilterAdd(g_engineHandle, &fwpfilter, NULL, NULL);
 
@@ -1415,23 +1642,23 @@ NTSTATUS callouts_addFilters()
 		if (!NT_SUCCESS(status))
 			break;
 
-		status = callout_addFlowEstablishedFilter(
-			&g_calloutGuid_flow_established_v4,
+		status = callout_addTCPFlowEstablishedFilter(
+			&g_calloutGuid_flow_tcp_established_v4,
 			&FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4,
 			&subLayer
 		);
 		if (!NT_SUCCESS(status))
 			break;
 
-		status = callout_addFlowEstablishedFilter(
-			&g_calloutGuid_flow_established_v6,
+		status = callout_addTCPFlowEstablishedFilter(
+			&g_calloutGuid_flow_tcp_established_v6,
 			&FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6,
 			&subLayer
 		);
 		if (!NT_SUCCESS(status))
 			break;
 
-		status = callout_addFlowEstablishedFilter(
+		status = callout_addTCPFlowEstablishedFilter(
 			&g_calloutGuid_ale_connectredirect_v4,
 			&FWPM_LAYER_ALE_CONNECT_REDIRECT_V4,
 			&subLayer
@@ -1439,7 +1666,7 @@ NTSTATUS callouts_addFilters()
 		if (!NT_SUCCESS(status))
 			break;
 
-		status = callout_addFlowEstablishedFilter(
+		status = callout_addTCPFlowEstablishedFilter(
 			&g_calloutGuid_ale_connectredirect_v6,
 			&FWPM_LAYER_ALE_CONNECT_REDIRECT_V6,
 			&subLayer
@@ -1447,7 +1674,23 @@ NTSTATUS callouts_addFilters()
 		if (!NT_SUCCESS(status))
 			break;
 
-		status = callout_addFlowEstablishedFilter(
+		status = callout_addUDPFlowEstablishedFilter(
+			&g_calloutGuid_flow_udp_established_v4,
+			&FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4,
+			&subLayer
+		);
+		if (!NT_SUCCESS(status))
+			break;
+
+		status = callout_addUDPFlowEstablishedFilter(
+			&g_calloutGuid_flow_udp_established_v6,
+			&FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6,
+			&subLayer
+		);
+		if (!NT_SUCCESS(status))
+			break;
+
+		status = callout_addUDPFlowEstablishedFilter(
 			&g_calloutGuid_datagram_v4,
 			&FWPM_LAYER_DATAGRAM_DATA_V4,
 			&subLayer
@@ -1455,9 +1698,25 @@ NTSTATUS callouts_addFilters()
 		if (!NT_SUCCESS(status))
 			break;
 
-		status = callout_addFlowEstablishedFilter(
+		status = callout_addUDPFlowEstablishedFilter(
 			&g_calloutGuid_datagram_v6,
 			&FWPM_LAYER_DATAGRAM_DATA_V6,
+			&subLayer
+		);
+		if (!NT_SUCCESS(status))
+			break;
+
+		status = callout_addUDPFlowEstablishedFilter(
+			&g_calloutGuid_udp_close_v4,
+			&FWPM_LAYER_ALE_ENDPOINT_CLOSURE_V4,
+			&subLayer
+		);
+		if (!NT_SUCCESS(status))
+			break;
+
+		status = callout_addUDPFlowEstablishedFilter(
+			&g_calloutGuid_udp_close_v6,
+			&FWPM_LAYER_ALE_ENDPOINT_CLOSURE_V6,
 			&subLayer
 		);
 		if (!NT_SUCCESS(status))
@@ -1519,33 +1778,57 @@ NTSTATUS callouts_registerCallouts(IN OUT void* deviceObject)
 
 	do
 	{
-		// FWPM_LAYER_ALE_FLOW_ESTABLISHED_V4
+		// TCP FWPM_LAYER_ALE_FLOW_ESTABLISHED
 		status = helper_callout_registerCallout(
 			deviceObject,
-			helper_callout_classFn_flowEstablished,
+			helper_callout_classFn_TCPFflowEstablished,
 			helper_callout_notifyFn_flowEstablished,
 			NULL,
-			&g_calloutGuid_flow_established_v4,
+			&g_calloutGuid_flow_tcp_established_v4,
 			0,
-			&g_calloutId_flow_established_v4
-		);
-		if (!NT_SUCCESS(status))
-			break;
-		
-		// FWPM_LAYER_ALE_FLOW_ESTABLISHED_V6
-		status = helper_callout_registerCallout(
-			deviceObject,
-			helper_callout_classFn_flowEstablished,
-			helper_callout_notifyFn_flowEstablished,
-			NULL,
-			&g_calloutGuid_flow_established_v6,
-			0,
-			&g_calloutId_flow_established_v6
+			&g_calloutId_flow_tcp_established_v4
 		);
 		if (!NT_SUCCESS(status))
 			break;
 
-		// FWPM_LAYER_ALE_CONNECT_REDIRECT_V4
+		status = helper_callout_registerCallout(
+			deviceObject,
+			helper_callout_classFn_TCPFflowEstablished,
+			helper_callout_notifyFn_flowEstablished,
+			NULL,
+			&g_calloutGuid_flow_tcp_established_v6,
+			0,
+			&g_calloutId_flow_tcp_established_v6
+		);
+		if (!NT_SUCCESS(status))
+			break;
+
+		// UDP FWPM_LAYER_ALE_FLOW_ESTABLISHED
+		status = helper_callout_registerCallout(
+			deviceObject,
+			helper_callout_classFn_UDPflowEstablished,
+			helper_callout_notifyFn_flowEstablished,
+			NULL,
+			&g_calloutGuid_flow_udp_established_v4,
+			0,
+			&g_calloutId_flow_udp_established_v4
+		);
+		if (!NT_SUCCESS(status))
+			break;
+
+		status = helper_callout_registerCallout(
+			deviceObject,
+			helper_callout_classFn_UDPflowEstablished,
+			helper_callout_notifyFn_flowEstablished,
+			NULL,
+			&g_calloutGuid_flow_udp_established_v6,
+			0,
+			&g_calloutId_flow_udp_established_v6
+		);
+		if (!NT_SUCCESS(status))
+			break;
+
+		// TCP FWPM_LAYER_ALE_CONNECT_REDIRECT_V4
 		status = helper_callout_registerCallout(
 			deviceObject,
 			helper_callout_classFn_connectredirect,
@@ -1570,7 +1853,7 @@ NTSTATUS callouts_registerCallouts(IN OUT void* deviceObject)
 		if (!NT_SUCCESS(status))
 			break;
 
-		// UDP
+		// UDP DataGram
 		status = helper_callout_registerCallout(
 			deviceObject,
 			helper_callout_classFn_udpCallout,
@@ -1591,6 +1874,30 @@ NTSTATUS callouts_registerCallouts(IN OUT void* deviceObject)
 			&g_calloutGuid_datagram_v6,
 			0,
 			&g_calloutId_datagram_v6
+		);
+		if (!NT_SUCCESS(status))
+			break;
+
+		// UDP Close
+		status = helper_callout_registerCallout(
+			deviceObject,
+			helper_callout_endpointClosureUdpCallout,
+			helper_callout_endpointClosureUdpNotify,
+			NULL,
+			&g_calloutGuid_udp_close_v4,
+			0,
+			&g_calloutId_udpclose_v4
+		);
+		if (!NT_SUCCESS(status))
+			break;
+		status = helper_callout_registerCallout(
+			deviceObject,
+			helper_callout_endpointClosureUdpCallout,
+			helper_callout_endpointClosureUdpNotify,
+			NULL,
+			&g_calloutGuid_udp_close_v6,
+			0,
+			&g_calloutId_udpclose_v6
 		);
 		if (!NT_SUCCESS(status))
 			break;
@@ -1670,16 +1977,26 @@ NTSTATUS callout_init(PDEVICE_OBJECT deviceObject)
 	RtlSecureZeroMemory(&session, sizeof(FWPM_SESSION0));
 
 	// Create GUID
-	ExUuidCreate(&g_calloutGuid_flow_established_v4);
-	ExUuidCreate(&g_calloutGuid_flow_established_v6);
+	ExUuidCreate(&g_calloutGuid_flow_tcp_established_v4);
+	ExUuidCreate(&g_calloutGuid_flow_tcp_established_v6);
+	ExUuidCreate(&g_calloutGuid_flow_udp_established_v4);
+	ExUuidCreate(&g_calloutGuid_flow_udp_established_v6);
+
 	ExUuidCreate(&g_calloutGuid_inbound_mac_etherent);
 	ExUuidCreate(&g_calloutGuid_outbound_mac_etherent);
 	ExUuidCreate(&g_calloutGuid_inbound_mac_native);
 	ExUuidCreate(&g_calloutGuid_outbound_mac_native);
+
 	ExUuidCreate(&g_calloutGuid_ale_connectredirect_v4);
 	ExUuidCreate(&g_calloutGuid_ale_connectredirect_v6);
+	ExUuidCreate(&g_calloutGuid_ale_udp_connectredirect_v4);
+	ExUuidCreate(&g_calloutGuid_ale_udp_connectredirect_v6);
+
 	ExUuidCreate(&g_calloutGuid_datagram_v4);
 	ExUuidCreate(&g_calloutGuid_datagram_v6);
+	ExUuidCreate(&g_calloutGuid_udp_close_v4);
+	ExUuidCreate(&g_calloutGuid_udp_close_v6);
+
 	ExUuidCreate(&g_providerGuid);
 	ExUuidCreate(&g_sublayerGuid);
 
@@ -1759,28 +2076,44 @@ VOID callout_free()
 	ExDeleteNPagedLookasideList(&g_callouts_datalinkPacktsList);
 
 	// clean guid
-	FwpsCalloutUnregisterByKey(&g_calloutGuid_flow_established_v4);
-	FwpsCalloutUnregisterByKey(&g_calloutGuid_flow_established_v6);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_flow_tcp_established_v4);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_flow_tcp_established_v6);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_flow_udp_established_v4);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_flow_udp_established_v6);
+
 	FwpsCalloutUnregisterByKey(&g_calloutGuid_inbound_mac_etherent);
 	FwpsCalloutUnregisterByKey(&g_calloutGuid_outbound_mac_etherent);
-	FwpsCalloutUnregisterByKey(&g_calloutGuid_ale_connectredirect_v4);
-	FwpsCalloutUnregisterByKey(&g_calloutGuid_ale_connectredirect_v6);
-	FwpsCalloutUnregisterByKey(&g_calloutGuid_datagram_v4);
-	FwpsCalloutUnregisterByKey(&g_calloutGuid_datagram_v6);
 	FwpsCalloutUnregisterByKey(&g_calloutGuid_inbound_mac_native);
 	FwpsCalloutUnregisterByKey(&g_calloutGuid_outbound_mac_native);
 
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_ale_connectredirect_v4);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_ale_connectredirect_v6);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_ale_udp_connectredirect_v4);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_ale_udp_connectredirect_v6);
+
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_datagram_v4);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_datagram_v6);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_udp_close_v4);
+	FwpsCalloutUnregisterByKey(&g_calloutGuid_udp_close_v6);
+
+
 	// clean id
-	FwpsCalloutUnregisterById(g_calloutId_flow_established_v4);
-	FwpsCalloutUnregisterById(g_calloutId_flow_established_v6);
+	FwpsCalloutUnregisterById(g_calloutId_flow_tcp_established_v4);
+	FwpsCalloutUnregisterById(g_calloutId_flow_tcp_established_v6);
+	FwpsCalloutUnregisterById(g_calloutId_flow_udp_established_v4);
+	FwpsCalloutUnregisterById(g_calloutId_flow_udp_established_v6);
 	FwpsCalloutUnregisterById(g_calloutId_inbound_mac_etherent);
 	FwpsCalloutUnregisterById(g_calloutId_outbound_mac_etherent);
 	FwpsCalloutUnregisterById(g_calloutId_inbound_mac_native);
 	FwpsCalloutUnregisterById(g_calloutId_outbound_mac_native);
 	FwpsCalloutUnregisterById(g_calloutId_ale_connectredirect_v4);
 	FwpsCalloutUnregisterById(g_calloutId_ale_connectredirect_v6);
+	FwpsCalloutUnregisterById(g_calloutId_ale_udp_connectredirect_v4);
+	FwpsCalloutUnregisterById(g_calloutId_ale_udp_connectredirect_v6);
 	FwpsCalloutUnregisterById(g_calloutId_datagram_v4);
 	FwpsCalloutUnregisterById(g_calloutId_datagram_v6);
+	FwpsCalloutUnregisterById(g_calloutId_udpclose_v4);
+	FwpsCalloutUnregisterById(g_calloutId_udpclose_v6);
 
 	// clean SubLayer
 	FwpmSubLayerDeleteByKey(g_engineHandle, &g_sublayerGuid);

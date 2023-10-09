@@ -110,7 +110,6 @@ NF_UDPPEND_PACKET* const udp_Get();
 VOID udp_clean();
 VOID udp_free();
 
-UDPCTX* const udp_packetAllocatCtx();
 UDPCTX* const udp_packetAllocatCtxHandle(UINT64 transportEndpointHandle);
 VOID udp_freeCtx(PUDPCTX pUdpCtx);
 

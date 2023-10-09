@@ -1477,7 +1477,6 @@ void devctrl_injectThread(IN PVOID StartContext)
 			break;
 		}
 
-		DbgBreakPoint();
 		devctrl_injectReads();
 	}
 
