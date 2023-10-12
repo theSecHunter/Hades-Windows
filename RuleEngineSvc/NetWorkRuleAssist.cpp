@@ -29,14 +29,16 @@ const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCo
         do
         {
             const auto pRoot = config["egress"];
-            if (pRoot.IsNull())
+            if (pRoot.IsNull()) {
+                OutputDebugStringA(("[HadesNetMon] Network Rule egress Failuer." + strRet).c_str());
                 break;
+            }
             
             std::string strAction = "";
             for (const auto iter : pRoot)
             {
                 if (!iter["action"].IsNull() && iter["action"].IsScalar())
-                    strAction = iter["action"].as<std::string>();
+                    strAction = iter["action"].as<std::string>().c_str();
                 else
                     continue;
                 if ((strAction == "DENY") && (*pDenyCounter < iMaxCounter)) {

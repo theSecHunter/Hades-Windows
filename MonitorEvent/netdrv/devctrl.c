@@ -42,9 +42,22 @@ static HANDLE g_injectionHandle = NULL;
 static HANDLE g_netInjectionHandleV4 = NULL;
 static HANDLE g_netInjectionHandleV6 = NULL;
 // Udp Inject Handle
+static BOOLEAN g_udpNwInject = FALSE;
 static HANDLE g_udpInjectionHandle = NULL;
 static HANDLE g_udpNwInjectionHandleV4 = NULL;
 static HANDLE g_udpNwInjectionHandleV6 = NULL;
+typedef struct _NF_UDP_INJECT_CONTEXT
+{
+	UINT64	id;
+	int		code;
+	PMDL	mdl;
+	PUDPCTX	pUdpCtx;
+	PNF_UDP_PACKET pPacket;
+} NF_UDP_INJECT_CONTEXT, * PNF_UDP_INJECT_CONTEXT;
+static NPAGED_LOOKASIDE_LIST g_udpInjectContextLAList;
+
+static NDIS_HANDLE g_netBufferListPool = NULL;
+static PNDIS_GENERIC_OBJECT g_ndisGenericObj = NULL;
 
 typedef struct _NF_QUEUE_ENTRY
 {
@@ -268,7 +281,6 @@ NTSTATUS devctrl_readEx(PIRP irp, PIO_STACK_LOCATION irpSp)
 	{
 		if (irp->MdlAddress == NULL)
 		{
-			KdPrint((DPREFIX"devctrl_read: NULL MDL address\n"));
 			status = STATUS_INVALID_PARAMETER;
 			break;
 		}
@@ -276,7 +288,6 @@ NTSTATUS devctrl_readEx(PIRP irp, PIO_STACK_LOCATION irpSp)
 		if (MmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority) == NULL ||
 			irpSp->Parameters.Read.Length < sizeof(NF_READ_RESULT))
 		{
-			KdPrint((DPREFIX"devctrl_read: Invalid request\n"));
 			status = STATUS_INSUFFICIENT_RESOURCES;
 			break;
 		}
@@ -327,25 +338,525 @@ NTSTATUS devctrl_read(PIRP irp, PIO_STACK_LOCATION irpSp)
 	return status;
 }
 
-ULONG devctrl_processUdpSend(PNF_DATA pData)
+void NTAPI devctrl_udpInjectCompletion(IN void* context,IN OUT NET_BUFFER_LIST* netBufferList,IN BOOLEAN dispatchLevel)
 {
-	return 0;
+	PNF_UDP_INJECT_CONTEXT inject_context = (PNF_UDP_INJECT_CONTEXT)context;
+	PUDPCTX pUdpCtx = NULL;
+	KLOCK_QUEUE_HANDLE lh;
+
+	UNREFERENCED_PARAMETER(dispatchLevel);
+	// Clearn
+	if (netBufferList)
+	{
+		// GetLastError
+		//KdPrint((DPREFIX"[UDP] Inject Completion Code %u\n", netBufferList->Status));
+		PMDL pMdl = NET_BUFFER_FIRST_MDL(NET_BUFFER_LIST_FIRST_NB(netBufferList));
+		if (pMdl != inject_context->mdl)
+		{
+			IoFreeMdl(pMdl);
+		}
+		FwpsFreeNetBufferList(netBufferList);
+	}
+
+	if (inject_context != NULL)
+	{
+		if (inject_context->mdl != NULL)
+		{
+			free_np(inject_context->mdl->MappedSystemVa);
+			IoFreeMdl(inject_context->mdl);
+			inject_context->mdl = NULL;
+		}
+		pUdpCtx = inject_context->pUdpCtx;
+
+		sl_lock(&pUdpCtx->lock, &lh);
+		if (inject_context->code == NF_UDP_SEND)
+		{
+			pUdpCtx->injectedSendBytes -= inject_context->pPacket->dataLength;
+			if (pUdpCtx->injectedSendBytes <= UDP_PEND_LIMIT)
+			{
+				pUdpCtx->sendInProgress = FALSE;
+			}
+
+			pUdpCtx->outCounter += inject_context->pPacket->dataLength;
+			pUdpCtx->outCounterTotal += inject_context->pPacket->dataLength;
+		}
+		else
+		{
+			pUdpCtx->injectedRecvBytes -= inject_context->pPacket->dataLength;
+			if (pUdpCtx->injectedRecvBytes <= UDP_PEND_LIMIT)
+			{
+				pUdpCtx->recvInProgress = FALSE;
+			}
+
+			pUdpCtx->inCounter += inject_context->pPacket->dataLength;
+			pUdpCtx->inCounterTotal += inject_context->pPacket->dataLength;
+		}
+		sl_unlock(&lh);
+
+		if (inject_context->pPacket)
+		{
+			udp_freePacketData(inject_context->pPacket);
+		}
+		udp_freeCtx(pUdpCtx);
+		ExFreeToNPagedLookasideList(&g_udpInjectContextLAList, inject_context);
+	}
 }
-ULONG devctrl_processUdpRecv(PNF_DATA pData)
+ULONG devctrl_processInjectUDPPacket(PNF_DATA pData)
 {
-	return 0;
+	// Check Buffer Size
+	const ULONG nErrRet = sizeof(NF_DATA) - 1 + pData->bufferSize;
+	if (pData->bufferSize < (NF_MAX_ADDRESS_LENGTH + sizeof(NF_UDP_PACKET_OPTIONS)))
+		return nErrRet;
+
+	// find by id
+	PUDPCTX pUdpCtx = NULL;
+	pUdpCtx = udp_findById(pData->id);
+	if (!pUdpCtx) {
+		// Recv Failuer Packet
+		if (pData->code != NF_UDP_SEND)
+			return nErrRet;
+
+		// Send Handler == 0
+		pUdpCtx = udp_packetAllocatCtxHandle(0);
+		if (!pUdpCtx)
+			return nErrRet;
+	}
+
+	// Close
+	KLOCK_QUEUE_HANDLE lh;
+	sl_lock(&pUdpCtx->lock, &lh);
+	if (pUdpCtx->closed)
+	{
+		sl_unlock(&lh);
+		udp_freeCtx(pUdpCtx);
+		return nErrRet;
+	}
+
+	// PendList
+	if ((pData->code == NF_UDP_SEND && pUdpCtx->sendInProgress) ||
+		(pData->code == NF_UDP_RECV && pUdpCtx->recvInProgress))
+	{
+		sl_unlock(&lh);
+		udp_freeCtx(pUdpCtx);
+		return 0;
+	}
+
+	sl_unlock(&lh);
+
+	/* NF_DATA + OPTION + REMOTEADDR + CONTROLDATA + UDPDATA*/
+	NTSTATUS nStus = STATUS_UNSUCCESSFUL;
+	ULONG uoffset = 0, uDataLength = 0, uResult = 0;
+	PVOID pUDataCopy = NULL;
+	PNF_UDP_PACKET pPacket = NULL;
+	PNF_UDP_INJECT_CONTEXT pInjectCtx = NULL;
+
+	PMDL pMdL = NULL;
+	NET_BUFFER* netBuffer = NULL;
+	NET_BUFFER_LIST* pNetBufferList = NULL;
+
+	UDP_HEADER* pUDPHeader = NULL;
+	UCHAR* pRemoteAddr = NULL;
+	UCHAR* pLocalAddr = NULL;
+	do
+	{
+		pPacket = udp_packetAllocatData(0);
+		if (!pPacket)
+			break;
+
+		// Option
+		RtlCopyMemory(&pPacket->options, pData->buffer + uoffset, sizeof(NF_UDP_PACKET_OPTIONS));
+		uoffset += sizeof(NF_UDP_PACKET_OPTIONS);
+		
+		// Remote
+		RtlCopyMemory(pPacket->remoteAddr, pData->buffer + uoffset, NF_MAX_ADDRESS_LENGTH);
+		uoffset += NF_MAX_ADDRESS_LENGTH;
+
+		// ControlData
+		if (pPacket->options.controlDataLength > 0)
+		{
+#pragma warning(push)
+#pragma warning(disable: 28197) 
+			pPacket->controlData = (WSACMSGHDR*)
+				ExAllocatePoolWithTag(NonPagedPool, pPacket->options.controlDataLength, MEM_TAG_UDP_DATA);
+#pragma warning(pop)
+
+			if (!pPacket->controlData)
+			{
+				nStus = STATUS_NO_MEMORY;
+				break;
+			}
+			
+			RtlCopyMemory(pPacket->controlData, pData->buffer + uoffset, pPacket->options.controlDataLength);
+			uoffset += pPacket->options.controlDataLength;
+		}
+		else
+		{
+			pPacket->controlData = NULL;
+		}
+		
+		// UDPData Size
+		uDataLength = pData->bufferSize - uoffset;
+		if (uDataLength <= 0) {
+			nStus = STATUS_NO_MEMORY;
+			break;
+		}
+		pPacket->dataLength = uDataLength;
+
+		// Allocat UdpData 
+		pUDataCopy = ExAllocatePoolWithTag(NonPagedPool, uDataLength, MEM_TAG_UDP_DATA_COPY);
+		if (pUDataCopy == NULL)
+		{
+			nStus = STATUS_NO_MEMORY;
+			break;
+		}
+		RtlCopyMemory(pUDataCopy, pData->buffer + uoffset, uDataLength);
+
+		// Allocat Inject 
+		pInjectCtx = (PNF_UDP_INJECT_CONTEXT)ExAllocateFromNPagedLookasideList(&g_udpInjectContextLAList);
+		if (pInjectCtx == NULL)
+		{
+			nStus = STATUS_NO_MEMORY;
+			break;
+		}
+		
+		// MDL
+		pMdL = IoAllocateMdl(
+			pUDataCopy,
+			uDataLength,
+			FALSE,
+			FALSE,
+			NULL);
+		if (pMdL == NULL)
+		{
+			nStus = STATUS_NO_MEMORY;
+			break;
+		}
+		MmBuildMdlForNonPagedPool(pMdL);
+
+		nStus = FwpsAllocateNetBufferAndNetBufferList(
+			g_netBufferListPool,
+			0,
+			0,
+			pMdL,
+			0,
+			uDataLength,
+			&pNetBufferList); // Fix **
+		if (!NT_SUCCESS(nStus))
+			break;
+
+		netBuffer = NET_BUFFER_LIST_FIRST_NB(pNetBufferList);
+		if (!netBuffer) {
+			nStus = STATUS_NO_MEMORY;
+			break;
+		}
+
+		pInjectCtx->id = pData->id;
+		pInjectCtx->code = pData->code;
+		pInjectCtx->mdl = pMdL;
+		pInjectCtx->pUdpCtx = pUdpCtx;
+		pInjectCtx->pPacket = pPacket;
+		
+		// ref add one
+		udpctx_addRef(pUdpCtx);
+
+		// Set Inject Buffer Size
+		sl_lock(&pUdpCtx->lock, &lh);
+		if (pData->code == NF_UDP_SEND)
+		{
+			pUdpCtx->injectedSendBytes += pPacket->dataLength;
+			if (pUdpCtx->injectedSendBytes > UDP_PEND_LIMIT)
+			{
+				pUdpCtx->sendInProgress = TRUE;
+			}
+		}
+		else
+		{
+			pUdpCtx->injectedRecvBytes += pPacket->dataLength;
+			if (pUdpCtx->injectedRecvBytes > UDP_PEND_LIMIT)
+			{
+				pUdpCtx->recvInProgress = TRUE;
+			}
+		}
+		sl_unlock(&lh);
+
+		if (pData->code == NF_UDP_SEND)
+		{
+			RtlSecureZeroMemory(&pPacket->sendArgs, sizeof(pPacket->sendArgs));
+			pUDPHeader = (UDP_HEADER*)NdisGetDataBuffer(
+				netBuffer,
+				sizeof(UDP_HEADER),
+				NULL,
+				1,
+				0
+			);
+			ASSERT(pUDPHeader != NULL);
+			if (!pUDPHeader)
+			{
+				nStus = STATUS_NO_MEMORY;
+				break;
+			}
+
+			if (pUdpCtx->transportEndpointHandle == 0)
+			{
+				struct sockaddr_in* pAddr = (struct sockaddr_in*)pPacket->remoteAddr;
+				pUdpCtx->ip_family = pAddr->sin_family;
+				pUdpCtx->ipProto = IPPROTO_UDP;
+				RtlCopyMemory(&pUdpCtx->localAddr, &pPacket->options.localAddr, NF_MAX_ADDRESS_LENGTH);
+			}
+
+			if (pUdpCtx->ip_family == AF_INET)
+			{
+				struct sockaddr_in* pAddr = (struct sockaddr_in*)pPacket->remoteAddr;
+				pUDPHeader->destPort = pAddr->sin_port;
+				pUDPHeader->length = htons(uDataLength);
+				pUDPHeader->checksum = 0;
+				pPacket->sendArgs.remoteAddress = (UCHAR*)&pAddr->sin_addr;
+				pRemoteAddr = (UCHAR*)&pAddr->sin_addr;
+				pAddr = (struct sockaddr_in*)pUdpCtx->localAddr;
+				pLocalAddr = (UCHAR*)&pAddr->sin_addr;
+			}
+			else
+			{
+				struct sockaddr_in6* pAddr = (struct sockaddr_in6*)pPacket->remoteAddr;
+				pUDPHeader->destPort = pAddr->sin6_port;
+				pUDPHeader->length = htons(uDataLength);
+				pUDPHeader->checksum = 0;
+				pPacket->sendArgs.remoteAddress = (UCHAR*)&pAddr->sin6_addr;
+				pRemoteAddr = (UCHAR*)&pAddr->sin6_addr;
+				pAddr = (struct sockaddr_in6*)pUdpCtx->localAddr;
+				pLocalAddr = (UCHAR*)&pAddr->sin6_addr;
+			}
+
+			pPacket->sendArgs.remoteScopeId = pPacket->options.remoteScopeId;
+			pPacket->sendArgs.controlData = pPacket->controlData;
+			pPacket->sendArgs.controlDataLength = pPacket->options.controlDataLength;
+
+			if (g_udpNwInject || (pUdpCtx->transportEndpointHandle == 0))
+			{
+				// Construct a new IP header
+				nStus = FwpsConstructIpHeaderForTransportPacket0(
+					pNetBufferList,
+					0,
+					pUdpCtx->ip_family,
+					pLocalAddr,
+					pRemoteAddr,
+					(IPPROTO)pUdpCtx->ipProto,
+					0,
+					pPacket->controlData,
+					pPacket->options.controlDataLength,
+					0,
+					NULL,
+					pPacket->options.interfaceIndex,
+					pPacket->options.subInterfaceIndex
+				);
+
+				if (!NT_SUCCESS(nStus))
+					break;
+
+				// Inject Packet
+				if (pUdpCtx->ip_family == AF_INET)
+				{
+					nStus = FwpsInjectNetworkSendAsync0(
+						g_udpNwInjectionHandleV4,
+						NULL,
+						0,
+						pPacket->options.compartmentId,
+						pNetBufferList,
+						devctrl_udpInjectCompletion,
+						pInjectCtx
+					);
+				}
+				else
+				{
+					nStus = FwpsInjectNetworkSendAsync0(
+						g_udpNwInjectionHandleV6,
+						NULL,
+						0,
+						pPacket->options.compartmentId,
+						pNetBufferList,
+						devctrl_udpInjectCompletion,
+						pInjectCtx
+					);
+				}
+			}
+			else
+			{
+				nStus = FwpsInjectTransportSendAsync0(
+					g_udpInjectionHandle,
+					NULL,
+					pPacket->options.endpointHandle,
+					0,
+					&pPacket->sendArgs,
+					pUdpCtx->ip_family,
+					pPacket->options.compartmentId,
+					pNetBufferList,
+					devctrl_udpInjectCompletion,
+					pInjectCtx
+				);
+			}
+
+			if (NT_SUCCESS(nStus))
+			{
+				uResult = sizeof(NF_DATA) - 1 + pData->bufferSize;
+				pPacket = NULL;
+				pNetBufferList = NULL;
+			}
+		}
+		else
+		{
+			// NF_UDP_RECV
+			pUDPHeader = (UDP_HEADER*)NdisGetDataBuffer(
+				netBuffer,
+				sizeof(UDP_HEADER),
+				NULL,
+				1,
+				0
+			);
+			ASSERT(pUDPHeader != NULL);
+			if (!pUDPHeader)
+			{
+				nStus = STATUS_NO_MEMORY;
+				break;
+			}
+			if (pUdpCtx->ip_family == AF_INET)
+			{
+				struct sockaddr_in* pAddr = (struct sockaddr_in*)pPacket->remoteAddr;
+				pUDPHeader->srcPort = pAddr->sin_port;
+				pUDPHeader->length = htons(uDataLength);
+				pUDPHeader->checksum = 0;
+				pRemoteAddr = (UCHAR*)&pAddr->sin_addr;
+				pAddr = (struct sockaddr_in*)pUdpCtx->localAddr;
+				pLocalAddr = (UCHAR*)&pAddr->sin_addr;
+				pUDPHeader->destPort = pAddr->sin_port;
+			}
+			else
+			{
+				struct sockaddr_in6* pAddr = (struct sockaddr_in6*)pPacket->remoteAddr;
+				pUDPHeader->srcPort = pAddr->sin6_port;
+				pUDPHeader->length = htons(uDataLength);
+				pUDPHeader->checksum = 0;
+				pRemoteAddr = (UCHAR*)&pAddr->sin6_addr;
+				pAddr = (struct sockaddr_in6*)pUdpCtx->localAddr;
+				pLocalAddr = (UCHAR*)&pAddr->sin6_addr;
+				pUDPHeader->destPort = pAddr->sin6_port;
+			}
+
+			nStus = FwpsConstructIpHeaderForTransportPacket0(
+				pNetBufferList,
+				0,
+				pUdpCtx->ip_family,
+				pRemoteAddr,
+				pLocalAddr,
+				(IPPROTO)pUdpCtx->ipProto,
+				0,
+				NULL,
+				0,
+				0,
+				NULL,
+				0, //pPacket->options.interfaceIndex,
+				0  //pPacket->options.subInterfaceIndex
+			);
+
+			if (!NT_SUCCESS(nStus))
+				break;
+			
+			nStus = FwpsInjectTransportReceiveAsync0(
+				g_udpInjectionHandle,
+				NULL,
+				NULL,
+				0,
+				pUdpCtx->ip_family,
+				pPacket->options.compartmentId,
+				pPacket->options.interfaceIndex,
+				pPacket->options.subInterfaceIndex,
+				pNetBufferList,
+				devctrl_udpInjectCompletion,
+				pInjectCtx
+			);
+
+			if (NT_SUCCESS(nStus))
+			{
+				uResult = sizeof(NF_DATA) + pData->bufferSize - 1;
+				pPacket = NULL;
+				pNetBufferList = NULL;
+			}
+		}
+
+		if (!NT_SUCCESS(nStus))
+		{
+			sl_lock(&pUdpCtx->lock, &lh);
+			if (pData->code == NF_UDP_SEND)
+			{
+				pUdpCtx->injectedSendBytes -= pPacket->dataLength;
+				if (pUdpCtx->injectedSendBytes <= UDP_PEND_LIMIT)
+				{
+					pUdpCtx->sendInProgress = FALSE;
+				}
+			}
+			else
+			{
+				pUdpCtx->injectedRecvBytes -= pPacket->dataLength;
+				if (pUdpCtx->injectedRecvBytes <= UDP_PEND_LIMIT)
+				{
+					pUdpCtx->recvInProgress = FALSE;
+				}
+			}
+			sl_unlock(&lh);
+			
+			udp_freeCtx(pUdpCtx);
+		}
+
+	} while (FALSE);
+
+	// Clear
+	if (!NT_SUCCESS(nStus))
+	{
+		if (pNetBufferList != NULL)
+		{
+			FwpsFreeNetBufferList(pNetBufferList);
+			pNetBufferList = NULL;
+		}
+		if (pMdL != NULL)
+		{
+			IoFreeMdl(pMdL);
+			pMdL = NULL;
+		}
+		if (pUDataCopy != NULL)
+		{
+			free_np(pUDataCopy);
+			pUDataCopy = NULL;
+		}
+		if (pInjectCtx != NULL)
+		{
+			ExFreeToNPagedLookasideList(&g_udpInjectContextLAList, pInjectCtx);
+			pInjectCtx = NULL;
+		}
+		if (pPacket != NULL)
+		{
+			udp_freePacketData(pPacket);
+			pPacket = NULL;
+		}
+	}	
+	udp_freeCtx(pUdpCtx);
+
+	return uResult;
+
 }
 ULONG devctrl_processUdpHandler(const NF_DATA_CODE nfCode, PNF_DATA pData)
 {
 	if (nfCode == NF_UDP_SEND) {
-		return devctrl_processUdpSend(pData);
+		return devctrl_processInjectUDPPacket(pData);
 	}
 	else if (nfCode == NF_UDP_RECV) {
-		return devctrl_processUdpRecv(pData);
+		return devctrl_processInjectUDPPacket(pData);
 	}
 	return 0;
 }
 ULONG devctrl_processTcpConnect(PNF_DATA pData)
+/*
+* FwpsPendClassify0 -->
+	FwpsApplyModifiedLayerData --> FwpsCompleteClassify
+*/
 {
 	PTCPCTX				pTcpCtx = NULL;
 	PNF_TCP_CONN_INFO	pInfo = NULL;
@@ -450,7 +961,6 @@ NTSTATUS devctrl_write(PIRP irp, PIO_STACK_LOCATION irpSp)
 	{
 		irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
 		IoCompleteRequest(irp, IO_NO_INCREMENT);
-		KdPrint((DPREFIX"devctrl_write invalid irp\n"));
 		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
@@ -504,8 +1014,6 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 	irpSp = IoGetCurrentIrpStackLocation(irp);
 	ASSERT(irpSp);
 
-	KdPrint((DPREFIX"devctrl_dispatch mj=%d\n", irpSp->MajorFunction));
-
 	switch (irpSp->MajorFunction)
 	{
 	case IRP_MJ_CREATE:
@@ -548,7 +1056,7 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 	IoCompleteRequest(irp, IO_NO_INCREMENT);
 	return STATUS_SUCCESS;
 }
-NTSTATUS devctrl_init()
+NTSTATUS devctrl_init(PDRIVER_OBJECT pDriverObject)
 {
 	HANDLE threadHandle;
 	NTSTATUS status = STATUS_SUCCESS;
@@ -632,9 +1140,40 @@ NTSTATUS devctrl_init()
 		ZwClose(threadHandle);
 	}
 
+	ExInitializeNPagedLookasideList(&g_udpInjectContextLAList,
+		NULL,
+		NULL,
+		0,
+		sizeof(NF_UDP_INJECT_CONTEXT),
+		MEM_TAG_UDP_INJECT,
+		0);
+
 	// Craete Inject Handle
 	do
 	{
+		NET_BUFFER_LIST_POOL_PARAMETERS nblPoolParams = { 0 };
+
+		g_ndisGenericObj = NdisAllocateGenericObject(pDriverObject, MEM_TAG, 0);
+		if (g_ndisGenericObj == NULL)
+		{
+			status = STATUS_NO_MEMORY;
+			break;
+		}
+
+		nblPoolParams.Header.Type = NDIS_OBJECT_TYPE_DEFAULT;
+		nblPoolParams.Header.Revision = NET_BUFFER_LIST_POOL_PARAMETERS_REVISION_1;
+		nblPoolParams.Header.Size = sizeof(nblPoolParams);
+		nblPoolParams.fAllocateNetBuffer = TRUE;
+		nblPoolParams.DataSize = 0;
+		nblPoolParams.PoolTag = MEM_TAG;
+
+		g_netBufferListPool = NdisAllocateNetBufferListPool(g_ndisGenericObj, &nblPoolParams);
+		if (g_netBufferListPool == NULL)
+		{
+			status = STATUS_NO_MEMORY;
+			break;
+		}
+
 		// stream tcp
 		status = FwpsInjectionHandleCreate(
 			AF_UNSPEC,
@@ -738,7 +1277,6 @@ VOID devctrl_clean()
 		}
 		else
 		{
-			KdPrint((DPREFIX"devctrl_serviceReads: skipping cancelled IRP\n"));
 			pIrpEntry = pIrpEntry->Flink;
 		}
 	}
@@ -808,7 +1346,18 @@ VOID devctrl_free()
 		FwpsInjectionHandleDestroy(g_udpNwInjectionHandleV6);
 		g_udpNwInjectionHandleV6 = NULL;
 	}
+	if (g_netBufferListPool != NULL)
+	{
+		NdisFreeNetBufferListPool(g_netBufferListPool);
+		g_netBufferListPool = NULL;
+	}
+	if (g_ndisGenericObj != NULL)
+	{
+		NdisFreeGenericObject(g_ndisGenericObj);
+		g_ndisGenericObj = NULL;
+	}
 
+	ExDeleteNPagedLookasideList(&g_udpInjectContextLAList);
 	return;
 }
 VOID devctrl_setShutdown()
@@ -1085,6 +1634,8 @@ NTSTATUS devtrl_popUdpPacketData(UINT64* pOffset, const int nCode)
 	PNF_DATA			pData = NULL;
 	UINT64				dataSize = 0;
 
+	ULONG				uoffset = 0;
+
 	pUdpPendData = udp_Get();
 	if (!pUdpPendData)
 		return STATUS_UNSUCCESSFUL;
@@ -1104,8 +1655,9 @@ NTSTATUS devtrl_popUdpPacketData(UINT64* pOffset, const int nCode)
 			break;
 		}
 
-		/* NF_DATA + OPTION + REMOTEADDR + UDPDATA*/
-		dataSize = sizeof(NF_DATA) - 1 + sizeof(NF_UDP_PACKET_OPTIONS) + NF_MAX_ADDRESS_LENGTH + pPacket->dataLength;
+		/* NF_DATA + OPTION + REMOTEADDR + CONTROLDATA + UDPDATA*/
+		const ULONG uExterSize = sizeof(NF_UDP_PACKET_OPTIONS) + NF_MAX_ADDRESS_LENGTH + pPacket->options.controlDataLength + pPacket->dataLength;
+		dataSize = sizeof(NF_DATA) - 1 + uExterSize;
 		if ((g_inBuf.bufferLength - *pOffset - 1) < dataSize) {
 			status = STATUS_NO_MEMORY;
 			break;
@@ -1119,20 +1671,29 @@ NTSTATUS devtrl_popUdpPacketData(UINT64* pOffset, const int nCode)
 
 		pData->id = pPacket->id;
 		pData->code = nCode;
-		pData->bufferSize = sizeof(NF_UDP_PACKET_OPTIONS) + NF_MAX_ADDRESS_LENGTH + pPacket->dataLength;
+		pData->bufferSize = uExterSize;
 
 		// Copy Option
-		memcpy(pData->buffer, &pPacket->options, sizeof(NF_UDP_PACKET_OPTIONS));
+		RtlCopyMemory(pData->buffer, &pPacket->options, sizeof(NF_UDP_PACKET_OPTIONS));
+		uoffset += sizeof(NF_UDP_PACKET_OPTIONS);
 
 		// Copy RemoteAddr
-		memcpy(pData->buffer + sizeof(NF_UDP_PACKET_OPTIONS), pPacket->remoteAddr, NF_MAX_ADDRESS_LENGTH);
+		RtlCopyMemory(pData->buffer + uoffset, pPacket->remoteAddr, NF_MAX_ADDRESS_LENGTH);
+		uoffset += NF_MAX_ADDRESS_LENGTH;
 
-		// Copy UDPData | dataSize - (NF_DATA + OPTION + REMOTEADDR)
-		if (pPacket->dataBuffer && pPacket->dataLength)
-			memcpy(pData->buffer + sizeof(NF_UDP_PACKET_OPTIONS) + NF_MAX_ADDRESS_LENGTH, pPacket->dataBuffer, pPacket->dataLength);
+		// Copy ControlData
+		if (pPacket->options.controlDataLength > 0) {
+			RtlCopyMemory(pData->buffer + uoffset, pPacket->controlData, pPacket->options.controlDataLength);
+			uoffset += pPacket->options.controlDataLength;
+		}
+
+		// Copy UDPData
+		if (pPacket->dataBuffer && pPacket->dataLength) {
+			RtlCopyMemory(pData->buffer + uoffset, pPacket->dataBuffer, pPacket->dataLength);
+			uoffset += pPacket->dataLength;
+		}
 
 		*pOffset += dataSize;
-
 		status = STATUS_SUCCESS;
 		break;
 	}
@@ -1243,7 +1804,6 @@ void devctrl_serviceReads()
 		}
 		else
 		{
-			KdPrint((DPREFIX"devctrl_serviceReads: skipping cancelled IRP\n"));
 			pIrpEntry = pIrpEntry->Flink;
 		}
 	}

@@ -84,25 +84,10 @@ inline void DbgPrintAddress(int ipFamily, void* addr, char* name, UINT64 id)
 	if (ipFamily == AF_INET)
 	{
 		struct sockaddr_in* pAddr = (struct sockaddr_in*)addr;
-
-		KdPrint((DPREFIX"DbgPrintAddress[%I64u] %s=%x:%d\n",
-			id, name, pAddr->sin_addr.s_addr, htons(pAddr->sin_port)));
 	}
 	else
 	{
 		struct sockaddr_in6* pAddr = (struct sockaddr_in6*)addr;
-
-		KdPrint((DPREFIX"DbgPrintAddress[%I64u] %s=[%x:%x:%x:%x:%x:%x:%x:%x]:%d\n",
-			id, name,
-			pAddr->sin6_addr.u.Word[0],
-			pAddr->sin6_addr.u.Word[1],
-			pAddr->sin6_addr.u.Word[2],
-			pAddr->sin6_addr.u.Word[3],
-			pAddr->sin6_addr.u.Word[4],
-			pAddr->sin6_addr.u.Word[5],
-			pAddr->sin6_addr.u.Word[6],
-			pAddr->sin6_addr.u.Word[7],
-			htons(pAddr->sin6_port)));
 	}
 }
 
@@ -153,7 +138,7 @@ VOID helper_callout_classFn_TCPFflowEstablished(
 
 	flowContextLocal->flowId = inMetaValues->flowHandle;
 	flowContextLocal->layerId = FWPS_LAYER_OUTBOUND_MAC_FRAME_ETHERNET;
-	flowContextLocal->calloutId = &g_calloutId_outbound_mac_etherent;
+	flowContextLocal->calloutId = g_calloutId_outbound_mac_etherent;
 
 	if (flowContextLocal->addressFamily == AF_INET)
 	{
@@ -373,7 +358,7 @@ VOID helper_callout_classFn_UDPflowEstablished(
 
 	flowContextLocal->flowId = inMetaValues->flowHandle;
 	flowContextLocal->layerId = FWPS_LAYER_OUTBOUND_MAC_FRAME_ETHERNET;
-	flowContextLocal->calloutId = &g_calloutId_outbound_mac_etherent;
+	flowContextLocal->calloutId = g_calloutId_outbound_mac_etherent;
 
 	if (flowContextLocal->addressFamily == AF_INET)
 	{
@@ -602,8 +587,8 @@ VOID helper_callout_classFn_mac(
 				UDP_HEADER* pUdpHeader = (PUDP_HEADER)NdisGetDataBuffer(netBuffer, sizeof(UDP_HEADER), 0, 1, 0);
 				if (pUdpHeader)
 				{
-					pCalloutMacDataInfo->toLocalPort = pUdpHeader->sourcePort;
-					pCalloutMacDataInfo->toRemotePort = pUdpHeader->destinationPort;
+					pCalloutMacDataInfo->toLocalPort = pUdpHeader->srcPort;
+					pCalloutMacDataInfo->toRemotePort = pUdpHeader->destPort;
 				}
 				NdisRetreatNetBufferDataStart(netBuffer, ipHeaderSize, 0, NULL);
 			}
@@ -1315,18 +1300,18 @@ VOID helper_callout_classFn_udpCallout(
 			}
 		}
 
-		//if (netBuffer == NULL)
-		//{
-		//	classifyOut->actionType = FWP_ACTION_BLOCK;
-		//	classifyOut->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
-		//	classifyOut->rights ^= FWPS_RIGHT_ACTION_WRITE;
-		//}
+		if (netBuffer == NULL)
+		{
+			classifyOut->actionType = FWP_ACTION_BLOCK;
+			classifyOut->flags |= FWPS_CLASSIFY_OUT_FLAG_ABSORB;
+			classifyOut->rights ^= FWPS_RIGHT_ACTION_WRITE;
+		}
 
 		break;
 	}
 
 	// test permit
-	classifyOut->actionType = FWP_ACTION_PERMIT;
+	//classifyOut->actionType = FWP_ACTION_PERMIT;
 	// reference -1
 	if (pUdpCtx) {
 		udp_freeCtx(pUdpCtx);
@@ -1360,6 +1345,8 @@ VOID helper_callout_endpointClosureUdpCallout(
 	UNREFERENCED_PARAMETER(classifyContext);
 	UNREFERENCED_PARAMETER(filter);
 	UNREFERENCED_PARAMETER(flowContext);
+	UNREFERENCED_PARAMETER(classifyOut);
+
 	PUDPCTX pUdpCtx = NULL;
 	pUdpCtx = udp_findByHandle(inMetaValues->transportEndpointHandle);
 	if (pUdpCtx)

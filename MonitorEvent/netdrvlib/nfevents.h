@@ -31,8 +31,8 @@ public:
 	virtual void EstablishedPacket(const char* buf, int len) = 0;
 	virtual void DatalinkPacket(const char* buf, int len) = 0;
 	virtual void TcpredirectPacket(const char* buf, int len) = 0;
-	virtual void UdpSend(const int id, const char* buf, int len) = 0;
-	virtual void UdpRecv(const int id, const char* buf, int len) = 0;
+	virtual void UdpSend(const int id, const char* buf, int len, bool* bDeny) = 0;
+	virtual void UdpRecv(const int id, const char* buf, int len, bool* bDeny) = 0;
 
 	virtual void threadStart() = 0;
 	virtual void threadEnd() = 0;

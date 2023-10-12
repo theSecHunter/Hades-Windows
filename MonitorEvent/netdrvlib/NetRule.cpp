@@ -226,12 +226,14 @@ void NetRule::SetRediRectRule(const REDIRECT_RULE& vecConnect)
 const bool NetRule::FilterConnect(const std::string strIpaddr, const int iPort, std::string strProtocol)
 {
 	std::unique_lock<std::mutex> lock(m_ruleDenyMtx);
-	if (m_vecDenyRule.empty())
+	if (m_vecDenyRule.empty()) {
+		OutputDebugStringA("[HadesNetMon] FilterConnect DenyRule Empty");
 		return false;
+	}
 	bool bFilter = false; bool bHit = false;
 	const std::string strRPort = std::to_string(iPort);
 	for (const auto iter : m_vecDenyRule) {
-		if ((iter.strProtocol != "ALL") || (iter.strProtocol != strProtocol))
+		if ((0 != strcmp(iter.strProtocol.c_str(), "ALL")) && (0 != strcmp(iter.strProtocol.c_str(), strProtocol.c_str()))) 
 			continue;
 		bHit = false;
 		// 1: Filter Port

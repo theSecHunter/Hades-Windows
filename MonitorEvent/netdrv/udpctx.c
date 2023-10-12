@@ -265,7 +265,7 @@ VOID udp_free() {
 }
 
 // Hash
-PUDPCTX udp_find(UINT64 id)
+PUDPCTX udp_findById(UINT64 id)
 {
 	PUDPCTX pUcpCtx = NULL;
 	PHASH_TABLE_ENTRY phte;
@@ -300,6 +300,14 @@ PUDPCTX udp_findByHandle(UINT64 handle)
 	sl_unlock(&lh);
 
 	return pUcpCtx;
+}
+void udpctx_addRef(PUDPCTX pUdpCtx)
+{
+	KLOCK_QUEUE_HANDLE lh;
+
+	sl_lock(&g_slUdpCtx, &lh);
+	pUdpCtx->refCount++;
+	sl_unlock(&lh);
 }
 void add_udpHandle(PUDPCTX pudpctx)
 {

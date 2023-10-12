@@ -121,7 +121,8 @@ VOID udp_freePacketData(NF_UDP_PACKET* const pPacket);
 
 NTSTATUS push_udpPacketinfo(PVOID packet, int lens, BOOLEAN isSend);
 
-PUDPCTX udp_find(UINT64 id);
+PUDPCTX udp_findById(UINT64 id);
 PUDPCTX udp_findByHandle(UINT64 handle);
+void udpctx_addRef(PUDPCTX pUdpCtx);
 void remove_udpHandle(PUDPCTX pudpctx);
 #endif

@@ -253,13 +253,12 @@ typedef struct _TCP_HEADER_
     unsigned short urgentPointer;
 }TCP_HEADER, * PTCP_HEADER;
 
-typedef struct _UDP_HEADER_
+typedef struct UDP_HEADER_
 {
-    unsigned short sourcePort;
-    unsigned short destinationPort;
-    unsigned short length;
-    unsigned short checksum;
-}UDP_HEADER, * PUDP_HEADER;
-
+    UINT16 srcPort;
+    UINT16 destPort;
+    UINT16 length;
+    UINT16 checksum;
+} UDP_HEADER, * PUDP_HEADER;
 #pragma pack(pop)
 #endif

@@ -34,49 +34,67 @@ static void OnReadHandleEventDispath(PNF_DATA pData)
 	if (!g_pEventHandler)
 		return;
 
-	switch (pData->code)
+	try
 	{
-	case NF_ESTABLISHED_LAYER_PACKET:
-	{
-		// push established - event
-		g_pEventHandler->EstablishedPacket(pData->buffer, pData->bufferSize);
-	}
-	break;
-	case NF_DATALINKMAC_LAYER_PACKET:
-	{
-		g_pEventHandler->DatalinkPacket(pData->buffer, pData->bufferSize);
-		// push datalink - event
-	}
-	break;
-	case NF_TCPREDIRECT_LAYER_PACKET:
-	{
-		if (pData->buffer && pData->bufferSize) {
+		switch (pData->code)
+		{
+		case NF_ESTABLISHED_LAYER_PACKET:
+		{
+			// push established - event
+			g_pEventHandler->EstablishedPacket(pData->buffer, pData->bufferSize);
+		}
+		break;
+		case NF_DATALINKMAC_LAYER_PACKET:
+		{
+			g_pEventHandler->DatalinkPacket(pData->buffer, pData->bufferSize);
+			// push datalink - event
+		}
+		break;
+		case NF_TCPREDIRECT_LAYER_PACKET:
+		{
+			if (!pData->buffer || !pData->bufferSize)
+				break; 				
 			g_pEventHandler->TcpredirectPacket(pData->buffer, pData->bufferSize);
 			PNF_DATA pRediRectData = (PNF_DATA)mempool::mp_alloc(sizeof(NF_DATA) - 1 + sizeof(NF_TCP_CONN_INFO));
-			if (pRediRectData)
-			{
-				pRediRectData->id = pData->id;
-				pRediRectData->code = NF_TCP_CONNECT_REQUEST;
-				pRediRectData->bufferSize = sizeof(NF_TCP_CONN_INFO);
-				memcpy(pRediRectData->buffer, &pData->buffer, sizeof(NF_TCP_CONN_INFO));
-				SingletNetMonx::instance()->devctrl_writeio(pRediRectData);
-				mempool::mp_free(pRediRectData);
-			}
+			if (!pRediRectData)
+				break;
+			pRediRectData->id = pData->id;
+			pRediRectData->code = NF_TCP_CONNECT_REQUEST;
+			pRediRectData->bufferSize = sizeof(NF_TCP_CONN_INFO);
+			memcpy(pRediRectData->buffer, &pData->buffer, sizeof(NF_TCP_CONN_INFO));
+			SingletNetMonx::instance()->devctrl_writeio(pRediRectData);
+			mempool::mp_free(pRediRectData);
+		}
+		break;
+		case NF_UDP_SEND:
+		case NF_UDP_RECV:
+		{
+			if (!pData->buffer || !pData->bufferSize)
+				break;
+			bool bDeny = false;
+			if (NF_UDP_SEND == pData->code)
+				g_pEventHandler->UdpSend(pData->id, pData->buffer, pData->bufferSize, &bDeny);
+			else if (NF_UDP_RECV == pData->code)
+				g_pEventHandler->UdpRecv(pData->id, pData->buffer, pData->bufferSize, &bDeny);
+			else
+				break;
+			if (bDeny)
+				break;
+			PNF_DATA pUdpSendData = (PNF_DATA)mempool::mp_alloc(sizeof(NF_DATA) - 1 + pData->bufferSize);
+			if (!pUdpSendData)
+				break;
+			pUdpSendData->id = pData->id;
+			pUdpSendData->code = pData->code;
+			pUdpSendData->bufferSize = pData->bufferSize;
+			memcpy(pUdpSendData->buffer, &pData->buffer, pData->bufferSize);
+			SingletNetMonx::instance()->devctrl_writeio(pUdpSendData);
+			mempool::mp_free(pUdpSendData);
+		}
+		break;
 		}
 	}
-	break;
-	case NF_UDP_SEND:
+	catch (const std::exception&)
 	{
-		if (pData->buffer && pData->bufferSize)
-			g_pEventHandler->UdpSend(pData->id, pData->buffer, pData->bufferSize);
-	}
-	break;
-	case NF_UDP_RECV:
-	{
-		if (pData->buffer && pData->bufferSize)
-			g_pEventHandler->UdpRecv(pData->id, pData->buffer, pData->bufferSize);
-	}
-	break;
 	}
 }
 

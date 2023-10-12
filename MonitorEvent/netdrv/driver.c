@@ -57,9 +57,6 @@ NTSTATUS driver_init(
 VOID driver_unload(IN PDRIVER_OBJECT driverObject)
 {
 	UNREFERENCED_PARAMETER(driverObject);
-
-	KdPrint((DPREFIX"driverUnload\n"));
-
 	if (g_bfeStateSubscribeHandle)
 	{
 		FwpmBfeStateUnsubscribeChanges(g_bfeStateSubscribeHandle);

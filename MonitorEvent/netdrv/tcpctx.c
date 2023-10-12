@@ -170,13 +170,9 @@ VOID tcp_release(PTCPCTX pTcpCtx)
 	}
 
 	if (pTcpCtx->inInjectQueue)
-	{
 		ASSERT(0);
-		KdPrint((DPREFIX"tcpctx_release orphan TCPCTX %I64u in inject queue\n", pTcpCtx->id));
-	}
 
 	tcp_purgeRedirectInfo(pTcpCtx);
-
 	ExFreeToNPagedLookasideList(&g_tcpCtxLAList, pTcpCtx);
 }
 
