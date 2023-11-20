@@ -20,6 +20,9 @@
     <ClCompile Include="NetRule.cpp">
       <Filter>Rule</Filter>
     </ClCompile>
+    <ClCompile Include="dns.cpp">
+      <Filter>Net</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="threadpool.h">
@@ -79,6 +82,9 @@
     </ClInclude>
     <ClInclude Include="NetRule.h">
       <Filter>Rule</Filter>
+    </ClInclude>
+    <ClInclude Include="dns.h">
+      <Filter>Net</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

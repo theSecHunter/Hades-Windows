@@ -1,4 +1,4 @@
-egress:
+tc:
   - name: "eguard_egress_test_project"
     address: "192.168.1.1/24"
     protocol: TCP # ALL/TCP/UDP
@@ -19,3 +19,10 @@ egress:
     redirectport: "88"            # redirect to port
     action: REDIRECT
     level: INFO
+dns:
+  - name: "eguard_egress_test_dns"
+    action: DENY
+    domain: "grpc.hades.store"
+  - name: "eguard_egress_test_dns_1"
+    action: DENY
+    domain: "*.baidu.com"

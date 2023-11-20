@@ -44,11 +44,22 @@ typedef struct _REDIRECT_RULE : NetWorkRuleNode
     }
 }REDIRECT_RULE, * PREDIRECT_RULE;
 
+typedef struct _DNS_RULE :NetWorkRuleNode
+{
+    std::string sDnsName;
+    void clear()
+    {
+        sDnsName = "";
+    }
+}DNS_RULE, * PDNS_RULE;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
     __declspec(dllexport) const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, REDIRECT_RULE* const pConnectRule, int* pConnetCounter, const int iMaxCounter);
+
+    __declspec(dllexport) const bool ConfigNetWorkYamlDnsRuleParsing(DNS_RULE* const pDnsRule, int* pDnsCounter, const int iMaxCounter);
 
 #ifdef __cplusplus
 }

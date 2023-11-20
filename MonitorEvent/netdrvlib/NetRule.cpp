@@ -1,6 +1,7 @@
 // [+] 后面一直到RuleEngineLib
 #include "ntbasic.h"
 #include "NetRule.h"
+#include "CodeTool.h"
 #include <map>
 
 #define Length 4
@@ -211,16 +212,22 @@ NetRule::~NetRule()
 {
 }
 
-void NetRule::SetDenyRule(const DENY_RULE& vecDeny)
+void NetRule::SetDenyRule(const DENY_RULE& rDenyNode)
 {
 	std::unique_lock<std::mutex> lock(m_ruleDenyMtx);
-	m_vecDenyRule.push_back(vecDeny);
+	m_vecDenyRule.push_back(rDenyNode);
 }
 
-void NetRule::SetRediRectRule(const REDIRECT_RULE& vecConnect)
+void NetRule::SetRediRectRule(const REDIRECT_RULE& rConnectNode)
 {
 	std::unique_lock<std::mutex> lock(m_ruleRediRectMtx);
-	m_vecRedirectRule.push_back(vecConnect);
+	m_vecRedirectRule.push_back(rConnectNode);
+}
+
+void NetRule::SetDnsRule(const DNS_RULE& rDnsNode) 
+{
+	std::unique_lock<std::mutex> lock(m_ruleDnsMtx);
+	m_vecDnsRule.push_back(rDnsNode);
 }
 
 const bool NetRule::FilterConnect(const std::string strIpaddr, const int iPort, std::string strProtocol)
@@ -295,6 +302,21 @@ const bool NetRule::FilterRedirect(const std::string strProcessName, const std::
 		}
 	}
 	return false;
+}
+
+const bool NetRule::FilterDnsPacket(const std::string& sDomainName) {
+	try
+	{
+		for (const auto& iter : m_vecDnsRule) {
+			if (CodeTool::MatchString(sDomainName.c_str(), iter.sDnsName.c_str()))
+				return true;
+		}
+		return false;
+	}
+	catch (const std::exception&)
+	{
+		return false;
+	}
 }
 
 void NetRule::NetRuleClear()

@@ -28,9 +28,9 @@ const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCo
         const YAML::Node config = YAML::LoadFile(strRet);
         do
         {
-            const auto pRoot = config["egress"];
+            const auto pRoot = config["tc"];
             if (pRoot.IsNull()) {
-                OutputDebugStringA(("[HadesNetMon] Network Rule egress Failuer." + strRet).c_str());
+                OutputDebugStringA(("[HadesNetMon] Network Rule tc Failuer." + strRet).c_str());
                 break;
             }
             
@@ -90,4 +90,54 @@ const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCo
         return false;
     }
 	return true;
+}
+
+const bool ConfigNetWorkYamlDnsRuleParsing(DNS_RULE* const pDnsRule, int* pDnsCounter, const int iMaxCounter)
+{
+    try
+    {
+        if (!RuleEngineToos::InitDeviceDosPathToNtPath())
+            return false;
+        if (!RuleEngineToos::IsFile(g_NetWorkConfigName))
+            return false;
+        std::string strRet;
+        if (!RuleEngineToos::GetCurrentExePath(strRet))
+            return false;
+        strRet.append("\\config\\");
+        strRet.append(g_NetWorkConfigName.c_str());
+
+        std::ifstream fin;
+        fin.open(strRet.c_str());
+        const YAML::Node config = YAML::LoadFile(strRet);
+        do
+        {
+            const auto pRoot = config["dns"];
+            if (pRoot.IsNull()) {
+                OutputDebugStringA(("[HadesNetMon] Network Rule dns Failuer." + strRet).c_str());
+                break;
+            }
+
+            std::string strAction = "";
+            for (const auto iter : pRoot)
+            {
+                if (!iter["action"].IsNull() && iter["action"].IsScalar())
+                    strAction = iter["action"].as<std::string>().c_str();
+                else
+                    continue;
+                if ((strAction == "DENY") && (*pDnsCounter < iMaxCounter)) {
+                    strcpy(pDnsRule[*pDnsCounter].strAction, strAction.c_str());
+                    if (!iter["name"].IsNull() && iter["name"].IsScalar())
+                        strcpy(pDnsRule[*pDnsCounter].strRuleName, iter["name"].as<std::string>().c_str());
+                    if (!iter["domain"].IsNull() && iter["domain"].IsScalar())
+                        strcpy(pDnsRule[*pDnsCounter].strProtocol, iter["domain"].as<std::string>().c_str());
+                    *pDnsCounter += 1;
+                }
+            }
+        } while (false);
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
+    return true;
 }

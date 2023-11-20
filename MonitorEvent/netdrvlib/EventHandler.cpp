@@ -3,9 +3,12 @@
 #include "NetApi.h"
 #include "nfevents.h"
 #include "EventHandler.h"
+
+#include "dns.h"
 #include "tcpctx.h"
 #include "datalinkctx.h"
 #include "establishedctx.h"
+
 #include "singGlobal.h"
 #include "CodeTool.h"
 #include <mutex>
@@ -292,6 +295,28 @@ void EventHandler::UdpSend(const int id, const char* buf, int len, bool* bDeny)
 			pOutPut.append(" RemoteAddr ").append(sRIp).append(":").append(std::to_string(wRPort));
 			OutputDebugStringA(pOutPut.c_str());
 		}
+
+		// Dns Filter
+		std::string sDoName;
+		do
+		{
+			if (53 != wRPort)
+				break;
+			GetpHostName(buf, len, sDoName);
+			if (sDoName.empty())
+				break;
+
+			// Rule yaml
+			if (!SingletonNetRule::instance()->FilterDnsPacket(sDoName))
+				break;
+
+			// Deny Dns
+			if (bLog)
+				OutputDebugStringA("[HadesNetMon] Dns NF_BLOCK ");
+			if (bDeny)
+				*bDeny = true;
+			return;
+		} while (false);
 
 		// Rule yaml
 		try

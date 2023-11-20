@@ -163,6 +163,17 @@ void NetNdrSetRediRectRule(const char* cRuleName, const char* cRedirectIp, const
 	SingletonNetRule::instance()->SetRediRectRule(tRediRectRule);
 }
 
+void NetNdrSetDnsRule(const char* cRuleName, const char* cProtocol, const char* cDnsName, const char* cAction)
+{
+	DNS_RULE tDnsRule;
+	tDnsRule.clear();
+	tDnsRule.strRuleName = cRuleName;
+	tDnsRule.strProtocol = cProtocol;
+	tDnsRule.strAction = cAction;
+	tDnsRule.sDnsName = cDnsName;
+	SingletonNetRule::instance()->SetDnsRule(tDnsRule);
+}
+
 void NetNdrRuleClear(void)
 {
 	SingletonNetRule::instance()->NetRuleClear();

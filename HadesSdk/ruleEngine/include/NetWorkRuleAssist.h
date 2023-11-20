@@ -24,7 +24,7 @@ typedef struct _DENY_RULE : NetWorkRuleNode
         memset(strIpAddress, 0, sizeof(strIpAddress));
         memset(strPorts, 0, sizeof(strPorts));
     }
-}DENY_RULE, *PDENY_RULE;
+}DENY_RULE, * PDENY_RULE;
 
 typedef struct _REDIRECT_RULE : NetWorkRuleNode
 {
@@ -44,11 +44,22 @@ typedef struct _REDIRECT_RULE : NetWorkRuleNode
     }
 }REDIRECT_RULE, * PREDIRECT_RULE;
 
+typedef struct _DNS_RULE :NetWorkRuleNode
+{
+    std::string sDnsName;
+    void clear()
+    {
+        sDnsName = "";
+    }
+}DNS_RULE, * PDNS_RULE;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
     __declspec(dllexport) const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, REDIRECT_RULE* const pConnectRule, int* pConnetCounter, const int iMaxCounter);
+
+    __declspec(dllexport) const bool ConfigNetWorkYamlDnsRuleParsing(DNS_RULE* const pDnsRule, int* pDnsCounter, const int iMaxCounter);
 
 #ifdef __cplusplus
 }

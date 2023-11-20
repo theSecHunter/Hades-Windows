@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
 	if (hExit)
 		return 0;
 
+#ifndef _TEST
 	// Check HadesAgent Process
 #ifdef _X64
 	if (!IsProcessExist(L"HadesAgent64.exe"))
@@ -84,6 +85,7 @@ int main(int argc, char* argv[])
 #endif
 		return 0;
 	CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
+#endif
 	
 	// HadesSvc Exit Event - HadesSvc
 	g_SvcExitEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
@@ -142,13 +144,15 @@ int main(int argc, char* argv[])
 	}
 
 //@ NetWork Test
-//#ifdef _X64
-//	SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
-//	if (SingletonDataHandler::instance()->NetCheckStatus()) {
-//		if (!SingletonKNetWork::instance()->GetNetNdrStus())
-//			SingletonKNetWork::instance()->NetNdrInit();
-//	}
-//#endif
+#ifdef _TEST
+#ifdef _X64
+	SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
+	if (SingletonDataHandler::instance()->NetCheckStatus()) {
+		if (!SingletonKNetWork::instance()->GetNetNdrStus())
+			SingletonKNetWork::instance()->NetNdrInit();
+	}
+#endif
+#endif
 
 	// WaitFor AgentEvent Exit
 	WaitForSingleObject(g_SvcExitEvent, INFINITE);

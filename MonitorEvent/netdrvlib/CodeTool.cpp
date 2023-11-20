@@ -4,6 +4,7 @@
 #include <codecvt>
 #include <iostream>
 #include <tchar.h>
+#include <regex>
 #include <shlobj_core.h>
 #pragma comment(lib, "Shell32.lib")
 
@@ -840,4 +841,18 @@ const bool CodeTool::DeviceDosPathToNtPath(wchar_t* pszDosPath, wchar_t* pszNtPa
 const int CodeTool::SplitString(LPCTSTR lpszString, std::vector<std::string>& vecSubStrings, TCHAR cSeparator)
 {
 	return 0;
+}
+
+const bool CodeTool::MatchString(const char* str, const char* pattern)
+{
+	try
+	{
+		tr1::regex reg(pattern);
+		const bool ret = tr1::regex_match(str, reg);
+		return ret;
+	}
+	catch (const std::exception&)
+	{
+		return false;
+	}
 }

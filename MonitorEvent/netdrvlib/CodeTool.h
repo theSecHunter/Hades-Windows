@@ -72,6 +72,8 @@ public:
 
 	static string md5(const std::string str);
 
+	static const bool MatchString(const char* str, const char* pattern);
+
 	static void CreateRegistryKey(HKEY key, std::wstring path, std::wstring name);
 	static void DeleteRegistryKey(HKEY key, std::wstring path, std::wstring name);
 	static void SetRegistryValue(HKEY key, std::wstring path, std::wstring name, std::wstring value);
