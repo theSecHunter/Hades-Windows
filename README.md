@@ -272,34 +272,37 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 | 进程/IP:PORT Deny和Redirect |  高 |完成|
 | DNS访问控制               | 高     |完成|
 
-Yaml配置流量规则, 支持基于TCP/UDP协议拦截和重定向, 重定向指定或全局进程, 详细请看egress示例, Deny优先级大于Redirect.
+Yaml配置流量规则, 支持基于TCP/UDP协议拦截和重定向, 重定向指定或全局进程, 详细请看示例, DNS优先级大于UDP, Deny优先级大于Redirect.
 
 ```
-egress:
+tc:
   - name: "eguard_egress_test_project"
-    address: "192.168.0.1/24"
-    protocol: ALL                                         # ALL/TCP/UDP
-    ports:                                                # empty means all ports. 32(single port like 80), 16(range like 8079-8080)
+    address: "192.168.1.1/24"
+    protocol: TCP # ALL/TCP/UDP
+    ports:        # empty means all ports. 32(single port like 80), 16(range like 8079-8080)
       - 80
       - 8079-8080
-    action: DENY                                          # DENY/LOG
+    action: DENY  # DENY/LOG
     level: INFO
 
   - name: "test_tcp_redirect"
-    protocol: TCP                                         # TCP/UDP
-    processname: "network.exe|cmd.exe|powershell.exe"     # empty means all process.
-    redirectip: "192.168.0.106"                           # Redirect to ipaddrss
-    redirectport: "88"                                    # Redirect to port
+    #address: ""
+    protocol: TCP   # TCP
+    #ports:         # empty means all ports.
+    #  - 80
+    #  - 8079-8080
+    processname: "1.exe|2.exe"    # empty means all process.
+    redirectip: "192.168.188.188" # redirect to ipaddrss
+    redirectport: "88"            # redirect to port
     action: REDIRECT
     level: INFO
-
-  - name: "test_udp_redirect"
-    protocol: UDP                                         # TCP/UDP
-    processname: "network.exe|cmd.exe|powershell.exe"     # empty means all process.
-    redirectip: "192.168.0.106"                           # Redirect to ipaddrss
-    redirectport: "66"                                    # Redirect to port
-    action: REDIRECT
-    level: INFO
+dns:
+  - name: "eguard_egress_test_dns"
+    action: DENY
+    domain: "grpc.hades.store"
+  - name: "eguard_egress_test_dns_1"
+    action: DENY
+    domain: "*.baidu.com"
     
 ```
 
