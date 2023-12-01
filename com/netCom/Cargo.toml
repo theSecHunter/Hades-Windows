@@ -1,0 +1,14 @@
+[package]
+name = "netCom"
+version = "23.11.30"
+edition = "2021"
+
+# unit test rule
+[[bin]]
+name = "unitRule"
+path = "tests\\rule.rs"
+
+[dependencies]
+log = "0.4.17"
+yaml-rust = "0.4"
+fast_log = "1.5.51"

@@ -1,0 +1,13 @@
+[
+	{
+		"FileIORuleMod": 1,
+		"processName": "CreateFile.exe|powershell.exe",
+		"Directory": "D:\\Document\\|C:\\System\\AppData\\|C:\\testIPS\\"
+	},
+
+	{
+		"FileIORuleMod": 2,
+		"processName": "explorer.exe|cmd.exe",
+		"Directory": "D:\\Document1\\|C:\\System\\AppData1\\|C:\\testIPS\\"
+	}
+]

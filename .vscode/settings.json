@@ -1,0 +1,13 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "D:\\Hades\\Hades-Windows\\com\\netCom\\Cargo.toml",
+        ".\\com\\netCom\\Cargo.toml",
+        ".\\com\\netCom\\Cargo.toml",
+        ".\\com\\netCom\\Cargo.toml",
+        ".\\com\\netCom\\Cargo.toml",
+        ".\\com\\netCom\\Cargo.toml",
+        ".\\com\\netCom\\Cargo.toml",
+        ".\\com\\netCom\\Cargo.toml"
+    ],
+    "editor.inlineSuggest.showToolbar": "onHover"
+}

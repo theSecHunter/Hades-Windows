@@ -9,6 +9,10 @@
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0.jpg)
 
 ## Rust Component
+Test Driven Development.
+1. com/netCom: Network unitTs & Network Build [network IDS/IPS]
+2. com/sysCom: Kernel unitTs & Kernel Build [system IDS/IPS]
+
 
 ## Contact
 
