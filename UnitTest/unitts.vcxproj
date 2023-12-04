@@ -21,9 +21,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{40d6f1c5-bea7-4392-b30c-039382d6d7c7}</ProjectGuid>
-    <RootNamespace>wfptoolsnf</RootNamespace>
+    <ProjectGuid>{e38ffc3e-2dec-4829-bbc8-b39f586e085c}</ProjectGuid>
+    <RootNamespace>unitts</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>UnitTest</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -72,19 +73,30 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\sysmonuser\include;..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;$(IncludePath);..\HadesSdk\include;..\HadesSdk\ruleEngine\include</IncludePath>
+    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);..\HadesSdk\sysmondrv\lib;..\HadesSdk\ruleEngine\lib</LibraryPath>
+    <OutDir>..\bin\x86\Debug</OutDir>
+    <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\bin\x86\Release</OutDir>
+    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\include;..\HadesSdk\ruleEngine\include</IncludePath>
+    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);..\HadesSdk\ruleEngine\lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>../../../int/$(Configuration)/$(ProjectName)/</IntDir>
-    <OutDir>../../../bin/wfp/</OutDir>
+    <OutDir>..\bin\x64\Debug</OutDir>
+    <TargetName>$(ProjectName)_d64</TargetName>
+    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include;..\HadesSdk\netdrv\include</IncludePath>
+    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\HadesSdk\ruleEngine\lib;..\HadesSdk\netdrv\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IntDir>../../../int/$(Configuration)/$(ProjectName)/</IntDir>
-    <OutDir>../../../bin/wfp/</OutDir>
+    <OutDir>..\bin\x64\Release</OutDir>
+    <TargetName>$(ProjectName)64</TargetName>
+    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include;..\HadesSdk\netdrv\include</IncludePath>
+    <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\HadesSdk\ruleEngine\lib;..\HadesSdk\netdrv\lib</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -92,10 +104,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>RuleEnginelib_d.lib;libprotobufd.lib;libprotocd.lib;SysMonUserlib_d.lib;SysMonDrvlib_d.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -106,25 +120,27 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>RuleEnginelib.lib;libprotobuf.lib;libprotoc.lib;SysMonUserlib.lib;SysMonDrvlib.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_X64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>NetDrvlib_d64.lib;RuleEnginelib_d64.lib;libprotocd64.lib;libprotobufd64.lib;SysMonUserlib_d64.lib;SysMonDrvlib_d64.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -133,19 +149,46 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_X64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>NetDrvlib64.lib;RuleEnginelib64.lib;libprotobuf64.lib;libprotoc64.lib;SysMonDrvlib64.lib;SysMonUserlib64.lib;Tdh.lib;Crypt32.lib;FltLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="UnitTest.cpp" />
+    <ClCompile Include="UntsControl.cpp" />
+    <ClCompile Include="UntsKerMon.cpp" />
+    <ClCompile Include="UntsNetwork.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="UntsRule.cpp" />
+    <ClCompile Include="UntsSvc.cpp" />
+    <ClCompile Include="UntsUserMon.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\HadesSdk\include\SingletonHandler.h" />
+    <ClInclude Include="..\..\HadesSdk\include\sysinfo.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="singGloal.h" />
+    <ClInclude Include="UntsControl.h" />
+    <ClInclude Include="UntsKerMon.h" />
+    <ClInclude Include="UntsNetwork.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="UntsRule.h" />
+    <ClInclude Include="UntsSvc.h" />
+    <ClInclude Include="UntsUserMon.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="UnitTest.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

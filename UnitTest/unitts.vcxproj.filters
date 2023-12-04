@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="unts_network">
+      <UniqueIdentifier>{4a42da88-c2b2-4618-a77a-033324cc7b4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="unts_rule">
+      <UniqueIdentifier>{f8c354aa-6541-49e9-822f-9e10a38cb695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="unts_sysmon">
+      <UniqueIdentifier>{443e5883-8bfa-4a87-898c-fbff5fae7d6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="unts_usermon">
+      <UniqueIdentifier>{13473570-a661-4e12-b18f-41119ac70738}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="unts_control">
+      <UniqueIdentifier>{4a031508-8b30-4927-9a7a-925ddc6ec3b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="unts svc">
+      <UniqueIdentifier>{7ec6ccd6-3585-47b4-8aa6-eec6b4db18b0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="UnitTest.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="UntsRule.cpp">
+      <Filter>unts_rule</Filter>
+    </ClCompile>
+    <ClCompile Include="UntsNetwork.cpp">
+      <Filter>unts_network</Filter>
+    </ClCompile>
+    <ClCompile Include="UntsKerMon.cpp">
+      <Filter>unts_sysmon</Filter>
+    </ClCompile>
+    <ClCompile Include="UntsUserMon.cpp">
+      <Filter>unts_usermon</Filter>
+    </ClCompile>
+    <ClCompile Include="UntsControl.cpp">
+      <Filter>unts_control</Filter>
+    </ClCompile>
+    <ClCompile Include="UntsSvc.cpp">
+      <Filter>unts svc</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="UntsRule.h">
+      <Filter>unts_rule</Filter>
+    </ClInclude>
+    <ClInclude Include="UntsNetwork.h">
+      <Filter>unts_network</Filter>
+    </ClInclude>
+    <ClInclude Include="UntsKerMon.h">
+      <Filter>unts_sysmon</Filter>
+    </ClInclude>
+    <ClInclude Include="UntsUserMon.h">
+      <Filter>unts_usermon</Filter>
+    </ClInclude>
+    <ClInclude Include="UntsControl.h">
+      <Filter>unts_control</Filter>
+    </ClInclude>
+    <ClInclude Include="UntsSvc.h">
+      <Filter>unts svc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\HadesSdk\include\SingletonHandler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\HadesSdk\include\sysinfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="singGloal.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="UnitTest.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

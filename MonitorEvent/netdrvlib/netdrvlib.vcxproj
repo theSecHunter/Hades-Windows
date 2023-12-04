@@ -154,7 +154,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>copy ..\..\HadesSdk\netdrv\lib\$(ProjectName).dll ..\..\bin\x86\Debug\$(ProjectName).dll</Command>
+      <Command>copy ..\..\HadesSdk\netdrv\lib\$(ProjectName)_d.dll ..\..\bin\x86\Debug\$(ProjectName)_d.dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

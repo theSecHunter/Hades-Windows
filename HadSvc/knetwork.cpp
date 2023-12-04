@@ -71,7 +71,7 @@ void KNetWork::ReLoadIpPortConnectRule()
 	// DNS
 	{
 		for (int i = 0; i < iDnsCounter; ++i)
-			NetNdrSetDnsRule(pDnsRule[i].strRuleName, pDnsRule[i].strProtocol, pDnsRule[i].sDnsName, pDnsRule[i].strAction);
+			NetNdrSetDnsRule(pDnsRule[i].strRuleName, pDnsRule[i].strProtocol, pDnsRule[i].sDnsName.c_str(), pDnsRule[i].strAction);
 	}
 
 	if (pDenyRule) {
