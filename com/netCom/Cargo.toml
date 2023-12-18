@@ -6,9 +6,24 @@ edition = "2021"
 # unit test rule
 [[bin]]
 name = "unitRule"
-path = "tests\\rule.rs"
+path = "tests\\tsRule.rs"
+
+# unit test driven
+[[bin]]
+name = "unitDrivern"
+path = "tests\\tsDrvmg.rs"
 
 [dependencies]
 log = "0.4.17"
 yaml-rust = "0.4"
 fast_log = "1.5.51"
+
+[dependencies.windows]
+version = "0.52"
+features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Threading",
+    "Win32_System_IO",
+]

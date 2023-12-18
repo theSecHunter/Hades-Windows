@@ -1,5 +1,6 @@
 use fast_log::{consts::LogSize, plugin::{file_split::RollingType, packer::LogPacker}};
-use netCom::sRuleImpl;
+use netCom::RuleImpl;
+
 
 #[test]
 pub fn UnitGetDnsRule() {
@@ -10,14 +11,10 @@ pub fn UnitGetDnsRule() {
         return;
     }
     let sNetRulePath: String = sCurrentPath + "\\config\\networkRuleConfig.yaml";
-    let bRet: bool = sRuleImpl::GetDnsRule(sNetRulePath, &mut sYamData);
+    let bRet: bool = RuleImpl::GetDnsRule(sNetRulePath, &mut sYamData);
     if false == bRet {
         log::error!("Get Rule DirPath Failuer.");
         return;
     }
     println!("Analyze Rule Success. {}",sYamData);
-}
-
-fn main(){
-    
 }

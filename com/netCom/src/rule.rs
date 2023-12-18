@@ -3,9 +3,9 @@ extern crate yaml_rust;
 use std::{fs, ptr::null, io::Read, path::PathBuf};
 use yaml_rust::{YamlLoader, YamlEmitter};
 
-pub struct sRuleImpl;
+pub struct RuleImpl;
 
-impl sRuleImpl {
+impl RuleImpl {
     // Read json, yaml Data
     fn ReadFileRule(sRulePath: String, sYamData: &mut String) -> bool {
         if sRulePath.is_empty() || null() == sYamData {
@@ -25,7 +25,7 @@ impl sRuleImpl {
             return false;
         }
         
-        sRuleImpl::ReadFileRule(sRulePath, sYamData);
+        RuleImpl::ReadFileRule(sRulePath, sYamData);
         if sYamData.is_empty() {
             return false;
         }
