@@ -99,25 +99,25 @@ FsFilterAntsDrPostFileHide(
 //
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
-      // file create
+      // File Create
       { IRP_MJ_CREATE,
         0,
         FsFilter1PreOperation,
         NULL/*FsFilter1PostOperation*/},
 
-      // hide file
+      // Hide File
       //{ IRP_MJ_DIRECTORY_CONTROL,
       //  0,
       //  FsFilterAntsDrPostFileHide,
       //  NULL },
 
-      //// disable exe execute
+      //// Disable exe Execute
       //{ IRP_MJ_ACQUIRE_FOR_SECTION_SYNCHRONIZATION,
       //  0,
       //  FsFilterAntsDrvPreExe,
       //  NULL },
 
-      //// delete rename
+      //// Delete Rename
       { IRP_MJ_SET_INFORMATION,
         0,
         FsFilter1PreOperation,
@@ -982,79 +982,79 @@ FsFilterAntsDrPostFileHide(
         }
     }
 
-    //PVOID Bufferptr = NULL;
-    //PWCHAR HideFileName = L"HideTest";
-    //if (Data->Iopb->MinorFunction == IRP_MN_QUERY_DIRECTORY &&
-    //    (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.FileInformationClass == FileBothDirectoryInformation) &&
-    //    Data->Iopb->Parameters.DirectoryControl.QueryDirectory.Length > 0 &&
-    //    NT_SUCCESS(Data->IoStatus.Status))
-    //{
-    //    if (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress != NULL)
-    //    {
+    PVOID Bufferptr = NULL;
+    PWCHAR HideFileName = L"HideTest";
+    if (Data->Iopb->MinorFunction == IRP_MN_QUERY_DIRECTORY &&
+        (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.FileInformationClass == FileBothDirectoryInformation) &&
+        Data->Iopb->Parameters.DirectoryControl.QueryDirectory.Length > 0 &&
+        NT_SUCCESS(Data->IoStatus.Status))
+    {
+        if (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress != NULL)
+        {
 
-    //        Bufferptr = MmGetSystemAddressForMdl(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress,
-    //            NormalPagePriority);
-    //    }
-    //    else
-    //    {
-    //        Bufferptr = Data->Iopb->Parameters.DirectoryControl.QueryDirectory.DirectoryBuffer;
-    //    }
+            Bufferptr = MmGetSystemAddressForMdl(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress,
+                NormalPagePriority);
+        }
+        else
+        {
+            Bufferptr = Data->Iopb->Parameters.DirectoryControl.QueryDirectory.DirectoryBuffer;
+        }
 
-    //    if (Bufferptr == NULL)
-    //        return FLT_POSTOP_FINISHED_PROCESSING;
+        if (Bufferptr == NULL)
+            return FLT_POSTOP_FINISHED_PROCESSING;
 
-    //    PFILE_BOTH_DIR_INFORMATION Currentfileptr = (PFILE_BOTH_DIR_INFORMATION)Bufferptr;
-    //    PFILE_BOTH_DIR_INFORMATION prefileptr = Currentfileptr;
-    //    PFILE_BOTH_DIR_INFORMATION nextfileptr = 0;
-    //    ULONG nextOffset = 0;
-    //    if (Currentfileptr == NULL)
-    //        return FLT_POSTOP_FINISHED_PROCESSING;
+        PFILE_BOTH_DIR_INFORMATION pCutFileInfo = (PFILE_BOTH_DIR_INFORMATION)Bufferptr;
+        PFILE_BOTH_DIR_INFORMATION pPreFileInfo = pCutFileInfo;
+        PFILE_BOTH_DIR_INFORMATION pNextFileInfo = 0;
+        ULONG uNextOffset = 0;
+        if (pCutFileInfo == NULL)
+            return FLT_POSTOP_FINISHED_PROCESSING;
 
-    //    int nModifyflag = 0;
-    //    int removedAllEntries = 1;
-    //    do {
-    //        nextOffset = Currentfileptr->NextEntryOffset;
+        int nModifyflag = 0;
+        int removedAllEntries = 1;
+        do {
+            uNextOffset = pCutFileInfo->NextEntryOffset;
 
-    //        nextfileptr = (PFILE_BOTH_DIR_INFORMATION)((PCHAR)(Currentfileptr)+nextOffset);
+            pNextFileInfo = (PFILE_BOTH_DIR_INFORMATION)((PCHAR)(pCutFileInfo)+uNextOffset);
 
-    //        if ((prefileptr == Currentfileptr) &&
-    //            (_wcsnicmp(Currentfileptr->FileName, HideFileName, wcslen(HideFileName)) == 0) &&
-    //            (Currentfileptr->FileNameLength == 2)
-    //            )
-    //        {
-    //            RtlCopyMemory(Currentfileptr->FileName, L".", 2);
-    //            Currentfileptr->FileNameLength = 0;
-    //            FltSetCallbackDataDirty(Data);
-    //            return FLT_POSTOP_FINISHED_PROCESSING;
-    //        }
+            if ((pPreFileInfo == pCutFileInfo) &&
+                (_wcsnicmp(pCutFileInfo->FileName, HideFileName, wcslen(HideFileName)) == 0) &&
+                (pCutFileInfo->FileNameLength == 2)
+                )
+            {
+                RtlCopyMemory(pCutFileInfo->FileName, L".", 2);
+                pCutFileInfo->FileNameLength = 0;
+                FltSetCallbackDataDirty(Data);
+                return FLT_POSTOP_FINISHED_PROCESSING;
+            }
 
-    //        if (_wcsnicmp(Currentfileptr->FileName, HideFileName, wcslen(HideFileName)) == 0 &&
-    //            (Currentfileptr->FileNameLength == 2)
-    //            )
-    //        {
-    //            if (nextOffset == 0)
-    //                prefileptr->NextEntryOffset = 0;
-    //            else
-    //                prefileptr->NextEntryOffset = (ULONG)((PCHAR)Currentfileptr - (PCHAR)prefileptr + nextOffset);
-    //            nModifyflag = 1;
-    //        }
-    //        else
-    //        {
-    //            removedAllEntries = 0;
-    //            prefileptr = Currentfileptr;
-    //        }
-    //        Currentfileptr = nextfileptr;
+            if (_wcsnicmp(pCutFileInfo->FileName, HideFileName, wcslen(HideFileName)) == 0 &&
+                (pCutFileInfo->FileNameLength == 2)
+                )
+            {
+                if (uNextOffset == 0)
+                    pPreFileInfo->NextEntryOffset = 0;
+                else
+                    pPreFileInfo->NextEntryOffset = (ULONG)((PCHAR)pCutFileInfo - (PCHAR)pPreFileInfo + uNextOffset);
+                nModifyflag = 1;
+            }
+            else
+            {
+                removedAllEntries = 0;
+                pPreFileInfo = pCutFileInfo;
+            }
+            pCutFileInfo = pNextFileInfo;
 
-    //    } while (nextOffset != 0);
+        } while (uNextOffset != 0);
 
-    //    if (nModifyflag)
-    //    {
-    //        if (removedAllEntries)
-    //            Data->IoStatus.Status = STATUS_NO_MORE_ENTRIES;
-    //        else
-    //            FltSetCallbackDataDirty(Data);
-    //    }
-    //}
+        if (nModifyflag)
+        {
+            if (removedAllEntries)
+                Data->IoStatus.Status = STATUS_NO_MORE_ENTRIES;
+            else
+                FltSetCallbackDataDirty(Data);
+        }
+    }
 
     return FLT_POSTOP_FINISHED_PROCESSING;
 }

@@ -135,7 +135,7 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(ProjectName)64</TargetName>
     <OutDir>..\..\HadesSdk\sysmonuser\lib</OutDir>
-    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>..\..\HadesSdk\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
     <LinkIncremental>false</LinkIncremental>

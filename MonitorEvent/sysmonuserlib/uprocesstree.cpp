@@ -67,8 +67,8 @@ const bool DosPathToNtPath(LPTSTR pszDosPath, LPTSTR pszNtPath)
 			szDrive[2] = '\0';
 			if (!QueryDosDevice(szDrive, szDevName, 100))//查询 Dos 设备名
 				return FALSE;
-
-			cchDevName = lstrlen(szDevName);
+			
+			cchDevName = lstrlenW(szDevName);
 			if (_tcsnicmp(pszDosPath, szDevName, cchDevName) == 0)//命中
 			{
 				lstrcpy(pszNtPath, szDrive);//复制驱动器

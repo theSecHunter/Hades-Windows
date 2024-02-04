@@ -556,7 +556,7 @@ const LONG RegDeleteKeyNT(HKEY hStartKey, LPTSTR pKeyName)
 	HKEY  hKey;
 	LONG  lRet;
 
-	if (pKeyName && lstrlen(pKeyName))
+	if (pKeyName && lstrlenW(pKeyName))
 	{
 		if ((lRet = RegOpenKeyEx(hStartKey, pKeyName, 0, KEY_ENUMERATE_SUB_KEYS | DELETE, &hKey)) == ERROR_SUCCESS)
 		{
