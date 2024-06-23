@@ -126,7 +126,7 @@ NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 
 	__try
 	{
-		kernelVa = MmGetSystemAddressForMdlSafe(mdl, HighPagePriority);
+		kernelVa = VerifiMmGetSystemAddressForMdlSafe(mdl, HighPagePriority);
 		if (!kernelVa)
 		{
 			MmFreePagesFromMdl(mdl);
@@ -137,12 +137,21 @@ NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 		//
 		// The preferred way to map the buffer into user space
 		//
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+		userVa = MmMapLockedPagesSpecifyCache(mdl,          // MDL
+			UserMode,     // Mode
+			MmCached,     // Caching
+			NULL,         // Address
+			FALSE,        // Bugcheck?
+			HighPagePriority | MdlMappingNoExecute); // Priority
+#else
 		userVa = MmMapLockedPagesSpecifyCache(mdl,          // MDL
 			UserMode,     // Mode
 			MmCached,     // Caching
 			NULL,         // Address
 			FALSE,        // Bugcheck?
 			HighPagePriority); // Priority
+#endif
 		if (!userVa)
 		{
 			MmUnmapLockedPages(kernelVa, mdl);
@@ -285,7 +294,7 @@ NTSTATUS devctrl_readEx(PIRP irp, PIO_STACK_LOCATION irpSp)
 			break;
 		}
 
-		if (MmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority) == NULL ||
+		if (VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority) == NULL ||
 			irpSp->Parameters.Read.Length < sizeof(NF_READ_RESULT))
 		{
 			status = STATUS_INSUFFICIENT_RESOURCES;
@@ -476,8 +485,13 @@ ULONG devctrl_processInjectUDPPacket(PNF_DATA pData)
 		{
 #pragma warning(push)
 #pragma warning(disable: 28197) 
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+			pPacket->controlData = (WSACMSGHDR*)
+				ExAllocatePoolWithTag(NonPagedPoolNx, pPacket->options.controlDataLength, MEM_TAG_UDP_DATA);
+#else
 			pPacket->controlData = (WSACMSGHDR*)
 				ExAllocatePoolWithTag(NonPagedPool, pPacket->options.controlDataLength, MEM_TAG_UDP_DATA);
+#endif
 #pragma warning(pop)
 
 			if (!pPacket->controlData)
@@ -503,7 +517,11 @@ ULONG devctrl_processInjectUDPPacket(PNF_DATA pData)
 		pPacket->dataLength = uDataLength;
 
 		// Allocat UdpData 
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+		pUDataCopy = ExAllocatePoolWithTag(NonPagedPoolNx, uDataLength, MEM_TAG_UDP_DATA_COPY);
+#else
 		pUDataCopy = ExAllocatePoolWithTag(NonPagedPool, uDataLength, MEM_TAG_UDP_DATA_COPY);
+#endif
 		if (pUDataCopy == NULL)
 		{
 			nStus = STATUS_NO_MEMORY;
@@ -956,7 +974,7 @@ NTSTATUS devctrl_write(PIRP irp, PIO_STACK_LOCATION irpSp)
 	PNF_READ_RESULT pRes = NULL;
 	ULONG bufferLength = irpSp->Parameters.Write.Length;
 
-	pRes = (PNF_READ_RESULT)MmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority);
+	pRes = (PNF_READ_RESULT)VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority);
 	if (!pRes || bufferLength < sizeof(NF_READ_RESULT))
 	{
 		irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -1064,7 +1082,7 @@ NTSTATUS devctrl_init(PDRIVER_OBJECT pDriverObject)
 	// Init List
 	InitializeListHead(&g_pendedIoRequests);
 	InitializeListHead(&g_IoQueryHead);
-	ExInitializeNPagedLookasideList(&g_IoQueryList, NULL, NULL, 0, sizeof(NF_QUEUE_ENTRY), 'NFQU', 0);
+	VerifiExInitializeNPagedLookasideList(&g_IoQueryList, NULL, NULL, 0, sizeof(NF_QUEUE_ENTRY), 'NFQU', 0);
 	KeInitializeSpinLock(&g_sIolock);
 	
 	// Init I/O handler Thread
@@ -1140,7 +1158,7 @@ NTSTATUS devctrl_init(PDRIVER_OBJECT pDriverObject)
 		ZwClose(threadHandle);
 	}
 
-	ExInitializeNPagedLookasideList(&g_udpInjectContextLAList,
+	VerifiExInitializeNPagedLookasideList(&g_udpInjectContextLAList,
 		NULL,
 		NULL,
 		0,
@@ -1815,7 +1833,7 @@ void devctrl_serviceReads()
 		return;
 	}
 
-	pResult = (PNF_READ_RESULT)MmGetSystemAddressForMdlSafe(irp->MdlAddress, HighPagePriority);
+	pResult = (PNF_READ_RESULT)VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, HighPagePriority);
 	if (!pResult)
 	{
 		irp->IoStatus.Information = 0;

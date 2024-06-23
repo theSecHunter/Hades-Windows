@@ -190,6 +190,8 @@
     <ClInclude Include="rThread.h">
       <Filter>kruleEngine</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="resource1.h" />
   </ItemGroup>
   <ItemGroup>
     <Inf Include="sysmondriver.inf" />

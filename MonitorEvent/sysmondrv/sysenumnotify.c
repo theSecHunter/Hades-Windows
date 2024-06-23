@@ -205,7 +205,7 @@ VOID Enum_MinifilterNotify(PMINIFILTER_INFO pFltInfo)
 		ntStatus = FltEnumerateFilters(NULL, 0, &uNumber);
 		if (ntStatus != STATUS_BUFFER_TOO_SMALL)
 			break;
-		pBuffer = ExAllocatePoolWithTag(NonPagedPool, sizeof(PFLT_FILTER) * uNumber, 'mnft');
+		pBuffer = VerifiExAllocatePoolTag(sizeof(PFLT_FILTER) * uNumber, 'mnft');
 		if (pBuffer == NULL)
 		{
 			ntStatus = STATUS_INSUFFICIENT_RESOURCES;

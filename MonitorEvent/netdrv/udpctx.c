@@ -23,7 +23,11 @@ NF_UDP_PACKET* const udp_packetAllocatData(const int lens)
 	if (pUdpPacket) {
 		RtlSecureZeroMemory(pUdpPacket, sizeof(NF_UDP_PACKET));
 		if (lens) {
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+			pUdpPacket->dataBuffer = ExAllocatePoolWithTag(NonPagedPoolNx, lens, MEM_TAG_UDP_DATA_COPY);
+#else
 			pUdpPacket->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, MEM_TAG_UDP_DATA_COPY);
+#endif
 			if (!pUdpPacket->dataBuffer) {
 				ExFreeToNPagedLookasideList(&g_udpPacketDataList, pUdpPacket);
 				return NULL;
@@ -64,7 +68,11 @@ NF_UDP_BUFFER* const udp_packAllocatebuf(const int lens) {
 		return pUcpctx;
 	}
 
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+	pUcpctx->dataBuffer = ExAllocatePoolWithTag(NonPagedPoolNx, lens, 'UDPF');
+#else
 	pUcpctx->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, 'UDPF');
+#endif
 	if (!pUcpctx->dataBuffer)
 	{
 		ExFreeToNPagedLookasideList(&g_udpctxPacketsBufList, pUcpctx);
@@ -177,7 +185,7 @@ NTSTATUS push_udpPacketinfo(PVOID packet, int lens, BOOLEAN isSend)
 
 NTSTATUS udp_init() {
 	NTSTATUS status = STATUS_SUCCESS;
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_udpctxPacketsBufList,
 		NULL,
 		NULL,
@@ -187,7 +195,7 @@ NTSTATUS udp_init() {
 		0
 	);
 
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_udpCtxList,
 		NULL,
 		NULL,
@@ -197,7 +205,7 @@ NTSTATUS udp_init() {
 		0
 	);
 
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_udpPacketDataList,
 		NULL,
 		NULL,

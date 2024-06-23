@@ -11,7 +11,11 @@ PHASH_TABLE hash_table_new(unsigned int size)
 
 	memsize = sizeof(HASH_TABLE) + sizeof(PHASH_TABLE_ENTRY) * (size - 1);
 
-	pTable = malloc_np(memsize);
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+	pTable = ExAllocatePoolWithTag(NonPagedPoolNx, (memsize), MEM_TAG);
+#else
+	pTable = ExAllocatePoolWithTag(NonPagedPool, (memsize), MEM_TAG);
+#endif
 	if (!pTable)
 		return NULL;
 

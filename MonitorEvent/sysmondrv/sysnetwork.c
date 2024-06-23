@@ -166,9 +166,9 @@ int nf_GetNetworkIpProcessInfo(
 			break;
 
 		ULONG_PTR Count = paramTcp.ConnCount + 2;
-		pBuf1 = (PINTERNAL_TCP_TABLE_ENTRY)ExAllocatePoolWithTag(NonPagedPool, 0x38 * Count, 'TCMM');
-		pBuf2 = (PNSI_STATUS_ENTRY)ExAllocatePoolWithTag(NonPagedPool, 0x10 * Count, 'TCMM');
-		pBuf3 = (PNSI_PROCESSID_INFO)ExAllocatePoolWithTag(NonPagedPool, 0x20 * Count, 'TCMM');
+		pBuf1 = (PINTERNAL_TCP_TABLE_ENTRY)VerifiExAllocatePoolTag(0x38 * Count, 'TCMM');
+		pBuf2 = (PNSI_STATUS_ENTRY)VerifiExAllocatePoolTag(0x10 * Count, 'TCMM');
+		pBuf3 = (PNSI_PROCESSID_INFO)VerifiExAllocatePoolTag(0x20 * Count, 'TCMM');
 		if (!pBuf1 || !pBuf2 || !pBuf3)
 		{
 			return -1;
@@ -273,8 +273,8 @@ int nf_GetNetworkIpProcessInfo(
 			break;
 
 		Count = paramUdp.ConnCount + 2;
-		pBuf4 = (PINTERNAL_UDP_TABLE_ENTRY)ExAllocatePoolWithTag(NonPagedPool, 0x1c * Count, 'UDMM');
-		pBuf5 = (PNSI_PROCESSID_INFO)ExAllocatePoolWithTag(NonPagedPool, 0x20 * Count, 'UDMM');
+		pBuf4 = (PINTERNAL_UDP_TABLE_ENTRY)VerifiExAllocatePoolTag(0x1c * Count, 'UDMM');
+		pBuf5 = (PNSI_PROCESSID_INFO)VerifiExAllocatePoolTag(0x20 * Count, 'UDMM');
 		if (!pBuf4 || !pBuf5)
 			break;
 

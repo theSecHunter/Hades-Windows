@@ -219,7 +219,7 @@ NTSTATUS GetProcessPathByPid(HANDLE pid, WCHAR* szProcessName)
 
 ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer)
 {
-	PVOID Buffer;
+	PVOID pBuffer = NULL;
 	ULONG BufferSize = 0x20000, rtl = 0;
 	NTSTATUS Status;
 	NTSTATUS ns = STATUS_SUCCESS;
@@ -242,22 +242,25 @@ ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer)
 	InitGloableFunction_Process1();
 	if (!ZwQueryInformationProcess)
 		return Count;
-	Buffer = malloc_np(BufferSize);
-	memset(Buffer, 0, BufferSize);
-	Status = ZwQuerySystemInformation(16, Buffer, BufferSize, 0);	//SystemHandleInformation=16
+	pBuffer = VerifiExAllocatePoolTag(BufferSize, MEM_TAG);
+	if (!pBuffer || (pBuffer == NULL))
+		return Count;
+	memset(pBuffer, 0, BufferSize);
+	Status = ZwQuerySystemInformation(16, pBuffer, BufferSize, 0);	//SystemHandleInformation=16
 	while (Status == 0xC0000004)	//STATUS_INFO_LENGTH_MISMATCH
 	{
-		free_np(Buffer);
+		free_np(pBuffer);
+		pBuffer = NULL;
 		BufferSize = BufferSize * 2;
-		Buffer = malloc_np(BufferSize);
-		memset(Buffer, 0, BufferSize);
-		Status = ZwQuerySystemInformation(16, Buffer, BufferSize, 0);
+		pBuffer = VerifiExAllocatePoolTag(BufferSize, MEM_TAG);
+		memset(pBuffer, 0, BufferSize);
+		Status = ZwQuerySystemInformation(16, pBuffer, BufferSize, 0);
 	}
 	if (!NT_SUCCESS(Status))
 		return 0x88888888;
 	
-	qwHandleCount = ((SYSTEM_HANDLE_INFORMATION*)Buffer)->NumberOfHandles;
-	p = (SYSTEM_HANDLE_TABLE_ENTRY_INFO*)((SYSTEM_HANDLE_INFORMATION*)Buffer)->Handles;
+	qwHandleCount = ((SYSTEM_HANDLE_INFORMATION*)pBuffer)->NumberOfHandles;
+	p = (SYSTEM_HANDLE_TABLE_ENTRY_INFO*)((SYSTEM_HANDLE_INFORMATION*)pBuffer)->Handles;
 	memset(pOutBuffer, 0, 1024 * sizeof(HANDLE_INFO) * 2);
 
 	//ENUM HANDLE PROC

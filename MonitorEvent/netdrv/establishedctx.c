@@ -9,7 +9,7 @@ NTSTATUS establishedctx_init()
 {
 	NTSTATUS status = STATUS_SUCCESS;
 
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_establishedList,
 		NULL,
 		NULL,
@@ -64,7 +64,11 @@ NF_FLOWESTABLISHED_BUFFER* establishedctx_packallocte(int lens)
 
 	if (lens > 0)
 	{
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+		pEsTabData->dataBuffer = ExAllocatePoolWithTag(NonPagedPoolNx, lens, 'DPLC');
+#else
 		pEsTabData->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, 'DPLC');
+#endif
 		if (!pEsTabData->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_establishedList, pEsTabData);

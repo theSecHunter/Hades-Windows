@@ -14,7 +14,7 @@ NF_DATALINK_DATA* datalink_get()
 NTSTATUS datalinkctx_init()
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_dataLinkPacketsList,
 		NULL,
 		NULL,
@@ -43,7 +43,11 @@ PNF_DATALINK_BUFFER datalinkctx_packallocate(int lens)
 	RtlSecureZeroMemory(pDataLink, sizeof(NF_DATALINK_BUFFER));
 	if (lens > 0)
 	{
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+		pDataLink->dataBuffer = ExAllocatePoolWithTag(NonPagedPoolNx, lens, 'DPLC');
+#else
 		pDataLink->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, 'DPLC');
+#endif
 		if (!pDataLink->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_dataLinkPacketsList, pDataLink);

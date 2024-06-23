@@ -160,7 +160,7 @@ NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 		const CHAR chrflag = p1[0];
 		const int dwflag = atoi(&chrflag);
 		rDirectory_IpsCleanEx(dwflag);
-		p2 = ExAllocatePoolWithTag(NonPagedPool, inputBufferLength, MEM_TAG_DK);
+		p2 = VerifiExAllocatePoolTag(inputBufferLength, MEM_TAG_DK);
 		if (NULL == p2)
 		{
 			status = STATUS_INSUFFICIENT_RESOURCES;

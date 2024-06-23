@@ -63,7 +63,7 @@ NTSTATUS rProcess_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
         rProcess_IpsClean();
         PWCHAR p1, p2; ULONG i;
         p1 = (PWCHAR)inputBuffer;
-        p2 = ExAllocatePoolWithTag(NonPagedPool, inputBufferLength, MEM_TAG_DK);
+        p2 = VerifiExAllocatePoolTag(inputBufferLength, MEM_TAG_DK);
         if (NULL == p2)
         {
             status = STATUS_INSUFFICIENT_RESOURCES;

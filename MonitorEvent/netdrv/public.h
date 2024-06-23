@@ -261,4 +261,20 @@ typedef struct UDP_HEADER_
     UINT16 checksum;
 } UDP_HEADER, * PUDP_HEADER;
 #pragma pack(pop)
+
+VOID VerifiExInitializeNPagedLookasideList(
+    _Out_ PNPAGED_LOOKASIDE_LIST Lookaside,
+    _In_opt_ PALLOCATE_FUNCTION Allocate,
+    _In_opt_ PFREE_FUNCTION Free,
+    _In_ ULONG Flags,
+    _In_ SIZE_T Size,
+    _In_ ULONG Tag,
+    _In_ USHORT Depth
+);
+
+PVOID VerifiMmGetSystemAddressForMdlSafe(
+    _Inout_ PMDL Mdl,
+    _In_    ULONG Priority
+);
+
 #endif

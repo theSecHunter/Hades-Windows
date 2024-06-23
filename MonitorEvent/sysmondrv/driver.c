@@ -42,6 +42,62 @@ static PfnNtQueryInformationProcess ZwQueryInformationProcess;
         DbgPrint _string :                          \
         ((int)0))
 
+PVOID VerifiExAllocatePoolTag(
+    _In_ SIZE_T NumberOfBytes,
+    _In_ ULONG Tag)
+{
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+    return ExAllocatePoolWithTag(NonPagedPoolNx, NumberOfBytes, Tag);
+#else
+    return ExAllocatePoolWithTag(NonPagedPool, NumberOfBytes, Tag);
+#endif;
+}
+
+VOID VerifiExInitializeNPagedLookasideList(
+    _Out_ PNPAGED_LOOKASIDE_LIST Lookaside,
+    _In_opt_ PALLOCATE_FUNCTION Allocate,
+    _In_opt_ PFREE_FUNCTION Free,
+    _In_ ULONG Flags,
+    _In_ SIZE_T Size,
+    _In_ ULONG Tag,
+    _In_ USHORT Depth
+)
+{
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+     ExInitializeNPagedLookasideList(
+        Lookaside,
+        Allocate,
+        Free,
+        POOL_NX_ALLOCATION,
+        Size,
+        Tag,
+        Depth
+    );
+#else
+    ExInitializeNPagedLookasideList(
+        Lookaside,
+        Allocate,
+        Free,
+        0,
+        Size,
+        Tag,
+        Depth
+    );
+#endif
+}
+
+PVOID VerifiMmGetSystemAddressForMdlSafe(
+    _Inout_ PMDL Mdl,
+    _In_    ULONG Priority
+)
+{
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+    return  MmGetSystemAddressForMdlSafe(Mdl, Priority | MdlMappingNoExecute);
+#else
+    return  MmGetSystemAddressForMdlSafe(Mdl, Priority);
+#endif
+}
+
 /*************************************************************************
     Prototypes
 *************************************************************************/
@@ -158,7 +214,7 @@ NTSTATUS
         return FALSE;
 
     do {
-        g_processname = (char*)ExAllocatePoolWithTag(NonPagedPool, 260 * (260 * sizeof(WCHAR)), 'CM');
+        g_processname = VerifiExAllocatePoolTag(260 * (260 * sizeof(WCHAR)), 'CM');
         if (!g_processname)
             return status;
 

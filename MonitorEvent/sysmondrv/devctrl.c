@@ -615,7 +615,7 @@ void devctrl_freeSharedMemory(PSHARED_MEMORY pSharedMemory)
 }
 NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 {
-	PMDL  mdl;
+	PMDL  pMdl = NULL;
 	PVOID userVa = NULL;
 	PVOID kernelVa = NULL;
 	PHYSICAL_ADDRESS lowAddress;
@@ -626,36 +626,43 @@ NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 	lowAddress.QuadPart = 0;
 	highAddress.QuadPart = 0xFFFFFFFFFFFFFFFF;
 
-	mdl = MmAllocatePagesForMdl(lowAddress, highAddress, lowAddress, (SIZE_T)len);
-	if (!mdl)
-	{
+	pMdl = MmAllocatePagesForMdl(lowAddress, highAddress, lowAddress, (SIZE_T)len);
+	if (pMdl == NULL || (!pMdl))
 		return STATUS_INSUFFICIENT_RESOURCES;
-	}
 
 	__try
 	{
-		kernelVa = MmGetSystemAddressForMdlSafe(mdl, HighPagePriority);
+		kernelVa = VerifiMmGetSystemAddressForMdlSafe(pMdl, HighPagePriority);
 		if (!kernelVa)
 		{
-			MmFreePagesFromMdl(mdl);
-			IoFreeMdl(mdl);
+			MmFreePagesFromMdl(pMdl);
+			IoFreeMdl(pMdl);
 			return STATUS_INSUFFICIENT_RESOURCES;
 		}
 
 		//
 		// The preferred way to map the buffer into user space
 		//
-		userVa = MmMapLockedPagesSpecifyCache(mdl,          // MDL
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+		userVa = MmMapLockedPagesSpecifyCache(pMdl,          // MDL
+			UserMode,     // Mode
+			MmCached,     // Caching
+			NULL,         // Address
+			FALSE,        // Bugcheck?
+			HighPagePriority | MdlMappingNoExecute); // Priority
+#else
+		userVa = MmMapLockedPagesSpecifyCache(pMdl,          // MDL
 			UserMode,     // Mode
 			MmCached,     // Caching
 			NULL,         // Address
 			FALSE,        // Bugcheck?
 			HighPagePriority); // Priority
+#endif
 		if (!userVa)
 		{
-			MmUnmapLockedPages(kernelVa, mdl);
-			MmFreePagesFromMdl(mdl);
-			IoFreeMdl(mdl);
+			MmUnmapLockedPages(kernelVa, pMdl);
+			MmFreePagesFromMdl(pMdl);
+			IoFreeMdl(pMdl);
 			return STATUS_INSUFFICIENT_RESOURCES;
 		}
 	}
@@ -671,24 +678,24 @@ NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 	{
 		if (userVa)
 		{
-			MmUnmapLockedPages(userVa, mdl);
+			MmUnmapLockedPages(userVa, pMdl);
 		}
 		if (kernelVa)
 		{
-			MmUnmapLockedPages(kernelVa, mdl);
+			MmUnmapLockedPages(kernelVa, pMdl);
 		}
-		MmFreePagesFromMdl(mdl);
-		IoFreeMdl(mdl);
+		MmFreePagesFromMdl(pMdl);
+		IoFreeMdl(pMdl);
 		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
 	//
 	// Return the allocated pointers
 	//
-	pSharedMemory->mdl = mdl;
+	pSharedMemory->mdl = pMdl;
 	pSharedMemory->userVa = userVa;
 	pSharedMemory->kernelVa = kernelVa;
-	pSharedMemory->bufferLength = MmGetMdlByteCount(mdl);
+	pSharedMemory->bufferLength = MmGetMdlByteCount(pMdl);
 
 	return STATUS_SUCCESS;
 }
@@ -696,10 +703,9 @@ NTSTATUS devctrl_openMem(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCATI
 {
 	PVOID ioBuffer = NULL;
 	ioBuffer = irp->AssociatedIrp.SystemBuffer;
-	if (!ioBuffer)
-	{
+	if (ioBuffer == NULL || (!ioBuffer))
 		ioBuffer = irp->UserBuffer;
-	}
+
 	ULONG outputBufferLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
 
 	if (ioBuffer && (outputBufferLength >= sizeof(NF_BUFFERS)))
@@ -822,7 +828,7 @@ NTSTATUS devctrl_read(PIRP irp, PIO_STACK_LOCATION irpSp)
 			break;
 		}
 
-		if (MmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority) == NULL ||
+		if (VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority) == NULL ||
 			irpSp->Parameters.Read.Length < sizeof(NF_READ_RESULT))
 		{
 			KdPrint((DPREFIX"devctrl_read: Invalid request\n"));
@@ -869,7 +875,7 @@ NTSTATUS devctrl_write(PIRP irp, PIO_STACK_LOCATION irpSp)
 	PNF_READ_RESULT pRes;
 	ULONG bufferLength = irpSp->Parameters.Write.Length;
 
-	pRes = (PNF_READ_RESULT)MmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority);
+	pRes = (PNF_READ_RESULT)VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority);
 	if (!pRes || bufferLength < sizeof(NF_READ_RESULT))
 	{
 		irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -1223,7 +1229,7 @@ NTSTATUS devctrl_ioInit(PDRIVER_OBJECT DriverObject) {
 	InitializeListHead(&g_IoQueryHead);
 	KeInitializeSpinLock(&g_IoQueryLock);
 
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_IoQueryList,
 		NULL,
 		NULL,
@@ -1790,7 +1796,7 @@ void devctrl_serviceReads()
 		return;
 	}
 
-	pResult = (PNF_READ_RESULT)MmGetSystemAddressForMdlSafe(irp->MdlAddress, HighPagePriority);
+	pResult = (PNF_READ_RESULT)VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, HighPagePriority);
 	if (!pResult)
 	{
 		irp->IoStatus.Information = 0;

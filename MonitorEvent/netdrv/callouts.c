@@ -80,6 +80,8 @@ typedef enum _NF_DIRECTION
 // OutPut
 inline void DbgPrintAddress(int ipFamily, void* addr, char* name, UINT64 id)
 {
+	UNREFERENCED_PARAMETER(name);
+	UNREFERENCED_PARAMETER(id);
 	return;
 	if (ipFamily == AF_INET)
 	{
@@ -1013,8 +1015,13 @@ BOOLEAN helper_callout_pushUdpPacket(
 
 #pragma warning(push)
 #pragma warning(disable: 28197) 
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+				pPacket->controlData = (WSACMSGHDR*)
+					ExAllocatePoolWithTag(NonPagedPoolNx, inMetaValues->controlDataLength, MEM_TAG_UDP_DATA);
+#else
 				pPacket->controlData = (WSACMSGHDR*)
 					ExAllocatePoolWithTag(NonPagedPool, inMetaValues->controlDataLength, MEM_TAG_UDP_DATA);
+#endif
 #pragma warning(pop)
 
 				if (pPacket->controlData != NULL)
@@ -1989,7 +1996,7 @@ NTSTATUS callout_init(PDEVICE_OBJECT deviceObject)
 
 	// Init FlowEstablished 
 	KeInitializeSpinLock(&g_callouts_flowspinlock);
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_callouts_flowCtxPacketsLAList,
 		NULL,
 		NULL,
@@ -2001,7 +2008,7 @@ NTSTATUS callout_init(PDEVICE_OBJECT deviceObject)
 
 	// Init DataLink
 	KeInitializeSpinLock(&g_callouts_datalinkspinlock);
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_callouts_datalinkPacktsList,
 		NULL,
 		NULL,

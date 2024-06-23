@@ -879,7 +879,7 @@ FsFilterAntsDrPostFileHide(
             {
 
                 // NormalPagePriority
-                Bufferptr = MmGetSystemAddressForMdl(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress);
+                Bufferptr = VerifiMmGetSystemAddressForMdlSafe(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress, NormalPagePriority);
             }
             else
             {
@@ -992,7 +992,7 @@ FsFilterAntsDrPostFileHide(
         if (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress != NULL)
         {
 
-            Bufferptr = MmGetSystemAddressForMdl(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress,
+            Bufferptr = VerifiMmGetSystemAddressForMdlSafe(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress,
                 NormalPagePriority);
         }
         else

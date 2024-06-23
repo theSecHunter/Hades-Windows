@@ -41,7 +41,11 @@ PNF_TCP_BUFFER tcp_packallocate(int lens)
 
 	if (lens > 0)
 	{
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+		pTcpctx->dataBuffer = ExAllocatePoolWithTag(NonPagedPoolNx, lens, 'TCLC');
+#else
 		pTcpctx->dataBuffer = ExAllocatePoolWithTag(NonPagedPool, lens, 'TCLC');
+#endif
 		if (!pTcpctx->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_tcpctxPacketsBufList, pTcpctx);
@@ -317,7 +321,7 @@ NF_TCPCTX_DATA* tcp_Get()
 NTSTATUS tcp_init()
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_tcpctxPacketsBufList,
 		NULL,
 		NULL,
@@ -327,7 +331,7 @@ NTSTATUS tcp_init()
 		0
 	);
 
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_tcpCtxLAList,
 		NULL,
 		NULL,
@@ -337,7 +341,7 @@ NTSTATUS tcp_init()
 		0
 	);
 
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_packetsLAList,
 		NULL,
 		NULL,

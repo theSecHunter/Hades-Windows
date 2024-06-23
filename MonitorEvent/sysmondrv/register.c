@@ -240,19 +240,19 @@ static NTSTATUS Process_NotifyRegister(
 		ExAcquireResourceExclusiveLite(&g_resourcelock, TRUE);
 		const int replaybuflen = sizeof(HADES_REPLY);
 		const int sendbuflen = sizeof(HADES_NOTIFICATION);
-		HADES_NOTIFICATION* const notification = (PHADES_NOTIFICATION)ExAllocatePoolWithTag(NonPagedPool, sendbuflen, 'IPSR');
-		if (notification)
+		HADES_NOTIFICATION* const pNotification = (PHADES_NOTIFICATION)VerifiExAllocatePoolTag(sendbuflen, 'IPSR');
+		if (pNotification)
 		{
-			RtlZeroMemory(notification, sendbuflen);
-			notification->CommandId = 2; // MINIPORT_IPS_REGISTER
-			RtlCopyMemory(&notification->Contents, &registerinfo, sizeof(REGISTERINFO));
-			NTSTATUS nSendRet = Fsflt_SendMsg(notification, sendbuflen, notification, &replaybuflen);
-			const DWORD  ReSafeToOpen = ((PHADES_REPLY)notification)->SafeToOpen;
+			RtlZeroMemory(pNotification, sendbuflen);
+			pNotification->CommandId = 2; // MINIPORT_IPS_REGISTER
+			RtlCopyMemory(&pNotification->Contents, &registerinfo, sizeof(REGISTERINFO));
+			NTSTATUS nSendRet = Fsflt_SendMsg(pNotification, sendbuflen, pNotification, &replaybuflen);
+			const DWORD  ReSafeToOpen = ((PHADES_REPLY)pNotification)->SafeToOpen;
 			// À¹½Ø
 			if (1 == ReSafeToOpen)
 				status = STATUS_ACCESS_DENIED;
-			if (notification)
-				ExFreePoolWithTag(notification, 'IPSR');
+			if (pNotification)
+				ExFreePoolWithTag(pNotification, 'IPSR');
 		}
 		ExReleaseResourceLite(&g_resourcelock);
 	}
@@ -287,7 +287,7 @@ NTSTATUS Register_Init(PDRIVER_OBJECT pDriverObject)
 
 	rRegister_IpsInit();
 
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_registerlist,
 		NULL,
 		NULL,
@@ -315,7 +315,8 @@ void Register_Free(void)
 {
 	Register_Clean();
 	ExDeleteNPagedLookasideList(&g_registerlist);
-	if (0 < g_plareg.QuadPart)
+	ExDeleteResourceLite(&g_resourcelock);
+	if (g_plareg.QuadPart > 0)
 	{
 		CmUnRegisterCallback(g_plareg);
 	}
@@ -377,7 +378,7 @@ REGISTERBUFFER* Register_PacketAllocate(int lens)
 
 	if (lens > 0)
 	{
-		regbuf->dataBuffer = (char*)ExAllocatePoolWithTag(NonPagedPool, lens, 'REMM');
+		regbuf->dataBuffer = (char*)VerifiExAllocatePoolTag(lens, 'REMM');
 		if (!regbuf->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_registerlist, regbuf);

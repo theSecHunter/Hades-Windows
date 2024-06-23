@@ -124,7 +124,7 @@ NTSTATUS Process_Init(void) {
 
     rProcess_IpsInit();
 
-    ExInitializeNPagedLookasideList(
+    VerifiExInitializeNPagedLookasideList(
         &g_processList,
         NULL,
         NULL,
@@ -236,23 +236,23 @@ PROCESSDATA* processctx_get()
 }
 PROCESSBUFFER* Process_PacketAllocate(const int lens)
 {
-    PROCESSBUFFER* processbuf = NULL;
-    processbuf = (PROCESSBUFFER*)ExAllocateFromNPagedLookasideList(&g_processList);
-    if (!processbuf)
+    PROCESSBUFFER* pProcessData = NULL;
+    pProcessData = (PROCESSBUFFER*)ExAllocateFromNPagedLookasideList(&g_processList);
+    if (!pProcessData)
         return NULL;
 
-    memset(processbuf, 0, sizeof(PROCESSBUFFER));
+    memset(pProcessData, 0, sizeof(PROCESSBUFFER));
 
     if (lens > 0)
     {
-        processbuf->dataBuffer = (char*)ExAllocatePoolWithTag(NonPagedPool, lens, 'PRMM');
-        if (!processbuf->dataBuffer)
+        pProcessData->dataBuffer = (char*)VerifiExAllocatePoolTag(lens, 'PRMM');
+        if (!pProcessData->dataBuffer)
         {
-            ExFreeToNPagedLookasideList(&g_processList, processbuf);
+            ExFreeToNPagedLookasideList(&g_processList, pProcessData);
             return FALSE;
         }
     }
-    return processbuf;
+    return pProcessData;
 }
 void Process_PacketFree(PROCESSBUFFER* packet)
 {

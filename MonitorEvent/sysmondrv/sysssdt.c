@@ -105,7 +105,7 @@ int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 
 	DWORD32		offset = 0;
 	ULONGLONG	funaddr = 0;
-	PSSDTINFO	ssdtinfo = ExAllocatePoolWithTag(NonPagedPool, sizeof(SSDTINFO), 'STMM');
+	PSSDTINFO	ssdtinfo = VerifiExAllocatePoolTag(sizeof(SSDTINFO), 'STMM');
 	if (!ssdtinfo)
 		return -1;
 	RtlSecureZeroMemory(ssdtinfo, sizeof(SSDTINFO));
@@ -127,7 +127,7 @@ int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 		funaddr = (ULONG64)ServiceTableBase + offset;
 		ssdtinfo->sstd_memaddr = funaddr;
 #endif // !_WIN64
-		if (MmIsAddressValid(ssdtinfo->sstd_memaddr))
+		if (MmIsAddressValid((PVOID)ssdtinfo->sstd_memaddr))
 			ssdtinfo->ssdt_addrstatus = TRUE;
 		else
 			ssdtinfo->ssdt_addrstatus = FALSE;

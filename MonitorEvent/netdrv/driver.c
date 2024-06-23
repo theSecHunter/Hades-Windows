@@ -20,6 +20,52 @@ static HANDLE g_bfeStateSubscribeHandle = NULL;
 UNICODE_STRING u_devicename;
 UNICODE_STRING u_devicesyslink;
 
+VOID VerifiExInitializeNPagedLookasideList(
+	_Out_ PNPAGED_LOOKASIDE_LIST Lookaside,
+	_In_opt_ PALLOCATE_FUNCTION Allocate,
+	_In_opt_ PFREE_FUNCTION Free,
+	_In_ ULONG Flags,
+	_In_ SIZE_T Size,
+	_In_ ULONG Tag,
+	_In_ USHORT Depth
+)
+{
+	UNREFERENCED_PARAMETER(Flags);
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+	 ExInitializeNPagedLookasideList(
+		Lookaside,
+		Allocate,
+		Free,
+		POOL_NX_ALLOCATION,
+		Size,
+		Tag,
+		Depth
+	);
+#else
+	 ExInitializeNPagedLookasideList(
+		Lookaside,
+		Allocate,
+		Free,
+		0,
+		Size,
+		Tag,
+		Depth
+	);
+#endif
+}
+
+PVOID VerifiMmGetSystemAddressForMdlSafe(
+	_Inout_ PMDL Mdl,
+	_In_    ULONG Priority
+)
+{
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+	return  MmGetSystemAddressForMdlSafe(Mdl, Priority | MdlMappingNoExecute);
+#else
+	return  MmGetSystemAddressForMdlSafe(Mdl, Priority);
+#endif
+}
+
 NTSTATUS driver_init(
 	IN  PDRIVER_OBJECT  driverObject,
 	IN  PUNICODE_STRING registryPath)

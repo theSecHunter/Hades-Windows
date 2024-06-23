@@ -161,7 +161,7 @@ NTSTATUS Imagemod_Init(void)
 	sl_init(&g_imagemod_ips_monitorlock);
 
 	sl_init(&g_imagemodlock);
-	ExInitializeNPagedLookasideList(
+	VerifiExInitializeNPagedLookasideList(
 		&g_imagemodList,
 		NULL,
 		NULL,
@@ -235,23 +235,23 @@ void Imagemod_SetIpsMonitor(BOOLEAN code)
 
 IMAGEMODBUFFER* Imagemod_PacketAllocate(int lens)
 {
-	IMAGEMODBUFFER* imagebuf = NULL;
-	imagebuf = (IMAGEMODBUFFER*)ExAllocateFromNPagedLookasideList(&g_imagemodList);
-	if (!imagebuf)
+	IMAGEMODBUFFER* pImageData = NULL;
+	pImageData = (IMAGEMODBUFFER*)ExAllocateFromNPagedLookasideList(&g_imagemodList);
+	if (!pImageData)
 		return NULL;
 
-	memset(imagebuf, 0, sizeof(IMAGEMODBUFFER));
+	memset(pImageData, 0, sizeof(IMAGEMODBUFFER));
 
 	if (lens > 0)
 	{
-		imagebuf->dataBuffer = (char*)ExAllocatePoolWithTag(NonPagedPool, lens, 'IMMM');
-		if (!imagebuf->dataBuffer)
+		pImageData->dataBuffer = (char*)VerifiExAllocatePoolTag(lens, 'IMMM');
+		if (!pImageData->dataBuffer)
 		{
-			ExFreeToNPagedLookasideList(&g_imagemodList, imagebuf);
+			ExFreeToNPagedLookasideList(&g_imagemodList, pImageData);
 			return FALSE;
 		}
 	}
-	return imagebuf;
+	return pImageData;
 }
 
 void Imagemod_PacketFree(IMAGEMODBUFFER* packet)
