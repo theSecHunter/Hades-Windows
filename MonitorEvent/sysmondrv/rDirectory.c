@@ -208,12 +208,16 @@ NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 			case 1:
 			{
 				p1 = g_reg_ipsProcNameWhiteList;
+				if (!NT_SUCCESS(MmIsAddressValid(p1))) 
+					break;
 				g_reg_ipsProcNameWhiteList = p2;
 			}
 			break;
 			case 2:
 			{
 				p1 = g_reg_ipsDirectNameWhiteList;
+				if (!NT_SUCCESS(MmIsAddressValid(p1)))
+					break;
 				g_reg_ipsDirectNameWhiteList = p2;
 
 			}
@@ -221,12 +225,16 @@ NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 			case 3:
 			{
 				p1 = g_reg_ipsProcNameBlackList;
+				if (!NT_SUCCESS(MmIsAddressValid(p1)))
+					break;
 				g_reg_ipsProcNameBlackList = p2;
 			}
 			break;
 			case 4:
 			{
 				p1 = g_reg_ipsDirectNameBlackList;
+				if (!NT_SUCCESS(MmIsAddressValid(p1)))
+					break;
 				g_reg_ipsDirectNameBlackList = p2;
 			}
 			break;
