@@ -14,10 +14,10 @@
 #include <DirectoryRuleAssist.h>
 
 // Debug调试
-static bool kerne_mon = false;		// kernel采集
+static bool kerne_mon = true;		// kernel采集
 static bool kerne_rootkit = false;	// rootkit接口
-static bool user_mod = false;		// user接口
-static bool etw_mon = false;		// user采集
+static bool user_mod = true;		// user接口
+static bool etw_mon = true;		// user采集
 
 static bool gpip_send = false;		// pip上报
 static char g_chNameGuid[64] = { 0 };	// agentid

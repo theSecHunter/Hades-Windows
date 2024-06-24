@@ -50,9 +50,9 @@ BOOLEAN rThrInject_IsIpsProcessNameInList(const PWCHAR path)
 }
 NTSTATUS rThrInject_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
+    NTSTATUS status = STATUS_SUCCESS;
     const PVOID inputBuffer = irp->AssociatedIrp.SystemBuffer;
     ULONG inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
-    NTSTATUS status = STATUS_SUCCESS;
     do
     {
         if (NULL == inputBuffer || inputBufferLength < sizeof(WCHAR))
@@ -61,12 +61,27 @@ NTSTATUS rThrInject_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
             break;
         }
         rThrInject_IpsClean();
-        PWCHAR p1, p2; ULONG i;
+
+        ULONG i = 0;
+        PWCHAR p1 = NULL, p2 = NULL; 
         p1 = (PWCHAR)inputBuffer;
-        p2 = VerifiExAllocatePoolTag(inputBufferLength, MEM_TAG_DK);
-        if (NULL == p2)
+        if (!p1 || (p1 == NULL))
         {
             status = STATUS_INSUFFICIENT_RESOURCES;
+            break;
+        }
+        if (!NT_SUCCESS(MmIsAddressValid(p1))) {
+            status = STATUS_INVALID_MEMBER;
+            break;
+        }
+        p2 = VerifiExAllocatePoolTag(inputBufferLength, MEM_TAG_DK);
+        if (!p2 || (p2 == NULL))
+        {
+            status = STATUS_INSUFFICIENT_RESOURCES;
+            break;
+        }
+        if (!NT_SUCCESS(MmIsAddressValid(p2))) {
+            status = STATUS_INVALID_MEMBER;
             break;
         }
         RtlCopyMemory(p2, p1, inputBufferLength);
@@ -79,9 +94,7 @@ NTSTATUS rThrInject_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
         p1 = g_thrinject_ipsList;
         g_thrinject_ipsList = p2;
         if (p1)
-        {
             ExFreePool(p1);
-        }
     } while (FALSE);
 
     irp->IoStatus.Status = status;

@@ -145,30 +145,59 @@ BOOLEAN rDirectory_IsIpsDirectNameInList(_In_ const PWCHAR FileDirectPath, BOOLE
 }
 NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 {
+	NTSTATUS status = STATUS_SUCCESS;
 	PVOID inputBuffer = irp->AssociatedIrp.SystemBuffer;
 	ULONG inputBufferLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
-	NTSTATUS status = STATUS_SUCCESS;
 	do 
 	{
-		if (NULL == inputBuffer || inputBufferLength < sizeof(WCHAR))
+		if ((NULL == inputBuffer) || (inputBufferLength < sizeof(WCHAR)))
 		{
 			status = STATUS_INVALID_PARAMETER;
 			break;
 		}
-		PWCHAR p1, p2; ULONG i;
+
+		ULONG i = 0;
+		PWCHAR p1 = NULL, p2 = NULL;
 		p1 = (PWCHAR)inputBuffer;
+		if(!p1 || (NULL == p1))
+		{
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		}
+		if (!NT_SUCCESS(MmIsAddressValid(p1))) {
+			status = STATUS_INVALID_MEMBER;
+			break;
+		}
+
 		const CHAR chrflag = p1[0];
 		const int dwflag = atoi(&chrflag);
 		rDirectory_IpsCleanEx(dwflag);
+
 		p2 = VerifiExAllocatePoolTag(inputBufferLength, MEM_TAG_DK);
-		if (NULL == p2)
+		if (NULL == p2 || (!p2))
 		{
 			status = STATUS_INSUFFICIENT_RESOURCES;
 			break;
 		}
-		const PWCHAR pwPtr = p1 + 1;
+		if (!NT_SUCCESS(MmIsAddressValid(p2))) {
+			status = STATUS_INVALID_MEMBER;
+			break;
+		}
+
+		PWCHAR pwPtr = NULL;
+		pwPtr = p1 + 1;
+		if (!pwPtr || (pwPtr == NULL)) {
+			status = STATUS_INSUFFICIENT_RESOURCES;
+			break;
+		}
+		if (!NT_SUCCESS(MmIsAddressValid(pwPtr))) {
+			status = STATUS_INVALID_MEMBER;
+			break;
+		}
+
 		RtlCopyMemory(p2, pwPtr, inputBufferLength);
 		inputBufferLength >>= 1;
+
 		for (i = 0; i < inputBufferLength; i++)
 		{
 			if (p2[i] == L'|')
@@ -203,9 +232,7 @@ NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 			break;
 		}
 		if (p1)
-		{
 			ExFreePool(p1);
-		}
 	} while (FALSE);
 
 	irp->IoStatus.Status = status;

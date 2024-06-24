@@ -63,6 +63,8 @@ VOID VerifiExInitializeNPagedLookasideList(
     _In_ USHORT Depth
 )
 {
+    UNREFERENCED_PARAMETER(Flags);
+
 #if (NTDDI_VERSION >= NTDDI_WIN8)
      ExInitializeNPagedLookasideList(
         Lookaside,
@@ -127,6 +129,8 @@ VOID driverUnload(
     _In_ struct _DRIVER_OBJECT* DriverObject
 )
 {
+    UNREFERENCED_PARAMETER(DriverObject);
+
     PAGED_CODE();
 
     if (g_processname) {
