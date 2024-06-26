@@ -173,7 +173,7 @@ NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 		const int dwflag = atoi(&chrflag);
 		rDirectory_IpsCleanEx(dwflag);
 
-		p2 = VerifiExAllocatePoolTag(inputBufferLength, MEM_TAG_DK);
+		p2 = VerifiExAllocatePoolTag(inputBufferLength + 1, MEM_TAG_DK);
 		if (NULL == p2 || (!p2))
 		{
 			status = STATUS_INSUFFICIENT_RESOURCES;
@@ -195,29 +195,29 @@ NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 			break;
 		}
 
-		RtlCopyMemory(p2, pwPtr, inputBufferLength);
-		inputBufferLength >>= 1;
+		int nProcessLen = inputBufferLength - sizeof(WCHAR);
+		RtlCopyMemory(p2, pwPtr, nProcessLen);
 
-		for (i = 0; i < inputBufferLength; i++)
+		nProcessLen >>= 1;
+		for (i = 0; i < nProcessLen; i++)
 		{
-			if (p2[i] == L'|')
+			const WCHAR* pCompare = &p2[i];
+			if (*pCompare == L'|')
 				p2[i] = 0;
 		}
+		if (!NT_SUCCESS(MmIsAddressValid(p2)))
+			break;
 		switch (dwflag)
 		{
 			case 1:
 			{
 				p1 = g_reg_ipsProcNameWhiteList;
-				if (!NT_SUCCESS(MmIsAddressValid(p1))) 
-					break;
 				g_reg_ipsProcNameWhiteList = p2;
 			}
 			break;
 			case 2:
 			{
 				p1 = g_reg_ipsDirectNameWhiteList;
-				if (!NT_SUCCESS(MmIsAddressValid(p1)))
-					break;
 				g_reg_ipsDirectNameWhiteList = p2;
 
 			}
@@ -225,16 +225,12 @@ NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 			case 3:
 			{
 				p1 = g_reg_ipsProcNameBlackList;
-				if (!NT_SUCCESS(MmIsAddressValid(p1)))
-					break;
 				g_reg_ipsProcNameBlackList = p2;
 			}
 			break;
 			case 4:
 			{
 				p1 = g_reg_ipsDirectNameBlackList;
-				if (!NT_SUCCESS(MmIsAddressValid(p1)))
-					break;
 				g_reg_ipsDirectNameBlackList = p2;
 			}
 			break;

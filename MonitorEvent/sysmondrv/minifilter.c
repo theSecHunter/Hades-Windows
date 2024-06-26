@@ -873,7 +873,6 @@ FsFilterAntsDrPostFileHide(
         const KIRQL irql = KeGetCurrentIrql();
         if (irql == PASSIVE_LEVEL)
         {
-            DbgBreakPoint();
             PVOID Bufferptr = NULL;
             if (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress != NULL)
             {

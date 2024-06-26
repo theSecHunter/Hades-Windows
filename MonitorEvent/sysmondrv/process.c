@@ -169,8 +169,10 @@ void Process_Clean(void)
             pData = (PROCESSBUFFER*)RemoveHeadList(&g_processQueryhead.process_pending);
             sl_unlock(&lh);
             lock_status = 0;
-            Process_PacketFree(pData);
-            pData = NULL;
+            if (pData) {
+                Process_PacketFree(pData);
+                pData = NULL;
+            }
             sl_lock(&g_processQueryhead.process_lock, &lh);
             lock_status = 1;
         }

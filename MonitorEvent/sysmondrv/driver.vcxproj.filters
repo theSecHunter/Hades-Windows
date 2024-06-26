@@ -3,226 +3,246 @@
   <ItemGroup>
     <ClCompile Include="driver.c" />
     <ClCompile Include="devctrl.c">
-      <Filter>devctrl</Filter>
+      <Filter>Devctrl</Filter>
     </ClCompile>
     <ClCompile Include="process.c">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClCompile>
     <ClCompile Include="register.c">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClCompile>
     <ClCompile Include="thread.c">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClCompile>
     <ClCompile Include="imagemod.c">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClCompile>
     <ClCompile Include="syswmi.c">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClCompile>
     <ClCompile Include="sysfile.c">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClCompile>
     <ClCompile Include="syssession.c">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClCompile>
     <ClCompile Include="sysssdt.c">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClCompile>
     <ClCompile Include="sysidt.c">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClCompile>
     <ClCompile Include="sysdpctimer.c">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClCompile>
     <ClCompile Include="sysenumnotify.c">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClCompile>
     <ClCompile Include="sysprocessinfo.c">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClCompile>
     <ClCompile Include="sysnetwork.c">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClCompile>
     <ClCompile Include="syshive.c">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClCompile>
     <ClCompile Include="sysfsd.c">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClCompile>
     <ClCompile Include="sysmousekeyboard.c">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClCompile>
     <ClCompile Include="sysworkthreadinfo.c">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClCompile>
     <ClCompile Include="sysdriverinfo.c">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClCompile>
     <ClCompile Include="mbr.c">
-      <Filter>sysbootkit</Filter>
+      <Filter>Sysbootkit</Filter>
     </ClCompile>
     <ClCompile Include="bios.c">
-      <Filter>sysbootkit</Filter>
+      <Filter>Sysbootkit</Filter>
     </ClCompile>
     <ClCompile Include="uefi.c">
-      <Filter>sysbootkit</Filter>
+      <Filter>Sysbootkit</Filter>
     </ClCompile>
     <ClCompile Include="kflt.c">
-      <Filter>fsminifilter\fsfltport</Filter>
+      <Filter>Fsminifilter\fsfltport</Filter>
     </ClCompile>
     <ClCompile Include="ksuse.c">
-      <Filter>ksocket</Filter>
+      <Filter>Ksocket</Filter>
     </ClCompile>
     <ClCompile Include="kwsk.c">
-      <Filter>ksocket</Filter>
+      <Filter>Ksocket</Filter>
     </ClCompile>
     <ClCompile Include="minifilter.c">
-      <Filter>fsminifilter</Filter>
+      <Filter>Fsminifilter</Filter>
     </ClCompile>
     <ClCompile Include="rDirectory.c">
-      <Filter>kruleEngine</Filter>
+      <Filter>KruleEngine</Filter>
     </ClCompile>
     <ClCompile Include="rRegister.c">
-      <Filter>kruleEngine</Filter>
+      <Filter>KruleEngine</Filter>
     </ClCompile>
     <ClCompile Include="rProcess.c">
-      <Filter>kruleEngine</Filter>
+      <Filter>KruleEngine</Filter>
     </ClCompile>
     <ClCompile Include="rThread.c">
-      <Filter>kruleEngine</Filter>
+      <Filter>KruleEngine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="driver.h" />
-    <ClInclude Include="public.h" />
     <ClInclude Include="devctrl.h">
-      <Filter>devctrl</Filter>
+      <Filter>Devctrl</Filter>
     </ClInclude>
     <ClInclude Include="process.h">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClInclude>
     <ClInclude Include="register.h">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClInclude>
     <ClInclude Include="thread.h">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClInclude>
     <ClInclude Include="imagemod.h">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClInclude>
-    <ClInclude Include="object.h" />
-    <ClInclude Include="ntdefines.h" />
     <ClInclude Include="syswmi.h">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClInclude>
     <ClInclude Include="sysfile.h">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClInclude>
     <ClInclude Include="syssession.h">
-      <Filter>sysmonitor</Filter>
+      <Filter>Sysmonitor</Filter>
     </ClInclude>
     <ClInclude Include="sysssdt.h">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClInclude>
     <ClInclude Include="sysidt.h">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClInclude>
     <ClInclude Include="sysdpctimer.h">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClInclude>
     <ClInclude Include="sysenumnotify.h">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClInclude>
-    <ClInclude Include="utiltools.h" />
     <ClInclude Include="sysprocessinfo.h">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClInclude>
     <ClInclude Include="sysnetwork.h">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClInclude>
     <ClInclude Include="syshive.h">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClInclude>
     <ClInclude Include="sysfsd.h">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClInclude>
     <ClInclude Include="sysmousekeyboard.h">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClInclude>
     <ClInclude Include="sysworkthreadinfo.h">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClInclude>
     <ClInclude Include="sysdriverinfo.h">
-      <Filter>sysrootkit</Filter>
+      <Filter>Sysrootkit</Filter>
     </ClInclude>
     <ClInclude Include="mbr.h">
-      <Filter>sysbootkit</Filter>
+      <Filter>Sysbootkit</Filter>
     </ClInclude>
     <ClInclude Include="bios.h">
-      <Filter>sysbootkit</Filter>
+      <Filter>Sysbootkit</Filter>
     </ClInclude>
     <ClInclude Include="uefi.h">
-      <Filter>sysbootkit</Filter>
+      <Filter>Sysbootkit</Filter>
     </ClInclude>
     <ClInclude Include="kflt.h">
-      <Filter>fsminifilter\fsfltport</Filter>
+      <Filter>Fsminifilter\fsfltport</Filter>
     </ClInclude>
     <ClInclude Include="ksuse.h">
-      <Filter>ksocket</Filter>
+      <Filter>Ksocket</Filter>
     </ClInclude>
     <ClInclude Include="kwsk.h">
-      <Filter>ksocket</Filter>
+      <Filter>Ksocket</Filter>
     </ClInclude>
     <ClInclude Include="minifilter.h">
-      <Filter>fsminifilter</Filter>
+      <Filter>Fsminifilter</Filter>
     </ClInclude>
     <ClInclude Include="rDirectory.h">
-      <Filter>kruleEngine</Filter>
+      <Filter>KruleEngine</Filter>
     </ClInclude>
     <ClInclude Include="rRegister.h">
-      <Filter>kruleEngine</Filter>
+      <Filter>KruleEngine</Filter>
     </ClInclude>
     <ClInclude Include="rProcess.h">
-      <Filter>kruleEngine</Filter>
+      <Filter>KruleEngine</Filter>
     </ClInclude>
-    <ClInclude Include="resource2.h" />
     <ClInclude Include="rThread.h">
-      <Filter>kruleEngine</Filter>
+      <Filter>KruleEngine</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="resource1.h" />
+    <ClInclude Include="ntdefines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="driver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="public.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utiltools.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="sysmondriver.inf" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="devctrl">
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{3109e4f3-eb70-44f5-84aa-0a6afda83fa7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{2a5f7f40-941c-4689-9027-ca1d486a4b48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Devctrl">
       <UniqueIdentifier>{0c440d3a-f981-4eb0-91cc-80ac436bb1b4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="sysmonitor">
-      <UniqueIdentifier>{c930406d-5d8f-4048-b248-e35aa76238e7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="sysbootkit">
-      <UniqueIdentifier>{a48c34c2-2a98-439e-8b49-d6187ef425f9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="sysrootkit">
-      <UniqueIdentifier>{6c91ef1a-0cdf-4da6-9a06-9031b2fa1495}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ksocket">
-      <UniqueIdentifier>{87db5376-2220-4461-8912-dc63d6cee44c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="fsminifilter">
+    <Filter Include="Fsminifilter">
       <UniqueIdentifier>{0d98a94e-6ced-42e1-ac43-0c4eeceb3907}</UniqueIdentifier>
     </Filter>
-    <Filter Include="kruleEngine">
+    <Filter Include="Fsminifilter\fsfltport">
+      <UniqueIdentifier>{f7228cee-c937-45a2-b4d4-792de18af0d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="KruleEngine">
       <UniqueIdentifier>{33e75b82-2479-4a2f-9425-a6a35b6536c4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="fsminifilter\fsfltport">
-      <UniqueIdentifier>{f7228cee-c937-45a2-b4d4-792de18af0d9}</UniqueIdentifier>
+    <Filter Include="Ksocket">
+      <UniqueIdentifier>{87db5376-2220-4461-8912-dc63d6cee44c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sysbootkit">
+      <UniqueIdentifier>{a48c34c2-2a98-439e-8b49-d6187ef425f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sysmonitor">
+      <UniqueIdentifier>{c930406d-5d8f-4048-b248-e35aa76238e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sysrootkit">
+      <UniqueIdentifier>{6c91ef1a-0cdf-4da6-9a06-9031b2fa1495}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="SysMonDrv.rc" />
+    <Inf Include="sysmondriver.inf">
+      <Filter>Resource Files</Filter>
+    </Inf>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SysMonDrv.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

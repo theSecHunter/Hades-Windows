@@ -5,8 +5,6 @@
 #include <atlstr.h>
 #pragma warning(disable: 4996)
 
-static const std::wstring g_drivenName = L"";
-
 UntsSvc::UntsSvc()
 {
 }
@@ -273,9 +271,9 @@ void GetOSVersion(std::string& strOSVersion, int& verMajorVersion, int& verMinor
     }
 }
 
-const bool UntsSvc::UnTs_NetCheckStatus()
+const bool UntsSvc::UnTs_NetCheckStatus(const std::wstring sDriverName)
 {
-    int nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(g_drivenName.c_str());
+    int nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(sDriverName.c_str());
     switch (nSeriverstatus)
     {
         // 正在运行
@@ -303,7 +301,7 @@ const bool UntsSvc::UnTs_NetCheckStatus()
             CloseHandle(pi.hProcess);
             CloseHandle(pi.hThread);
         }
-        nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(g_drivenName.c_str());
+        nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(sDriverName.c_str());
         if (SERVICE_RUNNING == nSeriverstatus)
         {
             OutputDebugString(L"[HadesNetMon] sc Driver Running");

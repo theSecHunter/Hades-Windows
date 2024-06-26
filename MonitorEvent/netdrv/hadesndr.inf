@@ -7,15 +7,17 @@
     DriverVer = 05/26/2023,15.34.9.876
 	PnpLockDown = 1
 
-[SourceDisksNames]
-   1 = %wfpdriverDisk%,,,""
+[DestinationDirs]
+    DefaultDestDir = 12                              ; %WinDir%\System32\Drivers
+	DriverFiles = 12
 
 [SourceDisksFiles]
     hadesndr.sys = 1,,
 
-[DestinationDirs]
-    DefaultDestDir = 12                              ; %WinDir%\System32\Drivers
-	DriverFiles = 12
+[SourceDisksNames]
+    1 = %wfpdriverDisk%,,,
+
+
 
 [DefaultInstall.NTamd64]
     OptionDesc = %wfpdriverServiceDesc%
@@ -32,15 +34,16 @@
     DelService = %wfpdriverServiceName%,0x200               ; SPSVCINST_STOPSERVICE
 	
 [DriverFiles]
-	hadesndr.sys
+	%wfpdriverServiceName%.sys
 
 [hadesndr.Service]
     DisplayName   = %wfpdriverServiceName%
     Description   = %wfpdriverServiceDesc%
+    ServiceBinary = %12%\%wfpdriverServiceName%.sys       ; %WinDir%\System32\Drivers\hadesndr.sys
     ServiceType   = 1                                     ; SERVICE_KERNEL_DRIVER
     StartType     = 3                                     ; SERVICE_DEMAND_START
     ErrorControl  = 1                                     ; SERVICE_ERROR_NORMAL
-    ServiceBinary = %12%\hadesndr.sys          			  ; %WinDir%\System32\Drivers\hadesndr.sys
+	LoadOrderGroup = "PNP_TDI"
 
 [Strings]
     ProviderString     = "theSecHunter"

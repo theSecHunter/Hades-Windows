@@ -19,7 +19,7 @@ const bool UntsNetwork::UnTs_NetworkInit()
 	// [exter] unts rule
 	SingletonUntsRule::instance()->UnTs_ReLoadIpPortConnectRule();
 	// [exter] unts svc -- checkout status
-	if (SingletonUntsSvc::instance()->UnTs_NetCheckStatus()) {
+	if (SingletonUntsSvc::instance()->UnTs_NetCheckStatus(L"hadesndr")) {
 		// NetApi.h --> [lib] --> [NetDrvlib]
 		if (!GetNetNdrStusEx()) {
 			NetNdrInitEx();

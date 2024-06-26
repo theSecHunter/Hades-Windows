@@ -15,7 +15,7 @@ DriverManager::~DriverManager()
 #define				MAX_KEY_LENGTH								1024
 #define				LG_SLEEP_TIME								4000
 
-// Wfp安装方式
+// WFP安装方式
 bool SplitFilePath(const char* szFullPath, char* szPath, char* szFileName, char* szFileExt)
 {
 	char* p = nullptr, * q = nullptr, * r = nullptr;

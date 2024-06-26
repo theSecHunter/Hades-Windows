@@ -249,10 +249,10 @@
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>USE_NTDDI;_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);NDIS_SUPPORT_NDIS6</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_NTDDI;NDIS_SUPPORT_NDIS6;_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>NtosKrnl.lib;ucrt.lib;$(DDK_LIB_PATH)\FwpKClnt.lib;$(DDK_LIB_PATH)\NetIO.lib;$(DDK_LIB_PATH)\NDIS.lib;$(DDK_LIB_PATH)\WDMSec.lib;$(SDK_LIB_PATH)\UUID.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(OutDir)\$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <DriverSign>
@@ -293,7 +293,6 @@
     <ClInclude Include="hashtable.h" />
     <ClInclude Include="ntdefines.h" />
     <ClInclude Include="public.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="resource1.h" />
     <ClInclude Include="tcpctx.h" />
     <ClInclude Include="udpctx.h" />

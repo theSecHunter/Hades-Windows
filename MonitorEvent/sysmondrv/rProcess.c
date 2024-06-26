@@ -74,7 +74,7 @@ NTSTATUS rProcess_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
             status = STATUS_INVALID_MEMBER;
             break;
         }
-        p2 = VerifiExAllocatePoolTag(inputBufferLength, MEM_TAG_DK);
+        p2 = VerifiExAllocatePoolTag(inputBufferLength + 1, MEM_TAG_DK);
         if (NULL == p2 || (!p2))
         {
             status = STATUS_INSUFFICIENT_RESOURCES;
@@ -84,13 +84,13 @@ NTSTATUS rProcess_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
             status = STATUS_INVALID_MEMBER;
             break;
         }
-
         RtlCopyMemory(p2, p1, inputBufferLength);
-        inputBufferLength >>= 1;
 
+        inputBufferLength >>= 1;
         for (i = 0; i < inputBufferLength; i++)
         {
-            if (p2[i] == L'|')
+            const WCHAR* pCompare = &p2[i];
+            if (*pCompare == L'|')
                 p2[i] = 0;
         }
         p1 = g_proc_ipsList;
