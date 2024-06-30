@@ -248,7 +248,7 @@ VOID helper_callout_classFn_UDPflowEstablished(
 			pUdpCtx = udp_packetAllocatCtxHandle(inMetaValues->transportEndpointHandle);
 			do
 			{
-				if (!pUdpCtx)
+				if ((pUdpCtx == NULL) || (!pUdpCtx))
 					break;
 				
 				pUdpCtx->closed = FALSE;
@@ -265,11 +265,13 @@ VOID helper_callout_classFn_UDPflowEstablished(
 
 					// Local
 					pAddr = (struct sockaddr_in*)pUdpCtx->localAddr;
-					pAddr->sin_family = AF_INET;
-					pAddr->sin_addr.S_un.S_addr =
-						htonl(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_ADDRESS].value.uint32);
-					pAddr->sin_port =
-						htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_PORT].value.uint16);
+					if (pAddr) {
+						pAddr->sin_family = AF_INET;
+						pAddr->sin_addr.S_un.S_addr =
+							htonl(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_ADDRESS].value.uint32);
+						pAddr->sin_port =
+							htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_IP_LOCAL_PORT].value.uint16);
+					}
 
 					// processName
 					if (inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V4_ALE_APP_ID].value.byteBlob)
@@ -301,16 +303,18 @@ VOID helper_callout_classFn_UDPflowEstablished(
 
 					// Local
 					pAddr = (struct sockaddr_in6*)pUdpCtx->localAddr;
-					pAddr->sin6_family = AF_INET6;
-					memcpy(&pAddr->sin6_addr,
-						inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_ADDRESS].value.byteArray16->byteArray16,
-						NF_MAX_IP_ADDRESS_LENGTH);
-					pAddr->sin6_port =
-						htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_PORT].value.uint16);
+					if (pAddr) {
+						pAddr->sin6_family = AF_INET6;
+						memcpy(&pAddr->sin6_addr,
+							inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_ADDRESS].value.byteArray16->byteArray16,
+							NF_MAX_IP_ADDRESS_LENGTH);
+						pAddr->sin6_port =
+							htons(inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_IP_LOCAL_PORT].value.uint16);
 
-					if (FWPS_IS_METADATA_FIELD_PRESENT(inMetaValues, FWPS_METADATA_FIELD_REMOTE_SCOPE_ID))
-					{
-						pAddr->sin6_scope_id = inMetaValues->remoteScopeId.Value;
+						if (FWPS_IS_METADATA_FIELD_PRESENT(inMetaValues, FWPS_METADATA_FIELD_REMOTE_SCOPE_ID))
+						{
+							pAddr->sin6_scope_id = inMetaValues->remoteScopeId.Value;
+						}
 					}
 
 					// processName
@@ -332,13 +336,9 @@ VOID helper_callout_classFn_UDPflowEstablished(
 							inFixedValues->incomingValue[FWPS_FIELD_ALE_FLOW_ESTABLISHED_V6_ALE_APP_ID].value.byteBlob->data + offset,
 							len);
 					}
-
-					// reference -1
-					{
-						udp_freeCtx(pUdpCtx);
-						pUdpCtx = NULL;
-					}
 				}
+				
+				udp_freeCtx(pUdpCtx);
 			} while (FALSE);
 		}
 	}
@@ -990,7 +990,7 @@ BOOLEAN helper_callout_pushUdpPacket(
 	NF_UDP_PACKET* pPacket = udp_packetAllocatData(uDataLens);
 	do
 	{
-		if (!pPacket)
+		if ((NULL == pPacket) || (!pPacket))
 			break;
 
 		pPacket->id = pUdpCtx->id;
@@ -1317,12 +1317,8 @@ VOID helper_callout_classFn_udpCallout(
 		break;
 	}
 
-	// test permit
-	//classifyOut->actionType = FWP_ACTION_PERMIT;
-	// reference -1
 	if (pUdpCtx) {
 		udp_freeCtx(pUdpCtx);
-		pUdpCtx = NULL;
 	}
 }
 

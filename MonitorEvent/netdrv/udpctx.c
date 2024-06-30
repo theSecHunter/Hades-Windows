@@ -108,8 +108,7 @@ UDPCTX* const udp_packetAllocatCtxHandle(UINT64 transportEndpointHandle)
 	RtlSecureZeroMemory(pUdpCtx, sizeof(UDPCTX));
 
 	sl_init(&pUdpCtx->lock);
-	// 初始化引用2
-	pUdpCtx->refCount = 2;
+	pUdpCtx->refCount = 2; 	// 初始化引用2
 	InitializeListHead(&pUdpCtx->pendedSendPackets);
 	InitializeListHead(&pUdpCtx->pendedRecvPackets);
 	pUdpCtx->transportEndpointHandle = transportEndpointHandle;
@@ -126,7 +125,7 @@ UDPCTX* const udp_packetAllocatCtxHandle(UINT64 transportEndpointHandle)
 VOID udp_freeCtx(PUDPCTX pUdpCtx) {
 	KLOCK_QUEUE_HANDLE lh;
 
-	if (!pUdpCtx)
+	if ((NULL == pUdpCtx) || (!pUdpCtx))
 		return;
 
 	sl_lock(&g_slUdpCtx, &lh);
@@ -236,9 +235,13 @@ NF_UDPPEND_PACKET* const udp_Get() {
 	return &g_udp_pendPacket;
 }
 VOID udp_clean() {
+
 	KLOCK_QUEUE_HANDLE lh;
+	KLOCK_QUEUE_HANDLE lhandle;
+	PUDPCTX pUdpCtx = NULL;
 	PNF_UDP_BUFFER pUdpBuffer = NULL;
 
+	// clear pending packet
 	sl_lock(&g_udp_pendPacket.lock, &lh);
 	while (!IsListEmpty(&g_udp_pendPacket.pendedPackets))
 	{
@@ -251,6 +254,31 @@ VOID udp_clean() {
 		sl_lock(&g_udp_pendPacket.lock, &lh);
 	}
 	sl_unlock(&lh);
+
+	// clear udp ctx
+	sl_lock(&g_slUdpCtx, &lhandle);
+	while (!IsListEmpty(&g_lUdpCtx))
+	{
+		pUdpCtx = (PUDPCTX)RemoveHeadList(&g_lUdpCtx);
+		do
+		{
+			if ((NULL == pUdpCtx) || (!pUdpCtx))
+				break;
+			if (pUdpCtx->refCount == 0)
+				break;
+
+			if (g_phtUdpCtxById)
+				ht_remove_entry(g_phtUdpCtxById, pUdpCtx->id);
+
+			if (pUdpCtx->transportEndpointHandle && g_phtUdpCtxByHandle)
+			{
+				ht_remove_entry(g_phtUdpCtxByHandle, pUdpCtx->transportEndpointHandle);
+				pUdpCtx->transportEndpointHandle = 0;
+			}
+			ExFreeToNPagedLookasideList(&g_udpCtxList, pUdpCtx);
+		} while (0);
+	}
+	sl_unlock(&lhandle);
 }
 VOID udp_free() {
 	udp_clean();
@@ -294,7 +322,7 @@ PUDPCTX udp_findById(UINT64 id)
 PUDPCTX udp_findByHandle(UINT64 handle)
 {
 	PUDPCTX pUcpCtx = NULL;
-	PHASH_TABLE_ENTRY phte;
+	PHASH_TABLE_ENTRY phte = NULL;
 	KLOCK_QUEUE_HANDLE lh;
 
 	sl_lock(&g_slUdpCtx, &lh);

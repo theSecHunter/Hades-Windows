@@ -855,7 +855,9 @@ ULONG devctrl_processInjectUDPPacket(PNF_DATA pData)
 			pPacket = NULL;
 		}
 	}	
-	udp_freeCtx(pUdpCtx);
+
+	if (pUdpCtx)
+		udp_freeCtx(pUdpCtx);
 
 	return uResult;
 
@@ -1298,7 +1300,6 @@ VOID devctrl_clean()
 			pIrpEntry = pIrpEntry->Flink;
 		}
 	}
-
 	sl_unlock(&lh);
 }
 VOID devctrl_free()
