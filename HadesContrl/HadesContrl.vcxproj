@@ -254,6 +254,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\HadesSdk\hpsocket\Include\HPSocket\HPSocket.h" />
+    <ClInclude Include="..\HadesSdk\include\sysinfo.h" />
     <ClInclude Include="crashreport.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="HadesContrl.h" />

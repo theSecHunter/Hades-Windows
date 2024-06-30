@@ -51,7 +51,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 24,6,23,1
+ FILEVERSION 24,6,30,1
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -69,7 +69,7 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Hades"
             VALUE "FileDescription", "Hades For Windows NetDrv"
-            VALUE "FileVersion", "24.6.23.1"
+            VALUE "FileVersion", "24.6.30.1"
             VALUE "InternalName", "NetDrv.sys"
             VALUE "LegalCopyright", "Copyright (C) 2024"
             VALUE "OriginalFilename", "NetDrv.sys"

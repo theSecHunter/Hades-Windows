@@ -588,8 +588,59 @@ NTSTATUS devctrl_DrDevEnum(PDEVICE_OBJECT DeviceObject, PIRP irp, PIO_STACK_LOCA
 }
 
 // ¡î Share Memory MDL
+VOID devctrl_freeSharedMemoryThread(_In_ PVOID Parameter)
+{
+	PSHARED_MEMORY pSharedMemory = (PSHARED_MEMORY)Parameter;
+	if (pSharedMemory) {
+		if (pSharedMemory->mdl)
+		{
+			__try
+			{
+				if (pSharedMemory->userVa)
+				{
+					MmUnmapLockedPages(pSharedMemory->userVa, pSharedMemory->mdl);
+				}
+				if (pSharedMemory->kernelVa)
+				{
+					MmUnmapLockedPages(pSharedMemory->kernelVa, pSharedMemory->mdl);
+				}
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER)
+			{
+			}
+
+			MmFreePagesFromMdl(pSharedMemory->mdl);
+			IoFreeMdl(pSharedMemory->mdl);
+			pSharedMemory->mdl = NULL;
+			memset(pSharedMemory, 0, sizeof(SHARED_MEMORY));
+		}
+	}
+	PsTerminateSystemThread(STATUS_SUCCESS);
+}
 void devctrl_freeSharedMemory(PSHARED_MEMORY pSharedMemory)
 {
+	if (KeGetCurrentIrql() > APC_LEVEL)
+	{
+		HANDLE threadHandle = NULL;
+		NTSTATUS status = STATUS_SUCCESS;
+		status = PsCreateSystemThread(
+			&threadHandle,
+			THREAD_ALL_ACCESS,
+			NULL,
+			NULL,
+			NULL,
+			devctrl_freeSharedMemoryThread,
+			pSharedMemory
+		);
+
+		if (NT_SUCCESS(status) && threadHandle)
+		{
+			KPRIORITY priority = HIGH_PRIORITY;
+			ZwSetInformationThread(threadHandle, ThreadPriority, &priority, sizeof(priority));
+			ZwClose(threadHandle);
+		}
+		return;
+	}
 	if (pSharedMemory->mdl)
 	{
 		__try

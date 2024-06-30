@@ -110,7 +110,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\..\HadesSdk\sysmonuser\lib</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
-    <IncludePath>D:\Hades\Hades-Windows\HadesSdk\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\HadesSdk\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>

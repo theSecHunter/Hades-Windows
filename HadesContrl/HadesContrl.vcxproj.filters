@@ -90,6 +90,9 @@
     <ClInclude Include="Interface.h">
       <Filter>Interface</Filter>
     </ClInclude>
+    <ClInclude Include="..\HadesSdk\include\sysinfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HadesContrl.cpp">

@@ -35,35 +35,35 @@ void hash_table_free(PHASH_TABLE pTable)
 }
 
 int ht_add_entry(PHASH_TABLE pTable, PHASH_TABLE_ENTRY pEntry)
-{
+{ 
+	if (pTable == NULL || (!pTable))
+		return 0;
+	if (pEntry == NULL || (!pEntry))
+		return 0;
 	UINT64 hash = pEntry->id % pTable->size;
-
 	if (ht_find_entry(pTable, pEntry->id))
 		return 0;
-
 	pEntry->pNext = pTable->pEntries[hash];
 	pTable->pEntries[hash] = pEntry;
-
 	return 1;
 }
 
 
 PHASH_TABLE_ENTRY ht_find_entry(PHASH_TABLE pTable, UINT64 id)
 {
-	PHASH_TABLE_ENTRY pEntry;
+	if (pTable == NULL || (!pTable))
+		return 0;
 
+	PHASH_TABLE_ENTRY pEntry = NULL;
 	pEntry = pTable->pEntries[id % pTable->size];
-
 	while (pEntry)
 	{
 		if (pEntry->id == id)
 		{
 			return pEntry;
 		}
-
 		pEntry = pEntry->pNext;
 	}
-
 	return NULL;
 }
 

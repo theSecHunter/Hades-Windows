@@ -45,6 +45,9 @@ void KNetWork::ReLoadIpPortConnectRule()
 	
 	if (!pDenyRule || !pConnectRule || !pDnsRule)
 		return;
+
+	// Clear
+	NetNdrRuleClear();
 	RtlSecureZeroMemory(pDenyRule, sizeof(DENY_RULE) * g_MaxRuleCounter);
 	RtlSecureZeroMemory(pConnectRule, sizeof(REDIRECT_RULE) * g_MaxRuleCounter);
 	RtlSecureZeroMemory(pDnsRule, sizeof(DNS_RULE) * g_MaxRuleCounter);
@@ -52,9 +55,6 @@ void KNetWork::ReLoadIpPortConnectRule()
 	int iDenyCounter = 0;	int iConnectCounter = 0; int iDnsCounter = 0;
 	ConfigNetWorkYamlRuleParsing(pDenyRule, &iDenyCounter, pConnectRule, &iConnectCounter, g_MaxRuleCounter);
 	ConfigNetWorkYamlDnsRuleParsing(pDnsRule, &iDnsCounter, g_MaxRuleCounter);
-
-	// Clear
-	NetNdrRuleClear();
 
 	// DENY
 	{
