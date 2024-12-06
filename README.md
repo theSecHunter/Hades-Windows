@@ -23,6 +23,12 @@ GoAgent负责GRPC和WIN下插件管理(跨平台)：[https://github.com/theSecHu
 
 GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboat
 
+### rust版本
+Windows Rust版本正在开发中
+```
+https://github.com/theSecHunter/Hades-Linux/tree/dev-win-plugins-rs/plugins/wdriver-rust
+```
+
 ## 方案：
 ### Kernel
 
