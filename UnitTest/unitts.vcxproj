@@ -32,6 +32,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <SpectreMitigation>false</SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -179,6 +180,7 @@
     <ClInclude Include="..\..\HadesSdk\include\sysinfo.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="singGloal.h" />
+    <ClInclude Include="uinterface.h" />
     <ClInclude Include="UntsControl.h" />
     <ClInclude Include="UntsKerMon.h" />
     <ClInclude Include="UntsNetwork.h">

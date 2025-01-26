@@ -1,6 +1,8 @@
 #ifndef _UETW_H
 #define _UETW_H
 #include <functional>
+#include <mutex>
+#include <queue>
 
 #define INITGUID
 #include <evntrace.h>

@@ -101,7 +101,6 @@ void HlprMiniPortIpc::StartMiniPortWaitConnectWork()
 	HRESULT Status = 0;
 	g_hPort = nullptr;
 	g_comPletion = nullptr;
-	PCOMMAND_MESSAGE msg = nullptr;
 
 	do {
 		Status = FilterConnectCommunicationPort(
@@ -124,40 +123,33 @@ void HlprMiniPortIpc::StartMiniPortWaitConnectWork()
 
 			// 初始化先GetMsg, Notify线程等待处理  
 			// 不要只GetMsg一次，因为IOCP端口可能error会浪费掉，驱动再次SendMsg没有GetMsg就会一直阻塞
-			
+			int iGetMessageCounter = 0;
 			for (size_t idx = 0; idx < 4; ++idx)
 			{
-				msg = (PCOMMAND_MESSAGE)malloc(sizeof(COMMAND_MESSAGE));
-				if (nullptr == msg)
-				{
-					Status = ERROR;
+				std::shared_ptr<COMMAND_MESSAGE> pCommandMsg = std::make_shared<COMMAND_MESSAGE>();
+				if (nullptr == pCommandMsg)
 					break;
-				}
 					
-				RtlSecureZeroMemory(&msg->Overlapped, sizeof(OVERLAPPED));
+				RtlSecureZeroMemory(&pCommandMsg->Overlapped, sizeof(OVERLAPPED));
 				Status = FilterGetMessage(
 					g_hPort,
-					&msg->MessageHeader,
+					&pCommandMsg->MessageHeader,
 					FIELD_OFFSET(COMMAND_MESSAGE, Overlapped),
-					&msg->Overlapped
+					&pCommandMsg->Overlapped
 				);
+
 				// Pending状态成功
 				if (Status != HRESULT_FROM_WIN32(ERROR_IO_PENDING))
-				{
-					Status = ERROR;
 					break;
-				}
+				iGetMessageCounter++;
 			}
 
-			if (Status == ERROR)
+			if (!iGetMessageCounter)
 			{
-				if (msg)
-					free(msg);
 				CloseHandle(g_hPort);
 				CloseHandle(g_comPletion);
 				g_hPort = nullptr;
 				g_comPletion = nullptr;
-				msg = nullptr;
 				g_InitPortStatus = false;
 				return;
 			}
@@ -193,8 +185,10 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 	// Recv While Driver Send to Client Msg_Handler
 	DWORD error_code = 0;
 	do {
-
-		nRet = GetQueuedCompletionStatus(g_comPletion, &outSize, &key, &pOvlp, INFINITE);
+		if (g_comPletion)
+			nRet = GetQueuedCompletionStatus(g_comPletion, &outSize, &key, &pOvlp, INFINITE);
+		else
+			break;
 		if (FALSE == nRet) {
 			OutputDebugString(L"GetQueuedCompletionStatus sysmondriver miniPort Error");
 			if (!g_comPletion)
@@ -257,13 +251,9 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		);
 		if (result != HRESULT_FROM_WIN32(ERROR_IO_PENDING))
 			break;
-		//OutputDebugString(L"FilterReplyMessage Message & FilterGetMessage");
 #pragma warning(push)
 #pragma warning(disable:4127)
 	} while (TRUE);
 #pragma warning(pop)
 
-}
-void HlprMiniPortIpc::MiniPortActiveCheck()
-{
 }

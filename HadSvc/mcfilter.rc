@@ -61,7 +61,7 @@ IDI_ICON1               ICON                    "firearms.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 23,6,30,1
+ FILEVERSION 25,1,26,1
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -79,7 +79,7 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "theSecHunter"
             VALUE "FileDescription", "HadesWin"
-            VALUE "FileVersion", "23.6.30.1"
+            VALUE "FileVersion", "25.1.26.1"
             VALUE "InternalName", "HadesSvc.exe"
             VALUE "LegalCopyright", "Copyright (C) 2022"
             VALUE "OriginalFilename", "HadesSvc.exe"

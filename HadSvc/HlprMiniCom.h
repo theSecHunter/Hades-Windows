@@ -9,7 +9,6 @@ public:
 
 	// 等待驱动创建端口 - 连接
 	void GetMsgNotifyWork();
-	void MiniPortActiveCheck();
 	void StartMiniPortWaitConnectWork();
 	bool SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, unsigned int processnamelen);
 

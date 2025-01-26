@@ -172,6 +172,13 @@ VOID Process_NotifyThread(
 	PTHREADBUFFER threadbuf = NULL;
 	BOOLEAN bIsInject = FALSE;
 
+	// See: https://github.com/zodiacon/RemoteThreadDetection
+	//int remote = PsGetCurrentProcessId() != ProcessId
+	//	&& PsGetCurrentProcess() != PsInitialSystemProcess
+	//	&& PsGetProcessId(PsInitialSystemProcess) != ProcessId;
+	//if (!remote)
+	//	return;
+
 	// Alter Check CraeteRemoteThread
 	const HANDLE CurrentProcId = PsGetCurrentProcessId();
 	if (Create && (CurrentProcId != (HANDLE)4) && (ProcessId != (HANDLE)4) && (CurrentProcId != ProcessId) && CheckIsRemoteThread(ProcessId))

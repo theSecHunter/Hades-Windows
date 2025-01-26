@@ -1,11 +1,11 @@
 ﻿#include <Windows.h>
+#include "uinterface.h"
 
 #ifdef _X64
 #include "UntsNetwork.h"
 #endif
 
 static bool bUnitExit = false;
-
 DWORD WINAPI UnitTsNetWorkThread(LPVOID lpThreadParameter)
 {
 	try
@@ -30,9 +30,11 @@ DWORD WINAPI UnitTsNetWorkThread(LPVOID lpThreadParameter)
 
 int main()
 {
-	QueueUserWorkItem(UnitTsNetWorkThread, nullptr, WT_EXECUTEDEFAULT);
-	system("pause");
-	bUnitExit = true;
-	Sleep(2000);
+	//QueueUserWorkItem(UnitTsNetWorkThread, nullptr, WT_EXECUTEDEFAULT);
+	//system("pause");
+	//bUnitExit = true;
+	//Sleep(2000);
+	char cSysData[0x4096] = { 0, };
+	SingletonNSysUser::instance()->uf_EnumSysUser(cSysData);
 	return 0;
 }
