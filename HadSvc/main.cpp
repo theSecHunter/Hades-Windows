@@ -144,15 +144,15 @@ int main(int argc, char* argv[])
 	}
 
 //@ NetWork Test
-#ifdef _TEST
-#ifdef _X64
-	SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
-	if (SingletonDataHandler::instance()->NetCheckStatus()) {
-		if (!SingletonKNetWork::instance()->GetNetNdrStus())
-			SingletonKNetWork::instance()->NetNdrInit();
-	}
-#endif
-#endif
+//#ifdef _TEST
+//#ifdef _X64
+//	SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
+//	if (SingletonDataHandler::instance()->NetCheckStatus()) {
+//		if (!SingletonKNetWork::instance()->GetNetNdrStus())
+//			SingletonKNetWork::instance()->NetNdrInit();
+//	}
+//#endif
+//#endif
 
 	// WaitFor AgentEvent Exit
 	WaitForSingleObject(g_SvcExitEvent, INFINITE);

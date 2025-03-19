@@ -154,7 +154,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>copy ..\..\HadesSdk\sysmondrv\lib\$(ProjectName)_d.dll ..\..\bin\x86\Debug\$(ProjectName)_d.dll</Command>
+      <Command>copy ..\..\HadesSdk\sysmondrv\lib\$(ProjectName)_d.dll ..\..\bin\x86\Debug\$(ProjectName)_d.dll /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -174,7 +174,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>copy ..\..\HadesSdk\sysmondrv\lib\$(ProjectName).dll ..\..\bin\x86\Release\$(ProjectName).dll</Command>
+      <Command>copy ..\..\HadesSdk\sysmondrv\lib\$(ProjectName).dll ..\..\bin\x86\Release\$(ProjectName).dll /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
@@ -207,7 +207,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>copy ..\..\HadesSdk\sysmondrv\lib\$(ProjectName)_d64.dll ..\..\bin\x64\Debug\$(ProjectName)_d64.dll</Command>
+      <Command>copy ..\..\HadesSdk\sysmondrv\lib\$(ProjectName)_d64.dll ..\..\bin\x64\Debug\$(ProjectName)_d64.dll /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -227,7 +227,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>copy ..\..\HadesSdk\sysmondrv\lib\$(ProjectName)64.dll ..\..\bin\x64\Release\$(ProjectName)64.dll</Command>
+      <Command>copy ..\..\HadesSdk\sysmondrv\lib\$(ProjectName)64.dll ..\..\bin\x64\Release\$(ProjectName)64.dll /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">

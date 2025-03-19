@@ -154,7 +154,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>copy ..\..\HadesSdk\netdrv\lib\$(ProjectName)_d.dll ..\..\bin\x86\Debug\$(ProjectName)_d.dll</Command>
+      <Command>copy ..\..\HadesSdk\netdrv\lib\$(ProjectName)_d.dll ..\..\bin\x86\Debug\$(ProjectName)_d.dll /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -173,7 +173,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>copy ..\..\HadesSdk\netdrv\lib\$(ProjectName).dll ..\..\bin\x86\Release\$(ProjectName).dll</Command>
+      <Command>copy ..\..\HadesSdk\netdrv\lib\$(ProjectName).dll ..\..\bin\x86\Release\$(ProjectName).dll /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|Win32'">
@@ -228,7 +228,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>copy ..\..\HadesSdk\netdrv\lib\$(ProjectName)64.dll ..\..\bin\x64\Release\$(ProjectName)64.dll</Command>
+      <Command>copy ..\..\HadesSdk\netdrv\lib\$(ProjectName)64.dll ..\..\bin\x64\Release\$(ProjectName)64.dll /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
