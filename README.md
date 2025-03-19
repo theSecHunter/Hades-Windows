@@ -1,3 +1,5 @@
+Elkeid Windows Plugin
+
 <div align=center>
 <img width="500" height="152.5" src="https://github.com/chriskaliX/Hades/blob/main/imgs/hades-low-resolution-logo-color-on-transparent-background.png"/>
 </div>
