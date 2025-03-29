@@ -394,7 +394,6 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 if (!procesNode)
                     break;
 
-                std::vector<std::string> test_vec;
                 for (i = 0; i < procesNode->processcount; ++i)
                 {   
                     tmpstr.clear();
