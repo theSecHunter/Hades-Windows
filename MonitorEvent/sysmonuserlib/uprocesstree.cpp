@@ -410,7 +410,7 @@ DWORD EnumProcess(LPVOID pData)
 			CloseHandle(hprocess);
 			return procesnumber;
 		}
-		string pri;
+		std::string pri = "";
 		do
 		{
 			TCHAR bufs[MAX_PATH] = {};

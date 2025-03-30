@@ -206,7 +206,7 @@ std::string UTF8_ToString(const std::string& str)
             RtlSecureZeroMemory(pwBuf, nwLen * 2 + 2);
             MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), pwBuf, nwLen);
             const size_t nLen = WideCharToMultiByte(CP_ACP, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
-            char* pBuf = new char[nLen + 1];
+            pBuf = new char[nLen + 1];
             if (!pBuf)
                 break;
             RtlSecureZeroMemory(pBuf, nLen + 1);

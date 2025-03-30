@@ -463,35 +463,65 @@ void CodeTool::DecodeBase64(const char *str, int bytes, char*& dest, int& len)
 		dest[idx] = _decode_result[idx];
 }
 
-string CodeTool::GbkToUtf8(const char *src_str)
+string CodeTool::GbkToUtf8(const char* src_str)
 {
+	std::string strTemp = "";
 	int len = MultiByteToWideChar(CP_ACP, 0, src_str, -1, NULL, 0);
-	wchar_t* wstr = new wchar_t[len + 1];
-	memset(wstr, 0, len + 1);
-	MultiByteToWideChar(CP_ACP, 0, src_str, -1, wstr, len);
-	len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
-	char* str = new char[len + 1];
-	memset(str, 0, len + 1);
-	WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, len, NULL, NULL);
-	string strTemp = str;
-	if (wstr) delete[] wstr;
-	if (str) delete[] str;
+	try
+	{
+		wchar_t* wstr = new wchar_t[len + 1];
+		if (wstr) {
+			memset(wstr, 0, len + 1);
+			MultiByteToWideChar(CP_ACP, 0, src_str, -1, wstr, len);
+			len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
+		}
+
+		char* str = new char[len + 1];
+		if (str && wstr) {
+			memset(str, 0, len + 1);
+			WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, len, NULL, NULL);
+			strTemp = str;
+		}
+
+		if (wstr)
+			delete[] wstr;
+		if (str)
+			delete[] str;
+	}
+	catch (...)
+	{
+		return "";
+	}
 	return strTemp;
 }
 
 string CodeTool::Utf8ToGbk(const char* src_str)
 {
+	std::string strTemp = "";
 	int len = MultiByteToWideChar(CP_UTF8, 0, src_str, -1, NULL, 0);
-	wchar_t* wszGBK = new wchar_t[len + 1];
-	memset(wszGBK, 0, len * 2 + 2);
-	MultiByteToWideChar(CP_UTF8, 0, src_str, -1, wszGBK, len);
-	len = WideCharToMultiByte(CP_ACP, 0, wszGBK, -1, NULL, 0, NULL, NULL);
-	char* szGBK = new char[len + 1];
-	memset(szGBK, 0, len + 1);
-	WideCharToMultiByte(CP_ACP, 0, wszGBK, -1, szGBK, len, NULL, NULL);
-	string strTemp(szGBK);
-	if (wszGBK) delete[] wszGBK;
-	if (szGBK) delete[] szGBK;
+	try
+	{
+		wchar_t* wszGBK = new wchar_t[len + 1];
+		if (wszGBK) {
+			memset(wszGBK, 0, len * 2 + 2);
+			MultiByteToWideChar(CP_UTF8, 0, src_str, -1, wszGBK, len);
+			len = WideCharToMultiByte(CP_ACP, 0, wszGBK, -1, NULL, 0, NULL, NULL);
+		}
+		char* szGBK = new char[len + 1];
+		if (szGBK && wszGBK) {
+			memset(szGBK, 0, len + 1);
+			WideCharToMultiByte(CP_ACP, 0, wszGBK, -1, szGBK, len, NULL, NULL);
+			strTemp = szGBK;
+		}
+		if (wszGBK)
+			delete[] wszGBK;
+		if (szGBK)
+			delete[] szGBK;
+	}
+	catch (const std::exception&)
+	{
+		return "";
+	}
 	return strTemp;
 }
 

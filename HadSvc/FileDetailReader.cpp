@@ -17,7 +17,7 @@ bool FileDetailReader::QueryValue(const std::string& ValueName, const std::strin
 		DWORD dwHandle = 0;
 		// 判断系统能否检索到指定文件的版本信息
 		DWORD dwDataSize = ::GetFileVersionInfoSizeA(szModuleName.c_str(), &dwHandle);
-		if (dwDataSize == 0)
+		if ((dwDataSize == 0) || !dwHandle)
 			break;
 
 		m_lpVersionData = new (std::nothrow) BYTE[dwDataSize];// 分配缓冲区
@@ -25,8 +25,7 @@ bool FileDetailReader::QueryValue(const std::string& ValueName, const std::strin
 			break;
 
 		// 检索信息
-		if (!::GetFileVersionInfoA(szModuleName.c_str(), dwHandle, dwDataSize,
-			(void*)m_lpVersionData))
+		if (!::GetFileVersionInfoA(szModuleName.c_str(), dwHandle, dwDataSize, (void*)m_lpVersionData))
 			break;
 
 		UINT nQuerySize;

@@ -448,12 +448,15 @@ inline bool PipWriteAnonymous(std::string& serializbuf, const int datasize)
     */
     {
         std::lock_guard<std::mutex> lock{ g_pipwritecs };
-        const int sendlens = datasize + sizeof(uint32_t);
+        const int sendlens = datasize + sizeof(uint32_t) + 1;
         std::shared_ptr<uint8_t> data{ new uint8_t[sendlens] };
-        *(uint32_t*)(data.get()) = datasize;
-        ::memcpy(data.get() + 0x4, serializbuf.c_str(), datasize);
-        if (g_anonymouspipe)
-            g_anonymouspipe->write(data, sendlens);
+        if (data) {
+            memset(data.get(), 0, sendlens);
+            *(uint32_t*)(data.get()) = datasize;
+            ::memcpy(data.get() + 0x4, serializbuf.c_str(), datasize);
+            if (g_anonymouspipe)
+                g_anonymouspipe->write(data, sendlens);
+        }
     }
 
     return true;
@@ -529,7 +532,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
                 SingletonKerMon::instance()->DriverInit(false); // 初始化启动read i/o线程
                 if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 {
-                    OutputDebugString(L"GetKerInitStatus false");
+                    OutputDebugString(L"[HadesSvc] GetKerInitStatus false");
                     return 0;
                 }
             }
@@ -706,8 +709,6 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
 
     // Write Pip
     {
-        size_t coutwrite = 0, idx = 0;
-        std::string serializbuf;
         std::shared_ptr<protocol::Record> record = std::make_shared<protocol::Record>();
         if (!record)
             return 0;
@@ -717,22 +718,23 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
         auto MapMessage = PayloadMsg->mutable_fields();
         if (!MapMessage)
             return 0;
-        std::mutex crecord_mutex;
-        std::lock_guard<std::mutex> lock{ crecord_mutex };
-        coutwrite = task_array_data.size();
+
+        std::string serializbuf = "";
         record->set_data_type(taskid);
         record->set_timestamp(GetTickCount64());
-        for (idx = 0; idx < coutwrite; ++idx)
+        for (const auto& iter : task_array_data)
         {
-            (*MapMessage)["data_type"] = to_string(taskid);
-            if (task_array_data[idx].size())
-                (*MapMessage)["udata"] = task_array_data[idx]; // json
+            (*MapMessage)["data_type"] = std::to_string(taskid).c_str();
+            if (!iter.empty()) {
+                (*MapMessage)["udata"] = iter.c_str(); // json
+            }
             else
                 (*MapMessage)["udata"] = "error";
 
             serializbuf = record->SerializeAsString();
             const size_t datasize = serializbuf.size();
             PipWriteAnonymous(serializbuf, datasize);
+            Sleep(10);
             MapMessage->clear();
         }
     }
