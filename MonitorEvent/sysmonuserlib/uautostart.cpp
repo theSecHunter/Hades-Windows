@@ -7,6 +7,7 @@
 #pragma comment(lib, "comsupp.lib")
 #include <wchar.h>
 #include <sysinfo.h>
+#include <regex>
 
 UAutoStart::UAutoStart()
 {
@@ -141,52 +142,36 @@ const ULONG CheckRegisterRun(RegRun* pRegRun)
 // 解析Xml中某个命令包含的格式
 void XmlCommandAn(const wchar_t* source, wchar_t* deststr)
 {
-	DWORD index_head = 0;
-	DWORD index_tail = 0;
-	// 查找<Command
-	for (int i = 0; i < 0x1024; i++)
+	try
 	{
+		const std::wstring sCommand = source;
 		// <Command>F:\\360zip\360zipUpdate.exe</Command>
-		if ((source[i] == '<') && (source[i + 1] == 'C') && (source[i + 2] == 'o') && (source[i + 3] == 'm'))
 		{
-			// 获取执行操作其实位置
-			index_head = i + 9;
+			const std::wregex pattern(L"<Command>(.*?)</Command>");
+			std::wsmatch match;
+			if (std::regex_search(sCommand, match, pattern) && match.size() > 1) {
+				const std::wstring sPath = match[1];
+				if (!sPath.empty()) {
+					lstrcpyW(deststr, sPath.c_str());
+				}
+			}
 		}
-
-		if ((source[i] == '<') && (source[i + 1] == '/') && (source[i + 2] == 'C') && (source[i + 3] == 'o'))
+		// <Arguments>/detectupdate</Arguments>
 		{
-			index_tail = i;
-			if ((index_tail - index_head) >= 3)
-			{
-				// 拷贝<Command> xxxxx </Command>
-				wmemcpy(deststr, &source[index_head], (index_tail - index_head));
-				break;
+			const std::wregex pattern(L"<Arguments>(.*?)</Arguments>");
+			std::wsmatch match;
+			if (std::regex_search(sCommand, match, pattern) && match.size() > 1) {
+				const std::wstring sPath = match[1];
+				if (!sPath.empty()) {
+					int nCommandSize = lstrlenW(deststr) + 0x1;
+					deststr[nCommandSize] = '&';
+					lstrcatW(&deststr[nCommandSize + 0x1], sPath.c_str());
+				}
 			}
 		}
 	}
-
-	// 查找参数 <Arguments>/detectupdate</Arguments>
-	for (int i = index_tail; i < 0x1024; i++)
+	catch (...)
 	{
-		// <Command>F:\\360zip\360zipUpdate.exe</Command>
-		if ((source[i] == '<') && (source[i + 1] == 'A') && (source[i + 2] == 'r') && (source[i + 3] == 'g'))
-		{
-			// 获取执行操作其实位置
-			index_head = i + 11;
-		}
-
-		if ((source[i] == '<') && (source[i + 1] == '/') && (source[i + 2] == 'A') && (source[i + 3] == 'r'))
-		{
-			index_tail = i;
-			if ((index_tail - index_head) >= 1)
-			{
-				// 拼接 <Command> + <Arguments>
-				int nCommandSize = lstrlenW(deststr);
-				deststr[nCommandSize] = ' ';
-				wmemcpy(&deststr[nCommandSize + 1], &source[index_head], (index_tail - index_head));
-				break;
-			}
-		}
 	}
 }
 /*
@@ -280,7 +265,7 @@ const ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* pTaskRun)
 	}
 
 	TASK_STATE taskState;
-	wchar_t TaskCommand[1024] = { 0 };
+	wchar_t TaskCommand[1024] = { 0, };
 
 	DWORD iCouent = 0;
 	for (LONG i = 0; i < numTasks; i++)
