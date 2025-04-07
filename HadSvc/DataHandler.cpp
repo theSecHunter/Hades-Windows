@@ -743,42 +743,62 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
 
     return 0;
 }
+
 static DWORD WINAPI PTaskHandlerThread(LPVOID lpThreadParameter)
 {
-    if (!lpThreadParameter || g_shutdown)
+    try
+    {
+        THREADPA_PARAMETER_NODE* pthreadPara = reinterpret_cast<THREADPA_PARAMETER_NODE*>(lpThreadParameter);
+        if (!pthreadPara || (pthreadPara == nullptr))
+            return 0;
+        if (g_shutdown)
+        {
+            delete pthreadPara;
+            return 0;
+        }
+        const int taskid = pthreadPara->nTaskId;
+        if (pthreadPara->pDataHandler)
+            pthreadPara->pDataHandler->PTaskHandlerNotify(taskid);
+
+        delete pthreadPara;
+        pthreadPara = nullptr;
         return 0;
-    THREADPA_PARAMETER_NODE* pthreadPara = reinterpret_cast<THREADPA_PARAMETER_NODE*>(lpThreadParameter);
-    if (!pthreadPara)
+    }
+    catch (const std::exception&)
+    {
         return 0;
-    if (pthreadPara->pDataHandler)
-        pthreadPara->pDataHandler->PTaskHandlerNotify(pthreadPara->nTaskId);
-    return 0;
+    }
 }
 
 // Recv Task
 void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_t size)
 {
-    if (!data && (size <= 1024 && size >= 0))
+    // filter size
+    if (!data || (data == nullptr) || (size <= 0 && size >= 1024))
         return;
     try
     {
-        const int isize = *((int*)data.get());
-        // 匿名管道不确定因素多，插件下发Task MaxLen <= 1024
-        if (isize <= 0 && isize >= 1024)
+        const int taskid = *((int*)data.get());
+        // 匿名管道不确定因素多，Filter Task id <= 1024
+        if (taskid <= 0 && taskid >= 1024)
             return;
-        THREADPA_PARAMETER_NODE threadPara;
-        threadPara.clear();
-        // 反序列化成Task
-        protocol::Task pTask;
-        pTask.ParseFromString((char*)(data.get() + 0x4));
-        threadPara.nTaskId = pTask.data_type();
-        threadPara.pDataHandler = this;
-        QueueUserWorkItem(PTaskHandlerThread, (LPVOID)&threadPara, WT_EXECUTEDEFAULT);
+
+        PTHREADPA_PARAMETER_NODE pThreadPara = nullptr;
+        pThreadPara = new THREADPA_PARAMETER_NODE;
+        if (pThreadPara) {
+            pThreadPara->clear();
+            // 反序列化成Task
+            protocol::Task pTask;
+            pTask.ParseFromString((char*)(data.get() + 0x4));
+            pThreadPara->nTaskId = pTask.data_type();
+            pThreadPara->pDataHandler = this;
+            QueueUserWorkItem(PTaskHandlerThread, (LPVOID)pThreadPara, WT_EXECUTEDEFAULT);
+        }
     }
     catch (const std::exception&)
     {
         return;
-    }  
+    }
 }
 
 // Debug interface

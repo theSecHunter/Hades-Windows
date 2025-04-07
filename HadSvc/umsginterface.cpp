@@ -428,36 +428,36 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 if (false == SingletonUAutoStart::instance()->uf_EnumAutoStartask(ptr_Getbuffer, dwAllocateMemSize))
                     break;
 
-                const PUAutoStartNode autorunnode = (PUAutoStartNode)ptr_Getbuffer;
-                if (!autorunnode)
+                const PUAutoStartNode pAutorunnode = (PUAutoStartNode)ptr_Getbuffer;
+                if (!pAutorunnode)
                     break;
 
-                
+
                 j["win_user_autorun_flag"] = "1";
-                for (i = 0; i < autorunnode->regnumber; ++i)
+                for (i = 0; i < pAutorunnode->regnumber; ++i)
                 {
                     tmpstr.clear();
-                    tmpstr = String_ToUtf8(autorunnode->regrun[i].szValueName);
+                    tmpstr = String_ToUtf8(pAutorunnode->regrun[i].szValueName);
                     j["win_user_autorun_regName"] = tmpstr.c_str();
                     tmpstr.clear();
-                    tmpstr = String_ToUtf8(autorunnode->regrun[i].szValueKey);
+                    tmpstr = String_ToUtf8(pAutorunnode->regrun[i].szValueKey);
                     j["win_user_autorun_regKey"] = tmpstr.c_str();
                     vec_task_string.emplace_back(j.dump());
                 }
 
                 j.clear();
                 j["win_user_autorun_flag"] = "2";
-                for (i = 0; i < autorunnode->taskrunnumber; ++i)
+                for (i = 0; i < pAutorunnode->taskrunnumber; ++i)
                 {
                     tmpstr.clear();
-                    Wchar_tToString(tmpstr, autorunnode->taskschrun[i].szValueName);
+                    Wchar_tToString(tmpstr, pAutorunnode->taskschrun[i].szValueName);
                     tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_autorun_tschname"] = tmpstr.c_str();
-                    j["win_user_autorun_tscState"] = to_string(autorunnode->taskschrun[i].State).c_str();
-                    j["win_user_autorun_tscLastTime"] = to_string(autorunnode->taskschrun[i].LastTime).c_str();
-                    j["win_user_autorun_tscNextTime"] = to_string(autorunnode->taskschrun[i].NextTime).c_str();
+                    j["win_user_autorun_tscState"] = to_string(pAutorunnode->taskschrun[i].State).c_str();
+                    j["win_user_autorun_tscLastTime"] = to_string(pAutorunnode->taskschrun[i].LastTime).c_str();
+                    j["win_user_autorun_tscNextTime"] = to_string(pAutorunnode->taskschrun[i].NextTime).c_str();
                     tmpstr.clear();
-                    Wchar_tToString(tmpstr, autorunnode->taskschrun[i].TaskCommand);
+                    Wchar_tToString(tmpstr, pAutorunnode->taskschrun[i].TaskCommand);
                     tmpstr = String_ToUtf8(tmpstr);
                     j["win_user_autorun_tscCommand"] = tmpstr.c_str();
                     vec_task_string.emplace_back(j.dump());

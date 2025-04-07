@@ -1354,14 +1354,14 @@ bool UEtw::uf_RegisterTraceFile()
 // [NT Kernel Logger]
 bool UEtw::uf_init()
 {
+    // EVENT_TRACE_FLAG_REGISTRY
     OutputDebugString(L"Etw nf_init - uf_RegisterTrace");
     bool test = false;
     if (!test && !uf_RegisterTrace(
         EVENT_TRACE_FLAG_NETWORK_TCPIP | \
         EVENT_TRACE_FLAG_PROCESS | \
         EVENT_TRACE_FLAG_THREAD | \
-        /*EVENT_TRACE_FLAG_IMAGE_LOAD | \
-        EVENT_TRACE_FLAG_REGISTRY | \*/
+        EVENT_TRACE_FLAG_IMAGE_LOAD | \
         EVENT_TRACE_FLAG_FILE_IO | EVENT_TRACE_FLAG_FILE_IO_INIT)) {
         return 0;
     }
