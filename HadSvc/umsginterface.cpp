@@ -610,37 +610,37 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, const std::string& sData, 
         break;
         case UF_SYSFILE_ID:
         {
-            if (_access(sData.c_str(), 0) != 0)
+            if (sData.empty() || _access(sData.c_str(), 0) != 0)
                 break;
-            //  目录路径
+            // 目录路径
             if (false == SingletonUFile::instance()->uf_GetDirectoryFile((char*)sData.c_str(), ptr_Getbuffer))
                 break;
 
-            const PUDriectInfo pDirectinfo = (PUDriectInfo)ptr_Getbuffer;
-            if (!pDirectinfo)
+            const PUDriectInfo pDirectInfo = (PUDriectInfo)ptr_Getbuffer;
+            if (!pDirectInfo)
                 break;
 
             // 先回发送一次cout和总目录大小
             j["win_user_driectinfo_flag"] = "1";
-            j["win_user_driectinfo_filecout"] = to_string(pDirectinfo->FileNumber).c_str();
-            j["win_user_driectinfo_size"] = to_string(pDirectinfo->DriectAllSize).c_str();
+            j["win_user_driectinfo_filecout"] = to_string(pDirectInfo->FileNumber).c_str();
+            j["win_user_driectinfo_size"] = to_string(pDirectInfo->DriectAllSize).c_str();
             vec_task_string.emplace_back(j.dump());
 
 
             // 枚举的文件发送
             j.clear();
             j["win_user_driectinfo_flag"] = "2";
-            for (i = 0; i < pDirectinfo->FileNumber; ++i)
+            for (i = 0; i < pDirectInfo->FileNumber; ++i)
             {
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, pDirectinfo->fileEntry[i].filename);
+                Wchar_tToString(tmpstr, pDirectInfo->fileEntry[i].filename);
                 tmpstr = String_ToUtf8(tmpstr);
                 j["win_user_driectinfo_filename"] = tmpstr.c_str();
                 tmpstr.clear();
-                Wchar_tToString(tmpstr, pDirectinfo->fileEntry[i].filepath);
+                Wchar_tToString(tmpstr, pDirectInfo->fileEntry[i].filepath);
                 tmpstr = String_ToUtf8(tmpstr);
                 j["win_user_driectinfo_filePath"] = tmpstr.c_str();
-                j["win_user_driectinfo_fileSize"] = to_string(pDirectinfo->fileEntry[i].filesize).c_str();
+                j["win_user_driectinfo_fileSize"] = to_string(pDirectInfo->fileEntry[i].filesize).c_str();
                 vec_task_string.emplace_back(j.dump());
             }
             OutputDebugString(L"[User] GetDirectoryFile Enum Success");
@@ -649,8 +649,9 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, const std::string& sData, 
         break;
         case UF_FILE_INFO:
         {
-            if (_access(sData.c_str(), 0) != 0)
+            if (sData.empty() || _access(sData.c_str(), 0) != 0)
                 break;
+            //  文件绝对路径
             if (false == SingletonUFile::instance()->uf_GetFileInfo((char*)sData.c_str(), ptr_Getbuffer))
                 break;
 
@@ -690,9 +691,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, const std::string& sData, 
         }
         break;
         case UF_ROOTKIT_ID:
-        {
-        }
-        break;
+            break;
         default:
             break;
         }

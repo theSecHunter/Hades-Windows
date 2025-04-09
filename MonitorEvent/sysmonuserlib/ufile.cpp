@@ -9,7 +9,7 @@
 using namespace std;
 
 static DWORD g_FileCount = 0, dwAllSize = 0;
-static PUDriectFile g_driectfileinfo = NULL;
+static PUDriectFile g_pDriectFileInfo = NULL;
 
 UFile::UFile()
 {
@@ -105,8 +105,8 @@ const bool EnumDriectFile(CString Path, LPVOID outbuf)
 	if (g_FileCount >= 0x4090)
 		return true;
 
-	if (!g_driectfileinfo)
-		g_driectfileinfo = (PUDriectFile)outbuf;
+	if (!g_pDriectFileInfo)
+		g_pDriectFileInfo = (PUDriectFile)outbuf;
 
 	int i = 0;
 	WIN32_FIND_DATA FileData = { 0 };
@@ -126,10 +126,10 @@ const bool EnumDriectFile(CString Path, LPVOID outbuf)
 			else
 			{
 				// file path
-				lstrcpyW(g_driectfileinfo[g_FileCount].filename, FileData.cFileName);
-				lstrcpyW(g_driectfileinfo[g_FileCount].filepath, Path + CString("\\") + FileData.cFileName);
+				lstrcpyW(g_pDriectFileInfo[g_FileCount].filename, FileData.cFileName);
+				lstrcpyW(g_pDriectFileInfo[g_FileCount].filepath, Path + CString("\\") + FileData.cFileName);
 				// file all Size
-				g_driectfileinfo[g_FileCount].filesize = FileData.nFileSizeLow;
+				g_pDriectFileInfo[g_FileCount].filesize = FileData.nFileSizeLow;
 				dwAllSize += FileData.nFileSizeLow;
 				// file number
 				++g_FileCount;
@@ -141,45 +141,52 @@ const bool EnumDriectFile(CString Path, LPVOID outbuf)
 	return true;
 }
 
-const bool UFile::uf_GetFileInfo(char* pFilepath,LPVOID pData)
+const bool UFile::uf_GetFileInfo(char* pFilepath, LPVOID pData)
 {
-	CString filestr = pFilepath;
-	if (!pData && (0 >= filestr.GetLength()))
+	const CString cFileStrPath = pFilepath;
+	const std::string sFilePath = pFilepath;
+	PUFileInfo pFileInfo = (PUFileInfo)pData;
+	if (!pFileInfo || (0 >= cFileStrPath.GetLength()))
 		return false;
 
 	// 获取文件路径
-	TCHAR Path[MAX_PATH] = {};
 	SYSTEMTIME System = { 0 };
+	TCHAR Path[MAX_PATH] = { 0, };
 	// 用于保存临时字符串的缓冲区
-	TCHAR TempBuffer[MAX_PATH] = { 0 };
+	TCHAR TempBuffer[MAX_PATH] = { 0, };
 	// VS_FIXEDFILEINFO 
 	WIN32_FIND_DATA stFileData = { 0 };
-	const HANDLE hFile = FindFirstFile(filestr, &stFileData);
+	const HANDLE hFile = FindFirstFile(cFileStrPath, &stFileData);
 	if (hFile == INVALID_HANDLE_VALUE)
 		return false;
 
 	// 1. 添加文件名
-	stFileData.cFileName;
+	StrCpyW(pFileInfo->cFileName, stFileData.cFileName);
 	// 2. 添加创建时间
 	FileTimeToSystemTime(&stFileData.ftCreationTime, &System);
 	_stprintf_s(TempBuffer, TEXT("%d/%d/%d %d:%d:%d"), System.wYear,
 		System.wMonth, System.wDay, System.wHour, System.wMinute, System.wSecond);
+	StrCpyW(pFileInfo->seFileCreate, TempBuffer);
 	// 3. 添加文件修改时间
+	TempBuffer[0] = '\x0';	TempBuffer[1] = '\x0';
 	FileTimeToSystemTime(&stFileData.ftLastWriteTime, &System);
 	_stprintf_s(TempBuffer, TEXT("%d/%d/%d %d:%d:%d"), System.wYear,
 		System.wMonth, System.wDay, System.wHour, System.wMinute, System.wSecond);
+	StrCpyW(pFileInfo->seFileModify, TempBuffer);
 	// 4. 添加最后访问
+	TempBuffer[0] = '\x0';	TempBuffer[1] = '\x0';
 	FileTimeToSystemTime(&stFileData.ftLastAccessTime, &System);
 	_stprintf_s(TempBuffer, TEXT("%d/%d/%d %d:%d:%d"), System.wYear,
 		System.wMonth, System.wDay, System.wHour, System.wMinute, System.wSecond);
-	TempBuffer[0] = 0;
+	StrCpyW(pFileInfo->seFileAccess, TempBuffer);
 	// 5. 判断是不是目录  
+	TempBuffer[0] = '\x0';	TempBuffer[1] = '\x0';
 	if (stFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		_tcscat_s(TempBuffer, TEXT("目录 "));
 	else
 		_tcscat_s(TempBuffer, TEXT("文件 "));
 	// 6. 显示当前文件的大小
-	TempBuffer[0] = 0;
+	TempBuffer[0] = '\x0';	TempBuffer[1] = '\x0';
 	if (stFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		_tcscat_s(TempBuffer, TEXT("-"));
 	else
@@ -191,24 +198,25 @@ const bool UFile::uf_GetFileInfo(char* pFilepath,LPVOID pData)
 		else
 			_stprintf_s(TempBuffer, TEXT("%.2lfKB"), stFileData.nFileSizeLow / 1024.0 / 1024.0);
 	}
+	StrCpyW(pFileInfo->m_seFileSizeof, TempBuffer);
 	// 7. 属性
-	// 判断是不是隐藏的
-	if (stFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN)
-		_tcscat_s(TempBuffer, TEXT("隐藏 "));
-	// 判断是不是只读的
-	if (stFileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
-		_tcscat_s(TempBuffer, TEXT("只读"));
-
+	StrCpyW(pFileInfo->dwFileAttributes, std::to_wstring(stFileData.dwFileAttributes).c_str());
+	if (stFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) {
+		StrCpyW(pFileInfo->dwFileAttributesHide, TEXT("隐藏 "));
+	}
 	// MD5计算
-	char FileName[MAX_PATH] = { 0 };
-	memset(FileName, 0, sizeof(FileName));
-	sprintf_s(FileName, "%ws", filestr.GetBuffer());
-	md5FileValue(FileName);
+	std::string sMd5 = md5FileValue((char*)sFilePath.c_str());
+	if (!sMd5.empty()) {
+		CString csMd5 = sMd5.c_str();
+		StrCpyW(pFileInfo->md5, csMd5.GetString());
+	}
 
 	// 获取信息
 	//GetModuleFileNameEx(hFile, NULL, Path, MAX_PATH);
 	//SHFILEINFOW shfileinfo;
 	//SHGetFileInfo(Path, 0, &shfileinfo, sizeof(SHFILEINFOW), SHGFI_ICON);
+
+	// close
 	if (hFile)
 		FindClose(hFile);
 	return true;
@@ -216,11 +224,12 @@ const bool UFile::uf_GetFileInfo(char* pFilepath,LPVOID pData)
 
 const bool UFile::uf_GetDirectoryFile(char* pDriPath, LPVOID pData)
 {
-	g_driectfileinfo = NULL;
+	g_pDriectFileInfo = NULL;
 	g_FileCount = 0, dwAllSize = 0;
-	PUDriectInfo const pDirinfo = (PUDriectInfo)pData;
+	PUDriectInfo pDirinfo = (PUDriectInfo)pData;
 	if (!pDirinfo)
 		return false;
+
 	EnumDriectFile(pDriPath, pDirinfo->fileEntry);
 	pDirinfo->DriectAllSize = dwAllSize;
 	pDirinfo->FileNumber = g_FileCount;

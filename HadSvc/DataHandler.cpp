@@ -16,7 +16,12 @@
 #include "singGloal.h"
 #include "NamedPipe.h"
 #include "AnonymousPipe.h"
+#include "CodeTool.h"
 
+#include <rapidjson/rapidjson.h>
+#include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 static bool                         g_shutdown = false;
 static mutex                        g_pipwritecs;
@@ -532,7 +537,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
                 SingletonKerMon::instance()->DriverInit(false); // 初始化启动read i/o线程
                 if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 {
-                    OutputDebugString(L"[HadesSvc] GetKerInitStatus false");
+                    OutputDebugString(L"GetKerInitStatus false");
                     return 0;
                 }
             }
@@ -576,7 +581,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
                 SingletonKerMon::instance()->DriverInit(true);
                 if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 {
-                    OutputDebugString(L"GetKerInitStatus false");
+                    OutputDebugString(L"[HadesSvc] GetKerInitStatus false");
                     return 0;
                 }
             }
@@ -722,7 +727,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
         std::string serializbuf = "";
         record->set_data_type(taskid);
         record->set_timestamp(GetTickCount64());
-        for (const auto& iter : task_array_data)
+        for(const auto& iter : task_array_data)
         {
             (*MapMessage)["data_type"] = std::to_string(taskid).c_str();
             if (!iter.empty()) {
@@ -739,31 +744,46 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
         }
     }
 
-    task_array_data.clear();
+    // Write Pip
+    //for (const auto& iter : task_array_data) {
+    //    const std::string sData = CodeTool::GbkToUtf8(iter.c_str()).c_str();
 
+    //    rapidjson::Document document;
+    //    document.SetObject();
+    //    document.AddMember(rapidjson::StringRef("taskid"), rapidjson::StringRef(std::to_string(taskid).c_str()), document.GetAllocator());
+    //    document.AddMember(rapidjson::StringRef("timestamp"), rapidjson::StringRef(std::to_string(GetTickCount64()).c_str()), document.GetAllocator());
+    //    document.AddMember(rapidjson::StringRef("data"), rapidjson::StringRef(sData.c_str()), document.GetAllocator());
+
+    //    std::string sJsonData = "";
+    //    rapidjson::StringBuffer sbuffer;
+    //    rapidjson::Writer<rapidjson::StringBuffer> writer(sbuffer);
+    //    document.Accept(writer);
+    //    sJsonData = sbuffer.GetString();
+    //    PipWriteAnonymous(sJsonData, sJsonData.size());
+    //}
+
+    task_array_data.clear();
     return 0;
 }
-
 static DWORD WINAPI PTaskHandlerThread(LPVOID lpThreadParameter)
 {
     try
     {
-        THREADPA_PARAMETER_NODE* pthreadPara = nullptr;
-        pthreadPara = reinterpret_cast<THREADPA_PARAMETER_NODE*>(lpThreadParameter);
-        if (!pthreadPara || (pthreadPara == nullptr))
+        THREADPA_PARAMETER_NODE* pThreadPara = nullptr;
+        pThreadPara = reinterpret_cast<THREADPA_PARAMETER_NODE*>(lpThreadParameter);
+        if (!pThreadPara || (pThreadPara == nullptr))
             return 0;
         if (g_shutdown)
         {
-            delete pthreadPara;
+            delete pThreadPara;
             return 0;
         }
-        const int taskid = pthreadPara->nTaskId;
-        const std::string sData = pthreadPara->sData.c_str();
-        if (pthreadPara->pDataHandler)
-            pthreadPara->pDataHandler->PTaskHandlerNotify(taskid, sData);
+        const int taskid = pThreadPara->nTaskId;
+        const std::string sData = pThreadPara->sData.c_str();
+        if (pThreadPara->pDataHandler)
+            pThreadPara->pDataHandler->PTaskHandlerNotify(taskid, sData);
 
-        delete pthreadPara;
-        pthreadPara = nullptr;
+        delete pThreadPara;
         return 0;
     }
     catch (const std::exception&)
@@ -801,7 +821,7 @@ void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_
     catch (const std::exception&)
     {
         return;
-    }
+    }  
 }
 
 // Debug interface

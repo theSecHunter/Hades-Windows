@@ -187,14 +187,18 @@ MD5VAL md5(char * str, unsigned int size)
 }
 
 #define BUFFER_SIZE 4096   //必须是64的倍数
-static char * Buffer = NULL;
+
 //MD5文件摘要
 MD5VAL md5File(FILE * fpin)
 {
-	if (!Buffer)
-		Buffer = new char[BUFFER_SIZE + 64];
-	char * buf = Buffer;
 	MD5VAL val = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476 };
+
+	char* pBuffer = nullptr;
+	pBuffer = new char[BUFFER_SIZE + 64];
+	if (pBuffer == nullptr || (!pBuffer))
+		return val;
+	memset(pBuffer, 0, BUFFER_SIZE + 64);
+
 	unsigned int &a = val.a, &b = val.b, &c = val.c, &d = val.d;
 	unsigned int aa, bb, cc, dd;
 	unsigned int i, j, count, co;
@@ -202,23 +206,23 @@ MD5VAL md5File(FILE * fpin)
 	i = 0;
 	do
 	{
-		count = fread(buf, 1, BUFFER_SIZE, fpin);
+		count = fread(pBuffer, 1, BUFFER_SIZE, fpin);
 		i += count;
 		if (count == BUFFER_SIZE)
 			co = BUFFER_SIZE;
 		else
 		{
 			j = count;
-			buf[j++] = 0x80;
+			pBuffer[j++] = 0x80;
 			for (j; j % 64 != 56; j++)
-				buf[j] = 0x00;
-			*(unsigned int *)(buf + j) = i << 3; j += 4;
-			*(unsigned int *)(buf + j) = i >> 29; j += 4;
+				pBuffer[j] = 0x00;
+			*(unsigned int *)(pBuffer + j) = i << 3; j += 4;
+			*(unsigned int *)(pBuffer + j) = i >> 29; j += 4;
 			co = j;
 		}
 		for (j = 0; j<co; j += 64)
 		{
-			x = (unsigned int *)(buf + j);
+			x = (unsigned int *)(pBuffer + j);
 			// Save the values
 			aa = a; bb = b; cc = c; dd = d;
 			// Round 1
@@ -295,32 +299,47 @@ MD5VAL md5File(FILE * fpin)
 			c += cc;
 			d += dd;
 		}
-
 	} while (count == BUFFER_SIZE);
+
+	if (pBuffer) {
+		delete[] pBuffer;
+		pBuffer = nullptr;
+	}
 	return val;
 }
 
 /* 获得文件的MD5值 */
 char * md5FileValue(char * fname)
 {
-	static char md5[33] = { 0 };
-	MD5VAL val;
-
-	FILE * fp = fopen(fname, "rb");
-	if (fp)
+	try
 	{
-		val = md5File(fp);
-		sprintf(md5, "%08x%08x%08x%08x", conv(val.a), conv(val.b), conv(val.c), conv(val.d));
-		fclose(fp);
+		char cMd5[1204] = { 0, };
+		MD5VAL val;
+		FILE* fp = fopen(fname, "rb");
+		if (fp)
+		{
+			val = md5File(fp);
+			sprintf(cMd5, "%08x%08x%08x%08x", conv(val.a), conv(val.b), conv(val.c), conv(val.d));
+			fclose(fp);
+		}
+		return cMd5;
 	}
-	return md5;
+	catch (...)
+	{
+		return nullptr;
+	}
 }
 
 /* 获得字串的MD5值 */
 void md5Str(char * input, char * output)
 {
-	MD5VAL val;
-	val = md5(input, strlen(input));
-	sprintf(output, "%08x%08x%08x%08x", conv(val.a), conv(val.b), conv(val.c), conv(val.d));
-
+	try
+	{
+		MD5VAL val;
+		val = md5(input, strlen(input));
+		sprintf(output, "%08x%08x%08x%08x", conv(val.a), conv(val.b), conv(val.c), conv(val.d));
+	}
+	catch (...)
+	{
+	}
 }
