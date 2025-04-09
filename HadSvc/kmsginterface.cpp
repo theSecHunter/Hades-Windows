@@ -452,14 +452,14 @@ void kMsgInterface::kMsg_taskPopInit()
 
 void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& vec_task_string)
 {
-    map<int, wstring>::iterator iter;
-    map<int, wstring> Process_list;
-    std::string tmpstr; wstring catstr;
+    std::map<int, wstring>::iterator iter;
+    std::map<int, wstring> Process_list;
+    std::string tmpstr; std::wstring catstr;
     size_t i = 0, index = 0;
     DWORD dwAllocateMemSize = 0;
     char* ptr_Getbuffer = nullptr;
-    bool nstatus = Choose_mem(ptr_Getbuffer, dwAllocateMemSize, taskcode);
-    if (false == nstatus || nullptr == ptr_Getbuffer || dwAllocateMemSize == 0)
+    bool bStatus = Choose_mem(ptr_Getbuffer, dwAllocateMemSize, taskcode);
+    if (false == bStatus || nullptr == ptr_Getbuffer || dwAllocateMemSize == 0)
         return;
 
     json_t j;
@@ -764,7 +764,7 @@ void kMsgInterface::DriverInit(const int flag)
     status = SingletonKDrvManage::instance()->devctrl_init();
     if (0 > status)
     {
-        OutputDebugString(L"devctrl_init error: main.c --> lines: 678");
+        OutputDebugString(L"devctrl_init error.");
         return;
     }
 
@@ -774,7 +774,7 @@ void kMsgInterface::DriverInit(const int flag)
         status = SingletonKDrvManage::instance()->devctrl_opendeviceSylink(devSyLinkName);
         if (0 >= status)
         {
-            OutputDebugString(L"devctrl_opendeviceSylink error: main.c --> lines: 688");
+            OutputDebugString(L"devctrl_opendeviceSylink error.");
             break;
         }
 
@@ -782,7 +782,7 @@ void kMsgInterface::DriverInit(const int flag)
         status = SingletonKDrvManage::instance()->devctrl_InitshareMem();
         if (0 >= status)
         {
-            OutputDebugString(L"devctrl_InitshareMem error: main.c --> lines: 690");
+            OutputDebugString(L"devctrl_InitshareMem error.");
             break;
         }
 

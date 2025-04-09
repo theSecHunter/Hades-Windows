@@ -15,7 +15,7 @@ public:
 	~uMsgInterface();
 	void uMsg_taskPopEtwLoop();
 	void uMsg_taskPopInit();
-	void uMsg_taskPush(const int taskcode, std::vector<std::string>& vec_task_string);
+	void uMsg_taskPush(const int taskcode, const std::string& sData, std::vector<std::string>& vec_task_string);
 
 	void uMsg_SetSubEventPtr(HANDLE& eventptr);
 	void uMsg_SetSubQueueLockPtr(std::mutex& qptrcs);

@@ -1,6 +1,6 @@
 #include "msgassist.h"
 
-// 智能指针 or 内存池
+// 智能指针 or 内存池 or vectory
 bool Choose_mem(char*& ptr, DWORD& dwAllocateMemSize, const int code)
 {
     dwAllocateMemSize = 0;

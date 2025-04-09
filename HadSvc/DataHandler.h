@@ -22,7 +22,7 @@ public:
 	// Sub Data Handle
 	void KerSublthreadProc();
 	void EtwSublthreadProc();
-	bool PTaskHandlerNotify(const DWORD taskid);
+	bool PTaskHandlerNotify(const DWORD taskid, const std::string& sData);
 
 	// Set ExitEvent
 	void SetExitSvcEvent(HANDLE& hexitEvent);
@@ -40,13 +40,25 @@ private:
 	HANDLE m_jobAvailableEvnet_WriteTask = NULL;
 };
 
+typedef struct _TH_FILE_NODE
+{
+	std::string sFileDirPath;
+	std::string sFileFullPath;
+}TH_FILE_NODE, *TH_PFILE_NODE;
+
 typedef struct _THREADPA_PARAMETER_NODE
 {
 	int nTaskId;
 	DataHandler* pDataHandler;
+
+	// json or ...
+	std::string sData;
+
 	void clear()
 	{
 		nTaskId = 0;
 		pDataHandler = nullptr;
+
+		sData = "";
 	}
 }THREADPA_PARAMETER_NODE, * PTHREADPA_PARAMETER_NODE;

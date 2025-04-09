@@ -29,6 +29,8 @@
 #include <json.hpp>
 using json_t = nlohmann::json;
 
+#include <io.h>
+
 // Topic主题队列指针1
 static std::mutex               g_RecvQueueCs;
 static std::queue<UPubNode*>    g_RecvQueueData;
@@ -368,335 +370,335 @@ void uMsgInterface::uMsg_taskPopInit()
 }
 
 // 接口：用户态TaskId下发获取数据,同步阻塞
-void uMsgInterface::uMsg_taskPush(const int taskcode, std::vector<std::string>& vec_task_string)
+void uMsgInterface::uMsg_taskPush(const int taskcode, const std::string& sData, std::vector<std::string>& vec_task_string)
 {
     std::string tmpstr = "";
     std::wstring catstr = L"";
     size_t i = 0, index = 0;
     DWORD dwAllocateMemSize = 0;
     char* ptr_Getbuffer = nullptr;
-    bool nstatus = Choose_mem(ptr_Getbuffer, dwAllocateMemSize, taskcode);
-    if (false == nstatus || nullptr == ptr_Getbuffer || dwAllocateMemSize == 0)
+    bool bStatus = Choose_mem(ptr_Getbuffer, dwAllocateMemSize, taskcode);
+    if (false == bStatus || nullptr == ptr_Getbuffer || dwAllocateMemSize == 0)
         return;
+
     json_t j;
     try
     {
         // ptr_Getbuffer
-        do
+        switch (taskcode)
         {
-            switch (taskcode)
-            {
-            case UF_PROCESS_ENUM:
-            {
-                if (false == SingletonUProcess::instance()->uf_EnumProcess(ptr_Getbuffer))
-                    break;
-                const PUProcessNode procesNode = (PUProcessNode)ptr_Getbuffer;
-                if (!procesNode)
-                    break;
-
-                for (i = 0; i < procesNode->processcount; ++i)
-                {   
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, procesNode->sysprocess[i].fullprocesspath);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_process_Path"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, procesNode->sysprocess[i].szExeFile);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_process_szExeFile"] = tmpstr.c_str();
-                    j["win_user_process_pid"] = to_string(procesNode->sysprocess[i].pid).c_str();
-                    tmpstr.clear();
-                    tmpstr = String_ToUtf8(procesNode->sysprocess[i].priclassbase);
-                    j["win_user_process_pribase"] = tmpstr.c_str();
-                    j["win_user_process_parenid"] = to_string(procesNode->sysprocess[i].th32ParentProcessID).c_str();
-                    j["win_user_process_thrcout"] = to_string(procesNode->sysprocess[i].threadcout).c_str();
-                    vec_task_string.emplace_back(j.dump());
-                }
-                OutputDebugString(L"[User] Process Enum Success");
-                std::cout << "[User] Process Enum Success" << std::endl;
-            }
-            break;
-            case UF_PROCESS_PID_TREE:
-            {
-                // Command - pid
-                if (false == SingletonUProcess::instance()->uf_GetProcessInfo(4, ptr_Getbuffer))
-                    break;
-            }
-            break;
-            case UF_SYSAUTO_START:
-            {
-                if (false == SingletonUAutoStart::instance()->uf_EnumAutoStartask(ptr_Getbuffer, dwAllocateMemSize))
-                    break;
-
-                const PUAutoStartNode pAutorunnode = (PUAutoStartNode)ptr_Getbuffer;
-                if (!pAutorunnode)
-                    break;
-
-
-                j["win_user_autorun_flag"] = "1";
-                for (i = 0; i < pAutorunnode->regnumber; ++i)
-                {
-                    tmpstr.clear();
-                    tmpstr = String_ToUtf8(pAutorunnode->regrun[i].szValueName);
-                    j["win_user_autorun_regName"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    tmpstr = String_ToUtf8(pAutorunnode->regrun[i].szValueKey);
-                    j["win_user_autorun_regKey"] = tmpstr.c_str();
-                    vec_task_string.emplace_back(j.dump());
-                }
-
-                j.clear();
-                j["win_user_autorun_flag"] = "2";
-                for (i = 0; i < pAutorunnode->taskrunnumber; ++i)
-                {
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pAutorunnode->taskschrun[i].szValueName);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_autorun_tschname"] = tmpstr.c_str();
-                    j["win_user_autorun_tscState"] = to_string(pAutorunnode->taskschrun[i].State).c_str();
-                    j["win_user_autorun_tscLastTime"] = to_string(pAutorunnode->taskschrun[i].LastTime).c_str();
-                    j["win_user_autorun_tscNextTime"] = to_string(pAutorunnode->taskschrun[i].NextTime).c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pAutorunnode->taskschrun[i].TaskCommand);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_autorun_tscCommand"] = tmpstr.c_str();
-                    vec_task_string.emplace_back(j.dump());
-                }
-                OutputDebugString(L"[User] SystemAutoStartRun Enum Success");
-                std::cout << "[User] SystemAutoStartRun Enum Success" << std::endl;
-            }
-            break;
-            case UF_SYSNET_INFO:
-            {
-                if (false == SingletonUNetWork::instance()->uf_EnumNetwork(ptr_Getbuffer))
-                    break;
-
-                const PUNetNode netnode = (PUNetNode)ptr_Getbuffer;
-                if (!netnode)
-                    break;
-                j["win_user_net_flag"] = "1";
-                for (i = 0; i < netnode->tcpnumber; i++)
-                {
-                    j["win_user_net_src"] = netnode->tcpnode[i].szlip;
-                    j["win_user_net_dst"] = netnode->tcpnode[i].szrip;
-                    j["win_user_net_status"] = netnode->tcpnode[i].TcpState;
-                    j["win_user_net_pid"] = netnode->tcpnode[i].PidString;
-                    vec_task_string.emplace_back(j.dump());
-                }
-
-                j.clear();
-                j["win_user_net_flag"] = "2";
-                for (i = 0; i < netnode->udpnumber; i++)
-                {
-
-                    j["win_user_net_src"] = netnode->tcpnode[i].szlip;
-                    j["win_user_net_pid"] = netnode->tcpnode[i].PidString;
-                    vec_task_string.emplace_back(j.dump());
-                }
-                OutputDebugString(L"[User] EnumNetwork Enum Success");
-                std::cout << "[User] EnumNetwork Enum Success" << std::endl;
-            }
-            break;
-            case UF_SYSSESSION_INFO:
-            {
-            }
-            break;
-            case UF_SYSINFO_ID:
-            {
-            }
-            break;
-            case UF_SYSLOG_ID:
-            {
-            }
-            break;
-            case UF_SYSUSER_ID:
-            {
-                if (false == SingletonNSysUser::instance()->uf_EnumSysUser(ptr_Getbuffer))
-                    break;
-
-                const PUUserNode pusernode = (PUUserNode)ptr_Getbuffer;
-                if (!pusernode)
-                    break;
-
-                for (i = 0; i < pusernode->usernumber; ++i)
-                {
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pusernode->usernode[i].serveruser);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_sysuser_user"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pusernode->usernode[i].servername);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_sysuser_name"] = tmpstr.c_str();
-                    j["win_user_sysuser_sid"] = to_string((ULONGLONG)pusernode->usernode[i].serverusid).c_str();
-                    j["win_user_sysuser_flag"] = to_string(pusernode->usernode[i].serveruflag).c_str();
-                    vec_task_string.emplace_back(j.dump());
-                }
-                OutputDebugString(L"[User] SysUser Enum Success");
-                std::cout << "[User] SysUser Enum Success" << std::endl;
-            }
-            break;
-            case UF_SYSSERVICE_SOFTWARE_ID:
-            {
-                if (false == SingletonUServerSoftware::instance()->uf_EnumAll(ptr_Getbuffer))
-                    break;
-
-                const PUAllServerSoftware pNode = (PUAllServerSoftware)ptr_Getbuffer;
-                if (!pNode)
-                    break;
-
-                j["win_user_softwareserver_flag"] = "1";
-                for (i = 0; i < pNode->servicenumber; ++i)
-                {
-                    j.clear();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpServiceName);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_server_lpsName"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpDisplayName);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_server_lpdName"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpBinaryPathName);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_server_lpPath"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpDescription);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_server_lpDescr"] = tmpstr.c_str();
-                    j["win_user_server_status"] = pNode->uSericeinfo[i].dwCurrentState;
-                    vec_task_string.emplace_back(j.dump());
-                }
-
-                j.clear();
-                j["win_user_softwareserver_flag"] = "2";
-                for (i = 0; i < pNode->softwarenumber; ++i)
-                {
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftName);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_software_lpsName"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftSize);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_software_Size"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftVer);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_software_Ver"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftInsPath);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_software_installpath"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftUniPath);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_software_uninstallpath"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftDate);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_software_data"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftVenRel);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_software_venrel"] = tmpstr.c_str();
-                    vec_task_string.emplace_back(j.dump());
-                }
-                OutputDebugString(L"[User] Software_Server Enum Success");
-                std::cout << "[User] Software_Server Enum Success" << std::endl;
-            }
-            break;
-            case UF_SYSFILE_ID:
-            {
-                // Command 获取 目录路径
-                if (false == SingletonUFile::instance()->uf_GetDirectoryFile((char*)"D:\\bin", ptr_Getbuffer))
-                    break;
-
-                const PUDriectInfo directinfo = (PUDriectInfo)ptr_Getbuffer;
-                if (!directinfo)
-                    break;
-
-                // 先回发送一次cout和总目录大小
-                j["win_user_driectinfo_flag"] = "1";
-                j["win_user_driectinfo_filecout"] = to_string(directinfo->FileNumber).c_str();
-                j["win_user_driectinfo_size"] = to_string(directinfo->DriectAllSize).c_str();
-                vec_task_string.emplace_back(j.dump());
-               
-                
-                // 枚举的文件发送
-                j.clear();
-                j["win_user_driectinfo_flag"] = "2";
-                for (i = 0; i < directinfo->FileNumber; ++i)
-                {
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, directinfo->fileEntry[i].filename);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_driectinfo_filename"] = tmpstr.c_str();
-                    tmpstr.clear();
-                    Wchar_tToString(tmpstr, directinfo->fileEntry[i].filepath);
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_user_driectinfo_filePath"] = tmpstr.c_str();
-                    j["win_user_driectinfo_fileSize"] = to_string(directinfo->fileEntry[i].filesize).c_str();
-                    vec_task_string.emplace_back(j.dump());
-                }
-                OutputDebugString(L"[User] GetDirectoryFile Enum Success");
-                std::cout << "[User] GetDirectoryFile Enum Success" << std::endl;
-            }
-            break;
-            case UF_FILE_INFO:
-            {
-                // Command 获取 文件绝对路径
-                if (false == SingletonUFile::instance()->uf_GetFileInfo((char*)"d:\\bin\\1.txt", ptr_Getbuffer))
-                    break;
-
-                const PUFileInfo fileinfo = (PUFileInfo)ptr_Getbuffer;
-                if (!fileinfo)
-                    break;
-
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, fileinfo->cFileName);
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_user_fileinfo_filename"] = tmpstr.c_str();
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, fileinfo->dwFileAttributes);
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_user_fileinfo_dwFileAttributes"] = tmpstr.c_str();
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, fileinfo->dwFileAttributesHide);
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_user_fileinfo_dwFileAttributesHide"] = tmpstr.c_str();
-                j["win_user_fileinfo_md5"] = fileinfo->md5;
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, fileinfo->m_seFileSizeof);
-                j["win_user_fileinfo_m_seFileSizeof"] = tmpstr.c_str();
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, fileinfo->seFileAccess);
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_user_fileinfo_seFileAccess"] = tmpstr.c_str();
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, fileinfo->seFileCreate);
-                j["win_user_fileinfo_seFileCreate"] = tmpstr.c_str();
-                tmpstr.clear();
-                Wchar_tToString(tmpstr, fileinfo->seFileModify);
-                j["win_user_fileinfo_seFileModify"] = tmpstr.c_str();
-                vec_task_string.emplace_back(j.dump());
-                OutputDebugString(L"[User] GetFIleInfo Success");
-                std::cout << "[User] GetFIleInfo Success" << std::endl;
-            }
-            break;
-            case UF_ROOTKIT_ID:     // v2.x
-            {
-            }
-            break;
-            default:
+        case UF_PROCESS_ENUM:
+        {
+            if (false == SingletonUProcess::instance()->uf_EnumProcess(ptr_Getbuffer))
                 break;
+            const PUProcessNode procesNode = (PUProcessNode)ptr_Getbuffer;
+            if (!procesNode)
+                break;
+
+            for (i = 0; i < procesNode->processcount; ++i)
+            {
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, procesNode->sysprocess[i].fullprocesspath);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_process_Path"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, procesNode->sysprocess[i].szExeFile);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_process_szExeFile"] = tmpstr.c_str();
+                j["win_user_process_pid"] = to_string(procesNode->sysprocess[i].pid).c_str();
+                tmpstr.clear();
+                tmpstr = String_ToUtf8(procesNode->sysprocess[i].priclassbase);
+                j["win_user_process_pribase"] = tmpstr.c_str();
+                j["win_user_process_parenid"] = to_string(procesNode->sysprocess[i].th32ParentProcessID).c_str();
+                j["win_user_process_thrcout"] = to_string(procesNode->sysprocess[i].threadcout).c_str();
+                vec_task_string.emplace_back(j.dump());
             }
-        } while (false);
+            OutputDebugString(L"[User] Process Enum Success");
+            std::cout << "[User] Process Enum Success" << std::endl;
+        }
+        break;
+        case UF_PROCESS_PID_TREE:
+        {
+            // Command - pid
+            if (false == SingletonUProcess::instance()->uf_GetProcessInfo(4, ptr_Getbuffer))
+                break;
+        }
+        break;
+        case UF_SYSAUTO_START:
+        {
+            if (false == SingletonUAutoStart::instance()->uf_EnumAutoStartask(ptr_Getbuffer, dwAllocateMemSize))
+                break;
+
+            const PUAutoStartNode pAutorunnode = (PUAutoStartNode)ptr_Getbuffer;
+            if (!pAutorunnode)
+                break;
+
+
+            j["win_user_autorun_flag"] = "1";
+            for (i = 0; i < pAutorunnode->regnumber; ++i)
+            {
+                tmpstr.clear();
+                tmpstr = String_ToUtf8(pAutorunnode->regrun[i].szValueName);
+                j["win_user_autorun_regName"] = tmpstr.c_str();
+                tmpstr.clear();
+                tmpstr = String_ToUtf8(pAutorunnode->regrun[i].szValueKey);
+                j["win_user_autorun_regKey"] = tmpstr.c_str();
+                vec_task_string.emplace_back(j.dump());
+            }
+
+            j.clear();
+            j["win_user_autorun_flag"] = "2";
+            for (i = 0; i < pAutorunnode->taskrunnumber; ++i)
+            {
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pAutorunnode->taskschrun[i].szValueName);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_autorun_tschname"] = tmpstr.c_str();
+                j["win_user_autorun_tscState"] = to_string(pAutorunnode->taskschrun[i].State).c_str();
+                j["win_user_autorun_tscLastTime"] = to_string(pAutorunnode->taskschrun[i].LastTime).c_str();
+                j["win_user_autorun_tscNextTime"] = to_string(pAutorunnode->taskschrun[i].NextTime).c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pAutorunnode->taskschrun[i].TaskCommand);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_autorun_tscCommand"] = tmpstr.c_str();
+                vec_task_string.emplace_back(j.dump());
+            }
+            OutputDebugString(L"[User] SystemAutoStartRun Enum Success");
+            std::cout << "[User] SystemAutoStartRun Enum Success" << std::endl;
+        }
+        break;
+        case UF_SYSNET_INFO:
+        {
+            if (false == SingletonUNetWork::instance()->uf_EnumNetwork(ptr_Getbuffer))
+                break;
+
+            const PUNetNode netnode = (PUNetNode)ptr_Getbuffer;
+            if (!netnode)
+                break;
+            j["win_user_net_flag"] = "1";
+            for (i = 0; i < netnode->tcpnumber; i++)
+            {
+                j["win_user_net_src"] = netnode->tcpnode[i].szlip;
+                j["win_user_net_dst"] = netnode->tcpnode[i].szrip;
+                j["win_user_net_status"] = netnode->tcpnode[i].TcpState;
+                j["win_user_net_pid"] = netnode->tcpnode[i].PidString;
+                vec_task_string.emplace_back(j.dump());
+            }
+
+            j.clear();
+            j["win_user_net_flag"] = "2";
+            for (i = 0; i < netnode->udpnumber; i++)
+            {
+
+                j["win_user_net_src"] = netnode->tcpnode[i].szlip;
+                j["win_user_net_pid"] = netnode->tcpnode[i].PidString;
+                vec_task_string.emplace_back(j.dump());
+            }
+            OutputDebugString(L"[User] EnumNetwork Enum Success");
+            std::cout << "[User] EnumNetwork Enum Success" << std::endl;
+        }
+        break;
+        case UF_SYSSESSION_INFO:
+        {
+        }
+        break;
+        case UF_SYSINFO_ID:
+        {
+        }
+        break;
+        case UF_SYSLOG_ID:
+        {
+        }
+        break;
+        case UF_SYSUSER_ID:
+        {
+            if (false == SingletonNSysUser::instance()->uf_EnumSysUser(ptr_Getbuffer))
+                break;
+
+            const PUUserNode pusernode = (PUUserNode)ptr_Getbuffer;
+            if (!pusernode)
+                break;
+
+            for (i = 0; i < pusernode->usernumber; ++i)
+            {
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pusernode->usernode[i].serveruser);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_sysuser_user"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pusernode->usernode[i].servername);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_sysuser_name"] = tmpstr.c_str();
+                j["win_user_sysuser_sid"] = to_string((ULONGLONG)pusernode->usernode[i].serverusid).c_str();
+                j["win_user_sysuser_flag"] = to_string(pusernode->usernode[i].serveruflag).c_str();
+                vec_task_string.emplace_back(j.dump());
+            }
+            OutputDebugString(L"[User] SysUser Enum Success");
+            std::cout << "[User] SysUser Enum Success" << std::endl;
+        }
+        break;
+        case UF_SYSSERVICE_SOFTWARE_ID:
+        {
+            if (false == SingletonUServerSoftware::instance()->uf_EnumAll(ptr_Getbuffer))
+                break;
+
+            const PUAllServerSoftware pNode = (PUAllServerSoftware)ptr_Getbuffer;
+            if (!pNode)
+                break;
+
+            j["win_user_softwareserver_flag"] = "1";
+            for (i = 0; i < pNode->servicenumber; ++i)
+            {
+                j.clear();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpServiceName);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_server_lpsName"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpDisplayName);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_server_lpdName"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpBinaryPathName);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_server_lpPath"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pNode->uSericeinfo[i].lpDescription);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_server_lpDescr"] = tmpstr.c_str();
+                j["win_user_server_status"] = pNode->uSericeinfo[i].dwCurrentState;
+                vec_task_string.emplace_back(j.dump());
+            }
+
+            j.clear();
+            j["win_user_softwareserver_flag"] = "2";
+            for (i = 0; i < pNode->softwarenumber; ++i)
+            {
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftName);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_software_lpsName"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftSize);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_software_Size"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftVer);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_software_Ver"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftInsPath);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_software_installpath"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftUniPath);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_software_uninstallpath"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pNode->uUsoinfo[i].szSoftDate);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_software_data"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pNode->uUsoinfo[i].strSoftVenRel);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_software_venrel"] = tmpstr.c_str();
+                vec_task_string.emplace_back(j.dump());
+            }
+            OutputDebugString(L"[User] Software_Server Enum Success");
+            std::cout << "[User] Software_Server Enum Success" << std::endl;
+        }
+        break;
+        case UF_SYSFILE_ID:
+        {
+            if (_access(sData.c_str(), 0) != 0)
+                break;
+            //  目录路径
+            if (false == SingletonUFile::instance()->uf_GetDirectoryFile((char*)sData.c_str(), ptr_Getbuffer))
+                break;
+
+            const PUDriectInfo pDirectinfo = (PUDriectInfo)ptr_Getbuffer;
+            if (!pDirectinfo)
+                break;
+
+            // 先回发送一次cout和总目录大小
+            j["win_user_driectinfo_flag"] = "1";
+            j["win_user_driectinfo_filecout"] = to_string(pDirectinfo->FileNumber).c_str();
+            j["win_user_driectinfo_size"] = to_string(pDirectinfo->DriectAllSize).c_str();
+            vec_task_string.emplace_back(j.dump());
+
+
+            // 枚举的文件发送
+            j.clear();
+            j["win_user_driectinfo_flag"] = "2";
+            for (i = 0; i < pDirectinfo->FileNumber; ++i)
+            {
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pDirectinfo->fileEntry[i].filename);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_driectinfo_filename"] = tmpstr.c_str();
+                tmpstr.clear();
+                Wchar_tToString(tmpstr, pDirectinfo->fileEntry[i].filepath);
+                tmpstr = String_ToUtf8(tmpstr);
+                j["win_user_driectinfo_filePath"] = tmpstr.c_str();
+                j["win_user_driectinfo_fileSize"] = to_string(pDirectinfo->fileEntry[i].filesize).c_str();
+                vec_task_string.emplace_back(j.dump());
+            }
+            OutputDebugString(L"[User] GetDirectoryFile Enum Success");
+            std::cout << "[User] GetDirectoryFile Enum Success" << std::endl;
+        }
+        break;
+        case UF_FILE_INFO:
+        {
+            if (_access(sData.c_str(), 0) != 0)
+                break;
+            if (false == SingletonUFile::instance()->uf_GetFileInfo((char*)sData.c_str(), ptr_Getbuffer))
+                break;
+
+            const PUFileInfo pFileinfo = (PUFileInfo)ptr_Getbuffer;
+            if (!pFileinfo)
+                break;
+
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pFileinfo->cFileName);
+            tmpstr = String_ToUtf8(tmpstr);
+            j["win_user_fileinfo_filename"] = tmpstr.c_str();
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pFileinfo->dwFileAttributes);
+            tmpstr = String_ToUtf8(tmpstr);
+            j["win_user_fileinfo_dwFileAttributes"] = tmpstr.c_str();
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pFileinfo->dwFileAttributesHide);
+            tmpstr = String_ToUtf8(tmpstr);
+            j["win_user_fileinfo_dwFileAttributesHide"] = tmpstr.c_str();
+            j["win_user_fileinfo_md5"] = pFileinfo->md5;
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pFileinfo->m_seFileSizeof);
+            j["win_user_fileinfo_m_seFileSizeof"] = tmpstr.c_str();
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pFileinfo->seFileAccess);
+            tmpstr = String_ToUtf8(tmpstr);
+            j["win_user_fileinfo_seFileAccess"] = tmpstr.c_str();
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pFileinfo->seFileCreate);
+            j["win_user_fileinfo_seFileCreate"] = tmpstr.c_str();
+            tmpstr.clear();
+            Wchar_tToString(tmpstr, pFileinfo->seFileModify);
+            j["win_user_fileinfo_seFileModify"] = tmpstr.c_str();
+            vec_task_string.emplace_back(j.dump());
+            OutputDebugString(L"[User] GetFIleInfo Success");
+            std::cout << "[User] GetFIleInfo Success" << std::endl;
+        }
+        break;
+        case UF_ROOTKIT_ID:
+        {
+        }
+        break;
+        default:
+            break;
+        }
     }
     catch (const std::exception&)
     {
-
     }
 
     if (ptr_Getbuffer)
