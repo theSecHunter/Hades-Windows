@@ -22,7 +22,7 @@ public:
 	// Sub Data Handle
 	void KerSublthreadProc();
 	void EtwSublthreadProc();
-	bool PTaskHandlerNotify(const DWORD taskid);
+	bool PTaskHandlerNotify(const DWORD taskid, const std::string& sData);
 
 	// Set ExitEvent
 	void SetExitSvcEvent(HANDLE& hexitEvent);
@@ -44,9 +44,16 @@ typedef struct _THREADPA_PARAMETER_NODE
 {
 	int nTaskId;
 	DataHandler* pDataHandler;
+
+	// json or other
+	std::string sData;
+
 	void clear()
 	{
 		nTaskId = 0;
 		pDataHandler = nullptr;
+
+		sData = "";
 	}
 }THREADPA_PARAMETER_NODE, * PTHREADPA_PARAMETER_NODE;
+

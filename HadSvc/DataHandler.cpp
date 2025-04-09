@@ -474,7 +474,7 @@ void DataHandler::SetExitSvcEvent(HANDLE & hexitEvent)
 }
 
 // Hboat Server Task Handler
-bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
+bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sData)
 {
     std::vector<std::string> task_array_data;
     task_array_data.clear();
@@ -502,7 +502,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid)
     else if ((taskid >= 100) && (taskid < 200))
         SingletonKerMon::instance()->kMsg_taskPush(taskid, task_array_data);
     else if ((taskid >= 200) && (taskid < 300))
-        SingletonUMon::instance()->uMsg_taskPush(taskid, task_array_data);
+        SingletonUMon::instance()->uMsg_taskPush(taskid, sData, task_array_data);
     else
     {
         switch (taskid)
@@ -769,20 +769,21 @@ static DWORD WINAPI PTaskHandlerThread(LPVOID lpThreadParameter)
 {
     try
     {
-        THREADPA_PARAMETER_NODE* pthreadPara = reinterpret_cast<THREADPA_PARAMETER_NODE*>(lpThreadParameter);
-        if (!pthreadPara || (pthreadPara == nullptr))
+        THREADPA_PARAMETER_NODE* pThreadPara = nullptr;
+        pThreadPara = reinterpret_cast<THREADPA_PARAMETER_NODE*>(lpThreadParameter);
+        if (!pThreadPara || (pThreadPara == nullptr))
             return 0;
         if (g_shutdown)
         {
-            delete pthreadPara;
+            delete pThreadPara;
             return 0;
         }
-        const int taskid = pthreadPara->nTaskId;
-        if (pthreadPara->pDataHandler)
-            pthreadPara->pDataHandler->PTaskHandlerNotify(taskid);
+        const int taskid = pThreadPara->nTaskId;
+        const std::string sData = pThreadPara->sData.c_str();
+        if (pThreadPara->pDataHandler)
+            pThreadPara->pDataHandler->PTaskHandlerNotify(taskid, sData);
 
-        delete pthreadPara;
-        pthreadPara = nullptr;
+        delete pThreadPara;
         return 0;
     }
     catch (const std::exception&)
@@ -809,10 +810,11 @@ void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_
         if (pThreadPara) {
             pThreadPara->clear();
             // 反序列化成Task
-            protocol::Task pTask;
-            pTask.ParseFromString((char*)(data.get() + 0x4));
-            pThreadPara->nTaskId = pTask.data_type();
+            protocol::Task task;
+            task.ParseFromString((char*)(data.get() + 0x4));
+            pThreadPara->nTaskId = task.data_type();
             pThreadPara->pDataHandler = this;
+            pThreadPara->sData = task.data().c_str();
             QueueUserWorkItem(PTaskHandlerThread, (LPVOID)pThreadPara, WT_EXECUTEDEFAULT);
         }
     }
