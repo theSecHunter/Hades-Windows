@@ -42,9 +42,9 @@ inline void uMsgInterface::uMsg_SetTopicQueueLockPtr() { SingletonUEtw::instance
 inline void uMsgInterface::uMsg_SetTopicEventPtr() { SingletonUEtw::instance()->uf_setqueueeventptr(g_jobAvailableEvent); }
 
 // 设置消费者指针(被消费者调用)
-static std::queue<std::shared_ptr<USubNode>>*       g_SendQueueData_Ptr = NULL;
-static std::mutex*                                  g_SendQueueCs_Ptr = NULL;
-static HANDLE                                       g_SendQueue_Event = NULL;
+static std::queue<std::shared_ptr<USubNode>>*       g_SendQueueData_Ptr = nullptr;
+static std::mutex*                                  g_SendQueueCs_Ptr = nullptr;
+static HANDLE                                       g_SendQueue_Event = nullptr;
 void uMsgInterface::uMsg_SetSubQueuePtr(std::queue<std::shared_ptr<USubNode>>& qptr) { g_SendQueueData_Ptr = &qptr; }
 void uMsgInterface::uMsg_SetSubQueueLockPtr(std::mutex& qptrcs) { g_SendQueueCs_Ptr = &qptrcs; }
 void uMsgInterface::uMsg_SetSubEventPtr(HANDLE& eventptr) { g_SendQueue_Event = eventptr; }
@@ -66,7 +66,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
     try
     {
         json_t j;
-        std::string tmpstr = "";
+        std::string sTmpString = "";
         UPubNode* pEtwTaskData = nullptr;
 
         for (;;)
@@ -74,9 +74,10 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             if (g_RecvQueueData.empty())
                 return;
 
+            pEtwTaskData = nullptr;
             pEtwTaskData = g_RecvQueueData.front();
             g_RecvQueueData.pop();
-            if (!pEtwTaskData)
+            if (pEtwTaskData == nullptr)
                 return;
 
             const int taskid = pEtwTaskData->taskid;
@@ -87,11 +88,11 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 const UEtwNetWork* pEtwNet = (UEtwNetWork*)&(pEtwTaskData->data[0]);
                 if (!pEtwNet)
                     break;
-                Wchar_tToString(tmpstr, pEtwNet->EventName);
-                if (!tmpstr.empty())
+                Wchar_tToString(sTmpString, pEtwNet->EventName);
+                if (!sTmpString.empty())
                 {
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_network_eventname"] = tmpstr.c_str();
+                    sTmpString = String_ToUtf8(sTmpString);
+                    j["win_network_eventname"] = sTmpString.c_str();
                 }
                 else
                 {
@@ -111,11 +112,11 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 const UEtwProcessInfo* pEtwProcess = (UEtwProcessInfo*)&(pEtwTaskData->data[0]);
                 if (!pEtwProcess)
                     break;
-                Wchar_tToString(tmpstr, pEtwProcess->EventName);
-                if (!tmpstr.empty())
+                Wchar_tToString(sTmpString, pEtwProcess->EventName);
+                if (!sTmpString.empty())
                 {
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_etw_processinfo_eventname"] = tmpstr.c_str();
+                    sTmpString = String_ToUtf8(sTmpString);
+                    j["win_etw_processinfo_eventname"] = sTmpString.c_str();
                 }
                 else
                 {
@@ -124,11 +125,11 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 j["win_etw_processinfo_parentid"] = to_string(pEtwProcess->parentId);
                 j["win_etw_processinfo_pid"] = to_string(pEtwProcess->processId);
                 j["win_etw_processinfo_status"] = to_string(pEtwProcess->processStatus);
-                Wchar_tToString(tmpstr, pEtwProcess->processPath);
-                if (!tmpstr.empty())
+                Wchar_tToString(sTmpString, pEtwProcess->processPath);
+                if (!sTmpString.empty())
                 {
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_etw_processinfo_path"] = tmpstr.c_str();
+                    sTmpString = String_ToUtf8(sTmpString);
+                    j["win_etw_processinfo_path"] = sTmpString.c_str();
                 }
                 else
                     j["win_etw_processinfo_path"] = "";
@@ -139,11 +140,11 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 const UEtwThreadInfo* pEtwThread = (UEtwThreadInfo*)&(pEtwTaskData->data[0]);
                 if (!pEtwThread)
                     break;
-                Wchar_tToString(tmpstr, pEtwThread->EventName);
-                if (!tmpstr.empty())
+                Wchar_tToString(sTmpString, pEtwThread->EventName);
+                if (!sTmpString.empty())
                 {
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_etw_threadinfo_eventname"] = tmpstr.c_str();
+                    sTmpString = String_ToUtf8(sTmpString);
+                    j["win_etw_threadinfo_eventname"] = sTmpString.c_str();
                 }
                 else
                 {
@@ -160,11 +161,11 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 const UEtwImageInfo* pEtwProcMod = (UEtwImageInfo*)&(pEtwTaskData->data[0]);
                 if (!pEtwProcMod)
                     break;
-                Wchar_tToString(tmpstr, pEtwProcMod->EventName);
-                if (!tmpstr.empty())
+                Wchar_tToString(sTmpString, pEtwProcMod->EventName);
+                if (!sTmpString.empty())
                 {
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_etw_imageinfo_eventname"] = tmpstr.c_str();
+                    sTmpString = String_ToUtf8(sTmpString);
+                    j["win_etw_imageinfo_eventname"] = sTmpString.c_str();
                 }
                 else
                 {
@@ -178,11 +179,11 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 j["win_etw_imageinfo_imageChecksum"] = to_string(pEtwProcMod->ImageChecksum);
                 j["win_etw_imageinfo_timeDateStamp"] = to_string(123);
                 j["win_etw_imageinfo_defaultBase"] = to_string(pEtwProcMod->DefaultBase);
-                Wchar_tToString(tmpstr, pEtwProcMod->FileName);
-                if (tmpstr.empty())
+                Wchar_tToString(sTmpString, pEtwProcMod->FileName);
+                if (sTmpString.empty())
                     break;
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_etw_imageinfo_fileName"] = tmpstr.c_str();
+                sTmpString = String_ToUtf8(sTmpString);
+                j["win_etw_imageinfo_fileName"] = sTmpString.c_str();
             }
             break;
             case UF_ETW_REGISTERTAB:
@@ -190,11 +191,11 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 const UEtwRegisterTabInfo* pEtwRegtab = (UEtwRegisterTabInfo*)&(pEtwTaskData->data[0]);
                 if (!pEtwRegtab)
                     break;
-                Wchar_tToString(tmpstr, pEtwRegtab->EventName);
-                if (!tmpstr.empty())
+                Wchar_tToString(sTmpString, pEtwRegtab->EventName);
+                if (!sTmpString.empty())
                 {
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_etw_regtab_eventname"] = tmpstr.c_str();
+                    sTmpString = String_ToUtf8(sTmpString);
+                    j["win_etw_regtab_eventname"] = sTmpString.c_str();
                 }
                 else
                 {
@@ -203,9 +204,9 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 j["win_etw_regtab_status"] = to_string(pEtwRegtab->Status);
                 j["win_etw_regtab_index"] = to_string(pEtwRegtab->Index);
                 j["win_etw_regtab_keyHandle"] = to_string(pEtwRegtab->KeyHandle);
-                Wchar_tToString(tmpstr, pEtwRegtab->KeyName);
-                tmpstr = String_ToUtf8(tmpstr);
-                j["win_etw_regtab_keyName"] = tmpstr.c_str();
+                Wchar_tToString(sTmpString, pEtwRegtab->KeyName);
+                sTmpString = String_ToUtf8(sTmpString);
+                j["win_etw_regtab_keyName"] = sTmpString.c_str();
             }
             break;
             case UF_ETW_FILEIO:
@@ -213,11 +214,11 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 const UEtwFileIoTabInfo* pEtwFileIo = (UEtwFileIoTabInfo*)&(pEtwTaskData->data[0]);
                 if (!pEtwFileIo)
                     break;
-                Wchar_tToString(tmpstr, pEtwFileIo->EventName);
-                if (!tmpstr.empty())
+                Wchar_tToString(sTmpString, pEtwFileIo->EventName);
+                if (!sTmpString.empty())
                 {
-                    tmpstr = String_ToUtf8(tmpstr);
-                    j["win_etw_fileio_eventname"] = tmpstr.c_str();
+                    sTmpString = String_ToUtf8(sTmpString);
+                    j["win_etw_fileio_eventname"] = sTmpString.c_str();
                 }
                 else
                 {
@@ -228,11 +229,11 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 int lens = lstrlenW(pEtwFileIo->FilePath);
                 if (lens > 0)
                 {
-                    Wchar_tToString(tmpstr, pEtwFileIo->FilePath);
-                    if (!tmpstr.empty())
+                    Wchar_tToString(sTmpString, pEtwFileIo->FilePath);
+                    if (!sTmpString.empty())
                     {
-                        tmpstr = String_ToUtf8(tmpstr);
-                        j["win_etw_fileio_FilePath"] = tmpstr.c_str();
+                        sTmpString = String_ToUtf8(sTmpString);
+                        j["win_etw_fileio_FilePath"] = sTmpString.c_str();
                     }
                     else
                     {
@@ -243,11 +244,11 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 lens = lstrlenW(pEtwFileIo->FileName);
                 if (lens > 0)
                 {
-                    Wchar_tToString(tmpstr, pEtwFileIo->FileName);
-                    if (!tmpstr.empty())
+                    Wchar_tToString(sTmpString, pEtwFileIo->FileName);
+                    if (!sTmpString.empty())
                     {
-                        tmpstr = String_ToUtf8(tmpstr);
-                        j["win_etw_fileio_FileName"] = tmpstr.c_str();
+                        sTmpString = String_ToUtf8(sTmpString);
+                        j["win_etw_fileio_FileName"] = sTmpString.c_str();
                     }
                     else
                     {
@@ -283,18 +284,18 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
             else
             {
                 j.clear();
-                tmpstr.clear();
+                sTmpString.clear();
                 continue;
             }
 
 
-            if (!g_SendQueueData_Ptr && !g_SendQueueCs_Ptr && !g_SendQueue_Event)
+            if ((nullptr == g_SendQueueData_Ptr) || (nullptr == g_SendQueueCs_Ptr) || (nullptr == g_SendQueue_Event))
             {
                 OutputDebugString(L"没设置订阅指针Pip");
                 return;
             }
 
-            const std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
+            std::shared_ptr<USubNode> sub = std::make_shared<USubNode>();
             if (!sub || !data)
                 return;
 
@@ -305,8 +306,9 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 g_SendQueueData_Ptr->push(sub);
                 SetEvent(g_SendQueue_Event);
             }
+            
             j.clear();
-            tmpstr.clear();
+            sTmpString.clear();
             data = nullptr;
         }
     }
@@ -349,8 +351,8 @@ static unsigned WINAPI uMsg_taskPopThread(void* pData)
 void uMsgInterface::uMsg_taskPopInit()
 {
     size_t i = 0;
-    HANDLE hThread;
-    unsigned threadId;
+    HANDLE hThread = nullptr;
+    unsigned threadId = 0;
 
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);
@@ -362,10 +364,8 @@ void uMsgInterface::uMsg_taskPopInit()
     for (i = 0; i < threadCount; i++)
     {
         hThread =(HANDLE)_beginthreadex(0, 0, uMsg_taskPopThread, (LPVOID)this, 0, &threadId);
-        if (hThread != 0 && hThread != (HANDLE)(-1L))
-        {
+        if (hThread != nullptr)
             m_topicthread.push_back(hThread);
-        }
     }
 }
 
