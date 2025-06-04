@@ -1353,14 +1353,14 @@ static DWORD WINAPI tracDispaththread(LPVOID param)
     g_ProcessTracehandle = OpenTrace(&trace);
     if (g_ProcessTracehandle == (TRACEHANDLE)INVALID_HANDLE_VALUE)
         return 0;
-    OutputDebugString(L"[Etw Trace] ProcessTrace Start");
+    OutputDebugString(L"[Etw Trace] KernelMod ProcessTrace Start");
     ProcessTrace(&g_ProcessTracehandle, 1, 0, 0);
     CloseTrace(g_ProcessTracehandle);
     return 0;
 }
 bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
 {
-    OutputDebugString(L"[Etw Trace]  KernelMod uf_RegisterTrace Entry");
+    OutputDebugString(L"[Etw Trace] KernelMod uf_RegisterTrace Entry");
 
     ULONG status = 0;
     TRACEHANDLE hSession;
@@ -1449,7 +1449,7 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
     g_thrhandle.push_back(hThread);
     g_th.Unlock();
 
-    OutputDebugString(L"[Etw Trace] Register TracGuid Success");
+    OutputDebugString(L"[Etw Trace] KernelMod Register TracGuid Success");
     return true;
 }
 
@@ -1553,7 +1553,7 @@ bool UEtw::uf_RegisterTraceFile()
 bool UEtw::uf_init()
 {
     // EVENT_TRACE_FLAG_REGISTRY
-    OutputDebugString(L"[Etw Trace] ETW Init KernelMod");
+    OutputDebugString(L"[Etw Trace] KernelMod ETW Init.");
     bool test = false;
     if (!test && !uf_RegisterTrace(
         EVENT_TRACE_FLAG_NETWORK_TCPIP | \
@@ -1625,7 +1625,7 @@ bool UEtw::uf_close()
 // [Guid File Logger]
 bool UEtw::uf_init(const bool flag)
 {
-    OutputDebugString(L"[Etw Trace] ETW Init UserMod");
+    OutputDebugString(L"[Etw Trace] UserMod ETW Init.");
     if (!uf_RegisterTraceFile())
         return 0;
     return 1;
