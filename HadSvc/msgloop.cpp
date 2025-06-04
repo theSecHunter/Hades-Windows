@@ -99,7 +99,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				const bool bkMStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
 				const DWORD dwId2 = bkMStatus ? 0x24 : 0x25;
 				::PostMessage(m_ControlHwnd, WM_GETMONITORSTATUS, dwId2, NULL);
-			} while (false);				
+			} while (false);
 		}
 	}
 	catch (const std::exception&)
@@ -133,7 +133,7 @@ static DWORD WINAPI pInitWinReg(LPVOID lpThreadParameter)
 	);
 	if (!hWnd)
 	{
-		OutputDebugString(L"HadesSvc窗口创建失败");
+		OutputDebugString(L"[HadesSvc] HadesSvc窗口创建失败");
 		return 0;
 	}
 	ShowWindow(hWnd, SW_HIDE);

@@ -71,7 +71,7 @@ HlprMiniPortIpc::~HlprMiniPortIpc()
 bool HlprMiniPortIpc::SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, unsigned int processnamelen) {
 	if (FALSE == g_InitPortStatus)
 		return false;
-	
+
 	DWORD bytesReturned = 0;
 	DWORD hResult = 0;
 	unsigned int total = sizeof(COMMAND_MESSAGE) + buflen + 1;
@@ -129,7 +129,7 @@ void HlprMiniPortIpc::StartMiniPortWaitConnectWork()
 				std::shared_ptr<COMMAND_MESSAGE> pCommandMsg = std::make_shared<COMMAND_MESSAGE>();
 				if (nullptr == pCommandMsg)
 					break;
-					
+
 				RtlSecureZeroMemory(&pCommandMsg->Overlapped, sizeof(OVERLAPPED));
 				Status = FilterGetMessage(
 					g_hPort,
@@ -157,7 +157,7 @@ void HlprMiniPortIpc::StartMiniPortWaitConnectWork()
 			g_InitPortStatus = true;
 			OutputDebugString(L"Connect sysmondriver miniPort Success");
 			break;
-		}		
+		}
 		else
 			Sleep(2000);
 	} while (TRUE);
@@ -190,7 +190,7 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		else
 			break;
 		if (FALSE == nRet) {
-			OutputDebugString(L"GetQueuedCompletionStatus sysmondriver miniPort Error");
+			OutputDebugString(L"[HadesSvc] GetQueuedCompletionStatus sysmondriver miniPort Error");
 			if (!g_comPletion)
 				break;
 			continue;
@@ -206,8 +206,12 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		{
 		case MIN_COMMAND::IPS_PROCESSSTART:
 		{
-			const PROCESSINFO* const processinfo = (PROCESSINFO*)notification->Contents;
+			PROCESSINFO* processinfo = nullptr;
+			processinfo = (PROCESSINFO*)notification->Contents;
+			if (processinfo == nullptr)
+				break;
 			OutputDebugString(processinfo->commandLine);
+
 			// 启动界面情况发送到界面等待用户操作
 			socketMsg socketPip;
 			if (false == socketPip.sendDlgMsg(IPS_PROCESSSTART, (char*)processinfo, sizeof(PROCESSINFO)))
@@ -215,12 +219,12 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 			replyMessage.Reply.SafeToOpen = socketPip.recv();
 		}
 		break;
-		case MIN_COMMAND::IPS_REGISTERTAB: 
+		case MIN_COMMAND::IPS_REGISTERTAB:
 		{
 			// 测试默认
 			const REGISTERINFO* const registerinfo = (REGISTERINFO*)notification->Contents;
 			const bool nReplay = FindRegisterRuleHit(registerinfo);
-			if(nReplay)
+			if (nReplay)
 				replyMessage.Reply.SafeToOpen = 2;
 			else
 				replyMessage.Reply.SafeToOpen = 1;
@@ -229,7 +233,7 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		case MIN_COMMAND::IPS_IMAGEDLL: break;
 		}
 
-		if (!g_hPort)
+		if (g_hPort == nullptr)
 			break;
 		replyMessage.ReplyHeader.Status = 0;
 		replyMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;
