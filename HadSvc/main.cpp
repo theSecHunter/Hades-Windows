@@ -76,16 +76,16 @@ int main(int argc, char* argv[])
 	if (hExit)
 		return 0;
 
-#ifndef _TEST
-	// Check HadesAgent Process
-#ifdef _X64
-	if (!IsProcessExist(L"HadesAgent64.exe"))
-#else
-	if (!IsProcessExist(L"HadesAgent.exe"))
-#endif
-		return 0;
-	CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
-#endif
+//#ifndef _TEST
+//	// Check HadesAgent Process
+//#ifdef _X64
+//	if (!IsProcessExist(L"HadesAgent64.exe"))
+//#else
+//	if (!IsProcessExist(L"HadesAgent.exe"))
+//#endif
+//		return 0;
+//	CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
+//#endif
 	
 	// HadesSvc Exit Event - HadesSvc
 	g_SvcExitEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
@@ -142,6 +142,8 @@ int main(int argc, char* argv[])
 	if (true == gpip_send && true == etw_mon) {
 		SingletonUMon::instance()->uMsg_EtwInit();
 	}
+
+	SingletonUMon::instance()->uMsg_EtwInit();
 
 //@ NetWork Test
 #ifdef _TEST

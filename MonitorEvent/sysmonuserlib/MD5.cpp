@@ -309,24 +309,24 @@ MD5VAL md5File(FILE * fpin)
 }
 
 /* 获得文件的MD5值 */
-char * md5FileValue(char * fname)
+void md5FileValue(char* fname, char* md5)
 {
+	if (md5 == nullptr)
+		return;
+
 	try
 	{
-		char cMd5[1204] = { 0, };
 		MD5VAL val;
 		FILE* fp = fopen(fname, "rb");
 		if (fp)
 		{
 			val = md5File(fp);
-			sprintf(cMd5, "%08x%08x%08x%08x", conv(val.a), conv(val.b), conv(val.c), conv(val.d));
+			sprintf(md5, "%08x%08x%08x%08x", conv(val.a), conv(val.b), conv(val.c), conv(val.d));
 			fclose(fp);
 		}
-		return cMd5;
 	}
 	catch (...)
 	{
-		return nullptr;
 	}
 }
 

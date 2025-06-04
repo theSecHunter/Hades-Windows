@@ -1,4 +1,7 @@
 #include <winsock2.h>
+#include <IPTypes.h>
+#include <iphlpapi.h>
+#include <WS2tcpip.h>
 #include <Windows.h>
 #include <memory>
 #include <Psapi.h>
@@ -13,12 +16,13 @@
 #include <wchar.h>
 #include <direct.h>
 #include <memory>
+#include <sstream>
 
 #include "sync.h"
 #include "uetw.h"
 
 #pragma comment(lib, "Tdh.lib")
-#pragma comment(lib,"psapi.lib")
+#pragma comment(lib, "psapi.lib")
 #pragma comment(lib, "Ws2_32.lib")
 using namespace std;
 
@@ -86,15 +90,15 @@ const char* newGUID()
     try
     {
         GUID guid;
-        char buf[64] = { 0. };
+        char cBuf[64] = { 0, };
         if (S_OK == ::CoCreateGuid(&guid))
         {
-            _snprintf(buf, sizeof(buf), "{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
+            _snprintf(cBuf, sizeof(cBuf), "{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
                 guid.Data1, guid.Data2, guid.Data3,
                 guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
                 guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
         }
-        return buf;
+        return cBuf;
     }
     catch (const std::exception&)
     {
@@ -179,67 +183,312 @@ DWORD uf_GetNetWrokEventStr(wstring& propName)
     return Code;
 }
 
+std::wstring SockAddrToWString(const SOCKADDR_STORAGE* addr) {
+    char ipStr[INET6_ADDRSTRLEN] = { 0 };
+    std::wstring result;
+
+    if (addr->ss_family == AF_INET) {
+        inet_ntop(AF_INET, &((const SOCKADDR_IN*)addr)->sin_addr,
+            ipStr, sizeof(ipStr));
+        result = std::wstring(ipStr, ipStr + strlen(ipStr));
+    }
+    else if (addr->ss_family == AF_INET6) {
+        inet_ntop(AF_INET6, &((const SOCKADDR_IN6*)addr)->sin6_addr,
+            ipStr, sizeof(ipStr));
+        result = std::wstring(ipStr, ipStr + strlen(ipStr));
+    }
+    else if (addr->ss_family == 0x31) {  // AF_NETBIOS
+        PIP_ADAPTER_ADDRESSES adapterInfo = nullptr;
+        ULONG bufLen = 0;
+        DWORD ret = GetAdaptersAddresses(AF_UNSPEC, 0, nullptr, nullptr, &bufLen);
+        if (ret == ERROR_BUFFER_OVERFLOW) {
+            adapterInfo = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(malloc(bufLen));
+            ret = GetAdaptersAddresses(AF_UNSPEC, 0, nullptr, adapterInfo, &bufLen);
+        }
+
+        if (ret == ERROR_SUCCESS) {
+            for (auto adapter = adapterInfo; adapter; adapter = adapter->Next) {
+                if (adapter->IfIndex == reinterpret_cast<const SOCKADDR_IN*>(addr)->sin_addr.S_un.S_addr) {
+                    wchar_t wbuf[256];
+                    swprintf_s(wbuf, L"[NetBIOS] %s", adapter->FriendlyName);
+                    result = wbuf;
+                    break;
+                }
+            }
+        }
+
+        if (adapterInfo) free(adapterInfo);
+    }
+    else {
+        wchar_t wbuf[64];
+        swprintf_s(wbuf, L"Unknown family: 0x%X", addr->ss_family);
+        result = wbuf;
+    }
+    return result;
+}
+
 // [Guid File Logger] File Log Event
-void WINAPI ProcessDnsEvent(PEVENT_RECORD rec)
-{
-    try
-    {
+void WINAPI ProcessDnsEvent(PEVENT_RECORD rec) {
+    if (rec == nullptr)
+        return;
+    try {
         ULONG bufferSize = 0;
         TdhGetEventInformation(rec, 0, nullptr, nullptr, &bufferSize);
-
         auto buffer = std::make_unique<BYTE[]>(bufferSize);
         auto info = reinterpret_cast<TRACE_EVENT_INFO*>(buffer.get());
 
         if (TdhGetEventInformation(rec, 0, nullptr, info, &bufferSize) != ERROR_SUCCESS)
             return;
 
-        std::wstring queryName = L"";
-        USHORT queryType = 0;
+        // 获取进程信息
+        ULONG processId = rec->EventHeader.ProcessId;
+        wchar_t processPath[MAX_PATH] = L"";
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId);
+        if (hProcess) {
+            DWORD size = MAX_PATH;
+            QueryFullProcessImageNameW(hProcess, 0, processPath, &size);
+            CloseHandle(hProcess);
+        }
+        else {
+            wcscpy_s(processPath, L"Unknown");
+        }
 
+        // 初始化 DNS 信息结构
+        _UEwtDns DnsInfo;
+        DnsInfo.clear();
+        DnsInfo.processId = processId;
+        DnsInfo.processPath = processPath;
+
+        // 提取事件属性
         for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
             PROPERTY_DATA_DESCRIPTOR desc;
-            DWORD size = 0;
-            wchar_t propName[128] = { 0, };
+            wchar_t propName[128] = { 0 };
 
             if (info->EventPropertyInfoArray[i].NameOffset) {
                 wcscpy_s(propName, reinterpret_cast<wchar_t*>(
                     reinterpret_cast<BYTE*>(info) + info->EventPropertyInfoArray[i].NameOffset));
 
-                if (wcscmp(propName, L"QueryName") == 0) {
-                    desc.PropertyName = reinterpret_cast<ULONGLONG>(propName);
-                    desc.ArrayIndex = ULONG_MAX;
+                DnsInfo.EventName = propName;
+                desc.PropertyName = reinterpret_cast<ULONGLONG>(propName);
+                desc.ArrayIndex = ULONG_MAX;
 
-                    TdhGetPropertySize(rec, 0, nullptr, 1, &desc, &size);
-                    queryName.resize(size / sizeof(wchar_t));
-                    TdhGetProperty(rec, 0, nullptr, 1, &desc, size, reinterpret_cast<PBYTE>(&queryName[0]));
+                // 通用数值属性处理
+                auto SetNumericField = [&](auto& field, ULONG size) {
+                    ULONG value;
+                    if (TdhGetProperty(rec, 0, nullptr, 1, &desc, size, (PBYTE)&value) == ERROR_SUCCESS) {
+                        field = std::to_wstring(value);
+                    }
+                };
+
+                // 字符串属性处理
+                auto SetStringField = [&](std::wstring& field) {
+                    ULONG size = 0;
+                    if (TdhGetPropertySize(rec, 0, nullptr, 1, &desc, &size) == ERROR_SUCCESS) {
+                        if (size > 0) {
+                            auto buffer = std::make_unique<BYTE[]>(size);
+                            if (TdhGetProperty(rec, 0, nullptr, 1, &desc, size, buffer.get()) == ERROR_SUCCESS) {
+                                if (info->EventPropertyInfoArray[i].nonStructType.InType == TDH_INTYPE_UNICODESTRING) {
+                                    field = std::wstring(reinterpret_cast<wchar_t*>(buffer.get()), size / sizeof(wchar_t));
+                                }
+                                else {
+                                    // 处理 ANSI 字符串
+                                    std::string ansiStr(reinterpret_cast<char*>(buffer.get()), size);
+                                    field = std::wstring(ansiStr.begin(), ansiStr.end());
+                                }
+                            }
+                        }
+                    }
+                };
+
+                // 地址属性处理
+                auto SetAddressField = [&](std::wstring& field) {
+                    SOCKADDR_STORAGE addr = { 0 };
+                    if (TdhGetProperty(rec, 0, nullptr, 1, &desc, sizeof(addr), (PBYTE)&addr) == ERROR_SUCCESS) {
+                        field = SockAddrToWString(&addr);
+                    }
+                };
+
+                // 地址数组处理
+                auto SetAddressArrayField = [&](std::wstring& field) {
+                    ULONG size = 0;
+                    if (TdhGetPropertySize(rec, 0, nullptr, 1, &desc, &size) == ERROR_SUCCESS) {
+                        if (size > 0) {
+                            auto buffer = std::make_unique<BYTE[]>(size);
+                            if (TdhGetProperty(rec, 0, nullptr, 1, &desc, size, buffer.get()) == ERROR_SUCCESS) {
+                                DWORD elementCount = size / sizeof(SOCKADDR_STORAGE);
+                                auto servers = reinterpret_cast<SOCKADDR_STORAGE*>(buffer.get());
+
+                                std::wstringstream ss;
+                                for (DWORD j = 0; j < elementCount; j++) {
+                                    if (j > 0) ss << L", ";
+                                    ss << SockAddrToWString(&servers[j]);
+                                }
+                                field = ss.str();
+                            }
+                        }
+                    }
+                };
+
+                // 根据属性名设置字段
+                if (wcscmp(propName, L"QueryName") == 0 || wcscmp(propName, L"Name") == 0) {
+                    SetStringField(DnsInfo.QueryName);
                 }
                 else if (wcscmp(propName, L"QueryType") == 0) {
-                    TdhGetProperty(rec, 0, nullptr, 1, &desc, sizeof(queryType), (PBYTE)&queryType);
+                    SetNumericField(DnsInfo.QueryType, sizeof(USHORT));
+                }
+                else if (wcscmp(propName, L"QueryOptions") == 0) {
+                    SetNumericField(DnsInfo.QueryOptions, sizeof(ULONG));
+                }
+                else if (wcscmp(propName, L"IsNetworkQuery") == 0) {
+                    SetNumericField(DnsInfo.IsNetworkQuery, sizeof(BOOLEAN));
+                }
+                else if (wcscmp(propName, L"NetworkQueryIndex") == 0) {
+                    SetNumericField(DnsInfo.NetworkQueryIndex, sizeof(ULONG));
+                }
+                else if (wcscmp(propName, L"InterfaceIndex") == 0) {
+                    SetNumericField(DnsInfo.InterfaceIndex, sizeof(ULONG));
+                }
+                else if (wcscmp(propName, L"IsAsyncQuery") == 0) {
+                    SetNumericField(DnsInfo.IsAsyncQuery, sizeof(BOOLEAN));
+                }
+                else if (wcscmp(propName, L"QueryStatus") == 0) {
+                    SetNumericField(DnsInfo.QueryStatus, sizeof(ULONG));
+                }
+                else if (wcscmp(propName, L"QueryResults") == 0) {
+                    SetStringField(DnsInfo.QueryResults);
+                }
+                else if (wcscmp(propName, L"IsParallelNetworkQuery") == 0) {
+                    SetNumericField(DnsInfo.IsParallelNetworkQuery, sizeof(BOOLEAN));
+                }
+                else if (wcscmp(propName, L"NetworkIndex") == 0) {
+                    SetNumericField(DnsInfo.NetworkIndex, sizeof(ULONG));
+                }
+                else if (wcscmp(propName, L"InterfaceCount") == 0) {
+                    SetNumericField(DnsInfo.InterfaceCount, sizeof(ULONG));
+                }
+                else if (wcscmp(propName, L"AdapterName") == 0) {
+                    SetStringField(DnsInfo.AdapterName);
+                }
+                else if (wcscmp(propName, L"LocalAddress") == 0 || wcscmp(propName, L"Source") == 0) {
+                    SetAddressField(DnsInfo.LocalAddress);
+                }
+                else if (wcscmp(propName, L"DNSServerAddress") == 0) {
+                    SetAddressArrayField(DnsInfo.DNSServerAddress);
+                }
+                else if (wcscmp(propName, L"Status") == 0 || wcscmp(propName, L"Result") == 0) {
+                    SetNumericField(DnsInfo.Status, sizeof(ULONG));
+                }
+                else if (wcscmp(propName, L"Interface") == 0) {
+                    SetStringField(DnsInfo.Interface);
+                }
+                else if (wcscmp(propName, L"TotalServerCount") == 0) {
+                    SetNumericField(DnsInfo.TotalServerCount, sizeof(ULONG));
+                }
+                else if (wcscmp(propName, L"Index") == 0) {
+                    SetNumericField(DnsInfo.Index, sizeof(ULONG));
+                }
+                else if (wcscmp(propName, L"DynamicAddress") == 0) {
+                    SetNumericField(DnsInfo.DynamicAddress, sizeof(BOOLEAN));
+                }
+                else if (wcscmp(propName, L"AddressLength") == 0) {
+                    SetNumericField(DnsInfo.AddressLength, sizeof(ULONG));
+                }
+                else if (wcscmp(propName, L"Address") == 0) {
+                    SetAddressField(DnsInfo.Address);
+                }
+                else if (wcscmp(propName, L"Location") == 0) {
+                    SetStringField(DnsInfo.Location);
+                }
+                else if (wcscmp(propName, L"Context") == 0) {
+                    SetStringField(DnsInfo.Context);
                 }
             }
         }
 
-        std::wstring sOutPut = L"";
-        switch (rec->EventHeader.EventDescriptor.Id) {
-        case 3008: {
-            sOutPut = (L"[Etw Trace] DNS Query: " + queryName + L" Type: " + std::to_wstring(queryType)).c_str();
+        std::wstring sOutPut;
+        const USHORT eventId = rec->EventHeader.EventDescriptor.Id;
+        OutputDebugString((L"[Etw Trace] DnsEventID " + std::to_wstring(eventId) + L" DomainName " + DnsInfo.QueryName).c_str());
+        switch (eventId) {
+            // Windows 10 事件
+        case WIN10_QUERY_START:
+            sOutPut = L"[Etw Trace] Process: " + DnsInfo.processPath +
+                L" PID: " + std::to_wstring(DnsInfo.processId) +
+                L"\n  Query: " + DnsInfo.QueryName +
+                L" Type: " + DnsInfo.QueryType +
+                L"\n  Options: " + DnsInfo.QueryOptions +
+                L"\n  Network: " + DnsInfo.IsNetworkQuery +
+                L" Async: " + DnsInfo.IsAsyncQuery +
+                L"\n  Local: " + DnsInfo.LocalAddress;
             break;
-        }
-        case 3009: {
-            PROPERTY_DATA_DESCRIPTOR desc;
-            desc.PropertyName = reinterpret_cast<ULONGLONG>(L"Result");
-            desc.ArrayIndex = ULONG_MAX;
-            ULONG result;
-            TdhGetProperty(rec, 0, nullptr, 1, &desc, sizeof(result), (PBYTE)&result);
-            sOutPut = (L"[Etw Trace] DNS Response: " + queryName + L" Status: " + std::to_wstring(result)).c_str();
+
+        case WIN10_RESPONSE_RECV:
+            sOutPut = L"[Etw Trace] Process: " + DnsInfo.processPath +
+                L" PID: " + std::to_wstring(DnsInfo.processId) +
+                L"\n  Query: " + DnsInfo.QueryName +
+                L" Status: " + DnsInfo.Status +
+                L"\n  Results: " + DnsInfo.QueryResults +
+                L"\n  Servers: " + DnsInfo.DNSServerAddress;
             break;
+
+        case WIN10_CONFIG_CHANGE:
+            sOutPut = L"[Etw Trace] Process: " + DnsInfo.processPath +
+                L" PID: " + std::to_wstring(DnsInfo.processId) +
+                L"\n  Adapter: " + DnsInfo.AdapterName +
+                L" Index: " + DnsInfo.InterfaceIndex +
+                L" Count: " + DnsInfo.InterfaceCount;
+            break;
+
+            // Windows 7 事件
+        case WIN7_QUERY_START:
+            sOutPut = L"[Etw Trace] Process: " + DnsInfo.processPath +
+                L" PID: " + std::to_wstring(DnsInfo.processId) +
+                L"\n  Query: " + DnsInfo.QueryName +
+                L" Type: " + DnsInfo.QueryType +
+                L"\n  Context: " + DnsInfo.Context +
+                L"\n  Source: " + DnsInfo.LocalAddress;
+            break;
+
+        case WIN7_RESPONSE_RECV:
+            sOutPut = L"[Etw Trace] Process: " + DnsInfo.processPath +
+                L" PID: " + std::to_wstring(DnsInfo.processId) +
+                L"\n  Query: " + DnsInfo.QueryName +
+                L" Status: " + DnsInfo.Status +
+                L"\n  Location: " + DnsInfo.Location;
+            break;
+
+        case WIN7_CONFIG_CHANGE:
+            sOutPut = L"[Etw Trace] Process: " + DnsInfo.processPath +
+                L" PID: " + std::to_wstring(DnsInfo.processId) +
+                L"\n  Interface: " + DnsInfo.Interface +
+                L" Index: " + DnsInfo.Index +
+                L"\n  Address: " + DnsInfo.Address +
+                L" Length: " + DnsInfo.AddressLength;
+            break;
+
+        case WIN7_QUERY_FAILED:
+            sOutPut = L"[Etw Trace] Process: " + DnsInfo.processPath +
+                L" PID: " + std::to_wstring(DnsInfo.processId) +
+                L"\n  Query: " + DnsInfo.QueryName +
+                L" Status: " + DnsInfo.Status +
+                L"\n  Context: " + DnsInfo.Context;
+            break;
+
+        default:
+            sOutPut = L"[Etw Trace] ID: " + std::to_wstring(eventId) +
+                L" Process: " + DnsInfo.processPath +
+                L" PID: " + std::to_wstring(DnsInfo.processId) +
+                L"\n  Type: " + DnsInfo.EventName;
         }
-        }
-        if (!sOutPut.empty())
+
+        if (!sOutPut.empty()) {
             OutputDebugString(sOutPut.c_str());
+        }
     }
-    catch (const std::exception&)
-    {
+    catch (const std::exception& e) {
+        OutputDebugStringA(("[Etw Trace] DNS Event Error: " + std::string(e.what())).c_str());
+    }
+    catch (...) {
+        OutputDebugString(L"[Etw Trace] Unknown error in ProcessDnsEvent");
     }
 }
 void WINAPI ProcessRecord(PEVENT_RECORD EventRecord)
@@ -326,6 +575,128 @@ void WINAPI ProcessFileRecord(PEVENT_RECORD rec)
 }
 void WINAPI DispatchLogEventCallback(PEVENT_RECORD rec)
 {
+/*
+    用户模式可监控的 ETW 提供者列表
+    一、核心系统组件
+    进程与线程：
+    Microsoft-Windows-Kernel-Process (已使用)
+    Microsoft-Windows-Kernel-Thread (已使用)
+    文件系统：
+    Microsoft-Windows-Kernel-File (已使用)
+    Microsoft-Windows-Win32File - 文件操作事件
+    注册表：
+    Microsoft-Windows-Kernel-Registry (已使用)
+    网络：
+    DNS 客户端：
+    Microsoft-Windows-DNS-Client (已使用)
+    GUID: {1c95126e-7eea-49a9-a3fe-a378b03ddb4d}
+    HTTP 服务：
+    Microsoft-Windows-HttpService - HTTP.sys 服务
+    GUID: {dd5ef90a-6398-47a4-ad34-4dcecdef795f}
+    WebIO：
+    Microsoft-Windows-WebIO - 低级 HTTP 操作
+    GUID: {50b3e73c-9370-461d-bb9f-26f32d68887d}
+    WinINet：
+    Microsoft-Windows-WinINet - WinINet API 事件
+    GUID: {43d1a55c-76d6-4f7e-995c-64c711e5cafe}
+    WinHTTP：
+    Microsoft-Windows-WinHttp - WinHTTP API 事件
+    GUID: {7d44233d-3055-4b9c-ba64-0d47ca40a232}
+    SMB 客户端：
+    Microsoft-Windows-SMBClient - SMB 文件共享客户端
+    GUID: {988c59c5-0a1c-45b6-a555-0c62276e327d}
+
+    二、安全相关
+    认证：
+    Microsoft-Windows-Authentication - 用户认证事件
+    GUID: {c7bde5a8-0000-0000-0000-000000000000}
+    授权：
+    Microsoft-Windows-Authorization - 访问控制事件
+    GUID: {6b1d8c3f-0000-0000-0000-000000000000}
+    审计：
+    Microsoft-Windows-Security-Auditing - 安全审计事件
+    GUID: {54849625-5478-4994-a5ba-3e3b0328c30d}
+
+    三、应用程序框架
+    .NET：
+    Microsoft-Windows-DotNETRuntime - CLR 运行时事件
+    GUID: {e13c0d23-ccbc-4e12-931b-d9cc2eee27e4}
+    Microsoft-Windows-ASP.NET - ASP.NET 事件
+    GUID: {aff081fe-0247-4275-9c4e-021f3dc1da35}
+    COM/OLE：
+    Microsoft-Windows-COM - 组件对象模型
+    GUID: {b7e34f1b-6c83-4118-aaf5-be1e267b1a92}
+    Microsoft-Windows-OLE - OLE 自动化
+    GUID: {5c8bb950-959e-4309-8908-67961a1205d5}
+    RPC：
+    Microsoft-Windows-RPC - 远程过程调用
+    GUID: {6ad52b32-d609-4be9-ae07-ce8dae937e39}
+
+    四、多媒体
+    媒体基础：
+    Microsoft-Windows-MediaFoundation - 媒体播放
+    GUID: {f404b94e-27e0-4384-bfe8-1d8d390b0aa3}
+    音频：
+    Microsoft-Windows-Audio - 音频服务
+    GUID: {f0f3e8db-2e99-4c9a-a537-0c9b6b8a0e8b}
+
+    五、系统服务
+    服务控制：
+    Microsoft-Windows-Services - 服务启动/停止
+    GUID: {2a9c6dd1-5701-4e0e-9f4a-8a8e9e1a1a8a}
+    任务计划：
+    Microsoft-Windows-TaskScheduler - 计划任务
+    GUID: {de7b24ea-73c8-4a09-985d-5bdd3a6c5d2c}
+    设备管理：
+    Microsoft-Windows-DeviceManagement - 设备管理
+    GUID: {6ad52b32-d609-4be9-ae07-ce8dae937e39}
+
+    六、用户界面
+    输入：
+    Microsoft-Windows-UserInput - 键盘/鼠标输入
+    GUID: {f0f3e8db-2e99-4c9a-a537-0c9b6b8a0e8b}
+    窗口管理：
+    Microsoft-Windows-Win32k - 窗口管理器
+    GUID: {8c416c79-d49b-4f01-a467-e56d3b5e7f2f}
+
+    七、脚本引擎
+    PowerShell：
+    Microsoft-Windows-PowerShell - PowerShell 执行
+    GUID: {a0c1853b-5c40-4b15-8766-3cf1c58f985a}
+    JScript：
+    Microsoft-Windows-JScript - JScript 引擎
+    GUID: {57277741-3638-4a4b-bdba-0ac6e45da56c}
+    VBScript：
+    Microsoft-Windows-VBScript - VBScript 引擎
+    GUID: {f1c3b79a-8765-4b5a-8a3a-7c4140c7d8c3}
+
+    八、数据库访问
+    ODBC：
+    Microsoft-Windows-ODBC - ODBC 数据库访问
+    GUID: {2a9c6dd1-5701-4e0e-9f4a-8a8e9e1a1a8a}
+    OLEDB：
+    Microsoft-Windows-OLEDB - OLEDB 数据库访问
+    GUID: {6b1d8c3f-0000-0000-0000-000000000000}
+
+    九、开发者工具
+    调试：
+    Microsoft-Windows-Debug - 调试事件
+    GUID: {6b1d8c3f-0000-0000-0000-000000000000}
+    性能分析：
+    Microsoft-Windows-Perf - 性能计数器
+    GUID: {ce1dbfb4-137e-4da6-87b0-3f59aa102cbc}
+
+    十、其他重要提供者
+    错误报告：
+    Microsoft-Windows-WindowsErrorReporting - WER 事件
+    GUID: {b4e9e8d7-5a5e-4c8e-8b8d-7d9d7d9d7d9d}
+    更新管理：
+    Microsoft-Windows-WindowsUpdateClient - Windows 更新
+    GUID: {945a8954-c147-4acd-923f-40c9b9d8e7b1}
+    存储：
+    Microsoft-Windows-Storage - 存储管理
+    GUID: {c7bde5a8-0000-0000-0000-000000000000}
+*/
     try
     {
         if (rec) {
@@ -1475,7 +1846,7 @@ bool UEtw::uf_RegisterTraceFile()
     OutputDebugString(L"[Etw Trace] UserMod uf_RegisterTraceFile");
 
     ULONG status = 0;
-    // SystemTraceControlGuid - {9e814aad-3204-11d2-9a82-006008a86939}
+    // UserModGuid - 自定义
     const UCHAR _Flag[] = { 111, 22, 129, 158, 4, 50, 210, 17, 154, 130, 0, 96, 8, 168, 105, 57 };
     char m_LogEventPath[256] = { 0, };
     _getcwd(m_LogEventPath, sizeof(m_LogEventPath));
@@ -1534,6 +1905,9 @@ bool UEtw::uf_RegisterTraceFile()
     //EnableTraceEx2(m_hFileSession, &ProcessProviderGuid, 
     //    EVENT_CONTROL_CODE_ENABLE_PROVIDER, 
     //    TRACE_LEVEL_VERBOSE, 0x10, 0, 0, nullptr);
+    EnableTraceEx2(m_hFileSession, &DnsClientWin7Guid,
+        EVENT_CONTROL_CODE_ENABLE_PROVIDER,
+        TRACE_LEVEL_VERBOSE, 0, 0, 0, nullptr);
     EnableTraceEx2(m_hFileSession, &DnsClientGuid,
         EVENT_CONTROL_CODE_ENABLE_PROVIDER,
         TRACE_LEVEL_VERBOSE, 0, 0, 0, nullptr);

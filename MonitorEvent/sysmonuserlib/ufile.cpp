@@ -205,7 +205,10 @@ const bool UFile::uf_GetFileInfo(char* pFilepath, LPVOID pData)
 		StrCpyW(pFileInfo->dwFileAttributesHide, TEXT("Òş²Ø "));
 	}
 	// MD5¼ÆËã
-	std::string sMd5 = md5FileValue((char*)sFilePath.c_str());
+	std::string sMd5 = "";
+	char cMd5[1024] = { 0, };
+	md5FileValue((char*)sFilePath.c_str(), cMd5);
+	sMd5 = cMd5;
 	if (!sMd5.empty()) {
 		CString csMd5 = sMd5.c_str();
 		StrCpyW(pFileInfo->md5, csMd5.GetString());

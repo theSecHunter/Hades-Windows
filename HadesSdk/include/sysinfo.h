@@ -593,6 +593,79 @@ typedef struct _UEtwNetWork
         RtlSecureZeroMemory(EventName, sizeof(EventName));
     }
 }UEtwNetWork, * PUEtwNetWork;
+// u_etw_dns
+#define WIN7_QUERY_START     1001
+#define WIN7_QUERY_FAILED    1015
+#define WIN7_CONFIG_CHANGE   1016
+#define WIN7_RESPONSE_RECV   1019
+#define WIN10_QUERY_START    3008
+#define WIN10_RESPONSE_RECV  3009
+#define WIN10_CONFIG_CHANGE  3020
+typedef struct _UEwtDns {
+    std::wstring    EventName;
+
+    // 进程信息
+    std::wstring    processPath;
+    ULONG           processId;
+
+    // Windows 7 特定字段
+    std::wstring Interface;
+    std::wstring TotalServerCount;
+    std::wstring Index;
+    std::wstring DynamicAddress;
+    std::wstring AddressLength;
+    std::wstring Address;
+    std::wstring Location;
+    std::wstring Context;
+
+    // Windows 10 通用字段
+    std::wstring QueryName;
+    std::wstring QueryType;
+    std::wstring QueryOptions;
+    std::wstring IsNetworkQuery;
+    std::wstring NetworkQueryIndex;
+    std::wstring InterfaceIndex;
+    std::wstring IsAsyncQuery;
+    std::wstring QueryStatus;
+    std::wstring QueryResults;
+    std::wstring IsParallelNetworkQuery;
+    std::wstring NetworkIndex;
+    std::wstring InterfaceCount;
+    std::wstring AdapterName;
+    std::wstring LocalAddress;
+    std::wstring DNSServerAddress;
+    std::wstring Status;
+
+    void clear() {
+        processId = 0;
+        processPath.clear();
+        EventName.clear();
+        Interface.clear();
+        TotalServerCount.clear();
+        Index.clear();
+        DynamicAddress.clear();
+        AddressLength.clear();
+        Address.clear();
+        Location.clear();
+        Context.clear();
+        QueryName.clear();
+        QueryType.clear();
+        QueryOptions.clear();
+        IsNetworkQuery.clear();
+        NetworkQueryIndex.clear();
+        InterfaceIndex.clear();
+        IsAsyncQuery.clear();
+        QueryStatus.clear();
+        QueryResults.clear();
+        IsParallelNetworkQuery.clear();
+        NetworkIndex.clear();
+        InterfaceCount.clear();
+        AdapterName.clear();
+        LocalAddress.clear();
+        DNSServerAddress.clear();
+        Status.clear();
+    }
+} UEwtDns;
 // u_etw_image
 typedef struct _UEtwImageInfo {
     UINT64 ImageBase;

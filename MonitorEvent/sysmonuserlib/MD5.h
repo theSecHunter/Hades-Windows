@@ -22,7 +22,7 @@ MD5VAL md5(char * str, unsigned int size = 0);
 MD5VAL md5File(FILE * fpin);
 
 //直接计算文件MD5
-char * md5FileValue(char * fname);
+void md5FileValue(char * fname, char* md5);
 
 //字符串md5加密
 void md5Str(char * input, char * output);
