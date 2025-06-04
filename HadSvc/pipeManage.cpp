@@ -205,7 +205,7 @@ bool PipeManage::ServerSend(const std::string& name, const std::string& str)
 			//LOG(INFO) << "proxy_client.exe ServerSend:" << StringConvert::ANSIToUnicode(str);
 		}
 		else {
-			OutputDebugString(L"proxy_client.exe ServerSend Error");
+			OutputDebugString(L"[HadesSvc] proxy_client.exe ServerSend Error");
 		}
 
 		_EX_Blink = _EX_Blink->Blink;

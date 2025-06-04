@@ -371,7 +371,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
 
             if (!g_SendQueueData_Ptr && !g_SendQueueCs_Ptr && !g_SendQueue_Event)
             {
-                OutputDebugString(L"Grpc没设置订阅指针");
+                OutputDebugString(L"[HadesSvc] Grpc没设置订阅指针");
                 return;
             }
 
@@ -483,7 +483,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 j["win_rootkit_ssdt_offsetaddr"] = to_string(pSSdtInfo[i].sstd_memoffset).c_str();
                 vec_task_string.push_back(j.dump());
             }
-            OutputDebugString(L"Task Get SSDT Data Pkg Success");
+            OutputDebugString(L"[HadesSvc] Task Get SSDT Data Pkg Success");
         }
     }
     break;
@@ -505,7 +505,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 j["win_rootkit_idt_offsetaddr"] = to_string(pIdtInfo[i].idt_isrmemaddr).c_str();
                 vec_task_string.push_back(j.dump());
             }
-            OutputDebugString(L"Task Get IDT Data Pkg Success");
+            OutputDebugString(L"[HadesSvc] Task Get IDT Data Pkg Success");
         }
     }
     break;
@@ -527,7 +527,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             j["win_rootkit_dpc_periodtime"] = to_string(pDpcInfo[i].period).c_str();
             vec_task_string.push_back(j.dump());
         }
-        OutputDebugString(L"Task Get Dpc Data Pkg Success");
+        OutputDebugString(L"[HadesSvc] Task Get Dpc Data Pkg Success");
     }
     break;
     case NF_FSD_ID:
@@ -547,7 +547,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             vec_task_string.push_back(j.dump());
             index++;
         }
-        OutputDebugString(L"Task Get FastFat MjFuction Data Pkg Success");
+        OutputDebugString(L"[HadesSvc] Task Get FastFat MjFuction Data Pkg Success");
 
         j.clear();
         j["win_rootkit_is_fsdmod"] = "2";
@@ -558,7 +558,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             vec_task_string.push_back(j.dump());
             index++;
         }
-        OutputDebugString(L"Task Get Ntfs MjFuction Data Pkg Success");
+        OutputDebugString(L"[HadesSvc] Task Get Ntfs MjFuction Data Pkg Success");
     }
     break;
     case NF_SYSCALLBACK_ID:
@@ -582,7 +582,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             vec_task_string.push_back(j.dump());
             index++;
         }
-        OutputDebugString(L"Task Get Mouse MjFuction Data Pkg Success");
+        OutputDebugString(L"[HadesSvc] Task Get Mouse MjFuction Data Pkg Success");
 
         j.clear();
         j["win_rootkit_is_mousekeymod"] = "2";
@@ -593,7 +593,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             vec_task_string.push_back(j.dump());
             index++;
         }
-        OutputDebugString(L"Task Get i8042 MjFuction Data Pkg Success");
+        OutputDebugString(L"[HadesSvc] Task Get i8042 MjFuction Data Pkg Success");
 
         j.clear();
         j["win_rootkit_is_mousekeymod"] = "3";
@@ -604,7 +604,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             vec_task_string.push_back(j.dump());
             index++;
         }
-        OutputDebugString(L"Task Get kbd MjFuction Data Pkg Success");
+        OutputDebugString(L"[HadesSvc] Task Get kbd MjFuction Data Pkg Success");
     }
     break;
     case NF_NETWORK_ID:
@@ -626,7 +626,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             j["win_rootkit_tcp_Status"] = to_string(pNetworkInfo->systcpinfo[i].socketStatus.dwState).c_str();
             vec_task_string.push_back(j.dump());
         }
-        OutputDebugString(L"Task Get NetWork Tcp Data Pkg Success");
+        OutputDebugString(L"[HadesSvc] Task Get NetWork Tcp Data Pkg Success");
 
         j.clear();
         j["win_rootkit_is_mod"] = "2";
@@ -638,7 +638,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             j["win_rootkit_udp_localIp_port"] = udpipport.c_str();
             vec_task_string.push_back(j.dump());
         }
-        OutputDebugString(L"Task Get NetWork Udp Data Pkg Success");
+        OutputDebugString(L"[HadesSvc] Task Get NetWork Udp Data Pkg Success");
     }
     break;
     case NF_PROCESS_ENUM:
@@ -672,7 +672,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 vec_task_string.push_back(j.dump());
             }
 
-            OutputDebugString(L"Task Get Process to Server Data Pkg Success");
+            OutputDebugString(L"[HadesSvc] Task Get Process to Server Data Pkg Success");
         }
     }
     break;
@@ -706,7 +706,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 vec_task_string.push_back(j.dump());
             }
         }
-        OutputDebugString(L"Task Get Process Mod Data Pkg Success");
+        OutputDebugString(L"[HadesSvc] Task Get Process Mod Data Pkg Success");
     }
     break;
     case NF_PROCESS_KILL:
@@ -741,7 +741,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
                 vec_task_string.push_back(j.dump());
             }
         }
-        OutputDebugString(L"Task Get SystemDriver Enum Data Pkg Success");
+        OutputDebugString(L"[HadesSvc] Task Get SystemDriver Enum Data Pkg Success");
     }
     break;
 
@@ -764,7 +764,7 @@ void kMsgInterface::DriverInit(const int flag)
     status = SingletonKDrvManage::instance()->devctrl_init();
     if (0 > status)
     {
-        OutputDebugString(L"devctrl_init error: main.c --> lines: 678");
+        OutputDebugString(L"[HadesSvc] devctrl_init error.");
         return;
     }
 
@@ -774,7 +774,7 @@ void kMsgInterface::DriverInit(const int flag)
         status = SingletonKDrvManage::instance()->devctrl_opendeviceSylink(devSyLinkName);
         if (0 >= status)
         {
-            OutputDebugString(L"devctrl_opendeviceSylink error: main.c --> lines: 688");
+            OutputDebugString(L"[HadesSvc] devctrl_opendeviceSylink error.");
             break;
         }
 
@@ -782,7 +782,7 @@ void kMsgInterface::DriverInit(const int flag)
         status = SingletonKDrvManage::instance()->devctrl_InitshareMem();
         if (0 >= status)
         {
-            OutputDebugString(L"devctrl_InitshareMem error: main.c --> lines: 690");
+            OutputDebugString(L"[HadesSvc] devctrl_InitshareMem error.");
             break;
         }
 
@@ -882,7 +882,7 @@ void kMsgInterface::DriverInit(const int flag)
 
     if (!status)
     {
-        OutputDebugString(L"Init Driver Failuer");
+        OutputDebugString(L"[HadesSvc] Init Driver Failuer");
         return;
     }
 

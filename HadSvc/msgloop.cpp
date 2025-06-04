@@ -133,7 +133,7 @@ static DWORD WINAPI pInitWinReg(LPVOID lpThreadParameter)
 	);
 	if (!hWnd)
 	{
-		OutputDebugString(L"HadesSvc窗口创建失败");
+		OutputDebugString(L"[HadesSvc] HadesSvc窗口创建失败");
 		return 0;
 	}
 	ShowWindow(hWnd, SW_HIDE);

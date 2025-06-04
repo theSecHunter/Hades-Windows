@@ -190,7 +190,7 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		else
 			break;
 		if (FALSE == nRet) {
-			OutputDebugString(L"GetQueuedCompletionStatus sysmondriver miniPort Error");
+			OutputDebugString(L"[HadesSvc] GetQueuedCompletionStatus sysmondriver miniPort Error");
 			if (!g_comPletion)
 				break;
 			continue;
@@ -206,8 +206,12 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		{
 		case MIN_COMMAND::IPS_PROCESSSTART:
 		{
-			const PROCESSINFO* const processinfo = (PROCESSINFO*)notification->Contents;
+			PROCESSINFO* processinfo = nullptr;
+			processinfo = (PROCESSINFO*)notification->Contents;
+			if (processinfo == nullptr)
+				break;
 			OutputDebugString(processinfo->commandLine);
+
 			// 启动界面情况发送到界面等待用户操作
 			socketMsg socketPip;
 			if (false == socketPip.sendDlgMsg(IPS_PROCESSSTART, (char*)processinfo, sizeof(PROCESSINFO)))
@@ -229,7 +233,7 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 		case MIN_COMMAND::IPS_IMAGEDLL: break;
 		}
 
-		if (!g_hPort)
+		if (g_hPort == nullptr)
 			break;
 		replyMessage.ReplyHeader.Status = 0;
 		replyMessage.ReplyHeader.MessageId = message->MessageHeader.MessageId;

@@ -67,23 +67,11 @@ const GUID RegistryProviderGuid =
 // Process
 const GUID ProcessProviderGuid =
 { 0x22fb2cd6, 0x0e7b, 0x422b, {0xa0, 0xc7, 0x2f, 0xad, 0x1f, 0xd0, 0xe7, 0x16} };
+// Dns
 static const GUID DnsClientWin7Guid =
 { 0x609151dd, 0x4f5, 0x4da7, { 0x97, 0x4c, 0xfc, 0x69, 0x47, 0xea, 0xa3, 0x23 } };
 static const GUID DnsClientGuid =
 { 0x1c95126e, 0x7eea, 0x49a9, { 0xa3, 0xfe, 0xa3, 0x78, 0xb0, 0x3d, 0xdb, 0x4d } };
-//DEFINE_GUID( /* 609151dd-04f5-4da7-974c-fc6947eaa323 */
-//    DnsClientWin7Guid,
-//    0x609151dd,
-//    0x4f5,
-//    0x4da7,
-//    0x97, 0x4c, 0xfc, 0x69, 0x47, 0xea, 0xa3, 0x23
-//);
-//DEFINE_GUID( /*1c95126e-7eea-49a9-a3fe-a378b03ddb4d*/
-//    DnsClientGuid,
-//    0x1c95126e,
-//    0x7eea,
-//    0x49a9,
-//    0xa3, 0xfe, 0xa3, 0x78, 0xb0, 0x3d, 0xdb, 0x4d);
 
 // Struct Size
 static int g_EtwNetworkDataLens = 0;
@@ -233,153 +221,24 @@ void WINAPI ProcessDnsEvent(PEVENT_RECORD rec)
 
         std::wstring sOutPut = L"";
         switch (rec->EventHeader.EventDescriptor.Id) {
-        case 3008: // DNS 查询开始
-            sOutPut = (L"[UetwMM Network] DNS Query: " + queryName + L" Type: " + std::to_wstring(queryType)).c_str();
+        case 3008: {
+            sOutPut = (L"[Etw Trace] DNS Query: " + queryName + L" Type: " + std::to_wstring(queryType)).c_str();
             break;
-
+        }
         case 3009: {
-            // DNS 响应接收
             PROPERTY_DATA_DESCRIPTOR desc;
             desc.PropertyName = reinterpret_cast<ULONGLONG>(L"Result");
             desc.ArrayIndex = ULONG_MAX;
             ULONG result;
             TdhGetProperty(rec, 0, nullptr, 1, &desc, sizeof(result), (PBYTE)&result);
-            sOutPut = (L"[UetwMM Network] DNS Response: " + queryName + L" Status: " + std::to_wstring(result)).c_str();
+            sOutPut = (L"[Etw Trace] DNS Response: " + queryName + L" Status: " + std::to_wstring(result)).c_str();
+            break;
         }
-                 break;
         }
         if (!sOutPut.empty())
             OutputDebugString(sOutPut.c_str());
     }
     catch (const std::exception&)
-    {
-    }
-}
-void WINAPI ProcessNetworkRecord(PEVENT_RECORD rec)
-{
-    if (rec == nullptr)
-        return;
-
-    ULONG bufferSize = 0;
-    ULONG status = ERROR_SUCCESS;
-    PTRACE_EVENT_INFO info = nullptr;
-
-    try
-    {
-        UEtwNetWork etwNetInfo;
-        etwNetInfo.clear();
-        status = TdhGetEventInformation(rec, 0, nullptr, nullptr, &bufferSize);
-        if (status == ERROR_INSUFFICIENT_BUFFER) {
-            auto buffer = std::make_unique<BYTE[]>(bufferSize);
-            info = reinterpret_cast<PTRACE_EVENT_INFO>(buffer.get());
-            status = TdhGetEventInformation(rec, 0, nullptr, info, &bufferSize);
-            if (status != ERROR_SUCCESS) return;
-        }
-
-        if (info->TaskNameOffset) {
-            wstring taskName = (PCWSTR)((BYTE*)info + info->TaskNameOffset);
-            if (taskName.find(L"TcpIp") != wstring::npos) {
-                etwNetInfo.protocol = IPPROTO_TCP;
-            }
-            else if (taskName.find(L"UdpIp") != wstring::npos) {
-                etwNetInfo.protocol = IPPROTO_UDP;
-            }
-        }
-
-        if (info->OpcodeNameOffset) {
-            wstring opcodeName = (PCWSTR)((BYTE*)info + info->OpcodeNameOffset);
-            wcsncpy_s(etwNetInfo.EventName, opcodeName.c_str(), _TRUNCATE);
-        }
-
-        auto userData = (PBYTE)rec->UserData;
-        auto userDataLength = rec->UserDataLength;
-        auto pointerSize = (rec->EventHeader.Flags & EVENT_HEADER_FLAG_32_BIT_HEADER) ? 4 : 8;
-
-        std::string sScrAddress = "";
-        std::string sDesAddress = "";
-        for (DWORD i = 0; i < info->TopLevelPropertyCount; i++) {
-            auto& propInfo = info->EventPropertyInfoArray[i];
-            wstring propName = (PCWSTR)((BYTE*)info + propInfo.NameOffset);
-
-            if (propInfo.Flags & (PropertyStruct | PropertyParamCount))
-                continue;
-
-            PEVENT_MAP_INFO mapInfo = nullptr;
-            std::unique_ptr<BYTE[]> mapBuffer;
-            ULONG size = 0;
-            WCHAR value[512] = { 0 };
-            USHORT consumed = 0;
-
-            status = TdhFormatProperty(
-                info,
-                nullptr,
-                pointerSize,
-                propInfo.nonStructType.InType,
-                propInfo.nonStructType.OutType,
-                static_cast<USHORT>(propInfo.length),
-                userDataLength,
-                userData,
-                &size,
-                value,
-                &consumed
-            );
-
-            if (status != ERROR_SUCCESS) continue;
-
-            userData += consumed;
-            userDataLength -= consumed;
-
-            if (propName == L"PID") {
-                etwNetInfo.processId = _wtoi(value);
-            }
-            else if (propName == L"saddr") {
-                std::string sTmp = "";
-                Wchar_tToString(sTmp, value);
-                sScrAddress.append(sTmp).append(":");
-                etwNetInfo.ipv4LocalAddr = inet_addr(sTmp.c_str());
-            }
-            else if (propName == L"daddr") {
-                std::string sTmp = "";
-                Wchar_tToString(sTmp, value);
-                sDesAddress.append(sTmp).append(":");
-                etwNetInfo.ipv4toRemoteAddr = inet_addr(sTmp.c_str());
-            }
-            else if (propName == L"sport") {
-                etwNetInfo.toLocalPort = static_cast<USHORT>(_wtoi(value));
-                sScrAddress.append(std::to_string(etwNetInfo.toLocalPort));
-            }
-            else if (propName == L"dport") {
-                etwNetInfo.toRemotePort = static_cast<USHORT>(_wtoi(value));
-                sDesAddress.append(std::to_string(etwNetInfo.toLocalPort));
-            }
-            else if (propName == L"size") {
-                // netInfo.size = _wtoi(value);
-            }
-            else if (propName == L"connid") {
-                // netInfo.connId = _wtoi64(value);
-            }
-        }
-
-        OutputDebugStringA(("[UetwMM Process] NetWork Event " + to_string(etwNetInfo.protocol) + " - " + to_string(etwNetInfo.processId) + " - " + sScrAddress + " -> " + sDesAddress).c_str());
-        sScrAddress.clear();
-        sDesAddress.clear();
-
-        UPubNode* pEtwData = nullptr;
-        pEtwData = (UPubNode*)new char[g_EtwNetworkDataLens];
-        if (pEtwData == nullptr)
-            return;
-        RtlZeroMemory(pEtwData, g_EtwNetworkDataLens);
-        pEtwData->taskid = UF_ETW_NETWORK;
-        RtlCopyMemory(&pEtwData->data[0], &etwNetInfo, sizeof(UEtwNetWork));
-
-        if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_JobQueue_Event)
-        {
-            std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
-            g_EtwQueue_Ptr->push(pEtwData);
-            SetEvent(g_JobQueue_Event);
-        }
-    }
-    catch (...)
     {
     }
 }
@@ -408,14 +267,13 @@ void WINAPI ProcessRecord(PEVENT_RECORD EventRecord)
                 else
                     processinfo_data.processName = L"";
                 processinfo_data.commandLine = processPath.c_str();*/
-                OutputDebugString((L"[UetwMM Process] Process Event " + to_wstring(etwProcessInfo.pid) + L" - " + to_wstring(EventProcesId) + L" - " + processPath).c_str());
+                OutputDebugString((L"[Etw Trace] Process Event " + to_wstring(etwProcessInfo.pid) + L" - " + to_wstring(EventProcesId) + L" - " + processPath).c_str());
             }
             else if (2 == EventProcesId)
             {                
                 //etwProcessInfo.processStatus = false;
                 //etwProcessInfo.processsid = *(ULONG*)(((PUCHAR)EventRecord->UserData) + 0);
                 //etwProcessInfo.processName = L"";
-                
             }
             if (g_OnProcessNotify)
                 g_OnProcessNotify(etwProcessInfo);
@@ -433,19 +291,19 @@ void WINAPI ProcessFileRecord(PEVENT_RECORD rec)
     {
         EVENT_HEADER& Header = rec->EventHeader;
         if (Header.EventDescriptor.Id == 12 || Header.EventDescriptor.Id == 30) {
-
-            // on skippe tout ce qui est sur le disque
             if (*(PULONGLONG)((SIZE_T)rec->UserData + 0x20) == 0x007600650044005c &&
                 *(PULONGLONG)((SIZE_T)rec->UserData + 0x30) == 0x0064007200610048)
                 return;
 
-            printf("FILE %d - PID %d - FileName %S - CreateOptions %.8X - CreateAttributes %.8X - ShareAccess %.8X\n",
+            char cFileInfo[4096] = { 0, };
+            sprintf(cFileInfo, "[Etw Trace] FILE %d - PID %d - FileName %S - CreateOptions %.8X - CreateAttributes %.8X - ShareAccess %.8X\n",
                 Header.EventDescriptor.Id,
                 Header.ProcessId,
                 (PWSTR)((SIZE_T)rec->UserData + 0x20),
                 *(PULONG)((SIZE_T)(rec->UserData) + 0x14),
                 *(PULONG)((SIZE_T)(rec->UserData) + 0x18),
                 *(PULONG)((SIZE_T)(rec->UserData) + 0x1C));
+            OutputDebugStringA(cFileInfo);
         }
         else if (Header.EventDescriptor.Id == 10 || Header.EventDescriptor.Id == 11) {
 
@@ -454,11 +312,12 @@ void WINAPI ProcessFileRecord(PEVENT_RECORD rec)
                 *(PULONGLONG)((SIZE_T)rec->UserData + 0x18) == 0x0064007200610048)
                 return;
 
-            printf("FILE %d - PID %d - FileName %S\n",
+            char cFileInfo[4096] = { 0, };
+            sprintf(cFileInfo, "[Etw Trace] FILE %d - PID %d - FileName %S\n",
                 Header.EventDescriptor.Id,
                 Header.ProcessId,
                 (PWSTR)((SIZE_T)rec->UserData + 0x8));
-
+            OutputDebugStringA(cFileInfo);
         }
     }
     catch (...)
@@ -477,6 +336,9 @@ void WINAPI DispatchLogEventCallback(PEVENT_RECORD rec)
             }
             else if (IsEqualGUID(header.ProviderId, ProcessProviderGuid)) {
                 ProcessRecord(rec);
+            }
+            else if (IsEqualGUID(header.ProviderId, FileProviderGuid)) {
+                ProcessFileRecord(rec);
             }
         }
     }
@@ -1491,14 +1353,15 @@ static DWORD WINAPI tracDispaththread(LPVOID param)
     g_ProcessTracehandle = OpenTrace(&trace);
     if (g_ProcessTracehandle == (TRACEHANDLE)INVALID_HANDLE_VALUE)
         return 0;
-    OutputDebugString(L"ProcessTrace Start");
+    OutputDebugString(L"[Etw Trace] ProcessTrace Start");
     ProcessTrace(&g_ProcessTracehandle, 1, 0, 0);
     CloseTrace(g_ProcessTracehandle);
     return 0;
 }
 bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
 {
-    printf("uf_RegisterTrace Entry\n");
+    OutputDebugString(L"[Etw Trace]  KernelMod uf_RegisterTrace Entry");
+
     ULONG status = 0;
     TRACEHANDLE hSession;
     uint32_t event_buffer = sizeof(EVENT_TRACE_PROPERTIES) + sizeof(KERNEL_LOGGER_NAME);
@@ -1551,8 +1414,7 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
                 status = StartTrace(&hSession, KERNEL_LOGGER_NAME, m_traceconfig);
                 if (ERROR_SUCCESS != status)
                 {
-                    OutputDebugString(L"启动EtwStartTrace失败");
-                    printf("err %d\n", GetLastError());
+                    OutputDebugString((L"[Etw Trace] 启动EtwStartTrace失败 " + std::to_wstring(GetLastError())).c_str());
                     return 0;
                 }
                 tracinfo.bufconfig = m_traceconfig;
@@ -1587,7 +1449,7 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
     g_thrhandle.push_back(hThread);
     g_th.Unlock();
 
-    OutputDebugString(L"Register TracGuid Success");
+    OutputDebugString(L"[Etw Trace] Register TracGuid Success");
     return true;
 }
 
@@ -1604,13 +1466,13 @@ static DWORD WINAPI tracDispaththreadFile(LPVOID param)
     g_ProcessTracehandle = OpenTrace(&trace);
     if (g_ProcessTracehandle == (TRACEHANDLE)INVALID_HANDLE_VALUE)
         return 0;
-    OutputDebugString(L"[UetwMM] ProcessTrace Start");
+    OutputDebugString(L"[Etw Trace] UserMod ProcessTrace Start");
     ProcessTrace(&g_ProcessTracehandle, 1, 0, 0);  
     return 0;
 }
 bool UEtw::uf_RegisterTraceFile()
 {
-    OutputDebugString(L"[UetwMM] uf_RegisterTraceFile");
+    OutputDebugString(L"[Etw Trace] UserMod uf_RegisterTraceFile");
 
     ULONG status = 0;
     // SystemTraceControlGuid - {9e814aad-3204-11d2-9a82-006008a86939}
@@ -1655,8 +1517,7 @@ bool UEtw::uf_RegisterTraceFile()
                 status = StartTrace(&m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(g_pTraceConfig + 8));
                 if (ERROR_SUCCESS != status)
                 {
-                    OutputDebugString(L"[UetwMM] 启动EtwStartTrace失败");
-                    printf("err %d\n", GetLastError());
+                    OutputDebugString((L"[Etw Trace] 启动EtwStartTrace失败 " + std::to_wstring(GetLastError())).c_str());
                     return 0;
                 }
             }
@@ -1670,9 +1531,9 @@ bool UEtw::uf_RegisterTraceFile()
     //EnableTraceEx2(m_hFileSession, &FileProviderGuid,
     //    EVENT_CONTROL_CODE_ENABLE_PROVIDER,
     //    TRACE_LEVEL_VERBOSE, 0x10, 0, 0, nullptr);
-    EnableTraceEx2(m_hFileSession, &ProcessProviderGuid, 
-        EVENT_CONTROL_CODE_ENABLE_PROVIDER, 
-        TRACE_LEVEL_VERBOSE, 0x10, 0, 0, nullptr);
+    //EnableTraceEx2(m_hFileSession, &ProcessProviderGuid, 
+    //    EVENT_CONTROL_CODE_ENABLE_PROVIDER, 
+    //    TRACE_LEVEL_VERBOSE, 0x10, 0, 0, nullptr);
     EnableTraceEx2(m_hFileSession, &DnsClientGuid,
         EVENT_CONTROL_CODE_ENABLE_PROVIDER,
         TRACE_LEVEL_VERBOSE, 0, 0, 0, nullptr);
@@ -1684,7 +1545,7 @@ bool UEtw::uf_RegisterTraceFile()
     g_thrhandle.push_back(hThread);
     g_th.Unlock();
 
-    OutputDebugString(L"[UetwMM] Register TracGuid Success");
+    OutputDebugString(L"[Etw Trace] UserMod Register TracGuid Success");
     return true;
 }
 
@@ -1692,7 +1553,7 @@ bool UEtw::uf_RegisterTraceFile()
 bool UEtw::uf_init()
 {
     // EVENT_TRACE_FLAG_REGISTRY
-    OutputDebugString(L"Etw nf_init - uf_RegisterTrace");
+    OutputDebugString(L"[Etw Trace] ETW Init KernelMod");
     bool test = false;
     if (!test && !uf_RegisterTrace(
         EVENT_TRACE_FLAG_NETWORK_TCPIP | \
@@ -1764,7 +1625,7 @@ bool UEtw::uf_close()
 // [Guid File Logger]
 bool UEtw::uf_init(const bool flag)
 {
-    OutputDebugString(L"[UetwMM] File Etw nf_init - uf_RegisterTrace");
+    OutputDebugString(L"[Etw Trace] ETW Init UserMod");
     if (!uf_RegisterTraceFile())
         return 0;
     return 1;

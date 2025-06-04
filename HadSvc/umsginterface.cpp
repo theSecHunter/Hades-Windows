@@ -291,7 +291,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
 
             if ((nullptr == g_SendQueueData_Ptr) || (nullptr == g_SendQueueCs_Ptr) || (nullptr == g_SendQueue_Event))
             {
-                OutputDebugString(L"没设置订阅指针Pip");
+                OutputDebugString(L"[HadesSvc] 没设置订阅指针Pip");
                 return;
             }
 
@@ -711,6 +711,7 @@ void uMsgInterface::uMsg_taskPush(const int taskcode, const std::string& sData, 
 void uMsgInterface::uMsg_EtwInit()
 {
     SingletonUEtw::instance()->uf_init();
+    SingletonUEtw::instance()->uf_init(true); // dns
     etwStatus = true;
 }
 void uMsgInterface::uMsg_EtwClose()
@@ -738,7 +739,7 @@ void uMsgInterface::uMsg_Free()
     for (size_t idx = 0; idx < m_topicthread.size(); ++idx)
     {
         SetEvent(g_jobAvailableEvent);
-        // setEvent 并不一定是这个线程
+        // SetEvent 并不一定是这个线程
         WaitForSingleObject(m_topicthread[idx], 500);
         CloseHandle(m_topicthread[idx]);
     }

@@ -317,7 +317,7 @@ const bool DataHandler::DrvCheckStatus()
     case SERVICE_RUNNING:
     case SERVICE_START_PENDING:
     {
-        OutputDebugString(L"Driver Running");
+        OutputDebugString(L"[HadesSvc] Driver Running");
         break;
     }
     break;
@@ -340,12 +340,12 @@ const bool DataHandler::DrvCheckStatus()
         nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(g_drverName.c_str());
         if (SERVICE_RUNNING == nSeriverstatus)
         {
-            OutputDebugString(L"sc Driver Running");
+            OutputDebugString(L"[HadesSvc] sc Driver Running");
             break;
         }
         else
         {
-            OutputDebugString(L"sc Driver Install Failuer");
+            OutputDebugString(L"[HadesSvc] sc Driver Install Failuer");
             return false;
         }
     }
@@ -380,7 +380,7 @@ const bool DataHandler::NetCheckStatus()
     case SERVICE_RUNNING:
     case SERVICE_START_PENDING:
     {
-        OutputDebugString(L"[HadesNetMon] Driver Running");
+        OutputDebugString(L"[HadesSvc] Driver Running");
         break;
     }
     break;
@@ -403,12 +403,12 @@ const bool DataHandler::NetCheckStatus()
         nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(g_drverNdrName.c_str());
         if (SERVICE_RUNNING == nSeriverstatus)
         {
-            OutputDebugString(L"[HadesNetMon] sc Driver Running");
+            OutputDebugString(L"[HadesSvc] sc Driver Running");
             break;
         }
         else
         {
-            OutputDebugString(L"[HadesNetMon] sc Driver Install Failuer");
+            OutputDebugString(L"[HadesSvc] sc Driver Install Failuer");
             return false;
         }
     }
@@ -537,7 +537,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
                 SingletonKerMon::instance()->DriverInit(false); // 初始化启动read i/o线程
                 if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 {
-                    OutputDebugString(L"GetKerInitStatus false");
+                    OutputDebugString(L"[HadesSvc] GetKerInitStatus false");
                     return 0;
                 }
             }
