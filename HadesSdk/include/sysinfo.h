@@ -63,7 +63,8 @@ enum UEtwId
     UF_ETW_IMAGEMOD,                // 302
     UF_ETW_NETWORK,                 // 303
     UF_ETW_REGISTERTAB,             // 304
-    UF_ETW_FILEIO                   // 305
+    UF_ETW_FILEIO,                  // 305
+    UF_ETW_NETWORK_DNS,             // 306
 };
 
 //======================register kernel calloutnotify============================

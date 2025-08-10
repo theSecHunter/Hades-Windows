@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
 		return 0;
 	CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
 #endif
-	
+
 	// HadesSvc Exit Event - HadesSvc
 	g_SvcExitEvent = CreateEvent(NULL, FALSE, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
 	if (!g_SvcExitEvent)

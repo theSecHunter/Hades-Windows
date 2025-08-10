@@ -483,6 +483,21 @@ void WINAPI ProcessDnsEvent(PEVENT_RECORD rec) {
         if (!sOutPut.empty()) {
             OutputDebugString(sOutPut.c_str());
         }
+
+        //UPubNode* pEtwData = nullptr;
+        //pEtwData = (UPubNode*)new char[g_EtwProcessDataLens];
+        //if (pEtwData == nullptr)
+        //    return;
+        //RtlZeroMemory(pEtwData, g_EtwProcessDataLens);
+        //pEtwData->taskid = UF_ETW_NETWORK_DNS;
+        //RtlCopyMemory(&pEtwData->data[0], &DnsInfo, sizeof(UEwtDns));
+
+        //if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_JobQueue_Event)
+        //{
+        //    std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
+        //    g_EtwQueue_Ptr->push(pEtwData);
+        //    SetEvent(g_JobQueue_Event);
+        //}
     }
     catch (const std::exception& e) {
         OutputDebugStringA(("[Etw Trace] DNS Event Error: " + std::string(e.what())).c_str());
@@ -501,31 +516,43 @@ void WINAPI ProcessRecord(PEVENT_RECORD EventRecord)
         const int EventProcesId = EventRecord->EventHeader.EventDescriptor.Id;
         if ((EventProcesId == 1) || (EventProcesId == 2))
         {
-            PROCESSINFO etwProcessInfo = { 0, };
+            UEtwProcessInfo etwProcessInfo = { 0, };
             if (1 == EventProcesId)
             {
                 std::wstring processPath = wstring((wchar_t*)(((PUCHAR)EventRecord->UserData) + 60));
                 size_t found = 0;
                 if (!processPath.empty())
                     found = processPath.find_last_of(L"/\\");
-                etwProcessInfo.endprocess = true;
-                etwProcessInfo.pid = *(ULONG*)(((PUCHAR)EventRecord->UserData) + 0);
-                // Name: wstring((wchar_t*)(((PUCHAR)EventRecord->UserData) + 84));
-  /*              if ((found > 0) && (found < MAX_PATH))
-                    processinfo_data.processpath = processPath.substr(found + 1);
-                else
-                    processinfo_data.processName = L"";
-                processinfo_data.commandLine = processPath.c_str();*/
-                OutputDebugString((L"[Etw Trace] Process Event " + to_wstring(etwProcessInfo.pid) + L" - " + to_wstring(EventProcesId) + L" - " + processPath).c_str());
+                etwProcessInfo.processStatus = true;
+                etwProcessInfo.processId = *(ULONG*)(((PUCHAR)EventRecord->UserData) + 0);
+                // Name: std::wstring((wchar_t*)(((PUCHAR)EventRecord->UserData) + 84));
+                if ((found > 0) && (found < MAX_PATH))
+                    lstrcpyW(etwProcessInfo.processPath, processPath.c_str());
+                OutputDebugString((L"[Etw Trace] Process Event " + to_wstring(etwProcessInfo.processId) + L" - " + to_wstring(EventProcesId) + L" - " + processPath).c_str());
             }
             else if (2 == EventProcesId)
             {
-                //etwProcessInfo.processStatus = false;
-                //etwProcessInfo.processsid = *(ULONG*)(((PUCHAR)EventRecord->UserData) + 0);
-                //etwProcessInfo.processName = L"";
+                etwProcessInfo.processStatus = false;
+                etwProcessInfo.processId = *(ULONG*)(((PUCHAR)EventRecord->UserData) + 0);
             }
-            if (g_OnProcessNotify)
-                g_OnProcessNotify(etwProcessInfo);
+
+            UPubNode* pEtwData = nullptr;
+            pEtwData = (UPubNode*)new char[g_EtwProcessDataLens];
+            if (pEtwData == nullptr)
+                return;
+            RtlZeroMemory(pEtwData, g_EtwProcessDataLens);
+            pEtwData->taskid = UF_ETW_PROCESSINFO;
+            RtlCopyMemory(&pEtwData->data[0], &etwProcessInfo, sizeof(UEtwProcessInfo));
+
+            if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_JobQueue_Event)
+            {
+                std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
+                g_EtwQueue_Ptr->push(pEtwData);
+                SetEvent(g_JobQueue_Event);
+            }
+            // Callback
+            //if (g_OnProcessNotify)
+            //    g_OnProcessNotify(etwProcessInfo);
         }
     }
     catch (...)
