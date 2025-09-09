@@ -30,11 +30,13 @@ using namespace std;
 typedef struct _TracGuidNode
 {
     DWORD                        event_tracid;
-    EVENT_TRACE_PROPERTIES* bufconfig;
+    EVENT_TRACE_PROPERTIES*      bufconfig;
 }TracGuidNode, * PTracGuidNode;
-static AutoCriticalSection              g_ms;
+
+// mutex
+static std::mutex                       g_ms;
 static map<TRACEHANDLE, TracGuidNode>   g_tracMap;
-static AutoCriticalSection              g_th;
+static std::mutex                       g_th;
 static vector<HANDLE>                   g_thrhandle;
 
 // Process Event_Notify
@@ -42,8 +44,19 @@ static std::function<void(const PROCESSINFO&)> g_OnProcessNotify = nullptr;
 
 // [Guid File Logger] Event File Logger
 static const wchar_t SESSION_NAME_FILE[] = L"HadesEtwTrace";
-static EVENT_TRACE_PROPERTIES g_traceconfig;
-static UCHAR g_pTraceConfig[2048] = { 0, };
+static EVENT_TRACE_PROPERTIES g_traceConfigNode;
+typedef struct _TraceConfig {
+    EVENT_TRACE_PROPERTIES trace_propertise;
+    std::wstring session_name;
+    std::wstring filelog_path;
+
+    _TraceConfig() {
+        RtlSecureZeroMemory(&trace_propertise, sizeof(EVENT_TRACE_PROPERTIES));
+        session_name.clear();
+        filelog_path.clear();
+    }
+}TraceConfig, *pTraceConfig;
+static TraceConfig g_pTraceConfig;
 
 // Write Read Offset Filter
 static std::mutex g_FileReadLock;
@@ -723,6 +736,20 @@ void WINAPI DispatchLogEventCallback(PEVENT_RECORD rec)
     存储：
     Microsoft-Windows-Storage - 存储管理
     GUID: {c7bde5a8-0000-0000-0000-000000000000}
+
+    // win32K
+    GUID providerGuid = { 0x8C416C79, 0xD49B, 0x4F01, {0xA4, 0x67, 0xE5, 0x6D, 0x3A, 0xA8, 0x23, 0x4C} };
+    GUID providerGuidWin7 = { 0xe7ef96be, 0x969f, 0x414f, {0x97, 0xd7, 0x3d, 0xdb, 0x7b, 0x55, 0x8c, 0xcc} };
+    ULONGLONG keyWord = 0x400 | 0x800000 | 0x1000 | 0x40000000000 | 0x80000000000;
+    status = EnableTraceEx2(
+        g_sessionHandle,
+        &providerGuid,
+        EVENT_CONTROL_CODE_ENABLE_PROVIDER,
+        TRACE_LEVEL_INFORMATION,
+        keyWord,
+        0,
+        0,
+        NULL);
 */
     try
     {
@@ -1836,16 +1863,18 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
             m_traceconfig = nullptr;
         }
     }
-    g_ms.Lock();
-    g_tracMap[hSession] = tracinfo;
-    g_ms.Unlock();
 
-    DWORD ThreadID = 0;
-    //初始化临界区
-    g_th.Lock();
-    HANDLE hThread = CreateThread(NULL, 0, tracDispaththread, (PVOID)dwEnableFlags, 0, &ThreadID);
-    g_thrhandle.push_back(hThread);
-    g_th.Unlock();
+    {
+        std::unique_lock<std::mutex> lock(g_ms);
+        g_tracMap[hSession] = tracinfo;
+    }
+
+    {
+        std::unique_lock<std::mutex> lock(g_th);
+        DWORD ThreadID = 0;
+        HANDLE hThread = CreateThread(NULL, 0, tracDispaththread, (PVOID)dwEnableFlags, 0, &ThreadID);
+        g_thrhandle.push_back(hThread);
+    }
 
     OutputDebugString(L"[Etw Trace] KernelMod Register TracGuid Success");
     return true;
@@ -1864,63 +1893,68 @@ static DWORD WINAPI tracDispaththreadFile(LPVOID param)
     g_ProcessTracehandle = OpenTrace(&trace);
     if (g_ProcessTracehandle == (TRACEHANDLE)INVALID_HANDLE_VALUE)
         return 0;
-    OutputDebugString(L"[Etw Trace] UserMod ProcessTrace Start");
+    OutputDebugString(L"[Etw Trace] UserMod ProcessTrace Start.");
     ProcessTrace(&g_ProcessTracehandle, 1, 0, 0);
+    CloseTrace(g_ProcessTracehandle);
+    OutputDebugString(L"[Etw Trace] UserMod ProcessTrace End.");
     return 0;
 }
 bool UEtw::uf_RegisterTraceFile()
 {
     OutputDebugString(L"[Etw Trace] UserMod uf_RegisterTraceFile");
 
-    ULONG status = 0;
-    // UserModGuid - 自定义
-    const UCHAR _Flag[] = { 111, 22, 129, 158, 4, 50, 210, 17, 154, 130, 0, 96, 8, 168, 105, 57 };
-    char m_LogEventPath[256] = { 0, };
-    _getcwd(m_LogEventPath, sizeof(m_LogEventPath));
-    strcat_s(m_LogEventPath, "\\HadesHidsWinEtwFile.etl");
+    static const GUID UserModGuid = { 0x6f16819e, 0x0432, 0xd211, { 0x9a, 0x82, 0x00, 0x60, 0x08, 0xa8, 0x69, 0x39 } };
+    WCHAR m_LogEventPath[MAX_PATH * 2] = { 0 };
+    GetCurrentDirectoryW(MAX_PATH, m_LogEventPath);
+    wcscat_s(m_LogEventPath, L"\\HadesHidsWinEtwFile.etl");
 
     // 注册
-    g_traceconfig.Wnode.BufferSize = 1024;
-    g_traceconfig.Wnode.Flags = WNODE_FLAG_TRACED_GUID;
+    ULONG bufferSize = sizeof(EVENT_TRACE_PROPERTIES) + (wcslen(SESSION_NAME_FILE) + 1) * sizeof(WCHAR) + 0x1000 * 2;
+    g_traceConfigNode.Wnode.BufferSize = bufferSize;
+    g_traceConfigNode.Wnode.Flags = WNODE_FLAG_TRACED_GUID;
     // 记录事件的时钟 100ns
-    g_traceconfig.Wnode.ClientContext = 1;
+    g_traceConfigNode.Wnode.ClientContext = 1;
     // See Msdn: https://docs.microsoft.com/en-us/windows/win32/etw/nt-kernel-logger-constants
-    g_traceconfig.BufferSize = 1;
-    g_traceconfig.FlushTimer = 1;
-    g_traceconfig.MinimumBuffers = 16;
-    g_traceconfig.LogFileMode = EVENT_TRACE_REAL_TIME_MODE;
-    g_traceconfig.LoggerNameOffset = sizeof(EVENT_TRACE_PROPERTIES);
+    g_traceConfigNode.BufferSize = 64;  // 64kb
+    g_traceConfigNode.FlushTimer = 0;   // flush time
+    g_traceConfigNode.MinimumBuffers = 16;
+    g_traceConfigNode.MaximumBuffers = 128;
+    g_traceConfigNode.LogFileMode = EVENT_TRACE_REAL_TIME_MODE;
+    g_traceConfigNode.LoggerNameOffset = sizeof(EVENT_TRACE_PROPERTIES);
+    g_traceConfigNode.MaximumFileSize = 1; // 1MB
 
-    /*
-        +8：EVENT_TRACE_PROPERTIES 结构开始位置（跳过8字节头部）
-        +28：GUID 在结构中的位置（Wnode.Guid 字段偏移量）
-        +128：会话名称存储位置
-        +128 + sizeof(SESSION_NAME_FILE)：日志文件路径存储位置
-    */
-    RtlMoveMemory(g_pTraceConfig + 8, &g_traceconfig, 120);
-    RtlCopyMemory(g_pTraceConfig + 28, _Flag, sizeof(_Flag));
-    RtlCopyMemory(g_pTraceConfig + 128, SESSION_NAME_FILE, sizeof(SESSION_NAME_FILE));
-    RtlCopyMemory(g_pTraceConfig + 128 + sizeof(SESSION_NAME_FILE), m_LogEventPath, strlen(m_LogEventPath));
+    g_pTraceConfig.trace_propertise = g_traceConfigNode;
+    g_pTraceConfig.trace_propertise.Wnode.Guid = UserModGuid;
+    g_pTraceConfig.session_name = SESSION_NAME_FILE;
+    g_pTraceConfig.filelog_path = m_LogEventPath;
 
-    status = StartTrace((PTRACEHANDLE)&m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(g_pTraceConfig + 8));
-    if (ERROR_SUCCESS != status)
+    ULONG nStatus = 0;
+    nStatus = StartTrace((PTRACEHANDLE)&m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
+    do
     {
-        /// 已经存在 Stop
-        if (ERROR_ALREADY_EXISTS == status)
+        if (ERROR_SUCCESS == nStatus)
+            break;
+        // 已运行
+        if (ERROR_ALREADY_EXISTS == nStatus)
         {
-            StopTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(g_pTraceConfig + 8));
-            status = ControlTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(g_pTraceConfig + 8), EVENT_TRACE_CONTROL_STOP);
-            if (SUCCEEDED(status))
+            StopTrace(m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
+            nStatus = ControlTrace(m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise), EVENT_TRACE_CONTROL_STOP);
+            if (SUCCEEDED(nStatus))
             {
-                status = StartTrace(&m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(g_pTraceConfig + 8));
-                if (ERROR_SUCCESS != status)
+                nStatus = StartTrace(&m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
+                if (ERROR_SUCCESS != nStatus)
                 {
-                    OutputDebugString((L"[Etw Trace] 启动EtwStartTrace失败 " + std::to_wstring(GetLastError())).c_str());
+                    OutputDebugString((L"[Etw Trace] 启动EtwStartTrace失败 " + std::to_wstring(nStatus)).c_str());
                     return 0;
                 }
             }
         }
-    }
+        else {
+            OutputDebugString((L"[Etw Trace] 启动EtwStartTrace失败  " + std::to_wstring(nStatus)).c_str());
+            return 0;
+        }
+    } while (false);
+
 
     // Enable Trace
     //EnableTraceEx2(m_hFileSession, &RegistryProviderGuid,
@@ -1929,9 +1963,9 @@ bool UEtw::uf_RegisterTraceFile()
     //EnableTraceEx2(m_hFileSession, &FileProviderGuid,
     //    EVENT_CONTROL_CODE_ENABLE_PROVIDER,
     //    TRACE_LEVEL_VERBOSE, 0x10, 0, 0, nullptr);
-    //EnableTraceEx2(m_hFileSession, &ProcessProviderGuid, 
-    //    EVENT_CONTROL_CODE_ENABLE_PROVIDER, 
-    //    TRACE_LEVEL_VERBOSE, 0x10, 0, 0, nullptr);
+    EnableTraceEx2(m_hFileSession, &ProcessProviderGuid, 
+        EVENT_CONTROL_CODE_ENABLE_PROVIDER, 
+        TRACE_LEVEL_VERBOSE, 0x10, 0, 0, nullptr);
     EnableTraceEx2(m_hFileSession, &DnsClientWin7Guid,
         EVENT_CONTROL_CODE_ENABLE_PROVIDER,
         TRACE_LEVEL_VERBOSE, 0, 0, 0, nullptr);
@@ -1939,12 +1973,13 @@ bool UEtw::uf_RegisterTraceFile()
         EVENT_CONTROL_CODE_ENABLE_PROVIDER,
         TRACE_LEVEL_VERBOSE, 0, 0, 0, nullptr);
 
-    DWORD ThreadID = 0;
     //初始化临界区
-    g_th.Lock();
-    HANDLE hThread = CreateThread(NULL, 0, tracDispaththreadFile, NULL, 0, &ThreadID);
-    g_thrhandle.push_back(hThread);
-    g_th.Unlock();
+    {
+        std::unique_lock<std::mutex> lock(g_th);
+        DWORD dwTid = 0;
+        HANDLE hThread = CreateThread(NULL, 0, tracDispaththreadFile, NULL, 0, &dwTid);
+        g_thrhandle.emplace_back(hThread);
+    }
 
     OutputDebugString(L"[Etw Trace] UserMod Register TracGuid Success");
     return true;
@@ -1999,23 +2034,23 @@ bool UEtw::uf_close()
                 iter->second.bufconfig = NULL;
             }
 
-            g_ms.Lock();
+            std::unique_lock<std::mutex> lock(g_ms);
             g_tracMap.erase(iter++);
-            g_ms.Unlock();
         }
 
         g_etwFileReadFilter.clear();
         g_etwFileWriteilter.clear();
         g_etwFileDirEnumFilter.clear();
 
-        g_th.Lock();
-        for (size_t i = 0; i < g_thrhandle.size(); ++i)
         {
-            WaitForSingleObject(g_thrhandle[i], 1000);
-            CloseHandle(g_thrhandle[i]);
+            std::unique_lock<std::mutex> lock(g_th);
+            for (size_t i = 0; i < g_thrhandle.size(); ++i)
+            {
+                WaitForSingleObject(g_thrhandle[i], 1000);
+                CloseHandle(g_thrhandle[i]);
+            }
+            g_thrhandle.clear();
         }
-        g_thrhandle.clear();
-        g_th.Unlock();
     }
     catch (const std::exception&)
     {
@@ -2034,17 +2069,17 @@ bool UEtw::uf_init(const bool flag)
 bool UEtw::uf_close(const bool flag)
 {
     // 停止Etw_Session
-    StopTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(g_pTraceConfig + 8));
-    ControlTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(g_pTraceConfig + 8), EVENT_TRACE_CONTROL_STOP);
+    StopTrace(m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
+    ControlTrace(m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise), EVENT_TRACE_CONTROL_STOP);
+    m_hFileSession = 0;
 
-    g_th.Lock();
+    std::unique_lock<std::mutex> lock(g_th);
     for (size_t i = 0; i < g_thrhandle.size(); ++i)
     {
         WaitForSingleObject(g_thrhandle[i], 1000);
         CloseHandle(g_thrhandle[i]);
     }
     g_thrhandle.clear();
-    g_th.Unlock();
     return true;
 }
 
