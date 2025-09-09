@@ -44,16 +44,16 @@ static std::function<void(const PROCESSINFO&)> g_OnProcessNotify = nullptr;
 
 // [Guid File Logger] Event File Logger
 static const wchar_t SESSION_NAME_FILE[] = L"HadesEtwTrace";
-static EVENT_TRACE_PROPERTIES g_traceConfigNode;
+// [可选头部] + [EVENT_TRACE_PROPERTIES] + [会话名称] + [文件路径]
 typedef struct _TraceConfig {
+    BYTE header[8];
     EVENT_TRACE_PROPERTIES trace_propertise;
-    std::wstring session_name;
-    std::wstring filelog_path;
+    wchar_t name_file_buffer[0x400];
 
     _TraceConfig() {
+        RtlSecureZeroMemory(header, sizeof(BYTE) * 8);
         RtlSecureZeroMemory(&trace_propertise, sizeof(EVENT_TRACE_PROPERTIES));
-        session_name.clear();
-        filelog_path.clear();
+        RtlSecureZeroMemory(name_file_buffer, sizeof(wchar_t) * 0x400);
     }
 }TraceConfig, *pTraceConfig;
 static TraceConfig g_pTraceConfig;
@@ -615,142 +615,142 @@ void WINAPI ProcessFileRecord(PEVENT_RECORD rec)
 }
 void WINAPI DispatchLogEventCallback(PEVENT_RECORD rec)
 {
-/*
-    用户模式可监控的 ETW 提供者列表
-    一、核心系统组件
-    进程与线程：
-    Microsoft-Windows-Kernel-Process (已使用)
-    Microsoft-Windows-Kernel-Thread (已使用)
-    文件系统：
-    Microsoft-Windows-Kernel-File (已使用)
-    Microsoft-Windows-Win32File - 文件操作事件
-    注册表：
-    Microsoft-Windows-Kernel-Registry (已使用)
-    网络：
-    DNS 客户端：
-    Microsoft-Windows-DNS-Client (已使用)
-    GUID: {1c95126e-7eea-49a9-a3fe-a378b03ddb4d}
-    HTTP 服务：
-    Microsoft-Windows-HttpService - HTTP.sys 服务
-    GUID: {dd5ef90a-6398-47a4-ad34-4dcecdef795f}
-    WebIO：
-    Microsoft-Windows-WebIO - 低级 HTTP 操作
-    GUID: {50b3e73c-9370-461d-bb9f-26f32d68887d}
-    WinINet：
-    Microsoft-Windows-WinINet - WinINet API 事件
-    GUID: {43d1a55c-76d6-4f7e-995c-64c711e5cafe}
-    WinHTTP：
-    Microsoft-Windows-WinHttp - WinHTTP API 事件
-    GUID: {7d44233d-3055-4b9c-ba64-0d47ca40a232}
-    SMB 客户端：
-    Microsoft-Windows-SMBClient - SMB 文件共享客户端
-    GUID: {988c59c5-0a1c-45b6-a555-0c62276e327d}
+    /*
+        用户模式可监控的 ETW 提供者列表
+        一、核心系统组件
+        进程与线程：
+        Microsoft-Windows-Kernel-Process (已使用)
+        Microsoft-Windows-Kernel-Thread (已使用)
+        文件系统：
+        Microsoft-Windows-Kernel-File (已使用)
+        Microsoft-Windows-Win32File - 文件操作事件
+        注册表：
+        Microsoft-Windows-Kernel-Registry (已使用)
+        网络：
+        DNS 客户端：
+        Microsoft-Windows-DNS-Client (已使用)
+        GUID: {1c95126e-7eea-49a9-a3fe-a378b03ddb4d}
+        HTTP 服务：
+        Microsoft-Windows-HttpService - HTTP.sys 服务
+        GUID: {dd5ef90a-6398-47a4-ad34-4dcecdef795f}
+        WebIO：
+        Microsoft-Windows-WebIO - 低级 HTTP 操作
+        GUID: {50b3e73c-9370-461d-bb9f-26f32d68887d}
+        WinINet：
+        Microsoft-Windows-WinINet - WinINet API 事件
+        GUID: {43d1a55c-76d6-4f7e-995c-64c711e5cafe}
+        WinHTTP：
+        Microsoft-Windows-WinHttp - WinHTTP API 事件
+        GUID: {7d44233d-3055-4b9c-ba64-0d47ca40a232}
+        SMB 客户端：
+        Microsoft-Windows-SMBClient - SMB 文件共享客户端
+        GUID: {988c59c5-0a1c-45b6-a555-0c62276e327d}
 
-    二、安全相关
-    认证：
-    Microsoft-Windows-Authentication - 用户认证事件
-    GUID: {c7bde5a8-0000-0000-0000-000000000000}
-    授权：
-    Microsoft-Windows-Authorization - 访问控制事件
-    GUID: {6b1d8c3f-0000-0000-0000-000000000000}
-    审计：
-    Microsoft-Windows-Security-Auditing - 安全审计事件
-    GUID: {54849625-5478-4994-a5ba-3e3b0328c30d}
+        二、安全相关
+        认证：
+        Microsoft-Windows-Authentication - 用户认证事件
+        GUID: {c7bde5a8-0000-0000-0000-000000000000}
+        授权：
+        Microsoft-Windows-Authorization - 访问控制事件
+        GUID: {6b1d8c3f-0000-0000-0000-000000000000}
+        审计：
+        Microsoft-Windows-Security-Auditing - 安全审计事件
+        GUID: {54849625-5478-4994-a5ba-3e3b0328c30d}
 
-    三、应用程序框架
-    .NET：
-    Microsoft-Windows-DotNETRuntime - CLR 运行时事件
-    GUID: {e13c0d23-ccbc-4e12-931b-d9cc2eee27e4}
-    Microsoft-Windows-ASP.NET - ASP.NET 事件
-    GUID: {aff081fe-0247-4275-9c4e-021f3dc1da35}
-    COM/OLE：
-    Microsoft-Windows-COM - 组件对象模型
-    GUID: {b7e34f1b-6c83-4118-aaf5-be1e267b1a92}
-    Microsoft-Windows-OLE - OLE 自动化
-    GUID: {5c8bb950-959e-4309-8908-67961a1205d5}
-    RPC：
-    Microsoft-Windows-RPC - 远程过程调用
-    GUID: {6ad52b32-d609-4be9-ae07-ce8dae937e39}
+        三、应用程序框架
+        .NET：
+        Microsoft-Windows-DotNETRuntime - CLR 运行时事件
+        GUID: {e13c0d23-ccbc-4e12-931b-d9cc2eee27e4}
+        Microsoft-Windows-ASP.NET - ASP.NET 事件
+        GUID: {aff081fe-0247-4275-9c4e-021f3dc1da35}
+        COM/OLE：
+        Microsoft-Windows-COM - 组件对象模型
+        GUID: {b7e34f1b-6c83-4118-aaf5-be1e267b1a92}
+        Microsoft-Windows-OLE - OLE 自动化
+        GUID: {5c8bb950-959e-4309-8908-67961a1205d5}
+        RPC：
+        Microsoft-Windows-RPC - 远程过程调用
+        GUID: {6ad52b32-d609-4be9-ae07-ce8dae937e39}
 
-    四、多媒体
-    媒体基础：
-    Microsoft-Windows-MediaFoundation - 媒体播放
-    GUID: {f404b94e-27e0-4384-bfe8-1d8d390b0aa3}
-    音频：
-    Microsoft-Windows-Audio - 音频服务
-    GUID: {f0f3e8db-2e99-4c9a-a537-0c9b6b8a0e8b}
+        四、多媒体
+        媒体基础：
+        Microsoft-Windows-MediaFoundation - 媒体播放
+        GUID: {f404b94e-27e0-4384-bfe8-1d8d390b0aa3}
+        音频：
+        Microsoft-Windows-Audio - 音频服务
+        GUID: {f0f3e8db-2e99-4c9a-a537-0c9b6b8a0e8b}
 
-    五、系统服务
-    服务控制：
-    Microsoft-Windows-Services - 服务启动/停止
-    GUID: {2a9c6dd1-5701-4e0e-9f4a-8a8e9e1a1a8a}
-    任务计划：
-    Microsoft-Windows-TaskScheduler - 计划任务
-    GUID: {de7b24ea-73c8-4a09-985d-5bdd3a6c5d2c}
-    设备管理：
-    Microsoft-Windows-DeviceManagement - 设备管理
-    GUID: {6ad52b32-d609-4be9-ae07-ce8dae937e39}
+        五、系统服务
+        服务控制：
+        Microsoft-Windows-Services - 服务启动/停止
+        GUID: {2a9c6dd1-5701-4e0e-9f4a-8a8e9e1a1a8a}
+        任务计划：
+        Microsoft-Windows-TaskScheduler - 计划任务
+        GUID: {de7b24ea-73c8-4a09-985d-5bdd3a6c5d2c}
+        设备管理：
+        Microsoft-Windows-DeviceManagement - 设备管理
+        GUID: {6ad52b32-d609-4be9-ae07-ce8dae937e39}
 
-    六、用户界面
-    输入：
-    Microsoft-Windows-UserInput - 键盘/鼠标输入
-    GUID: {f0f3e8db-2e99-4c9a-a537-0c9b6b8a0e8b}
-    窗口管理：
-    Microsoft-Windows-Win32k - 窗口管理器
-    GUID: {8c416c79-d49b-4f01-a467-e56d3b5e7f2f}
+        六、用户界面
+        输入：
+        Microsoft-Windows-UserInput - 键盘/鼠标输入
+        GUID: {f0f3e8db-2e99-4c9a-a537-0c9b6b8a0e8b}
+        窗口管理：
+        Microsoft-Windows-Win32k - 窗口管理器
+        GUID: {8c416c79-d49b-4f01-a467-e56d3b5e7f2f}
 
-    七、脚本引擎
-    PowerShell：
-    Microsoft-Windows-PowerShell - PowerShell 执行
-    GUID: {a0c1853b-5c40-4b15-8766-3cf1c58f985a}
-    JScript：
-    Microsoft-Windows-JScript - JScript 引擎
-    GUID: {57277741-3638-4a4b-bdba-0ac6e45da56c}
-    VBScript：
-    Microsoft-Windows-VBScript - VBScript 引擎
-    GUID: {f1c3b79a-8765-4b5a-8a3a-7c4140c7d8c3}
+        七、脚本引擎
+        PowerShell：
+        Microsoft-Windows-PowerShell - PowerShell 执行
+        GUID: {a0c1853b-5c40-4b15-8766-3cf1c58f985a}
+        JScript：
+        Microsoft-Windows-JScript - JScript 引擎
+        GUID: {57277741-3638-4a4b-bdba-0ac6e45da56c}
+        VBScript：
+        Microsoft-Windows-VBScript - VBScript 引擎
+        GUID: {f1c3b79a-8765-4b5a-8a3a-7c4140c7d8c3}
 
-    八、数据库访问
-    ODBC：
-    Microsoft-Windows-ODBC - ODBC 数据库访问
-    GUID: {2a9c6dd1-5701-4e0e-9f4a-8a8e9e1a1a8a}
-    OLEDB：
-    Microsoft-Windows-OLEDB - OLEDB 数据库访问
-    GUID: {6b1d8c3f-0000-0000-0000-000000000000}
+        八、数据库访问
+        ODBC：
+        Microsoft-Windows-ODBC - ODBC 数据库访问
+        GUID: {2a9c6dd1-5701-4e0e-9f4a-8a8e9e1a1a8a}
+        OLEDB：
+        Microsoft-Windows-OLEDB - OLEDB 数据库访问
+        GUID: {6b1d8c3f-0000-0000-0000-000000000000}
 
-    九、开发者工具
-    调试：
-    Microsoft-Windows-Debug - 调试事件
-    GUID: {6b1d8c3f-0000-0000-0000-000000000000}
-    性能分析：
-    Microsoft-Windows-Perf - 性能计数器
-    GUID: {ce1dbfb4-137e-4da6-87b0-3f59aa102cbc}
+        九、开发者工具
+        调试：
+        Microsoft-Windows-Debug - 调试事件
+        GUID: {6b1d8c3f-0000-0000-0000-000000000000}
+        性能分析：
+        Microsoft-Windows-Perf - 性能计数器
+        GUID: {ce1dbfb4-137e-4da6-87b0-3f59aa102cbc}
 
-    十、其他重要提供者
-    错误报告：
-    Microsoft-Windows-WindowsErrorReporting - WER 事件
-    GUID: {b4e9e8d7-5a5e-4c8e-8b8d-7d9d7d9d7d9d}
-    更新管理：
-    Microsoft-Windows-WindowsUpdateClient - Windows 更新
-    GUID: {945a8954-c147-4acd-923f-40c9b9d8e7b1}
-    存储：
-    Microsoft-Windows-Storage - 存储管理
-    GUID: {c7bde5a8-0000-0000-0000-000000000000}
+        十、其他重要提供者
+        错误报告：
+        Microsoft-Windows-WindowsErrorReporting - WER 事件
+        GUID: {b4e9e8d7-5a5e-4c8e-8b8d-7d9d7d9d7d9d}
+        更新管理：
+        Microsoft-Windows-WindowsUpdateClient - Windows 更新
+        GUID: {945a8954-c147-4acd-923f-40c9b9d8e7b1}
+        存储：
+        Microsoft-Windows-Storage - 存储管理
+        GUID: {c7bde5a8-0000-0000-0000-000000000000}
 
-    // win32K
-    GUID providerGuid = { 0x8C416C79, 0xD49B, 0x4F01, {0xA4, 0x67, 0xE5, 0x6D, 0x3A, 0xA8, 0x23, 0x4C} };
-    GUID providerGuidWin7 = { 0xe7ef96be, 0x969f, 0x414f, {0x97, 0xd7, 0x3d, 0xdb, 0x7b, 0x55, 0x8c, 0xcc} };
-    ULONGLONG keyWord = 0x400 | 0x800000 | 0x1000 | 0x40000000000 | 0x80000000000;
-    status = EnableTraceEx2(
-        g_sessionHandle,
-        &providerGuid,
-        EVENT_CONTROL_CODE_ENABLE_PROVIDER,
-        TRACE_LEVEL_INFORMATION,
-        keyWord,
-        0,
-        0,
-        NULL);
-*/
+        // win32K
+        GUID providerGuid = { 0x8C416C79, 0xD49B, 0x4F01, {0xA4, 0x67, 0xE5, 0x6D, 0x3A, 0xA8, 0x23, 0x4C} };
+        GUID providerGuidWin7 = { 0xe7ef96be, 0x969f, 0x414f, {0x97, 0xd7, 0x3d, 0xdb, 0x7b, 0x55, 0x8c, 0xcc} };
+        ULONGLONG keyWord = 0x400 | 0x800000 | 0x1000 | 0x40000000000 | 0x80000000000;
+        status = EnableTraceEx2(
+            g_sessionHandle,
+            &providerGuid,
+            EVENT_CONTROL_CODE_ENABLE_PROVIDER,
+            TRACE_LEVEL_INFORMATION,
+            keyWord,
+            0,
+            0,
+            NULL);
+    */
     try
     {
         if (rec) {
@@ -1873,7 +1873,7 @@ bool UEtw::uf_RegisterTrace(const int dwEnableFlags)
         std::unique_lock<std::mutex> lock(g_th);
         DWORD ThreadID = 0;
         HANDLE hThread = CreateThread(NULL, 0, tracDispaththread, (PVOID)dwEnableFlags, 0, &ThreadID);
-        g_thrhandle.push_back(hThread);
+        g_thrhandle.emplace_back(hThread);
     }
 
     OutputDebugString(L"[Etw Trace] KernelMod Register TracGuid Success");
@@ -1908,28 +1908,34 @@ bool UEtw::uf_RegisterTraceFile()
     GetCurrentDirectoryW(MAX_PATH, m_LogEventPath);
     wcscat_s(m_LogEventPath, L"\\HadesHidsWinEtwFile.etl");
 
-    // 注册
-    ULONG bufferSize = sizeof(EVENT_TRACE_PROPERTIES) + (wcslen(SESSION_NAME_FILE) + 1) * sizeof(WCHAR) + 0x1000 * 2;
-    g_traceConfigNode.Wnode.BufferSize = bufferSize;
-    g_traceConfigNode.Wnode.Flags = WNODE_FLAG_TRACED_GUID;
-    // 记录事件的时钟 100ns
-    g_traceConfigNode.Wnode.ClientContext = 1;
-    // See Msdn: https://docs.microsoft.com/en-us/windows/win32/etw/nt-kernel-logger-constants
-    g_traceConfigNode.BufferSize = 64;  // 64kb
-    g_traceConfigNode.FlushTimer = 0;   // flush time
-    g_traceConfigNode.MinimumBuffers = 16;
-    g_traceConfigNode.MaximumBuffers = 128;
-    g_traceConfigNode.LogFileMode = EVENT_TRACE_REAL_TIME_MODE;
-    g_traceConfigNode.LoggerNameOffset = sizeof(EVENT_TRACE_PROPERTIES);
-    g_traceConfigNode.MaximumFileSize = 1; // 1MB
-
-    g_pTraceConfig.trace_propertise = g_traceConfigNode;
+    RtlSecureZeroMemory(&g_pTraceConfig, sizeof(TraceConfig));
+    g_pTraceConfig.trace_propertise.Wnode.BufferSize = sizeof(TraceConfig) - 8;
+    g_pTraceConfig.trace_propertise.Wnode.Flags = WNODE_FLAG_TRACED_GUID;
     g_pTraceConfig.trace_propertise.Wnode.Guid = UserModGuid;
-    g_pTraceConfig.session_name = SESSION_NAME_FILE;
-    g_pTraceConfig.filelog_path = m_LogEventPath;
+    // 记录事件的时钟 100ns
+    g_pTraceConfig.trace_propertise.Wnode.ClientContext = 1;
+    // See Msdn: https://docs.microsoft.com/en-us/windows/win32/etw/nt-kernel-logger-constants
+    g_pTraceConfig.trace_propertise.BufferSize = 64;        // 64kb
+    g_pTraceConfig.trace_propertise.FlushTimer = 1;
+    g_pTraceConfig.trace_propertise.MinimumBuffers = 16;
+    g_pTraceConfig.trace_propertise.MaximumBuffers = 128;
+    g_pTraceConfig.trace_propertise.LogFileMode = EVENT_TRACE_REAL_TIME_MODE;
+    g_pTraceConfig.trace_propertise.MaximumFileSize = 1;    // 1MB
+    g_pTraceConfig.trace_propertise.LoggerNameOffset =
+        sizeof(EVENT_TRACE_PROPERTIES);
+    g_pTraceConfig.trace_propertise.LogFileNameOffset =
+        sizeof(EVENT_TRACE_PROPERTIES) +
+        (wcslen(SESSION_NAME_FILE) + 1) * sizeof(WCHAR);
+    wcscpy_s(g_pTraceConfig.name_file_buffer,
+        sizeof(g_pTraceConfig.name_file_buffer) / sizeof(WCHAR),
+        SESSION_NAME_FILE);
+    wcscpy_s(g_pTraceConfig.name_file_buffer + wcslen(SESSION_NAME_FILE) + 1,
+        (sizeof(g_pTraceConfig.name_file_buffer) / sizeof(WCHAR)) -
+        (wcslen(SESSION_NAME_FILE) + 1),
+        m_LogEventPath);
 
     ULONG nStatus = 0;
-    nStatus = StartTrace((PTRACEHANDLE)&m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
+    nStatus = StartTrace((PTRACEHANDLE)&m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
     do
     {
         if (ERROR_SUCCESS == nStatus)
@@ -1937,11 +1943,12 @@ bool UEtw::uf_RegisterTraceFile()
         // 已运行
         if (ERROR_ALREADY_EXISTS == nStatus)
         {
-            StopTrace(m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
-            nStatus = ControlTrace(m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise), EVENT_TRACE_CONTROL_STOP);
+            // stoptrace || controltrace
+            StopTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
+            nStatus = ControlTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise), EVENT_TRACE_CONTROL_STOP);
             if (SUCCEEDED(nStatus))
             {
-                nStatus = StartTrace(&m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
+                nStatus = StartTrace(&m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
                 if (ERROR_SUCCESS != nStatus)
                 {
                     OutputDebugString((L"[Etw Trace] 启动EtwStartTrace失败 " + std::to_wstring(nStatus)).c_str());
@@ -1963,9 +1970,9 @@ bool UEtw::uf_RegisterTraceFile()
     //EnableTraceEx2(m_hFileSession, &FileProviderGuid,
     //    EVENT_CONTROL_CODE_ENABLE_PROVIDER,
     //    TRACE_LEVEL_VERBOSE, 0x10, 0, 0, nullptr);
-    EnableTraceEx2(m_hFileSession, &ProcessProviderGuid, 
-        EVENT_CONTROL_CODE_ENABLE_PROVIDER, 
-        TRACE_LEVEL_VERBOSE, 0x10, 0, 0, nullptr);
+    //EnableTraceEx2(m_hFileSession, &ProcessProviderGuid,
+    //    EVENT_CONTROL_CODE_ENABLE_PROVIDER,
+    //    TRACE_LEVEL_VERBOSE, 0x10, 0, 0, nullptr);
     EnableTraceEx2(m_hFileSession, &DnsClientWin7Guid,
         EVENT_CONTROL_CODE_ENABLE_PROVIDER,
         TRACE_LEVEL_VERBOSE, 0, 0, 0, nullptr);
@@ -2068,9 +2075,9 @@ bool UEtw::uf_init(const bool flag)
 }
 bool UEtw::uf_close(const bool flag)
 {
-    // 停止Etw_Session
-    StopTrace(m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
-    ControlTrace(m_hFileSession, g_pTraceConfig.session_name.c_str(), (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise), EVENT_TRACE_CONTROL_STOP);
+    // stop etw session
+    StopTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise));
+    ControlTrace(m_hFileSession, SESSION_NAME_FILE, (PEVENT_TRACE_PROPERTIES)(&g_pTraceConfig.trace_propertise), EVENT_TRACE_CONTROL_STOP);
     m_hFileSession = 0;
 
     std::unique_lock<std::mutex> lock(g_th);
