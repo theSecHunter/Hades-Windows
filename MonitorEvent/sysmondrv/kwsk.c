@@ -370,7 +370,7 @@ KsCreateSocket(
     // Allocate memory for the socket structure.
     //
 
-    PKSOCKET NewSocket = VerifiExAllocatePoolTag(sizeof(KSOCKET), MEMORY_TAG);
+    PKSOCKET NewSocket = VerifierExAllocatePoolTag(sizeof(KSOCKET), MEMORY_TAG);
     if (!NewSocket)
     {
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -568,7 +568,7 @@ KsAccept(
 
     if (NT_SUCCESS(Status))
     {
-        PKSOCKET KNewSocket = VerifiExAllocatePoolTag(sizeof(KSOCKET), MEMORY_TAG);
+        PKSOCKET KNewSocket = VerifierExAllocatePoolTag(sizeof(KSOCKET), MEMORY_TAG);
         if (!KNewSocket)
         {
             return STATUS_INSUFFICIENT_RESOURCES;

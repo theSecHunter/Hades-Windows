@@ -124,7 +124,7 @@ NTSTATUS Process_Init(void) {
 
     rProcess_IpsInit();
 
-    VerifiExInitializeNPagedLookasideList(
+    VerifierExInitializeNPagedLookasideList(
         &g_processList,
         NULL,
         NULL,
@@ -247,7 +247,7 @@ PROCESSBUFFER* Process_PacketAllocate(const int lens)
 
     if (lens > 0)
     {
-        pProcessData->dataBuffer = (char*)VerifiExAllocatePoolTag(lens, 'PRMM');
+        pProcessData->dataBuffer = (char*)VerifierExAllocatePoolTag(lens, 'PRMM');
         if (!pProcessData->dataBuffer)
         {
             ExFreeToNPagedLookasideList(&g_processList, pProcessData);

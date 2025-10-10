@@ -9,7 +9,7 @@ NTSTATUS establishedctx_init()
 {
 	NTSTATUS status = STATUS_SUCCESS;
 
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_establishedList,
 		NULL,
 		NULL,

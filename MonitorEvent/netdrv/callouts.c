@@ -83,6 +83,7 @@ inline void DbgPrintAddress(int ipFamily, void* addr, char* name, UINT64 id)
 	UNREFERENCED_PARAMETER(name);
 	UNREFERENCED_PARAMETER(id);
 	return;
+
 	if (ipFamily == AF_INET)
 	{
 		struct sockaddr_in* pAddr = (struct sockaddr_in*)addr;
@@ -1992,7 +1993,7 @@ NTSTATUS callout_init(PDEVICE_OBJECT deviceObject)
 
 	// Init FlowEstablished 
 	KeInitializeSpinLock(&g_callouts_flowspinlock);
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_callouts_flowCtxPacketsLAList,
 		NULL,
 		NULL,
@@ -2004,7 +2005,7 @@ NTSTATUS callout_init(PDEVICE_OBJECT deviceObject)
 
 	// Init DataLink
 	KeInitializeSpinLock(&g_callouts_datalinkspinlock);
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_callouts_datalinkPacktsList,
 		NULL,
 		NULL,

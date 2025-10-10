@@ -26,6 +26,7 @@ CommunicateConnect(
 	g_FltClientPortEvnetPort = ClientPort;
 	return STATUS_SUCCESS;
 }
+
 VOID
 CommunicateDisconnect(
 	IN PVOID ConnectionCookie
@@ -39,7 +40,7 @@ CommunicateDisconnect(
 	}
 }
 
-NTSTATUS Fsflt_initPort()
+NTSTATUS FsFltPortInitialize()
 {
 	NTSTATUS status;
 	OBJECT_ATTRIBUTES oa;
@@ -80,7 +81,7 @@ NTSTATUS Fsflt_initPort()
 }
 
 // Synchronize
-NTSTATUS Fsflt_SendMsg(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID ReplyBuffer, PULONG ReplyLength)
+NTSTATUS FsFltPortSendMessage(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID ReplyBuffer, PULONG ReplyLength)
 {
 	if (g_FltServerPortEvnet && g_FltClientPortEvnetPort)
 	{
@@ -95,20 +96,22 @@ NTSTATUS Fsflt_SendMsg(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID Reply
 	}
 	return STATUS_UNSUCCESSFUL;
 }
+
 // Asynchronous
-NTSTATUS Fsflt_SendToMsg(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID ReplyBuffer, PULONG ReplyLength)
+NTSTATUS FsFltPortSendMessageTo(PVOID SenderBuffer, ULONG SenderBufferLength, PVOID ReplyBuffer, PULONG ReplyLength)
 {
 	return STATUS_SUCCESS;
 }
 
-void Fsflt_ClosePort()
+void FsFltPortClose()
 {
 	if (g_FltServerPortEvnetPort) {
 		FltCloseCommunicationPort(g_FltServerPortEvnetPort);
 		g_FltServerPortEvnetPort = NULL;
 	}
 }
-void Fsflt_freePort()
+
+void FsFltPortDelete()
 {
-	Fsflt_ClosePort();
+	FsFltPortClose();
 }

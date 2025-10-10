@@ -411,11 +411,11 @@ typedef enum _WinVer
 
 
 // verifier.exe
-PVOID VerifiExAllocatePoolTag(
+PVOID VerifierExAllocatePoolTag(
     _In_ SIZE_T NumberOfBytes,
     _In_ ULONG Tag);
 
-VOID VerifiExInitializeNPagedLookasideList(
+VOID VerifierExInitializeNPagedLookasideList(
     _Out_ PNPAGED_LOOKASIDE_LIST Lookaside,
     _In_opt_ PALLOCATE_FUNCTION Allocate,
     _In_opt_ PFREE_FUNCTION Free,
@@ -425,7 +425,7 @@ VOID VerifiExInitializeNPagedLookasideList(
     _In_ USHORT Depth
 );
 
-PVOID VerifiMmGetSystemAddressForMdlSafe(
+PVOID VerifierMmGetSystemAddressForMdlSafe(
     _Inout_ PMDL Mdl,
     _In_    ULONG Priority
 );

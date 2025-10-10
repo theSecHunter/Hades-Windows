@@ -74,7 +74,7 @@ NTSTATUS rThrInject_SetIpsProcessName(PIRP irp, PIO_STACK_LOCATION irpSp)
             status = STATUS_INVALID_MEMBER;
             break;
         }
-        p2 = VerifiExAllocatePoolTag(inputBufferLength + 1, MEM_TAG_DK);
+        p2 = VerifierExAllocatePoolTag(inputBufferLength + 1, MEM_TAG_DK);
         if (!p2 || (p2 == NULL))
         {
             status = STATUS_INSUFFICIENT_RESOURCES;

@@ -321,7 +321,7 @@ NF_TCPCTX_DATA* tcp_Get()
 NTSTATUS tcp_init()
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_tcpctxPacketsBufList,
 		NULL,
 		NULL,
@@ -331,7 +331,7 @@ NTSTATUS tcp_init()
 		0
 	);
 
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_tcpCtxLAList,
 		NULL,
 		NULL,
@@ -341,7 +341,7 @@ NTSTATUS tcp_init()
 		0
 	);
 
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_packetsLAList,
 		NULL,
 		NULL,
@@ -468,5 +468,3 @@ void remove_tcpHandle(PTCPCTX ptcpctx)
 	ht_remove_entry(g_phtTcpCtxByHandle, ptcpctx->transportEndpointHandle);
 	sl_unlock(&lh);
 }
-
-

@@ -20,7 +20,7 @@ static HANDLE g_bfeStateSubscribeHandle = NULL;
 UNICODE_STRING u_devicename;
 UNICODE_STRING u_devicesyslink;
 
-VOID VerifiExInitializeNPagedLookasideList(
+VOID VerifierExInitializeNPagedLookasideList(
 	_Out_ PNPAGED_LOOKASIDE_LIST Lookaside,
 	_In_opt_ PALLOCATE_FUNCTION Allocate,
 	_In_opt_ PFREE_FUNCTION Free,
@@ -54,7 +54,7 @@ VOID VerifiExInitializeNPagedLookasideList(
 #endif
 }
 
-PVOID VerifiMmGetSystemAddressForMdlSafe(
+PVOID VerifierMmGetSystemAddressForMdlSafe(
 	_Inout_ PMDL Mdl,
 	_In_    ULONG Priority
 )

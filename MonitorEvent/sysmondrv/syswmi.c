@@ -54,7 +54,7 @@ NTSTATUS Wmi_Init()
 	sl_init(&g_wmidata.wmi_lock);
 	InitializeListHead(&g_wmidata.wmi_pending);
 
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_wmilist,
 		NULL,
 		NULL,
@@ -157,7 +157,7 @@ WMIBUFFER* Wmi_PacketAllocate(int lens)
 
 	if (lens > 0)
 	{
-		wmibuf->dataBuffer = (char*)VerifiExAllocatePoolTag(lens, 'WMMM');
+		wmibuf->dataBuffer = (char*)VerifierExAllocatePoolTag(lens, 'WMMM');
 		if (!wmibuf->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_wmilist, wmibuf);

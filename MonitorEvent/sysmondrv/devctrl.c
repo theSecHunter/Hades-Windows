@@ -683,7 +683,7 @@ NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 
 	__try
 	{
-		kernelVa = VerifiMmGetSystemAddressForMdlSafe(pMdl, HighPagePriority);
+		kernelVa = VerifierMmGetSystemAddressForMdlSafe(pMdl, HighPagePriority);
 		if (!kernelVa)
 		{
 			MmFreePagesFromMdl(pMdl);
@@ -879,7 +879,7 @@ NTSTATUS devctrl_read(PIRP irp, PIO_STACK_LOCATION irpSp)
 			break;
 		}
 
-		if (VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority) == NULL ||
+		if (VerifierMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority) == NULL ||
 			irpSp->Parameters.Read.Length < sizeof(NF_READ_RESULT))
 		{
 			KdPrint((DPREFIX"devctrl_read: Invalid request\n"));
@@ -926,7 +926,7 @@ NTSTATUS devctrl_write(PIRP irp, PIO_STACK_LOCATION irpSp)
 	PNF_READ_RESULT pRes;
 	ULONG bufferLength = irpSp->Parameters.Write.Length;
 
-	pRes = (PNF_READ_RESULT)VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority);
+	pRes = (PNF_READ_RESULT)VerifierMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority);
 	if (!pRes || bufferLength < sizeof(NF_READ_RESULT))
 	{
 		irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -1118,7 +1118,7 @@ VOID devctrl_setIpsMonitor(BOOLEAN code)
 	Wmi_SetIpsMonitor(code);
 	Session_SetIpsMonitor(code);
 	// minifilter Ips monitor
-	FsFlt_SetDirectoryIpsMonitor(code);
+	FsFltSetDirectoryIpsMonitor(code);
 	sl_unlock(&lh);
 
 	devctrl_cancelPendingReads();
@@ -1191,7 +1191,7 @@ NTSTATUS devctrl_dispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP irp)
 		// Directory Ips: 进程名/目录列表
 		case CTL_DEVCTRL_IPS_SETDIRECTORYRULE:
 		{
-			FsFlt_SetDirectoryIpsMonitor(FALSE);
+			FsFltSetDirectoryIpsMonitor(FALSE);
 			utiltools_sleep(500);
 			return rDirectory_SetIpsDirectRule(irp, irpSp);
 		}
@@ -1280,7 +1280,7 @@ NTSTATUS devctrl_ioInit(PDRIVER_OBJECT DriverObject) {
 	InitializeListHead(&g_IoQueryHead);
 	KeInitializeSpinLock(&g_IoQueryLock);
 
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_IoQueryList,
 		NULL,
 		NULL,
@@ -1847,7 +1847,7 @@ void devctrl_serviceReads()
 		return;
 	}
 
-	pResult = (PNF_READ_RESULT)VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, HighPagePriority);
+	pResult = (PNF_READ_RESULT)VerifierMmGetSystemAddressForMdlSafe(irp->MdlAddress, HighPagePriority);
 	if (!pResult)
 	{
 		irp->IoStatus.Information = 0;

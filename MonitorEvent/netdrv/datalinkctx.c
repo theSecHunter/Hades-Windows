@@ -14,7 +14,7 @@ NF_DATALINK_DATA* datalink_get()
 NTSTATUS datalinkctx_init()
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_dataLinkPacketsList,
 		NULL,
 		NULL,

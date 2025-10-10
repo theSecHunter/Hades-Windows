@@ -772,7 +772,7 @@ void WINAPI DispatchLogEventCallback(PEVENT_RECORD rec)
     }
 }
 
-// 生产者：Etw事件回调 - 数据推送至订阅消息队列(消费者)
+// 生产者：ETW事件回调 - 数据推送至订阅消息队列(消费者) producer-consumer
 // [NT Kernel Logger] PEVENT_RECORD回调
 void WINAPI NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
 {

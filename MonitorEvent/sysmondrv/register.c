@@ -240,13 +240,13 @@ static NTSTATUS Process_NotifyRegister(
 		ExAcquireResourceExclusiveLite(&g_resourcelock, TRUE);
 		const int replaybuflen = sizeof(HADES_REPLY);
 		const int sendbuflen = sizeof(HADES_NOTIFICATION);
-		HADES_NOTIFICATION* const pNotification = (PHADES_NOTIFICATION)VerifiExAllocatePoolTag(sendbuflen, 'IPSR');
+		HADES_NOTIFICATION* const pNotification = (PHADES_NOTIFICATION)VerifierExAllocatePoolTag(sendbuflen, 'IPSR');
 		if (pNotification)
 		{
 			RtlZeroMemory(pNotification, sendbuflen);
 			pNotification->CommandId = 2; // MINIPORT_IPS_REGISTER
 			RtlCopyMemory(&pNotification->Contents, &registerinfo, sizeof(REGISTERINFO));
-			NTSTATUS nSendRet = Fsflt_SendMsg(pNotification, sendbuflen, pNotification, &replaybuflen);
+			NTSTATUS nSendRet = FsFltPortSendMessage(pNotification, sendbuflen, pNotification, &replaybuflen);
 			const DWORD  ReSafeToOpen = ((PHADES_REPLY)pNotification)->SafeToOpen;
 			// À¹½Ø
 			if (1 == ReSafeToOpen)
@@ -287,7 +287,7 @@ NTSTATUS Register_Init(PDRIVER_OBJECT pDriverObject)
 
 	rRegister_IpsInit();
 
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_registerlist,
 		NULL,
 		NULL,
@@ -378,7 +378,7 @@ REGISTERBUFFER* Register_PacketAllocate(int lens)
 
 	if (lens > 0)
 	{
-		regbuf->dataBuffer = (char*)VerifiExAllocatePoolTag(lens, 'REMM');
+		regbuf->dataBuffer = (char*)VerifierExAllocatePoolTag(lens, 'REMM');
 		if (!regbuf->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_registerlist, regbuf);

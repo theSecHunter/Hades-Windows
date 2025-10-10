@@ -83,7 +83,7 @@ BOOLEAN CheckIsRemoteThread(const HANDLE ProcessId)
 			if (!BufferLen) 
 				break;
 
-			pInfo = (PSYSTEM_PROCESS_INFORMATION)VerifiExAllocatePoolTag(BufferLen, 'THMM');
+			pInfo = (PSYSTEM_PROCESS_INFORMATION)VerifierExAllocatePoolTag(BufferLen, 'THMM');
 			if (!pInfo) 
 				break;
 			pMemAddr = pInfo;
@@ -279,7 +279,7 @@ NTSTATUS Thread_Init()
 	sl_init(&g_thr_ips_monitorlock);
 
 	sl_init(&g_threadlock);
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_threadlist,
 		NULL,
 		NULL,
@@ -365,7 +365,7 @@ PTHREADBUFFER Thread_PacketAllocate(int lens)
 	
 	if (lens > 0)
 	{
-		threadbuf->dataBuffer = (char*)VerifiExAllocatePoolTag(lens, 'THMM');
+		threadbuf->dataBuffer = (char*)VerifierExAllocatePoolTag(lens, 'THMM');
 		if (!threadbuf->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_threadlist, threadbuf);

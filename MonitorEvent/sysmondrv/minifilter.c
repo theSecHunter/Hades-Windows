@@ -351,7 +351,7 @@ CONST FLT_REGISTRATION FilterRegistration = {
 
 };
 
-void FsFlt_SetDirectoryIpsMonitor(const BOOLEAN code)
+void FsFltSetDirectoryIpsMonitor(const BOOLEAN code)
 {
     KLOCK_QUEUE_HANDLE lh;
 
@@ -360,7 +360,7 @@ void FsFlt_SetDirectoryIpsMonitor(const BOOLEAN code)
     KeReleaseInStackQueuedSpinLock(&lh);
 }
 
-NTSTATUS FsMini_Init(PDRIVER_OBJECT DriverObject)
+NTSTATUS FsMiniInitialize(PDRIVER_OBJECT DriverObject)
 {
     NTSTATUS nStatus = FltRegisterFilter(DriverObject, &FilterRegistration, &g_FltServerPortEvnet);
     if (NT_SUCCESS(nStatus))
@@ -375,15 +375,15 @@ NTSTATUS FsMini_Init(PDRIVER_OBJECT DriverObject)
     return nStatus;
 }
 
-NTSTATUS FsMini_Clean()
+NTSTATUS FsMiniCleanup()
 {
     rDirectory_IpsClean();
     return STATUS_SUCCESS;
 }
 
-NTSTATUS FsMini_Free()
+NTSTATUS FsMiniFree()
 {
-    FsMini_Clean();
+    FsMiniCleanup();
     if ((TRUE == g_fltregstatus) && g_FltServerPortEvnet)
     {
         FltUnregisterFilter(g_FltServerPortEvnet);
@@ -393,7 +393,7 @@ NTSTATUS FsMini_Free()
     return STATUS_SUCCESS;
 }
 
-NTSTATUS Mini_StartFilter()
+NTSTATUS FsMiniStartFilter()
 {
     //
     //  Start filtering i/o
@@ -878,7 +878,7 @@ FsFilterAntsDrPostFileHide(
             {
 
                 // NormalPagePriority
-                Bufferptr = VerifiMmGetSystemAddressForMdlSafe(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress, NormalPagePriority);
+                Bufferptr = VerifierMmGetSystemAddressForMdlSafe(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress, NormalPagePriority);
             }
             else
             {
@@ -991,7 +991,7 @@ FsFilterAntsDrPostFileHide(
         if (Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress != NULL)
         {
 
-            Bufferptr = VerifiMmGetSystemAddressForMdlSafe(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress,
+            Bufferptr = VerifierMmGetSystemAddressForMdlSafe(Data->Iopb->Parameters.DirectoryControl.QueryDirectory.MdlAddress,
                 NormalPagePriority);
         }
         else

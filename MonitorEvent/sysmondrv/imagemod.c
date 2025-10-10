@@ -161,7 +161,7 @@ NTSTATUS Imagemod_Init(void)
 	sl_init(&g_imagemod_ips_monitorlock);
 
 	sl_init(&g_imagemodlock);
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_imagemodList,
 		NULL,
 		NULL,
@@ -244,7 +244,7 @@ IMAGEMODBUFFER* Imagemod_PacketAllocate(int lens)
 
 	if (lens > 0)
 	{
-		pImageData->dataBuffer = (char*)VerifiExAllocatePoolTag(lens, 'IMMM');
+		pImageData->dataBuffer = (char*)VerifierExAllocatePoolTag(lens, 'IMMM');
 		if (!pImageData->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_imagemodList, pImageData);

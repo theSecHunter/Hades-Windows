@@ -393,7 +393,6 @@
     <ClInclude Include="public.h" />
     <ClInclude Include="rDirectory.h" />
     <ClInclude Include="register.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="rProcess.h" />
     <ClInclude Include="rRegister.h" />
     <ClInclude Include="rThread.h" />
@@ -414,9 +413,6 @@
     <ClInclude Include="thread.h" />
     <ClInclude Include="uefi.h" />
     <ClInclude Include="utiltools.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="SysMonDrv.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

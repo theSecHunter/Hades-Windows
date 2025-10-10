@@ -105,11 +105,11 @@ int Sstd_GetTableInfo(SSDTINFO* MemBuffer)
 
 	DWORD32		offset = 0;
 	ULONGLONG	funaddr = 0;
-	PSSDTINFO	ssdtinfo = VerifiExAllocatePoolTag(sizeof(SSDTINFO), 'STMM');
+	PSSDTINFO	ssdtinfo = VerifierExAllocatePoolTag(sizeof(SSDTINFO), 'STMM');
 	if (!ssdtinfo)
 		return -1;
 	RtlSecureZeroMemory(ssdtinfo, sizeof(SSDTINFO));
-	int			i = 0;
+	unsigned int i = 0;
 	for (i = 0; i < dwSsdtFunNumber; ++i)
 	{
 		ssdtinfo->ssdt_id = i;

@@ -179,7 +179,7 @@ NTSTATUS devctrl_createSharedMemory(PSHARED_MEMORY pSharedMemory, UINT64 len)
 
 	__try
 	{
-		kernelVa = VerifiMmGetSystemAddressForMdlSafe(mdl, HighPagePriority);
+		kernelVa = VerifierMmGetSystemAddressForMdlSafe(mdl, HighPagePriority);
 		if (!kernelVa)
 		{
 			MmFreePagesFromMdl(mdl);
@@ -347,7 +347,7 @@ NTSTATUS devctrl_readEx(PIRP irp, PIO_STACK_LOCATION irpSp)
 			break;
 		}
 
-		if (VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority) == NULL ||
+		if (VerifierMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority) == NULL ||
 			irpSp->Parameters.Read.Length < sizeof(NF_READ_RESULT))
 		{
 			status = STATUS_INSUFFICIENT_RESOURCES;
@@ -1029,7 +1029,7 @@ NTSTATUS devctrl_write(PIRP irp, PIO_STACK_LOCATION irpSp)
 	PNF_READ_RESULT pRes = NULL;
 	ULONG bufferLength = irpSp->Parameters.Write.Length;
 
-	pRes = (PNF_READ_RESULT)VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority);
+	pRes = (PNF_READ_RESULT)VerifierMmGetSystemAddressForMdlSafe(irp->MdlAddress, NormalPagePriority);
 	if (!pRes || bufferLength < sizeof(NF_READ_RESULT))
 	{
 		irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -1137,7 +1137,7 @@ NTSTATUS devctrl_init(PDRIVER_OBJECT pDriverObject)
 	// Init List
 	InitializeListHead(&g_pendedIoRequests);
 	InitializeListHead(&g_IoQueryHead);
-	VerifiExInitializeNPagedLookasideList(&g_IoQueryList, NULL, NULL, 0, sizeof(NF_QUEUE_ENTRY), 'NFQU', 0);
+	VerifierExInitializeNPagedLookasideList(&g_IoQueryList, NULL, NULL, 0, sizeof(NF_QUEUE_ENTRY), 'NFQU', 0);
 	KeInitializeSpinLock(&g_sIolock);
 
 	// Init I/O handler Thread
@@ -1213,7 +1213,8 @@ NTSTATUS devctrl_init(PDRIVER_OBJECT pDriverObject)
 		ZwClose(threadHandle);
 	}
 
-	VerifiExInitializeNPagedLookasideList(&g_udpInjectContextLAList,
+	VerifierExInitializeNPagedLookasideList(
+		&g_udpInjectContextLAList,
 		NULL,
 		NULL,
 		0,
@@ -1887,7 +1888,7 @@ void devctrl_serviceReads()
 		return;
 	}
 
-	pResult = (PNF_READ_RESULT)VerifiMmGetSystemAddressForMdlSafe(irp->MdlAddress, HighPagePriority);
+	pResult = (PNF_READ_RESULT)VerifierMmGetSystemAddressForMdlSafe(irp->MdlAddress, HighPagePriority);
 	if (!pResult)
 	{
 		irp->IoStatus.Information = 0;

@@ -89,7 +89,7 @@ NTSTATUS Session_Init(PDRIVER_OBJECT pDriverObject)
 	sl_init(&g_sessiondata.session_lock);
 	InitializeListHead(&g_sessiondata.session_pending);
 
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_sessionlist,
 		NULL,
 		NULL,
@@ -189,7 +189,7 @@ SESSIONBUFFER* Session_PacketAllocate(int lens)
 
 	if (lens > 0)
 	{
-		seionbuf->dataBuffer = (char*)VerifiExAllocatePoolTag(lens, 'SEMM');
+		seionbuf->dataBuffer = (char*)VerifierExAllocatePoolTag(lens, 'SEMM');
 		if (!seionbuf->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_sessionlist, seionbuf);

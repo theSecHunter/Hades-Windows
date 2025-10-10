@@ -242,7 +242,7 @@ ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer)
 	InitGloableFunction_Process1();
 	if (!ZwQueryInformationProcess)
 		return Count;
-	pBuffer = VerifiExAllocatePoolTag(BufferSize, MEM_TAG);
+	pBuffer = VerifierExAllocatePoolTag(BufferSize, MEM_TAG);
 	if (!pBuffer || (pBuffer == NULL))
 		return Count;
 	memset(pBuffer, 0, BufferSize);
@@ -252,7 +252,7 @@ ULONG_PTR nf_GetProcessInfo(int Enumbool, HANDLE pid, PHANDLE_INFO pOutBuffer)
 		free_np(pBuffer);
 		pBuffer = NULL;
 		BufferSize = BufferSize * 2;
-		pBuffer = VerifiExAllocatePoolTag(BufferSize, MEM_TAG);
+		pBuffer = VerifierExAllocatePoolTag(BufferSize, MEM_TAG);
 		memset(pBuffer, 0, BufferSize);
 		Status = ZwQuerySystemInformation(16, pBuffer, BufferSize, 0);
 	}

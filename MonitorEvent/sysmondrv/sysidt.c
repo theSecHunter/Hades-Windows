@@ -51,7 +51,7 @@ int nf_GetIdtTableInfo(IDTINFO* MemBuffer)
     }
 
     ULONGLONG uaddress = 0;
-	IDTINFO* idtinfo = VerifiExAllocatePoolTag(sizeof(IDTINFO), 'IDMM');
+	IDTINFO* idtinfo = VerifierExAllocatePoolTag(sizeof(IDTINFO), 'IDMM');
 	if (!idtinfo)
 		return -1;
 

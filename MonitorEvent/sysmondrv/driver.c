@@ -42,7 +42,7 @@ static PfnNtQueryInformationProcess ZwQueryInformationProcess;
         DbgPrint _string :                          \
         ((int)0))
 
-PVOID VerifiExAllocatePoolTag(
+PVOID VerifierExAllocatePoolTag(
     _In_ SIZE_T NumberOfBytes,
     _In_ ULONG Tag)
 {
@@ -53,7 +53,7 @@ PVOID VerifiExAllocatePoolTag(
 #endif;
 }
 
-VOID VerifiExInitializeNPagedLookasideList(
+VOID VerifierExInitializeNPagedLookasideList(
     _Out_ PNPAGED_LOOKASIDE_LIST Lookaside,
     _In_opt_ PALLOCATE_FUNCTION Allocate,
     _In_opt_ PFREE_FUNCTION Free,
@@ -88,7 +88,7 @@ VOID VerifiExInitializeNPagedLookasideList(
 #endif
 }
 
-PVOID VerifiMmGetSystemAddressForMdlSafe(
+PVOID VerifierMmGetSystemAddressForMdlSafe(
     _Inout_ PMDL Mdl,
     _In_    ULONG Priority
 )
@@ -138,8 +138,8 @@ VOID driverUnload(
         g_processname = NULL;
     }
 
-    Fsflt_freePort();
-    FsMini_Free();
+    FsFltPortDelete();
+    FsMiniFree();
     devctrl_free();
     devctrl_ioThreadFree();
     return;
@@ -163,16 +163,16 @@ NTSTATUS
 		("driver!DriverEntry: Entered\n"));
 
     // Init MiniFilter
-    status = FsMini_Init(DriverObject);
+    status = FsMiniInitialize(DriverObject);
     if (!NT_SUCCESS(status))
         return status;
-    status = Mini_StartFilter();
+    status = FsMiniStartFilter();
     if (!NT_SUCCESS(status))
         return status;
-    status = Fsflt_initPort();
+    status = FsFltPortInitialize();
     if (!NT_SUCCESS(status))
     {
-        FsMini_Free();
+        FsMiniFree();
         return status;
     }
     
@@ -218,7 +218,7 @@ NTSTATUS
         return FALSE;
 
     do {
-        g_processname = VerifiExAllocatePoolTag(260 * (260 * sizeof(WCHAR)), 'CM');
+        g_processname = VerifierExAllocatePoolTag(260 * (260 * sizeof(WCHAR)), 'CM');
         if (!g_processname)
             return status;
 

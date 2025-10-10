@@ -184,7 +184,7 @@ NTSTATUS push_udpPacketinfo(PVOID packet, int lens, BOOLEAN isSend)
 
 NTSTATUS udp_init() {
 	NTSTATUS status = STATUS_SUCCESS;
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_udpctxPacketsBufList,
 		NULL,
 		NULL,
@@ -194,7 +194,7 @@ NTSTATUS udp_init() {
 		0
 	);
 
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_udpCtxList,
 		NULL,
 		NULL,
@@ -204,7 +204,7 @@ NTSTATUS udp_init() {
 		0
 	);
 
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_udpPacketDataList,
 		NULL,
 		NULL,

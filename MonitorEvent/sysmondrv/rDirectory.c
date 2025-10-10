@@ -173,7 +173,7 @@ NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 		const int dwflag = atoi(&chrflag);
 		rDirectory_IpsCleanEx(dwflag);
 
-		p2 = VerifiExAllocatePoolTag(inputBufferLength + 1, MEM_TAG_DK);
+		p2 = VerifierExAllocatePoolTag(inputBufferLength + 1, MEM_TAG_DK);
 		if (NULL == p2 || (!p2))
 		{
 			status = STATUS_INSUFFICIENT_RESOURCES;
@@ -195,7 +195,7 @@ NTSTATUS rDirectory_SetIpsDirectRule(PIRP irp, PIO_STACK_LOCATION irpSp)
 			break;
 		}
 
-		int nProcessLen = inputBufferLength - sizeof(WCHAR);
+		unsigned int nProcessLen = inputBufferLength - sizeof(WCHAR);
 		RtlCopyMemory(p2, pwPtr, nProcessLen);
 
 		nProcessLen >>= 1;

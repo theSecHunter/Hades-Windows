@@ -103,7 +103,7 @@ NTSTATUS File_Init(PDRIVER_OBJECT pDriverObject)
 	sl_init(&g_filedata.file_lock);
 	InitializeListHead(&g_filedata.file_pending);
 
-	VerifiExInitializeNPagedLookasideList(
+	VerifierExInitializeNPagedLookasideList(
 		&g_filelist,
 		NULL,
 		NULL,
@@ -196,7 +196,7 @@ FILEBUFFER* File_PacketAllocate(int lens)
 
 	if (lens > 0)
 	{
-		filebuf->dataBuffer = (char*)VerifiExAllocatePoolTag(lens, 'FLMM');
+		filebuf->dataBuffer = (char*)VerifierExAllocatePoolTag(lens, 'FLMM');
 		if (!filebuf->dataBuffer)
 		{
 			ExFreeToNPagedLookasideList(&g_filelist, filebuf);
