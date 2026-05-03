@@ -74,6 +74,25 @@ static std::mutex* g_EtwQueueCs_Ptr = nullptr;
 static HANDLE                         g_JobQueue_Event = nullptr;
 static bool                           g_EtwEventExit = false;
 static TRACEHANDLE                    g_ProcessTracehandle = 0;
+static void PushEtwQueueOrFree(UPubNode*& node)
+{
+    if (!node)
+        return;
+
+    if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_JobQueue_Event)
+    {
+        std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
+        g_EtwQueue_Ptr->push(node);
+        node = nullptr;
+        SetEvent(g_JobQueue_Event);
+    }
+
+    if (node)
+    {
+        delete[] reinterpret_cast<char*>(node);
+        node = nullptr;
+    }
+}
 
 // File - Microsoft-Windows-Kernel-File
 const GUID FileProviderGuid =
@@ -557,12 +576,8 @@ void WINAPI ProcessRecord(PEVENT_RECORD EventRecord)
             pEtwData->taskid = UF_ETW_PROCESSINFO;
             RtlCopyMemory(&pEtwData->data[0], &etwProcessInfo, sizeof(UEtwProcessInfo));
 
-            if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_JobQueue_Event)
-            {
-                std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
-                g_EtwQueue_Ptr->push(pEtwData);
-                SetEvent(g_JobQueue_Event);
-            }
+            PushEtwQueueOrFree(pEtwData);
+
             // Callback
             //if (g_OnProcessNotify)
             //    g_OnProcessNotify(etwProcessInfo);
@@ -907,12 +922,8 @@ void WINAPI NetWorkEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         pEtwData->taskid = UF_ETW_NETWORK;
         RtlCopyMemory(&pEtwData->data[0], &etwNetInfo, sizeof(UEtwNetWork));
 
-        if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_JobQueue_Event)
-        {
-            std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
-            g_EtwQueue_Ptr->push(pEtwData);
-            SetEvent(g_JobQueue_Event);
-        }
+        PushEtwQueueOrFree(pEtwData);
+
     }
     catch (...)
     {
@@ -1024,12 +1035,8 @@ void WINAPI ProcessEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         pEtwData->taskid = UF_ETW_PROCESSINFO;
         RtlCopyMemory(&pEtwData->data[0], &etwProcessInfo, sizeof(UEtwProcessInfo));
 
-        if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_JobQueue_Event)
-        {
-            std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
-            g_EtwQueue_Ptr->push(pEtwData);
-            SetEvent(g_JobQueue_Event);
-        }
+        PushEtwQueueOrFree(pEtwData);
+
     }
     catch (...)
     {
@@ -1150,12 +1157,8 @@ void WINAPI ThreadEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
             pEtwData->taskid = UF_ETW_THREADINFO;
             RtlCopyMemory(&pEtwData->data[0], &etwThreadInfo, sizeof(UEtwThreadInfo));
 
-            if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_JobQueue_Event)
-            {
-                std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
-                g_EtwQueue_Ptr->push(pEtwData);
-                SetEvent(g_JobQueue_Event);
-            }
+            PushEtwQueueOrFree(pEtwData);
+
         }
     }
     catch (...)
@@ -1364,12 +1367,8 @@ void WINAPI FileEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         pEtwData->taskid = UF_ETW_FILEIO;
         RtlCopyMemory(&pEtwData->data[0], &etwFileIoInfo, sizeof(UEtwFileIoTabInfo));
 
-        if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_JobQueue_Event)
-        {
-            std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
-            g_EtwQueue_Ptr->push(pEtwData);
-            SetEvent(g_JobQueue_Event);
-        }
+        PushEtwQueueOrFree(pEtwData);
+
     }
     catch (...)
     {
@@ -1468,12 +1467,8 @@ void WINAPI RegisterTabEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
         RtlZeroMemory(pEtwData, g_EtwRegtabDataLens);
         pEtwData->taskid = UF_ETW_REGISTERTAB;
         RtlCopyMemory(&pEtwData->data[0], &etwRegtabInfo, sizeof(UEtwRegisterTabInfo));
-        if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_JobQueue_Event)
-        {
-            std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
-            g_EtwQueue_Ptr->push(pEtwData);
-            SetEvent(g_JobQueue_Event);
-        }
+        PushEtwQueueOrFree(pEtwData);
+
     }
     catch (...)
     {
@@ -1597,12 +1592,8 @@ void WINAPI ImageModEventInfo(PEVENT_RECORD rec, PTRACE_EVENT_INFO info)
             return;
         pEtwData->taskid = UF_ETW_IMAGEMOD;
         RtlCopyMemory(&pEtwData->data[0], &eImageInfo, sizeof(UEtwImageInfo));
-        if (g_EtwQueue_Ptr && g_EtwQueueCs_Ptr && g_JobQueue_Event)
-        {
-            std::unique_lock<std::mutex> lock(*g_EtwQueueCs_Ptr);
-            g_EtwQueue_Ptr->push(pEtwData);
-            SetEvent(g_JobQueue_Event);
-        }
+        PushEtwQueueOrFree(pEtwData);
+
     }
     catch (...)
     {

@@ -1,4 +1,4 @@
-# win_ker_event v2.0
+# win_kernel_event v2.0
 
 #### 监控回调：
 
@@ -12,7 +12,7 @@ API: PsSetCreateProcessNotifyRoutineEx
 
 API: PsSetCreateThreadNotifyRoutine|PsRemoveCreateThreadNotifyRoutine
 
-See Code: thread.h thread.c
+**See Code: thread.h thread.c**
 
 ###### 注册表事件
 
@@ -42,11 +42,11 @@ API: KeRegisterNmiCallback
 
 ###### 关机(未监控)
 
-API:IoRegisterShutdownNotification
+API: IoRegisterShutdownNotification
 
 ###### 电源管理(未监控)
 
-API:PoRegisterPowerSettingCallback
+API: PoRegisterPowerSettingCallback
 
 ###### WMI
 
@@ -100,7 +100,7 @@ KeRegisterProcessorChangeCallback
 - 	RtlInitUnicodeString(&i8042sysName, L"\\Driver\\i8042ptr");
 - 	RtlInitUnicodeString(&mousysName, L"\\Driver\\Mouclass");
 
-MajorFunction检测 -  非inlinehook检测。
+MajorFunction 检测，非 inline hook 检测。
 
 **See Code:  sysenumnotify.h sysenumnotify.c**
 
@@ -109,7 +109,7 @@ MajorFunction检测 -  非inlinehook检测。
 - 	RtlInitUnicodeString(&fatsysName, L"\\FileSystem\\FastFat");
 - 	RtlInitUnicodeString(&ntfssysName, L"\\FileSystem\\Ntfs");
 
-MajorFunction检测 -  非inlinehook检测。
+MajorFunction 检测，非 inline hook 检测。
 
 **See Code:  sysmousekeyboard.h sysmousekeyboard.c**
 
@@ -130,11 +130,11 @@ MajorFunction检测 -  非inlinehook检测。
 
 - Image_Notify
 
-- Regsiter_Notify
+- Register_Notify
 
 - ObCall_Notify
 
-- WFPCallout_Nofity(未实现)
+- WFPCallout_Notify
 
 **See Code:  sysenumnotify.h sysenumnotify.c**
 
@@ -143,7 +143,7 @@ MajorFunction检测 -  非inlinehook检测。
 - process thread - 输入PID - 查看进程线程
 - process image -  输入PID - 查看进程模块
 - process memory - 输入PID - 查看进程内存
-- process scan inliehook - iathook - 扫描进程应用层挂钩
+- process scan inlinehook - iathook - 扫描进程应用层挂钩
 - process dump - 输入PID - dump进程内存
 
 **See Code: sysprocessinfo.h  sysprocessinfo.c**
@@ -168,7 +168,7 @@ MajorFunction检测 -  非inlinehook检测。
 
 ###### SysNetwork
 
-- xp:  tpc/udp查询IOCTL_TCP_QUERY_INFORMATION_EX，这里只是提供思路。
+- xp:  tcp/udp查询IOCTL_TCP_QUERY_INFORMATION_EX，这里只是提供思路。
 - win7/win10: 获取Nsi.sys对象，发送IOCTL_NSI_GETALLPARAM，原因如下：
 
 ```c++

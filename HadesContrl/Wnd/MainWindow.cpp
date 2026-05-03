@@ -1,4 +1,4 @@
-#include "../HpTcpSvc.h"
+ï»¿#include "../HpTcpSvc.h"
 #include "../Systeminfolib.h"
 #include "../Interface.h"
 #include "MainWindow.h"
@@ -18,12 +18,12 @@ const int WM_ONOPEN = WM_USER + 503;
 const int WM_GETMONITORSTATUS = WM_USER + 504;
 const int WM_IPS_PROCESS = WM_USER + 600;
 
-// Hades×´Ì¬Ëø
+// HadesçŠ¶æ€é”
 static std::mutex			g_hadesStatuscs;
-// StartÏß³ÌËø
+// Startçº¿ç¨‹é”
 static std::mutex			g_startprocesslock;
 
-// Çı¶¯Ãû
+// é©±åŠ¨å
 static const std::wstring	g_drverName = L"sysmondriver";
 static const std::wstring	g_drverNdrName = L"hadesndr";
 
@@ -80,7 +80,7 @@ static DWORD WINAPI StartIocpWorkNotify(LPVOID lpThreadParameter)
 	return 0;
 }
 
-// ¼ì²âÇı¶¯ÊÇ·ñ°²×°
+// æ£€æµ‹é©±åŠ¨æ˜¯å¦å®‰è£…
 const bool DrvCheckStatus()
 {
 	std::wstring pszCmd = L"sc start sysmondriver";
@@ -88,7 +88,7 @@ const bool DrvCheckStatus()
 	int nSeriverstatus = SingletonDriverManager::instance()->nf_GetServicesStatus(g_drverName.c_str());
 	switch (nSeriverstatus)
 	{
-		// ÕıÔÚÔËĞĞ
+		// æ­£åœ¨è¿è¡Œ
 	case SERVICE_CONTINUE_PENDING:
 	case SERVICE_RUNNING:
 	case SERVICE_START_PENDING:
@@ -97,16 +97,18 @@ const bool DrvCheckStatus()
 		break;
 	}
 	break;
-	// ÒÑ°²×° - Î´ÔËĞĞ
+	// å·²å®‰è£… - æœªè¿è¡Œ
 	case SERVICE_STOPPED:
 	case SERVICE_STOP_PENDING:
 	{
 		GetStartupInfo(&si);
 		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 		si.wShowWindow = SW_HIDE;
-		// Æô¶¯ÃüÁîĞĞ
+		// å¯åŠ¨å‘½ä»¤è¡Œ
 		PROCESS_INFORMATION pi;
-		if (CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
+		std::vector<wchar_t> cmdline(pszCmd.begin(), pszCmd.end());
+		cmdline.push_back(L'\0');
+		if (CreateProcessW(NULL, cmdline.data(), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
 		{
 			CloseHandle(pi.hProcess);
 			CloseHandle(pi.hThread);
@@ -134,7 +136,7 @@ const bool DrvCheckStatus()
 		SingletonUSysBaseInfo::instance()->GetOSVersion(strVerkerLinfo, verMajorVersion, verMinorVersion, Is64);
 		if (!SingletonDriverManager::instance()->nf_DriverInstall_SysMonStart(verMajorVersion, verMinorVersion, Is64))
 		{
-			MessageBox(NULL, L"Çı¶¯°²×°Ê§°Ü£¬ÇëÄúÊÖ¶¯°²×°ÔÙ´Î¿ªÆôÄÚºËÌ¬²É¼¯", L"ÌáÊ¾", MB_OKCANCEL);
+			MessageBox(NULL, L"é©±åŠ¨å®‰è£…å¤±è´¥ï¼Œè¯·æ‚¨æ‰‹åŠ¨å®‰è£…å†æ¬¡å¼€å¯å†…æ ¸æ€é‡‡é›†", L"æç¤º", MB_OKCANCEL);
 			return false;
 		}
 	}
@@ -153,7 +155,7 @@ const bool NetCheckStatus()
 	int nSeriverstatus = SingletonDriverManager::instance()->nf_GetServicesStatus(g_drverNdrName.c_str());
 	switch (nSeriverstatus)
 	{
-		// ÕıÔÚÔËĞĞ
+		// æ­£åœ¨è¿è¡Œ
 	case SERVICE_CONTINUE_PENDING:
 	case SERVICE_RUNNING:
 	case SERVICE_START_PENDING:
@@ -162,16 +164,18 @@ const bool NetCheckStatus()
 		break;
 	}
 	break;
-	// ÒÑ°²×° - Î´ÔËĞĞ
+	// å·²å®‰è£… - æœªè¿è¡Œ
 	case SERVICE_STOPPED:
 	case SERVICE_STOP_PENDING:
 	{
 		GetStartupInfo(&si);
 		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 		si.wShowWindow = SW_HIDE;
-		// Æô¶¯ÃüÁîĞĞ
+		// å¯åŠ¨å‘½ä»¤è¡Œ
 		PROCESS_INFORMATION pi;
-		if (CreateProcess(NULL, (LPWSTR)pszCmd.c_str(), NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi))
+		std::vector<wchar_t> cmdline(pszCmd.begin(), pszCmd.end());
+		cmdline.push_back(L'\0');
+		if (CreateProcessW(NULL, cmdline.data(), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
 		{
 			CloseHandle(pi.hProcess);
 			CloseHandle(pi.hThread);
@@ -199,7 +203,7 @@ const bool NetCheckStatus()
 		SingletonUSysBaseInfo::instance()->GetOSVersion(strVerkerLinfo, verMajorVersion, verMinorVersion, Is64);
 		if (!SingletonDriverManager::instance()->nf_DriverInstall_NetMonStart(verMajorVersion, verMinorVersion, Is64))
 		{
-			MessageBox(NULL, L"Á÷Á¿Çı¶¯°²×°Ê§°Ü£¬ÇëÄúÊÖ¶¯°²×°.", L"ÌáÊ¾", MB_OKCANCEL);
+			MessageBox(NULL, L"æµé‡é©±åŠ¨å®‰è£…å¤±è´¥ï¼Œè¯·æ‚¨æ‰‹åŠ¨å®‰è£….", L"æç¤º", MB_OKCANCEL);
 			return false;
 		}
 	}
@@ -211,7 +215,7 @@ const bool NetCheckStatus()
 	return true;
 }
 
-// ½áÊø½ø³Ì
+// ç»“æŸè¿›ç¨‹
 void killProcess(const wchar_t* const processname)
 {
 
@@ -221,17 +225,20 @@ void killProcess(const wchar_t* const processname)
 		return;
 	}
 
-	// »ñµÃÏß³ÌÁĞ±í  
+	// è·å¾—çº¿ç¨‹åˆ—è¡¨  
 	PROCESSENTRY32 stcProcessInfo;
 	stcProcessInfo.dwSize = sizeof(stcProcessInfo);
 	BOOL  bRet = Process32First(hSnapshort, &stcProcessInfo);
 	while (bRet)
 	{
-		if (lstrcatW(stcProcessInfo.szExeFile, processname) == 0)
+		if (lstrcmpiW(stcProcessInfo.szExeFile, processname) == 0)
 		{
 			HANDLE hProcess = ::OpenProcess(PROCESS_TERMINATE, FALSE, stcProcessInfo.th32ProcessID);
-			::TerminateProcess(hProcess, 0);
-			CloseHandle(hProcess);
+			if (hProcess)
+			{
+				::TerminateProcess(hProcess, 0);
+				CloseHandle(hProcess);
+			}
 			break;
 		}
 		bRet = Process32Next(hSnapshort, &stcProcessInfo);
@@ -239,17 +246,17 @@ void killProcess(const wchar_t* const processname)
 
 	CloseHandle(hSnapshort);
 }
-// Æô¶¯½ø³Ì
+// å¯åŠ¨è¿›ç¨‹
 bool StartHadesAgentProcess()
 {
-	// Æô¶¯
+	// å¯åŠ¨
 	wchar_t szModule[4096] = { 0, };
-	GetModuleFileName(NULL, szModule, 4096 * sizeof(wchar_t));
+	GetModuleFileNameW(NULL, szModule, _countof(szModule));
 	std::wstring dirpath = szModule;
 	if (0 >= dirpath.size())
 		return false;
-	const int offset = dirpath.rfind(L"\\");
-	if (0 >= offset)
+	const size_t offset = dirpath.rfind(L"\\");
+	if (offset == std::wstring::npos)
 		return false;
 	dirpath = dirpath.substr(0, (offset + 1));
 
@@ -280,7 +287,9 @@ bool StartHadesAgentProcess()
 #else
 	cmdline += L"HadesAgent.exe";
 #endif
-	BOOL ok = CreateProcess(cmdline.c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
+	std::vector<wchar_t> mutableCmdLine(cmdline.begin(), cmdline.end());
+	mutableCmdLine.push_back(L'\0');
+	BOOL ok = CreateProcessW(mutableCmdLine.data(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
 	if (Environ)
 		DestroyEnvironmentBlock(Environ);
 	if (ok) {
@@ -291,7 +300,7 @@ bool StartHadesAgentProcess()
 	return ok;
 }
 
-// Agent/Svc/¼à¿Ø×´Ì¬Ë¢ĞÂ
+// Agent/Svc/ç›‘æ§çŠ¶æ€åˆ·æ–°
 void MainWindow::UpdateHadesSvcStatus()
 {
 	try
@@ -307,7 +316,7 @@ void MainWindow::UpdateHadesSvcStatus()
 			m_pImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerSvcConnectImg")));
 			m_pConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerSvcConnectStatus")));
 			m_pImage_lab->SetBkImage(L"img/normal/winmain_connectfailuer1.png");
-			m_pConnectSvc_lab->SetText(L"HadesSvcÎ´¼ÓÔØ");
+			m_pConnectSvc_lab->SetText(L"HadesSvcæœªåŠ è½½");
 			g_hadesStatuscs.lock();
 			m_hadesSvcStatus = false;
 			g_hadesStatuscs.unlock();
@@ -321,7 +330,7 @@ void MainWindow::UpdateHadesSvcStatus()
 			m_pImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerSvcConnectImg")));
 			m_pConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerSvcConnectStatus")));
 			m_pImage_lab->SetBkImage(L"img/normal/winmain_connectsuccess.png");
-			m_pConnectSvc_lab->SetText(L"HadesSvcÒÑ¼ÓÔØ");
+			m_pConnectSvc_lab->SetText(L"HadesSvcå·²åŠ è½½");
 			g_hadesStatuscs.lock();
 			m_hadesSvcStatus = true;
 			g_hadesStatuscs.unlock();
@@ -336,7 +345,7 @@ void MainWindow::UpdateHadesAgentStatus()
 {
 	try
 	{
-		// ¼ì²âHadesAgent½ø³ÌÊÇ·ñ´æÔÚ
+		// æ£€æµ‹HadesAgentè¿›ç¨‹æ˜¯å¦å­˜åœ¨
 #ifdef _WIN64
 		if (!IsProcessExist(L"HadesAgent64.exe"))
 #else
@@ -348,7 +357,7 @@ void MainWindow::UpdateHadesAgentStatus()
 			m_pAgentImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerAgentConnectImg")));
 			m_pAgentConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerAgentConnectStatus")));
 			m_pAgentImage_lab->SetBkImage(L"img/normal/winmain_connectfailuer1.png");
-			m_pAgentConnectSvc_lab->SetText(L"HadesAgentÎ´¼ÓÔØ");
+			m_pAgentConnectSvc_lab->SetText(L"HadesAgentæœªåŠ è½½");
 			g_hadesStatuscs.lock();
 			m_hadesAgentStatus = false;
 			g_hadesStatuscs.unlock();
@@ -360,7 +369,7 @@ void MainWindow::UpdateHadesAgentStatus()
 			m_pAgentImage_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerAgentConnectImg")));
 			m_pAgentConnectSvc_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("ServerAgentConnectStatus")));
 			m_pAgentImage_lab->SetBkImage(L"img/normal/winmain_connectsuccess.png");
-			m_pAgentConnectSvc_lab->SetText(L"HadesAgentÒÑ¼ÓÔØ");
+			m_pAgentConnectSvc_lab->SetText(L"HadesAgentå·²åŠ è½½");
 			g_hadesStatuscs.lock();
 			m_hadesAgentStatus = true;
 			g_hadesStatuscs.unlock();
@@ -378,7 +387,7 @@ void MainWindow::UpdateMonitorSvcStatus(LPARAM lParam)
 		const int dStatusId = (DWORD)lParam;
 		if (!dStatusId && (0x20 <= dStatusId) && (0x26 >= dStatusId))
 			return;
-		// ÓÃ»§Ì¬¼à¿Ø
+		// ç”¨æˆ·æ€ç›‘æ§
 		static COptionUI* pUOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonUserBtn")));
 		static COptionUI* pKOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonKerBtn")));
 		static COptionUI* pMOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonBeSnipingBtn")));
@@ -417,11 +426,11 @@ void MainWindow::UpdateMonitorSvcStatus(LPARAM lParam)
 	}
 }
 
-// ×¢:GoAgentÃ»ÓĞÊ¹ÓÃCreateEventÊÂ¼ş£¬ÕâÀïÒ²²»ÓÃÊÂ¼şµÈ´ıºÍ¶¨Ê±Æ÷ÁË - Ïß³ÌÖĞ5s¼ì²âÒ»´Î
-// HadesAgent×´Ì¬Õ¹Ê¾
+// æ³¨:GoAgentæ²¡æœ‰ä½¿ç”¨CreateEventäº‹ä»¶ï¼Œè¿™é‡Œä¹Ÿä¸ç”¨äº‹ä»¶ç­‰å¾…å’Œå®šæ—¶å™¨äº† - çº¿ç¨‹ä¸­5sæ£€æµ‹ä¸€æ¬¡
+// HadesAgentçŠ¶æ€å±•ç¤º
 void MainWindow::GetHadesAgentStatus()
 {
-	//¼ì²âHadesAgentÊÇ·ñ¹ÒÁË
+	//æ£€æµ‹HadesAgentæ˜¯å¦æŒ‚äº†
 	for (;;)
 	{
 		UpdateHadesAgentStatus();
@@ -433,10 +442,10 @@ static DWORD WINAPI HadesAgentActiveEventNotify(LPVOID lpThreadParameter)
 	(reinterpret_cast<MainWindow*>(lpThreadParameter))->GetHadesAgentStatus();
 	return 0;
 }
-// HadesSvc×´Ì¬Õ¹Ê¾
+// HadesSvcçŠ¶æ€å±•ç¤º
 void MainWindow::GetHadesSvcStatus()
 {
-	// ¼ì²âHadesSvc½ø³ÌÊÇ·ñ´æÔÚ
+	// æ£€æµ‹HadesSvcè¿›ç¨‹æ˜¯å¦å­˜åœ¨
 	for (;;)
 	{
 		UpdateHadesSvcStatus();
@@ -448,10 +457,10 @@ static DWORD WINAPI HadesSvcActiveEventNotify(LPVOID lpThreadParameter)
 	(reinterpret_cast<MainWindow*>(lpThreadParameter))->GetHadesSvcStatus();
 	return 0;
 }
-// ¼à¿Ø×´Ì¬Õ¹Ê¾
+// ç›‘æ§çŠ¶æ€å±•ç¤º
 void MainWindow::GetMonitorStatus()
 {
-	// ¼ì²âHadesSvcÕıÔÚÊ¹ÓÃµÄ¼à¿Ø·şÎñ
+	// æ£€æµ‹HadesSvcæ­£åœ¨ä½¿ç”¨çš„ç›‘æ§æœåŠ¡
 	for (;;)
 	{
 		HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
@@ -483,7 +492,7 @@ void MainWindow::InitWindows()
 {
 	try
 	{
-		//³õÊ¼»¯Êı¾İ
+		//åˆå§‹åŒ–æ•°æ®
 		Systeminfolib libobj;
 		CLabelUI* pCurrentUser_lab = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("mainwin_currentuser_lab")));
 		pCurrentUser_lab->SetText(GetWStringByChar(SYSTEMPUBLIC::sysattriinfo.currentUser.c_str()).c_str());
@@ -507,7 +516,7 @@ void MainWindow::InitWindows()
 #endif
 		{
 			m_pImage_lab->SetBkImage(L"img/normal/winmain_connectfailuer1.png");
-			m_pConnectSvc_lab->SetText(L"HadesSvcÎ´¼ÓÔØ");
+			m_pConnectSvc_lab->SetText(L"HadesSvcæœªåŠ è½½");
 			g_hadesStatuscs.lock();
 			m_hadesSvcStatus = false;
 			g_hadesStatuscs.unlock();
@@ -515,7 +524,7 @@ void MainWindow::InitWindows()
 		else
 		{
 			m_pImage_lab->SetBkImage(L"img/normal/winmain_connectsuccess.png");
-			m_pConnectSvc_lab->SetText(L"HadesSvcÒÑ¼ÓÔØ");
+			m_pConnectSvc_lab->SetText(L"HadesSvcå·²åŠ è½½");
 			g_hadesStatuscs.lock();
 			m_hadesSvcStatus = true;
 			g_hadesStatuscs.unlock();
@@ -530,7 +539,7 @@ void MainWindow::InitWindows()
 #endif
 		{
 			m_pAgentImage_lab->SetBkImage(L"img/normal/winmain_connectfailuer1.png");
-			m_pAgentConnectSvc_lab->SetText(L"HadesAgentÎ´¼ÓÔØ");
+			m_pAgentConnectSvc_lab->SetText(L"HadesAgentæœªåŠ è½½");
 			g_hadesStatuscs.lock();
 			m_hadesAgentStatus = false;
 			g_hadesStatuscs.unlock();
@@ -538,7 +547,7 @@ void MainWindow::InitWindows()
 		else
 		{
 			m_pAgentImage_lab->SetBkImage(L"img/normal/winmain_connectsuccess.png");
-			m_pAgentConnectSvc_lab->SetText(L"HadesAgentÒÑ¼ÓÔØ");
+			m_pAgentConnectSvc_lab->SetText(L"HadesAgentå·²åŠ è½½");
 			g_hadesStatuscs.lock();
 			m_hadesAgentStatus = true;
 			g_hadesStatuscs.unlock();
@@ -581,8 +590,8 @@ LRESULT MainWindow::OnTrayIcon(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
 		SetForegroundWindow(m_hWnd);
 		HMENU hMenu;
 		hMenu = CreatePopupMenu();
-		AppendMenu(hMenu, MF_STRING, WM_ONCLOSE, _T("ÍË³ö"));
-		AppendMenu(hMenu, MF_STRING, WM_ONOPEN, _T("´ò¿ªÖ÷½çÃæ"));
+		AppendMenu(hMenu, MF_STRING, WM_ONCLOSE, _T("é€€å‡º"));
+		AppendMenu(hMenu, MF_STRING, WM_ONOPEN, _T("æ‰“å¼€ä¸»ç•Œé¢"));
 		int cmd = TrackPopupMenu(hMenu, TPM_RETURNCMD, pt.x, pt.y, NULL, m_hWnd, NULL);
 		if (cmd == WM_ONCLOSE)
 		{
@@ -608,33 +617,41 @@ LRESULT MainWindow::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 	m_pMenu->Create(m_hWnd, _T(""), WS_POPUP, WS_EX_TOOLWINDOW);
 	m_pMenu->ShowWindow(false);
 
-	// ³õÊ¼»¯½çÃæÊı¾İ
+	// åˆå§‹åŒ–ç•Œé¢æ•°æ®
 	InitWindows();
 	
-	// ¼ì²âHadesAgentÉÏÏß
-	CreateThread(NULL, NULL, HadesAgentActiveEventNotify, this, 0, 0);
+	// æ£€æµ‹HadesAgentä¸Šçº¿
+	HANDLE hThread = CreateThread(NULL, NULL, HadesAgentActiveEventNotify, this, 0, 0);
+	if (hThread)
+		CloseHandle(hThread);
 	Sleep(100);
 
-	// ¼ì²âHadesSvcÉÏÏß
-	CreateThread(NULL, NULL, HadesSvcActiveEventNotify, this, 0, 0);
+	// æ£€æµ‹HadesSvcä¸Šçº¿
+	hThread = CreateThread(NULL, NULL, HadesSvcActiveEventNotify, this, 0, 0);
+	if (hThread)
+		CloseHandle(hThread);
 	Sleep(100);
 
-	// ¼ì²â¼à¿Ø×´Ì¬
-	CreateThread(NULL, NULL, HadesMonitorNotify, this, 0, 0);
+	// æ£€æµ‹ç›‘æ§çŠ¶æ€
+	hThread = CreateThread(NULL, NULL, HadesMonitorNotify, this, 0, 0);
+	if (hThread)
+		CloseHandle(hThread);
 	Sleep(100);
 	
-	// ÉèÖÃ¶¨Ê±Æ÷,Ë¢ĞÂ½çÃæÊı¾İ(cpu,mem)
+	// è®¾ç½®å®šæ—¶å™¨,åˆ·æ–°ç•Œé¢æ•°æ®(cpu,mem)
 	SetTimer(m_hWnd, 1, 1000, NULL);
 	
-	// Æô¶¯HpSocketServerµÈ´ıHadesSvc - HpSocketÓÃÓÚĞĞÎªÀ¹½Ø½»»¥
-	CreateThread(NULL, NULL, StartIocpWorkNotify, this, 0, 0);
+	// å¯åŠ¨HpSocketServerç­‰å¾…HadesSvc - HpSocketç”¨äºè¡Œä¸ºæ‹¦æˆªäº¤äº’
+	hThread = CreateThread(NULL, NULL, StartIocpWorkNotify, this, 0, 0);
+	if (hThread)
+		CloseHandle(hThread);
 	return lRes;
 }
 LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	KillTimer(m_hWnd, 1);
 	Sleep(100);
-	// ½çÃæÍË³öÊÇ·ñ½«HadesSvcÍË³ö?
+	// ç•Œé¢é€€å‡ºæ˜¯å¦å°†HadesSvcé€€å‡º?
 	//const auto exithandSvc = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"Global\\HadesSvc_EVNET_EXIT");
 	//if (exithandSvc)
 	//{
@@ -642,7 +659,7 @@ LRESULT MainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHand
 	//	CloseHandle(exithandSvc);
 	//}
 	
-	// ÍË³öHpSocket
+	// é€€å‡ºHpSocket
 	auto IocpExEvt = OpenEvent(EVENT_ALL_ACCESS, FALSE, L"HpStopTcpSvcEvent");
 	if (IocpExEvt)
 	{
@@ -668,9 +685,9 @@ void MainWindow::FlushData()
 
 		//memory
 		const DWORD dwMem = SingletonUSysBaseInfo::instance()->GetSysDynSysMem();
-		// µ±Ç°Õ¼ÓÃÂÊ Occupancy rate
+		// å½“å‰å ç”¨ç‡ Occupancy rate
 		CString m_MemoryBFB;
-		m_MemoryBFB.Format(L"ÄÚ´æ: %u", dwMem);
+		m_MemoryBFB.Format(L"å†…å­˜: %u", dwMem);
 		m_MemoryBFB += "%";
 		CLabelUI* pMem = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("winmain_layout_memory")));
 		if (pMem)
@@ -706,14 +723,14 @@ void MainWindow::Notify(TNotifyUI& msg)
 		{
 			if (strControlName == _T("MainCloseBtn"))
 			{
-				const int nret = MessageBox(m_hWnd, L"µã»÷¹Ø±Õ,ÄúÏ£ÍûÊÇ·ñÒş²ØÖÁÍĞÅÌ£¿", L"ÌáÊ¾", MB_OKCANCEL | MB_ICONWARNING);
+				const int nret = MessageBox(m_hWnd, L"ç‚¹å‡»å…³é—­,æ‚¨å¸Œæœ›æ˜¯å¦éšè—è‡³æ‰˜ç›˜ï¼Ÿ", L"æç¤º", MB_OKCANCEL | MB_ICONWARNING);
 				if (1 == nret)
 					AddTrayIcon();
 				else
 					Close();
 			}
 			else if (strControlName == _T("MainMenuBtn"))
-			{//²Ëµ¥
+			{//èœå•
 				int xPos = msg.pSender->GetPos().left - 36;
 				int yPos = msg.pSender->GetPos().bottom;
 				POINT pt = { xPos, yPos };
@@ -721,7 +738,7 @@ void MainWindow::Notify(TNotifyUI& msg)
 				m_pMenu->ShowWindow(true);
 				::SetWindowPos(m_pMenu->GetHWND(), NULL, pt.x, pt.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 			}
-			//×îĞ¡»¯
+			//æœ€å°åŒ–
 			else if (strControlName == _T("MainMinsizeBtn"))
 			{
 				::ShowWindow(m_hWnd, SW_MINIMIZE);
@@ -735,13 +752,13 @@ void MainWindow::Notify(TNotifyUI& msg)
 #endif
 				{
 					if(StartHadesAgentProcess())
-						MessageBox(m_hWnd, L"³É¹¦´úÀíHadesAgent³É¹¦", L"ÌáÊ¾", MB_OK);
+						MessageBox(m_hWnd, L"æˆåŠŸä»£ç†HadesAgentæˆåŠŸ", L"æç¤º", MB_OK);
 					else
-						MessageBox(m_hWnd, L"´´½¨´úÀíHadesAgentÊ§°Ü,ÇëÁªÏµ¹ÜÀíÔ±", L"ÌáÊ¾", MB_OK);
+						MessageBox(m_hWnd, L"åˆ›å»ºä»£ç†HadesAgentå¤±è´¥,è¯·è”ç³»ç®¡ç†å‘˜", L"æç¤º", MB_OK);
 				}
 				else
 				{
-					MessageBox(m_hWnd, L"HadesAgentÒÑÆô¶¯£¬ÈçÓĞÎÊÌâÁªÏµÅÅ²é", L"ÌáÊ¾", MB_OK);
+					MessageBox(m_hWnd, L"HadesAgentå·²å¯åŠ¨ï¼Œå¦‚æœ‰é—®é¢˜è”ç³»æ’æŸ¥", L"æç¤º", MB_OK);
 				}
 			}
 		}
@@ -773,14 +790,14 @@ void MainWindow::Notify(TNotifyUI& msg)
 				}
 			}
 			else if (strControlName == _T("MainMonUserBtn"))
-			{//ÏÂ·¢ÓÃ»§Ì¬¼à¿ØÖ¸Áî
+			{//ä¸‹å‘ç”¨æˆ·æ€ç›‘æ§æŒ‡ä»¤
 				//COptionUI* pOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonUserBtn")));
 				//if (!pOption)
 				//	return;
 				//if (false == m_hadesSvcStatus)
 				//{
 				//	pOption->Selected(true);
-				//	MessageBox(m_hWnd, L"ÇëÏÈÁ¬½ÓGrpcÉÏ±¨Æ½Ì¨£¬ºóµã»÷²É¼¯", L"ÌáÊ¾", MB_OK);
+				//	MessageBox(m_hWnd, L"è¯·å…ˆè¿æ¥Grpcä¸ŠæŠ¥å¹³å°ï¼Œåç‚¹å‡»é‡‡é›†", L"æç¤º", MB_OK);
 				//	return;
 				//}
 				//HWND m_SvcHwnd = FindWindow(L"HadesSvc", L"HadesSvc");
@@ -788,24 +805,24 @@ void MainWindow::Notify(TNotifyUI& msg)
 				//c2_.dwData = 1;
 				//c2_.cbData = 0;
 				//c2_.lpData = NULL;
-				////·¢ËÍÏûÏ¢
+				////å‘é€æ¶ˆæ¯
 				//::SendMessage(m_SvcHwnd, WM_COPYDATA, NULL, (LPARAM)&c2_);
 			}
 			else if (strControlName == _T("MainMonKerBtn"))
-			{//ÏÂ·¢ÄÚºËÌ¬¼à¿ØÖ¸Áî
+			{//ä¸‹å‘å†…æ ¸æ€ç›‘æ§æŒ‡ä»¤
 				//COptionUI* pOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonKerBtn")));
 				//if (!pOption)
 				//	return;
 				//if (false == m_hadesSvcStatus)
 				//{
 				//	pOption->Selected(true);
-				//	MessageBox(m_hWnd, L"ÇëÏÈÁ¬½ÓGrpcÉÏ±¨Æ½Ì¨£¬ºóµã»÷²É¼¯", L"ÌáÊ¾", MB_OK);
+				//	MessageBox(m_hWnd, L"è¯·å…ˆè¿æ¥Grpcä¸ŠæŠ¥å¹³å°ï¼Œåç‚¹å‡»é‡‡é›†", L"æç¤º", MB_OK);
 				//	return;
 				//}
 				//if (SYSTEMPUBLIC::sysattriinfo.verMajorVersion < 6)
 				//{
 				//	pOption->Selected(true);
-				//	MessageBox(m_hWnd, L"µ±Ç°ÏµÍ³Çı¶¯Ä£Ê½²»¼æÈİ£¬Çë±£Ö¤²Ù×÷ÏµÍ³win7~win10Ö®¼ä", L"ÌáÊ¾", MB_OK);
+				//	MessageBox(m_hWnd, L"å½“å‰ç³»ç»Ÿé©±åŠ¨æ¨¡å¼ä¸å…¼å®¹ï¼Œè¯·ä¿è¯æ“ä½œç³»ç»Ÿwin7~win10ä¹‹é—´", L"æç¤º", MB_OK);
 				//	return;
 				//}
 				//const bool nret = DrvCheckStart();
@@ -820,24 +837,24 @@ void MainWindow::Notify(TNotifyUI& msg)
 				//}
 				//else {
 				//	pOption->Selected(true);
-				//	MessageBox(m_hWnd, L"ÄÚºËÌ¬¼à¿ØÆô¶¯Ê§°Ü\nÇëÊ¹ÓÃcmd: sc query/delete hadesmondrv²é¿´Çı¶¯×´Ì¬\ndeleteÉ¾³ıºóÇëÖØĞÂ¿ªÆô¡£", L"ÌáÊ¾", MB_OK);
+				//	MessageBox(m_hWnd, L"å†…æ ¸æ€ç›‘æ§å¯åŠ¨å¤±è´¥\nè¯·ä½¿ç”¨cmd: sc query/delete hadesmondrvæŸ¥çœ‹é©±åŠ¨çŠ¶æ€\ndeleteåˆ é™¤åè¯·é‡æ–°å¼€å¯ã€‚", L"æç¤º", MB_OK);
 				//}
 			}
 			else if (strControlName == _T("MainMonBeSnipingBtn"))
-			{//À¹½Ø¶ñÒâĞĞÎª
+			{//æ‹¦æˆªæ¶æ„è¡Œä¸º
 				//COptionUI* pOption = static_cast<COptionUI*>(m_PaintManager.FindControl(_T("MainMonBeSnipingBtn")));
 				//if (!pOption)
 				//	return;
 				//if (false == m_hadesSvcStatus)
 				//{
 				//	pOption->Selected(true);
-				//	MessageBox(m_hWnd, L"ÇëÏÈÁ¬½ÓGrpcÉÏ±¨Æ½Ì¨£¬ºóµã»÷²É¼¯", L"ÌáÊ¾", MB_OK);
+				//	MessageBox(m_hWnd, L"è¯·å…ˆè¿æ¥Grpcä¸ŠæŠ¥å¹³å°ï¼Œåç‚¹å‡»é‡‡é›†", L"æç¤º", MB_OK);
 				//	return;
 				//}
 				//if (SYSTEMPUBLIC::sysattriinfo.verMajorVersion < 6)
 				//{
 				//	pOption->Selected(true);
-				//	MessageBox(m_hWnd, L"µ±Ç°ÏµÍ³Çı¶¯Ä£Ê½²»¼æÈİ£¬Çë±£Ö¤²Ù×÷ÏµÍ³win7~win10Ö®¼ä", L"ÌáÊ¾", MB_OK);
+				//	MessageBox(m_hWnd, L"å½“å‰ç³»ç»Ÿé©±åŠ¨æ¨¡å¼ä¸å…¼å®¹ï¼Œè¯·ä¿è¯æ“ä½œç³»ç»Ÿwin7~win10ä¹‹é—´", L"æç¤º", MB_OK);
 				//	return;
 				//}
 				//const bool nret = DrvCheckStart();
@@ -852,7 +869,7 @@ void MainWindow::Notify(TNotifyUI& msg)
 				//}
 				//else {
 				//	pOption->Selected(true);
-				//	MessageBox(m_hWnd, L"ÄÚºËÌ¬¼à¿ØÆô¶¯Ê§°Ü\nÇëÊ¹ÓÃcmd: sc query/delete hadesmondrv²é¿´Çı¶¯×´Ì¬\ndeleteÉ¾³ıºóÇëÖØĞÂ¿ªÆô¡£", L"ÌáÊ¾", MB_OK);
+				//	MessageBox(m_hWnd, L"å†…æ ¸æ€ç›‘æ§å¯åŠ¨å¤±è´¥\nè¯·ä½¿ç”¨cmd: sc query/delete hadesmondrvæŸ¥çœ‹é©±åŠ¨çŠ¶æ€\ndeleteåˆ é™¤åè¯·é‡æ–°å¼€å¯ã€‚", L"æç¤º", MB_OK);
 				//}
 			}
 		}
@@ -870,9 +887,9 @@ LRESULT MainWindow::HandleCustomMessage(UINT uMsg, WPARAM wParam, LPARAM lParam,
 	bHandled = TRUE;
 
 	switch (uMsg) {
-	case WM_TIMER: lRes = OnTimer(uMsg, wParam, lParam, bHandled); break;	// Ë¢ĞÂ½çÃæÊı¾İ
-	case WM_SHOWTASK: OnTrayIcon(uMsg, wParam, lParam, bHandled); break;	// ÍĞÅÌ´¦Àí
-	case WM_GETMONITORSTATUS: UpdateMonitorSvcStatus(wParam); break;		// ´¦Àí¼à¿Ø×´Ì¬
+	case WM_TIMER: lRes = OnTimer(uMsg, wParam, lParam, bHandled); break;	// åˆ·æ–°ç•Œé¢æ•°æ®
+	case WM_SHOWTASK: OnTrayIcon(uMsg, wParam, lParam, bHandled); break;	// æ‰˜ç›˜å¤„ç†
+	case WM_GETMONITORSTATUS: UpdateMonitorSvcStatus(wParam); break;		// å¤„ç†ç›‘æ§çŠ¶æ€
 	case WM_IPS_PROCESS: break;
 	default:
 		bHandled = FALSE;

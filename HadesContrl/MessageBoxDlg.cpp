@@ -1,4 +1,4 @@
-#include "MessageBoxDlg.h"
+ï»¿#include "MessageBoxDlg.h"
 #include <Psapi.h>
 #include <Windows.h>
 #include <xstring>
@@ -18,7 +18,7 @@ CDuiString MessageBoxDlg::GetSkinFolder()
 
 void ShowProcName(uint32_t pid, wchar_t* processpath)
 {
-	//±ØĞë¾ßÓĞµÄÈ¨ÏŞ
+	//å¿…é¡»å…·æœ‰çš„æƒé™
 	HANDLE processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (processHandle == NULL) {
 		return;
@@ -32,7 +32,7 @@ void ShowProcName(uint32_t pid, wchar_t* processpath)
 	//printf("%s\n", tempProcName);
 	//GetProcessImageFileName(processHandle, tempProcName, MAX_PATH);
 	//printf("%s\n", tempProcName);
-	//CloseHandle(processHandle);
+	CloseHandle(processHandle);
 }
 void MessageBoxDlg::MsgBoxTimerDefuleCloseNotify()
 {
@@ -45,11 +45,11 @@ void MessageBoxDlg::MsgBoxTimerDefuleCloseNotify()
 	{
 		if (true == m_buttonevent || timer == 1)
 			break;
-		wsprintf(timerwString, L"×èÖ¹(%ds)", timer--);
+		wsprintf(timerwString, L"é˜»æ­¢(%ds)", timer--);
 		pButtonStrtimer->SetText(timerwString);
 		Sleep(1000);
 	}
-	// falseÒâÎ¶×ÅÓÃ»§Ã»ÓĞµã»÷
+	// falseæ„å‘³ç€ç”¨æˆ·æ²¡æœ‰ç‚¹å‡»
 	if (false == m_buttonevent)
 	{
 		m_msgOption->options = 1;
@@ -71,7 +71,7 @@ LRESULT MessageBoxDlg::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& b
 		if (!m_msgOption || !m_msginfo)
 			break;
 		taskId = m_msgOption->options;
-		// ½ø³Ì
+		// è¿›ç¨‹
 		if (IPS_PROCESSSTART == taskId)
 		{
 			PPROCESSINFO procinfo = (PPROCESSINFO)m_msginfo;
@@ -94,7 +94,7 @@ LRESULT MessageBoxDlg::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& b
 			CLabelUI* pLabDescribe = static_cast<CLabelUI*>(m_PaintManager.FindControl(_T("MsgWin_MaBe_Describe")));
 			if (!pLabDescribe)
 				break;
-			pLabDescribe->SetText(L"Ãô¸Ğ½ø³ÌÖ´ĞĞ");
+			pLabDescribe->SetText(L"æ•æ„Ÿè¿›ç¨‹æ‰§è¡Œ");
 			// Wait
 			m_msgboxtunertr = CreateThread(NULL, 0, MsgBoxTimerDefuleCloseThread, this, 0, NULL);
 		}
@@ -105,7 +105,7 @@ LRESULT MessageBoxDlg::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& b
 void MessageBoxDlg::buttonEventModifyStatus()
 {
 	m_buttonevent = true;
-	// Òş²Ø´°¿Ú - µÈ´ı»Øµ÷½áÊø
+	// éšè—çª—å£ - ç­‰å¾…å›è°ƒç»“æŸ
 	::ShowWindow(m_hWnd, SW_HIDE);
 	if (m_msgboxtunertr)
 	{

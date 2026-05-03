@@ -1,9 +1,9 @@
-#include "knetwork.h"
+Ôªø#include "knetwork.h"
 #include <NetWorkRuleAssist.h>
 #include <sysinfo.h>
 #include <NetApi.h>
 
-// Rule√ø∏ˆ¿‡–Õ◊Ó¥Û100Ãı
+// RuleÊØè‰∏™Á±ªÂûãÊúÄÂ§ß100Êù°
 static const int g_MaxRuleCounter = 100;
 
 KNetWork::KNetWork()
@@ -44,13 +44,21 @@ void KNetWork::ReLoadIpPortConnectRule()
 	pDnsRule = (PDNS_RULE)new DNS_RULE[g_MaxRuleCounter];
 	
 	if (!pDenyRule || !pConnectRule || !pDnsRule)
+	{
+		delete[] pDenyRule;
+		delete[] pConnectRule;
+		delete[] pDnsRule;
 		return;
+	}
 
 	// Clear
 	NetNdrRuleClear();
-	RtlSecureZeroMemory(pDenyRule, sizeof(DENY_RULE) * g_MaxRuleCounter);
-	RtlSecureZeroMemory(pConnectRule, sizeof(REDIRECT_RULE) * g_MaxRuleCounter);
-	RtlSecureZeroMemory(pDnsRule, sizeof(DNS_RULE) * g_MaxRuleCounter);
+	for (int i = 0; i < g_MaxRuleCounter; ++i)
+	{
+		pDenyRule[i].clear();
+		pConnectRule[i].clear();
+		pDnsRule[i].clear();
+	}
 
 	int iDenyCounter = 0;	int iConnectCounter = 0; int iDnsCounter = 0;
 	ConfigNetWorkYamlRuleParsing(pDenyRule, &iDenyCounter, pConnectRule, &iConnectCounter, g_MaxRuleCounter);
@@ -82,5 +90,10 @@ void KNetWork::ReLoadIpPortConnectRule()
 		delete[] pConnectRule;
 		pConnectRule = nullptr;
 	}
+	if (pDnsRule) {
+		delete[] pDnsRule;
+		pDnsRule = nullptr;
+	}
 }
+
 

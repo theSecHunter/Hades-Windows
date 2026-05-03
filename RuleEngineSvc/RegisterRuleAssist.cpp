@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include <sysinfo.h>
 #include "RegisterRuleAssist.h"
 #include "utiltools.h"
@@ -25,7 +25,7 @@ void GetProcessName(const std::wstring& ProcessPath, std::wstring& ProcessPathNa
 		return;
 	const std::wstring wsProcPath = ProcessPath;
 	const size_t iLast = wsProcPath.find_last_of(L"\\");
-	if (iLast < 0)
+	if (iLast == std::wstring::npos)
 		return;
 	ProcessPathName = wsProcPath.substr(iLast + 1);
 }
@@ -66,17 +66,22 @@ const bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 	const HANDLE FileHandle = CreateFileA(
 		strRet.c_str(),
 		GENERIC_READ,
-		0,
+		FILE_SHARE_READ,
 		NULL,
 		OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL,
 		NULL
 	);
-	if (!FileHandle)
+	if (FileHandle == INVALID_HANDLE_VALUE)
 		return false;
 
 	DWORD dwGetSize = 0;
 	const DWORD dwFileSize = GetFileSize(FileHandle, &dwGetSize);
+	if (dwFileSize == INVALID_FILE_SIZE)
+	{
+		CloseHandle(FileHandle);
+		return false;
+	}
 	char* const data = new char[dwFileSize + 1];
 	if (data)
 		RtlSecureZeroMemory(data, dwFileSize + 1);
@@ -91,7 +96,7 @@ const bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 	static std::string strStrings;
 	do {
 		DWORD dwRead = 0;
-		if (!ReadFile(FileHandle, data, dwFileSize, &dwRead, NULL))
+		if (!ReadFile(FileHandle, data, dwFileSize, &dwRead, NULL) || dwRead != dwFileSize)
 			break;
 		rapidjson::Document document;
 		document.Parse<0>(data);
@@ -126,7 +131,7 @@ const bool ConfigRegisterJsonRuleParsing(std::string& strProcessNameList)
 		nRet = true;
 	} while (false);
 
-	if (FileHandle)
+	if (FileHandle != INVALID_HANDLE_VALUE)
 		CloseHandle(FileHandle);
 	if (data)
 		delete[] data;
@@ -146,7 +151,7 @@ const bool FindRegisterRuleHitEx(const int opearType, const int permissions, con
 	{
 		bool nRet = false;
 
-		// ½âÎö¹æÔòÈ¨ÏŞ
+		// è§£æè§„åˆ™æƒé™
 		// Open
 		const int _open = Rulepermissions & 0x1000000;
 		// Close
@@ -162,11 +167,11 @@ const bool FindRegisterRuleHitEx(const int opearType, const int permissions, con
 		// ReName
 		const int _rename = Rulepermissions & 0x0000001;
 
-		// ¸ù¾İopearType ¶ÔÈ¨ÏŞ×ö³ö½âÊÍ
+		// æ ¹æ®opearType å¯¹æƒé™åšå‡ºè§£é‡Š
 		switch (opearType)
 		{
 			case RegNtPreCreateKey:
-			{// CreateKey - ´´½¨ ´ò¿ª 
+			{// CreateKey - åˆ›å»º æ‰“å¼€ 
 				if (_create || _open)
 					nRet = true;
 			}
@@ -181,7 +186,7 @@ const bool FindRegisterRuleHitEx(const int opearType, const int permissions, con
 			case RegNtPostCreateKey:
 			case RegNtPostOpenKeyEx:
 			case RegNtPostCreateKeyEx:
-			{// ºó²Ù×÷Ä¬ÈÏtrue
+			{// åæ“ä½œé»˜è®¤true
 				if (0 == status)
 				{
 					InsertRuleMapObjToPathHplr(object, registerPath);
@@ -212,33 +217,33 @@ const bool FindRegisterRuleHitEx(const int opearType, const int permissions, con
 			}
 			break;
 			case RegNtPreSetValueKey:
-			{// ĞŞ¸ÄKey
+			{// ä¿®æ”¹Key
 				if (_setvaluse)
 					nRet = true;
 				OutputDebugString((L"[HadesSvc] RegNtSetValueKey Object :" + to_wstring((ULONG64)object)).c_str());
 			}
 			break;
 			case RegNtPreDeleteKey:
-			{// É¾³ıKey
+			{// åˆ é™¤Key
 				if (_delete)
 					nRet = true;
 			}
 			break;
 			case RegNtEnumerateKey:
 			case RegNtQueryValueKey:
-			{// Ã¶¾Ù- ²éÑ¯
+			{// æšä¸¾- æŸ¥è¯¢
 				if (_query)
 					nRet = true;
 			}
 			break;
 			case RegNtRenameKey:
-			{// ÖØÃüÃû×¢²á±í
+			{// é‡å‘½åæ³¨å†Œè¡¨
 				if (_rename)
 					nRet = true;
 			}
 			break;
 			case RegNtKeyHandleClose:
-			{// ¹Ø±Õ
+			{// å…³é—­
 				if (_close)
 				{
 					DeleteRuleMapObjtoPathHplr(object);
@@ -248,7 +253,7 @@ const bool FindRegisterRuleHitEx(const int opearType, const int permissions, con
 			}
 			break;
 			case RegNtPostKeyHandleClose:
-			{// ¹Ø±ÕÍê³Éºó
+			{// å…³é—­å®Œæˆå
 				if (0 == status)
 				{
 
@@ -266,7 +271,7 @@ const bool FindRegisterRuleHitEx(const int opearType, const int permissions, con
 	
 }
 const bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
-{// true ·ÅĞĞ - false À¹½Ø 
+{// true æ”¾è¡Œ - false æ‹¦æˆª 
 	if (!registerinfo || g_vecRegRuleList.empty())
 		return true;
 	
@@ -275,7 +280,7 @@ const bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 	if (wsCompleteName.empty() || (RegNtPreSetValueKey == registerinfo->opeararg))
 	{// Find Table
 		//if (RegNtPreSetValueKey == registerinfo->opeararg)
-		//{// RegNtPreSetValueKeyµÄÊ±ºòCompleteNameÊÇ¼üÖµ - ÓĞĞèÒªÏÈ±£´æ
+		//{// RegNtPreSetValueKeyçš„æ—¶å€™CompleteNameæ˜¯é”®å€¼ - æœ‰éœ€è¦å…ˆä¿å­˜
 		//	OutputDebugString((L"[HadesSvc] RegNtSetValueKey Object: " + wsCompleteName + to_wstring((ULONG64)registerinfo->Object)).c_str());
 		//}
 		if (registerinfo->Object)
@@ -297,7 +302,7 @@ const bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 	for (const auto& rule : g_vecRegRuleList)
 	{
 		const size_t idx = rule.registerValuse.find(wsCompleteName.c_str());
-		if (idx < 0)
+		if (idx == std::wstring::npos)
 			continue;
 
 		wsProcessName.clear();
@@ -306,21 +311,21 @@ const bool FindRegisterRuleHit(const REGISTERINFO* const registerinfo)
 			continue;
 		
 		const size_t idx_ = rule.processName.find(wsProcessName.c_str());
-		if (idx_ < 0)
+		if (idx_ == std::wstring::npos)
 			continue;
 
-		// bOperate¹æÔòÈ¨ÏŞÅĞ¶¨
+		// bOperateè§„åˆ™æƒé™åˆ¤å®š
 		const bool bOperate = FindRegisterRuleHitEx(registerinfo->opeararg, registerinfo->DesiredAccess, rule.permissions, registerinfo->Status, registerinfo->Object, wsCompleteName);
 		const int mods = rule.registerRuleMod; 
 		bool nRet = true;
-		// °×Ãûµ¥È¨ÏŞ·ûºÏ·ÅĞĞ·´Ö®
+		// ç™½åå•æƒé™ç¬¦åˆæ”¾è¡Œåä¹‹
 		if (1 == mods)
 			bOperate ? nRet = true : nRet = false;
-		// ºÚÃûµ¥È¨ÏŞ·ûºÏÀ¹½Ø·´Ö®
+		// é»‘åå•æƒé™ç¬¦åˆæ‹¦æˆªåä¹‹
 		else if (2 == mods)
 			bOperate ? nRet = false : nRet = true;
 		else
-			nRet = true; // Î´ÖªÇé¿öÒ»ÂÉ·ÅĞĞ
+			nRet = true; // æœªçŸ¥æƒ…å†µä¸€å¾‹æ”¾è¡Œ
 		return nRet;
 	}
 	return true;

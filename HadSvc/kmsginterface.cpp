@@ -1,4 +1,4 @@
-#include "msgassist.h"
+ï»¿#include "msgassist.h"
 #include "kmsginterface.h"
 #include "kinterface.h"
 
@@ -29,7 +29,7 @@ inline void kMsgInterface::kMsg_SetTopicQueuePtr() { SingletonKDrvManage::instan
 inline void kMsgInterface::kMsg_SetTopicQueueLockPtr() { SingletonKDrvManage::instance()->kf_setqueuelockptr(g_RecvDataQueueCs); }
 inline void kMsgInterface::kMsg_SetTopicEventPtr() { SingletonKDrvManage::instance()->kf_setqueueeventptr(g_kjobAvailableEvent); }
 
-// ÉèÖÃGrpcÏû·ÑÕßÖ¸Õë(±»Ïû·ÑÕßµ÷ÓÃ)
+// è®¾ç½®Grpcæ¶ˆè´¹è€…æŒ‡é’ˆ(è¢«æ¶ˆè´¹è€…è°ƒç”¨)
 static std::queue<std::shared_ptr<USubNode>>* 	    g_SendQueueData_Ptr = nullptr;
 static std::mutex* 								    g_SendQueueCs_Ptr = nullptr;
 static HANDLE                                       g_SendQueue_Event = nullptr;
@@ -119,25 +119,26 @@ void Choose_register(string& opearestring, const int code)
         opearestring = "RegNtQueryValueKey";
     }
     break;
-    // ĞŞ¸ÄKey
+    // ä¿®æ”¹Key
     case RegNtSetValueKey:
     {
         opearestring = "RegNtSetValueKey";
     }
-    // É¾³ıKey
+    break;
+    // åˆ é™¤Key
     case RegNtPreDeleteKey:
     {
         opearestring = "RegNtPreDeleteKey";
     }
     break;
-    // Ã¶¾ÙKey
+    // æšä¸¾Key
     case RegNtEnumerateKey:
     {
         opearestring = "RegNtEnumerateKey";
     }
     break;
 
-    // ÖØÃüÃû×¢²á±í
+    // é‡å‘½åæ³¨å†Œè¡¨
     case RegNtPostRenameKey:
     {
         opearestring = "RegNtPostRenameKey";
@@ -150,23 +151,26 @@ void Choose_register(string& opearestring, const int code)
 }
 void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
 {
-    std::unique_lock<std::mutex> lock(g_RecvDataQueueCs);
-
     try
     {
         json_t j;
         std::string tmpstr = "";
-        UPubNode* pubNode = nullptr;
 
         for (;;)
         {
-            Sleep(1);
-            if (g_RecvDataQueue.empty())
-                return;
-            pubNode = g_RecvDataQueue.front();
-            g_RecvDataQueue.pop();
+            UPubNode* pubNode = nullptr;
+            {
+                std::unique_lock<std::mutex> lock(g_RecvDataQueueCs);
+                if (g_RecvDataQueue.empty())
+                    return;
+                pubNode = g_RecvDataQueue.front();
+                g_RecvDataQueue.pop();
+            }
             if (!pubNode)
-                return;
+                continue;
+
+            j.clear();
+            tmpstr.clear();
             const int taskid = pubNode->taskid;
             switch (taskid)
             {
@@ -252,7 +256,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
                 }
                 else
                 {
-                    // server ¶ªÆú¸Ã°ü - ²»¹ØĞÄµÄ²Ù×÷
+                    // server ä¸¢å¼ƒè¯¥åŒ… - ä¸å…³å¿ƒçš„æ“ä½œ
                     j["win_sysmonitor_regtab_pid"] = to_string(pRegisterInfo->processid);
                     j["win_sysmonitor_regtab_tpid"] = to_string(pRegisterInfo->threadid);
                     j["win_sysmonitor_regtab_opeares"] = to_string(0);
@@ -314,14 +318,13 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
                 const SESSIONINFO* pSessionInfo = (SESSIONINFO*)pubNode->data;
                 if (!pSessionInfo)
                     break;
-                std::shared_ptr<IO_SESSION_STATE_INFORMATION> iosession;
-                RtlSecureZeroMemory(&iosession, sizeof(IO_SESSION_STATE_INFORMATION));
+                IO_SESSION_STATE_INFORMATION iosession = {};
                 RtlCopyMemory(&iosession, pSessionInfo->iosessioninfo, sizeof(IO_SESSION_STATE_INFORMATION));
 
                 tmpstr.clear();
                 Choose_session(tmpstr, pSessionInfo->evens);
 
-                if (iosession->LocalSession)
+                if (iosession.LocalSession)
                     tmpstr += " - User Local Login";
                 else
                     tmpstr += " - User Remote Login";
@@ -329,7 +332,7 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
                 j["win_sysmonitor_session_pid"] = to_string(pSessionInfo->processid);
                 j["win_sysmonitor_session_tpid"] = to_string(pSessionInfo->threadid);
                 j["win_sysmonitor_session_event"] = tmpstr.c_str();
-                j["win_sysmonitor_session_sessionid"] = to_string(iosession->SessionId);
+                j["win_sysmonitor_session_sessionid"] = to_string(iosession.SessionId);
             }
             break;
             case NF_INJECT_INFO:
@@ -351,27 +354,25 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
             break;
             }
 
-            // ×¢: Topic ÊÍ·Å PubµÄÊı¾İÖ¸Õë
+            // æ³¨: Topic é‡Šæ”¾ Pubçš„æ•°æ®æŒ‡é’ˆ
             if (pubNode)
             {
                 delete[] pubNode;
                 pubNode = nullptr;
             }
 
-            // ĞòÁĞ»¯
+            // åºåˆ—åŒ–
             std::shared_ptr<std::string> data = nullptr;
             if (j.size())
                 data = std::make_shared<std::string>(j.dump());
             else
             {
-                j.clear();
-                tmpstr.clear();
                 continue;
             }
 
-            if (!g_SendQueueData_Ptr && !g_SendQueueCs_Ptr && !g_SendQueue_Event)
+            if (!g_SendQueueData_Ptr || !g_SendQueueCs_Ptr || !g_SendQueue_Event)
             {
-                OutputDebugString(L"[HadesSvc] GrpcÃ»ÉèÖÃ¶©ÔÄÖ¸Õë");
+                OutputDebugString(L"[HadesSvc] Grpcæ²¡è®¾ç½®è®¢é˜…æŒ‡é’ˆ");
                 return;
             }
 
@@ -385,8 +386,6 @@ void kMsgInterface::kMsgNotifyRouteDataHandlerEx()
                 g_SendQueueData_Ptr->push(sub);
                 SetEvent(g_SendQueue_Event);
             }
-            j.clear();
-            tmpstr.clear();
             data = nullptr;
         }
     }
@@ -403,10 +402,13 @@ void kMsgInterface::kMsg_taskPopNotifyRoutineLoop()
             return;
         do
         {
-            WaitForSingleObject(
+            const DWORD waitStatus = WaitForSingleObject(
                 g_kjobAvailableEvent,
                 INFINITE
             );
+
+            if (waitStatus != WAIT_OBJECT_0)
+                break;
 
             if (g_exit)
                 break;
@@ -653,7 +655,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
             for (i = 0; i < pPhandleInfo[0].CountNum; ++i)
             {
                 //wcout << "Pid: " << phandleinfo[i].ProcessId << " - Process: " << phandleinfo[i].ProcessPath << endl;// " - ProcessName: " << phandleinfo[i].ProcessName << endl;
-                // È¥ÖØ
+                // å»é‡
                 catstr = pPhandleInfo[i].ProcessPath;
                 catstr += L" - ";
                 catstr += pPhandleInfo[i].ProcessName;
@@ -680,7 +682,7 @@ void kMsgInterface::kMsg_taskPush(const int taskcode, std::vector<std::string>& 
     {
         int Process_Pid = 4;
         cout << "Test Input Pid: 4";
-        // Ä¬ÈÏ²âÊÔ
+        // é»˜è®¤æµ‹è¯•
         if (false == SingletonKProcessInfo::instance()->nf_GetProcessMod(Process_Pid, ptr_Getbuffer, dwAllocateMemSize))
             break;
 
@@ -874,7 +876,7 @@ void kMsgInterface::DriverInit(const int flag)
                 OutputDebugString(L"[HadesSvc] ThreadInejctProc devctrl_SetIpsProcessNameList Fauiler");
         }
 
-        // Enable Event --> ÄÚºËÌáÈ¡³öÀ´Êı¾İÒÔºó´¦ÀíÀà
+        // Enable Event --> å†…æ ¸æå–å‡ºæ¥æ•°æ®ä»¥åå¤„ç†ç±»
         //SingletonKDrvManage::instance()->nf_setEventHandler((PVOID)&eventobj);
 
         status = 1;
@@ -894,7 +896,7 @@ void kMsgInterface::DriverFree()
     kInitStatus = false;
 }
 
-// ¶ÁÏß³Ì
+// è¯»çº¿ç¨‹
 void kMsgInterface::StopReadFileThread()
 {
     SingletonKDrvManage::instance()->devctrl_stopthread();
@@ -951,7 +953,7 @@ void kMsgInterface::OffBeSnipingMonitor()
     kBesnipingStatus = false;
 }
 
-// ÒıÇæÌ¬
+// å¼•æ“æ€
 bool kMsgInterface::GetKerMonStatus()
 {
     return kerMonStatus;
@@ -965,7 +967,7 @@ bool kMsgInterface::GetKerBeSnipingStatus()
     return kBesnipingStatus;
 }
 
-// ¹æÔò
+// è§„åˆ™
 bool kMsgInterface::ReLoadProcessRuleConfig()
 {
     int status = 0;
@@ -1072,12 +1074,15 @@ bool kMsgInterface::ReLoadThreadInjectRuleConfig()
 }
 
 void kMsgInterface::kMsg_Init() {
-    // ³õÊ¼»¯Topic
+    // åˆå§‹åŒ–Topic
+    g_exit = false;
     g_kjobAvailableEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (!g_kjobAvailableEvent)
+        return;
     this->kMsg_SetTopicQueuePtr();
     this->kMsg_SetTopicQueueLockPtr();
     this->kMsg_SetTopicEventPtr();
-    // ×îºóµ÷ÓÃ
+    // æœ€åè°ƒç”¨
     this->kMsg_taskPopInit();
 };
 void kMsgInterface::kMsg_Free()
@@ -1090,10 +1095,10 @@ void kMsgInterface::kMsg_Free()
         CloseHandle(m_topicthread[idx]);
     }
 
-    if (g_kjobAvailableEvent != INVALID_HANDLE_VALUE)
+    if (g_kjobAvailableEvent && g_kjobAvailableEvent != INVALID_HANDLE_VALUE)
     {
         ::CloseHandle(g_kjobAvailableEvent);
-        g_kjobAvailableEvent = INVALID_HANDLE_VALUE;
+        g_kjobAvailableEvent = nullptr;
     }
     m_topicthread.clear();
 

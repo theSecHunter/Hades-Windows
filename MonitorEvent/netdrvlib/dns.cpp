@@ -1,5 +1,6 @@
-#include <Windows.h>
+﻿#include <Windows.h>
 #include "dns.h"
+#include <cstring>
 #include <string>
 
 const bool DecodeDotStr(const char* szEncodedStr, unsigned short* pusEncodedStrLen, char* szDotStr, unsigned short nDotStrSize, const char* szPacketStartPos)
@@ -88,15 +89,34 @@ char* const conver_host(char* input_host)
 
 char* const GetQueryHost(const char* szQueryPacket, int nQueryPacketLen)
 {
-	char* pQueryHost = NULL;
-	p_dns_header dns_ = (p_dns_header)szQueryPacket;
-	p_dns_query query_ = (p_dns_query)&szQueryPacket[sizeof(dns_header)];
-	unsigned short query_type = ntohs(*(unsigned short*)((unsigned long)query_ + strlen((const char*)query_) + 1));
-	if (query_type == 1)
+	if (!szQueryPacket || nQueryPacketLen <= (int)sizeof(dns_header))
 	{
-		pQueryHost = conver_host((char*)query_);
+		return NULL;
 	}
-	return pQueryHost;
+
+	const char* const query = szQueryPacket + sizeof(dns_header);
+	const size_t querySize = (size_t)nQueryPacketLen - sizeof(dns_header);
+	const void* const queryEnd = memchr(query, '\0', querySize);
+	if (!queryEnd)
+	{
+		return NULL;
+	}
+
+	const size_t encodedNameLen = static_cast<const char*>(queryEnd) - query + 1;
+	if (querySize < encodedNameLen + sizeof(unsigned short))
+	{
+		return NULL;
+	}
+
+	unsigned short query_type = 0;
+	memcpy(&query_type, query + encodedNameLen, sizeof(query_type));
+	query_type = ntohs(query_type);
+	if (query_type != 1)
+	{
+		return NULL;
+	}
+
+	return conver_host((char*)query);
 }
 
 void DoHost(const char* buf, int len)

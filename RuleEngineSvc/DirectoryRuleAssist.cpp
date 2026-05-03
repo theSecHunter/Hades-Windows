@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "utiltools.h"
 #include "DirectoryRuleAssist.h"
 
@@ -19,17 +19,22 @@ const bool ConfigDirectoryJsonRuleParsing(std::string& strNameWhitelis, std::str
 	const HANDLE FileHandle = CreateFileA(
 		strRet.c_str(),
 		GENERIC_READ,
-		0,
+		FILE_SHARE_READ,
 		NULL,
 		OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL,
 		NULL
 	);
-	if (!FileHandle)
+	if (FileHandle == INVALID_HANDLE_VALUE)
 		return false;
 
 	DWORD dwGetSize = 0;
 	const DWORD dwFileSize = GetFileSize(FileHandle, &dwGetSize);
+	if (dwFileSize == INVALID_FILE_SIZE)
+	{
+		CloseHandle(FileHandle);
+		return false;
+	}
 	char* const data = new char[dwFileSize + 1];
 	if (data)
 		RtlSecureZeroMemory(data, dwFileSize + 1);
@@ -43,7 +48,7 @@ const bool ConfigDirectoryJsonRuleParsing(std::string& strNameWhitelis, std::str
 	static std::string strStrings;
 	do {
 		DWORD dwRead = 0;
-		if (!ReadFile(FileHandle, data, dwFileSize, &dwRead, NULL))
+		if (!ReadFile(FileHandle, data, dwFileSize, &dwRead, NULL) || dwRead != dwFileSize)
 			break;
 		rapidjson::Document document;
 		document.Parse<0>(data);
@@ -82,7 +87,7 @@ const bool ConfigDirectoryJsonRuleParsing(std::string& strNameWhitelis, std::str
 		nRet = true;
 	} while (false);
 
-	if (FileHandle)
+	if (FileHandle != INVALID_HANDLE_VALUE)
 		CloseHandle(FileHandle);
 	if (data)
 		delete[] data;

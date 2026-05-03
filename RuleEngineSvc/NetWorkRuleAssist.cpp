@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "utiltools.h"
 #include "NetWorkRuleAssist.h"
 #include <yaml-cpp/yaml.h>
@@ -9,10 +9,21 @@
 
 static const std::string g_NetWorkConfigName = "networkRuleConfig.yaml";
 
+namespace
+{
+    template <size_t N>
+    void CopyField(char(&dest)[N], const std::string& value)
+    {
+        strncpy_s(dest, value.c_str(), _TRUNCATE);
+    }
+}
+
 const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCounter, REDIRECT_RULE* const pConnectRule, int* pConnetCounter, const int iMaxCounter)
 {
     try
     {
+        if (!pDenyRule || !pDenyCounter || !pConnectRule || !pConnetCounter)
+            return false;
         if (!RuleEngineToos::InitDeviceDosPathToNtPath())
             return false;
         if (!RuleEngineToos::IsFile(g_NetWorkConfigName))
@@ -42,15 +53,15 @@ const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCo
                 else
                     continue;
                 if ((strAction == "DENY") && (*pDenyCounter < iMaxCounter)) {
-                    strcpy(pDenyRule[*pDenyCounter].strAction, strAction.c_str());
+                    CopyField(pDenyRule[*pDenyCounter].strAction, strAction);
                     if (!iter["name"].IsNull() && iter["name"].IsScalar())
-                        strcpy(pDenyRule[*pDenyCounter].strRuleName, iter["name"].as<std::string>().c_str());
+                        CopyField(pDenyRule[*pDenyCounter].strRuleName, iter["name"].as<std::string>());
                     if (!iter["protocol"].IsNull() && iter["protocol"].IsScalar())
-                        strcpy(pDenyRule[*pDenyCounter].strProtocol, iter["protocol"].as<std::string>().c_str());
+                        CopyField(pDenyRule[*pDenyCounter].strProtocol, iter["protocol"].as<std::string>());
                     if (!iter["level"].IsNull() && iter["level"].IsScalar())
-                        strcpy(pDenyRule[*pDenyCounter].strLevel, iter["level"].as<std::string>().c_str());
+                        CopyField(pDenyRule[*pDenyCounter].strLevel, iter["level"].as<std::string>());
                     if (!iter["address"].IsNull() && iter["address"].IsScalar())
-                        strcpy(pDenyRule[*pDenyCounter].strIpAddress, iter["address"].as<std::string>().c_str());
+                        CopyField(pDenyRule[*pDenyCounter].strIpAddress, iter["address"].as<std::string>());
                     if (!iter["ports"].IsNull() && iter["ports"].IsSequence())
                     {
                         std::string strCatPort = "";
@@ -61,23 +72,22 @@ const bool ConfigNetWorkYamlRuleParsing(DENY_RULE* const pDenyRule, int* pDenyCo
                                 strCatPort.append(tPort).append("|");
                             }
                         }
-                        if (strCatPort.length() < 4000)
-                            strcpy(pDenyRule[*pDenyCounter].strPorts, strCatPort.c_str());
+                        CopyField(pDenyRule[*pDenyCounter].strPorts, strCatPort);
                     }
                     *pDenyCounter += 1;
                 }
                 else if ((strAction == "REDIRECT") && (*pConnetCounter < iMaxCounter)) {
-                    strcpy(pConnectRule[*pConnetCounter].strAction, strAction.c_str());
+                    CopyField(pConnectRule[*pConnetCounter].strAction, strAction);
                     if (!iter["name"].IsNull() && iter["name"].IsScalar())
-                        strcpy(pConnectRule[*pConnetCounter].strRuleName, iter["name"].as<std::string>().c_str());
+                        CopyField(pConnectRule[*pConnetCounter].strRuleName, iter["name"].as<std::string>());
                     if (!iter["protocol"].IsNull() && iter["protocol"].IsScalar())
-                        strcpy(pConnectRule[*pConnetCounter].strProtocol, iter["protocol"].as<std::string>().c_str());
+                        CopyField(pConnectRule[*pConnetCounter].strProtocol, iter["protocol"].as<std::string>());
                     if (!iter["level"].IsNull() && iter["level"].IsScalar())
-                        strcpy(pConnectRule[*pConnetCounter].strLevel, iter["level"].as<std::string>().c_str());
+                        CopyField(pConnectRule[*pConnetCounter].strLevel, iter["level"].as<std::string>());
                     if (!iter["processname"].IsNull() && iter["processname"].IsScalar())
-                        strcpy(pConnectRule[*pConnetCounter].strProcessName, iter["processname"].as<std::string>().c_str());
+                        CopyField(pConnectRule[*pConnetCounter].strProcessName, iter["processname"].as<std::string>());
                     if (!iter["redirectip"].IsNull() && iter["redirectip"].IsScalar())
-                        strcpy(pConnectRule[*pConnetCounter].strRedirectIp, iter["redirectip"].as<std::string>().c_str());
+                        CopyField(pConnectRule[*pConnetCounter].strRedirectIp, iter["redirectip"].as<std::string>());
                     if (!iter["redirectport"].IsNull() && iter["redirectport"].IsScalar())
                         pConnectRule[*pConnetCounter].RedrectPort = atoi(iter["redirectport"].as<std::string>().c_str());
                     *pConnetCounter += 1;
@@ -96,6 +106,8 @@ const bool ConfigNetWorkYamlDnsRuleParsing(DNS_RULE* const pDnsRule, int* pDnsCo
 {
     try
     {
+        if (!pDnsRule || !pDnsCounter)
+            return false;
         if (!RuleEngineToos::InitDeviceDosPathToNtPath())
             return false;
         if (!RuleEngineToos::IsFile(g_NetWorkConfigName))
@@ -125,11 +137,12 @@ const bool ConfigNetWorkYamlDnsRuleParsing(DNS_RULE* const pDnsRule, int* pDnsCo
                 else
                     continue;
                 if ((strAction == "DENY") && (*pDnsCounter < iMaxCounter)) {
-                    strcpy(pDnsRule[*pDnsCounter].strAction, strAction.c_str());
+                    CopyField(pDnsRule[*pDnsCounter].strAction, strAction);
                     if (!iter["name"].IsNull() && iter["name"].IsScalar())
-                        strcpy(pDnsRule[*pDnsCounter].strRuleName, iter["name"].as<std::string>().c_str());
+                        CopyField(pDnsRule[*pDnsCounter].strRuleName, iter["name"].as<std::string>());
+                    CopyField(pDnsRule[*pDnsCounter].strProtocol, "DNS");
                     if (!iter["domain"].IsNull() && iter["domain"].IsScalar())
-                        strcpy(pDnsRule[*pDnsCounter].strProtocol, iter["domain"].as<std::string>().c_str());
+                        pDnsRule[*pDnsCounter].sDnsName = iter["domain"].as<std::string>();
                     *pDnsCounter += 1;
                 }
             }

@@ -41,7 +41,7 @@ const DWORD UServerSoftware::EnumService(LPVOID pData)
 		service_status = (LPENUM_SERVICE_STATUS)LocalAlloc(LPTR, MAX_SERVICE_SIZE);
 		if (!service_status)
 			break;
-
+		
 		BOOL ESS = EnumServicesStatus(SCMan,						// 句柄
 			SERVICE_WIN32,                                          // 服务类型
 			SERVICE_STATE_ALL,                                      // 服务的状态

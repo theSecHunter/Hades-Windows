@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <vector>
 
@@ -13,7 +13,7 @@ typedef struct _NetWorkRuleNode
 typedef struct _DENY_RULE : NetWorkRuleNode
 {
     char strIpAddress[24];
-    char strPorts[10];
+    char strPorts[4096];
     void clear()
     {
         memset(strRuleName, 0, sizeof(strRuleName));

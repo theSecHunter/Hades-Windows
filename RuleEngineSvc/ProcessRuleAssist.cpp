@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "ProcessRuleAssist.h"
 #include "utiltools.h"
 #include <string>
@@ -19,17 +19,22 @@ const bool ConfigProcessJsonRuleParsing(unsigned int& imods, std::string& strPro
 	const HANDLE FileHandle = CreateFileA(
 		strRet.c_str(),
 		GENERIC_READ,
-		0,
+		FILE_SHARE_READ,
 		NULL,
 		OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL,
 		NULL
 	);
-	if (!FileHandle)
+	if (FileHandle == INVALID_HANDLE_VALUE)
 		return false;
 
 	DWORD dwGetSize = 0;
 	const DWORD dwFileSize = GetFileSize(FileHandle, &dwGetSize);
+	if (dwFileSize == INVALID_FILE_SIZE)
+	{
+		CloseHandle(FileHandle);
+		return false;
+	}
 	//std::shared_ptr<uint8_t> data{ new uint8_t[dwFileSize] };
 	char* const data = new char[dwFileSize + 1];
 	if (data)
@@ -43,20 +48,20 @@ const bool ConfigProcessJsonRuleParsing(unsigned int& imods, std::string& strPro
 	bool nRet = false;
 	do {
 		DWORD dwRead = 0;
-		if (!ReadFile(FileHandle, data, dwFileSize, &dwRead, NULL))
+		if (!ReadFile(FileHandle, data, dwFileSize, &dwRead, NULL) || dwRead != dwFileSize)
 			break;
 		rapidjson::Document document;
 		document.Parse<0>(data);
 		if (document.HasParseError())
 			break;
-		if (!document.HasMember("processRuleMod") && document.HasMember("processName"))
+		if (!document.HasMember("processRuleMod") || !document.HasMember("processName"))
 			break;
 		imods = document["processRuleMod"].GetInt();
 		strProcessNameList = document["processName"].GetString();
 		nRet = true;
 	} while (false);
 
-	if (FileHandle)
+	if (FileHandle != INVALID_HANDLE_VALUE)
 		CloseHandle(FileHandle);
 	if (data)
 		delete[] data;

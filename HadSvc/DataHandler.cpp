@@ -1,4 +1,4 @@
-#include <sysinfo.h>
+Ôªø#include <sysinfo.h>
 #include <winsock.h>
 #include <map>
 #include <queue>
@@ -9,6 +9,7 @@
 #include <vector>
 #include <time.h>
 #include <functional>
+#include <limits>
 #include <atlstr.h>
 
 #include "DataHandler.h"
@@ -37,7 +38,7 @@ static std::mutex                               g_Ker_QueueCs_Ptr;
 static HANDLE                                   g_Ker_Queue_Event = nullptr;
 
 // ExitEvent
-static HANDLE                                   g_ExitEvent;
+static HANDLE                                   g_ExitEvent = nullptr;
 
 // NamedPip|Anonymous
 static const std::wstring PIPE_HADESWIN_NAME = L"\\\\.\\Pipe\\HadesPipe";
@@ -306,13 +307,13 @@ void GetOSVersion(std::string& strOSVersion, int& verMajorVersion, int& verMinor
     }
 }
 
-// ºÏ≤‚∞≤◊∞«˝∂ØºÏ≤‚
+// Ê£ÄÊµãÂÆâË£ÖÈ©±Âä®Ê£ÄÊµã
 const bool DataHandler::DrvCheckStatus()
 {
     int nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(g_drverName.c_str());
     switch (nSeriverstatus)
     {
-        // ’˝‘⁄‘À––
+        // Ê≠£Âú®ËøêË°å
     case SERVICE_CONTINUE_PENDING:
     case SERVICE_RUNNING:
     case SERVICE_START_PENDING:
@@ -321,7 +322,7 @@ const bool DataHandler::DrvCheckStatus()
         break;
     }
     break;
-    // “—∞≤◊∞ - Œ¥‘À––
+    // Â∑≤ÂÆâË£Ö - Êú™ËøêË°å
     case SERVICE_STOPPED:
     case SERVICE_STOP_PENDING:
     {
@@ -359,7 +360,7 @@ const bool DataHandler::DrvCheckStatus()
         GetOSVersion(strVerkerLinfo, verMajorVersion, verMinorVersion, Is64);
         if (!SingletonDrvManage::instance()->nf_DriverInstall_SysMonStart(verMajorVersion, verMinorVersion, Is64))
         {
-            MessageBox(NULL, L"«˝∂Ø∞≤◊∞ ß∞‹£¨«Îƒ˙ ÷∂Ø∞≤◊∞‘Ÿ¥Œø™∆Ùƒ⁄∫ÀÃ¨≤…ºØ", L"Ã· æ", MB_OKCANCEL);
+            MessageBox(NULL, L"È©±Âä®ÂÆâË£ÖÂ§±Ë¥•ÔºåËØ∑ÊÇ®ÊâãÂä®ÂÆâË£ÖÂÜçÊ¨°ÂºÄÂêØÂÜÖÊ†∏ÊÄÅÈááÈõÜ", L"ÊèêÁ§∫", MB_OKCANCEL);
             return false;
         }
     }
@@ -375,7 +376,7 @@ const bool DataHandler::NetCheckStatus()
     int nSeriverstatus = SingletonDrvManage::instance()->nf_GetServicesStatus(g_drverNdrName.c_str());
     switch (nSeriverstatus)
     {
-        // ’˝‘⁄‘À––
+        // Ê≠£Âú®ËøêË°å
     case SERVICE_CONTINUE_PENDING:
     case SERVICE_RUNNING:
     case SERVICE_START_PENDING:
@@ -384,12 +385,12 @@ const bool DataHandler::NetCheckStatus()
         break;
     }
     break;
-    // “—∞≤◊∞ - Œ¥‘À––
+    // Â∑≤ÂÆâË£Ö - Êú™ËøêË°å
     case SERVICE_STOPPED:
     case SERVICE_STOP_PENDING:
     {
         PROCESS_INFORMATION pi;
-        std::wstring pszCmd = L"[HadesNetMon] sc start hadesndr";
+        std::wstring pszCmd = L"sc start hadesndr";
         STARTUPINFO si = { sizeof(STARTUPINFO) };
         GetStartupInfo(&si);
         si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
@@ -422,7 +423,7 @@ const bool DataHandler::NetCheckStatus()
         GetOSVersion(strVerkerLinfo, verMajorVersion, verMinorVersion, Is64);
         if (!SingletonDrvManage::instance()->nf_DriverInstall_NetMonStart(verMajorVersion, verMinorVersion, Is64))
         {
-            MessageBox(NULL, L"¡˜¡ø«˝∂Ø∞≤◊∞ ß∞‹£¨«Îƒ˙ ÷∂Ø∞≤◊∞.", L"Ã· æ", MB_OKCANCEL);
+            MessageBox(NULL, L"ÊµÅÈáèÈ©±Âä®ÂÆâË£ÖÂ§±Ë¥•ÔºåËØ∑ÊÇ®ÊâãÂä®ÂÆâË£Ö.", L"ÊèêÁ§∫", MB_OKCANCEL);
             return false;
         }
     }
@@ -441,8 +442,8 @@ DataHandler::~DataHandler()
 {
 }
 
-// π‹µ¿–¥
-inline bool PipWriteAnonymous(std::string& serializbuf, const int datasize)
+// ÁÆ°ÈÅìÂÜô
+inline bool PipWriteAnonymous(std::string& serializbuf, const size_t datasize)
 {
     /*
     * |---------------------------------
@@ -451,13 +452,16 @@ inline bool PipWriteAnonymous(std::string& serializbuf, const int datasize)
     * |   4 byte      |    xxx byte    |
     * |---------------------------------
     */
+    if (datasize > (std::numeric_limits<uint32_t>::max)() - sizeof(uint32_t) - 1)
+        return false;
+
     {
         std::lock_guard<std::mutex> lock{ g_pipwritecs };
-        const int sendlens = datasize + sizeof(uint32_t) + 1;
-        std::shared_ptr<uint8_t> data{ new uint8_t[sendlens] };
+        const size_t sendlens = datasize + sizeof(uint32_t) + 1;
+        std::shared_ptr<uint8_t> data(new uint8_t[sendlens], std::default_delete<uint8_t[]>());
         if (data) {
             memset(data.get(), 0, sendlens);
-            *(uint32_t*)(data.get()) = datasize;
+            *(uint32_t*)(data.get()) = static_cast<uint32_t>(datasize);
             ::memcpy(data.get() + 0x4, serializbuf.c_str(), datasize);
             if (g_anonymouspipe)
                 g_anonymouspipe->write(data, sendlens);
@@ -467,7 +471,7 @@ inline bool PipWriteAnonymous(std::string& serializbuf, const int datasize)
     return true;
 }
 
-// …Ë÷√÷˜≥Ã–ÚÕÀ≥ˆEvent
+// ËÆæÁΩÆ‰∏ªÁ®ãÂ∫èÈÄÄÂá∫Event
 void DataHandler::SetExitSvcEvent(HANDLE & hexitEvent)
 {
     g_ExitEvent = hexitEvent;
@@ -493,7 +497,6 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
         if (g_ExitEvent)
         {
             SetEvent(g_ExitEvent);
-            CloseHandle(g_ExitEvent);
             task_array_data.push_back("Success!");
         }
         else
@@ -508,7 +511,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
         switch (taskid)
         {
         case 401:
-        {// Etw≤…ºØø™∆Ù
+        {// EtwÈááÈõÜÂºÄÂêØ
             task_array_data.clear();
             const auto uStatus = SingletonUMon::instance()->GetEtwMonStatus();
             if (false == uStatus)
@@ -519,7 +522,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
         }
         break;
         case 402:
-        {// Etw≤…ºØπÿ±’
+        {// EtwÈááÈõÜÂÖ≥Èó≠
             task_array_data.clear();
             const auto uStatus = SingletonUMon::instance()->GetEtwMonStatus();
             if (true == uStatus)
@@ -530,11 +533,11 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
         }
         break;
         case 403:
-        {// ƒ⁄∫ÀÃ¨≤…ºØø™∆Ù
+        {// ÂÜÖÊ†∏ÊÄÅÈááÈõÜÂºÄÂêØ
             task_array_data.clear();
             if (false == SingletonKerMon::instance()->GetKerInitStatus())
             {
-                SingletonKerMon::instance()->DriverInit(false); // ≥ı ºªØ∆Ù∂Øread i/oœﬂ≥Ã
+                SingletonKerMon::instance()->DriverInit(false); // ÂàùÂßãÂåñÂêØÂä®read i/oÁ∫øÁ®ã
                 if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 {
                     OutputDebugString(L"GetKerInitStatus false");
@@ -547,14 +550,14 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
                 OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Enable KernelMonitor Command");
                 SingletonKerMon::instance()->OnMonitor();
                 OutputDebugString(L"[HadesSvc] GetKerMonStatus Enable KernelMonitor Success");
-                // ø™∆ÙRead IO Thread
+                // ÂºÄÂêØRead IO Thread
                 SingletonKerMon::instance()->StartReadFileThread();
                 task_array_data.push_back("Success");
             }
         }
         break;
         case 404:
-        {// ƒ⁄∫ÀÃ¨≤…ºØπÿ±’
+        {// ÂÜÖÊ†∏ÊÄÅÈááÈõÜÂÖ≥Èó≠
             task_array_data.clear();
             if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
@@ -564,17 +567,17 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
                 OutputDebugString(L"[HadesSvc] GetKerMonStatus Send Disable KernelMonitor Command");
                 SingletonKerMon::instance()->OffMonitor();
                 OutputDebugString(L"[HadesSvc] GetKerMonStatus Disable KernelMonitor Success");
-                // ––Œ™¿πΩÿ√ªø™∆Ù£¨πÿ±’«˝∂Øæ‰±˙
+                // Ë°å‰∏∫Êã¶Êà™Ê≤°ÂºÄÂêØÔºåÂÖ≥Èó≠È©±Âä®Âè•ÊüÑ
                 if ((true == SingletonKerMon::instance()->GetKerInitStatus()) && (false == SingletonKerMon::instance()->GetKerBeSnipingStatus()))
                     SingletonKerMon::instance()->DriverFree();
                 else
-                    SingletonKerMon::instance()->StopReadFileThread(); // ø™∆Ù––Œ™¿πΩÿ◊¥Ã¨œ¬£¨πÿ±’œﬂ≥Ã - ∑¿÷πœ¬∑¢I/O
+                    SingletonKerMon::instance()->StopReadFileThread(); // ÂºÄÂêØË°å‰∏∫Êã¶Êà™Áä∂ÊÄÅ‰∏ãÔºåÂÖ≥Èó≠Á∫øÁ®ã - Èò≤Ê≠¢‰∏ãÂèëI/O
                 task_array_data.push_back("Success");
             }
         }
         break;
         case 405:
-        {// ––Œ™º‡øÿø™∆Ù
+        {// Ë°å‰∏∫ÁõëÊéßÂºÄÂêØ
             task_array_data.clear();
             if (false == SingletonKerMon::instance()->GetKerInitStatus())
             {
@@ -596,7 +599,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
         }
         break;
         case 406:
-        {// ––Œ™º‡øÿπÿ±’
+        {// Ë°å‰∏∫ÁõëÊéßÂÖ≥Èó≠
             task_array_data.clear();
             if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
@@ -613,64 +616,64 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
         }
         break;
         case 407:
-        {// Ω¯≥ÃπÊ‘Ú÷ÿ‘ÿ
+        {// ËøõÁ®ãËßÑÂàôÈáçËΩΩ
             task_array_data.clear();
-            // «˝∂ØŒ¥∆Ù∂Ø
+            // È©±Âä®Êú™ÂêØÂä®
             if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
             const int ioldStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
             OutputDebugString(L"[HadesSvc] ReLoadProcessRuleConfig Send Enable KernelMonitor Command");
             SingletonKerMon::instance()->ReLoadProcessRuleConfig();
             OutputDebugString(L"[HadesSvc] ReLoadProcessRuleConfig Enable KernelMonitor Success");
-            // πÊ‘Ú÷ÿ‘ÿƒ⁄∫Àª·πÿ±’––Œ™º‡øÿ - »Áπ˚÷Æ«∞ø™∆Ù’‚¿Ô“™÷ÿ–¬ø™∆Ù
+            // ËßÑÂàôÈáçËΩΩÂÜÖÊ†∏‰ºöÂÖ≥Èó≠Ë°å‰∏∫ÁõëÊéß - Â¶ÇÊûú‰πãÂâçÂºÄÂêØËøôÈáåË¶ÅÈáçÊñ∞ÂºÄÂêØ
             if (ioldStatus)
                 SingletonKerMon::instance()->OnBeSnipingMonitor();
             task_array_data.push_back("Success");
         }
         break;
         case 408:
-        {// ◊¢≤·±ÌπÊ‘Ú÷ÿ‘ÿ
+        {// Ê≥®ÂÜåË°®ËßÑÂàôÈáçËΩΩ
             task_array_data.clear();
-            // «˝∂ØŒ¥∆Ù∂Ø
+            // È©±Âä®Êú™ÂêØÂä®
             if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
             const int ioldStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
             OutputDebugString(L"[HadesSvc] ReLoadRegisterRuleConfig Send Enable KernelMonitor Command");
             SingletonKerMon::instance()->ReLoadRegisterRuleConfig();
             OutputDebugString(L"[HadesSvc] ReLoadRegisterRuleConfig Enable KernelMonitor Success");
-            // πÊ‘Ú÷ÿ‘ÿƒ⁄∫Àª·πÿ±’––Œ™º‡øÿ - »Áπ˚÷Æ«∞ø™∆Ù’‚¿Ô“™÷ÿ–¬ø™∆Ù
+            // ËßÑÂàôÈáçËΩΩÂÜÖÊ†∏‰ºöÂÖ≥Èó≠Ë°å‰∏∫ÁõëÊéß - Â¶ÇÊûú‰πãÂâçÂºÄÂêØËøôÈáåË¶ÅÈáçÊñ∞ÂºÄÂêØ
             if (ioldStatus)
                 SingletonKerMon::instance()->OnBeSnipingMonitor();
             task_array_data.push_back("Success");
         }
         break;
         case 409:
-        {// ƒø¬ºπÊ‘Ú÷ÿ‘ÿ
+        {// ÁõÆÂΩïËßÑÂàôÈáçËΩΩ
             task_array_data.clear();
-            // «˝∂ØŒ¥∆Ù∂Ø
+            // È©±Âä®Êú™ÂêØÂä®
             if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
             const int ioldStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
             OutputDebugString(L"[HadesSvc] ReLoadDirectoryRuleConfig Send Enable KernelMonitor Command");
             SingletonKerMon::instance()->ReLoadDirectoryRuleConfig();
             OutputDebugString(L"[HadesSvc] ReLoadDirectpryRuleConfig Enable KernelMonitor Success");
-            // πÊ‘Ú÷ÿ‘ÿƒ⁄∫Àª·πÿ±’––Œ™º‡øÿ - »Áπ˚÷Æ«∞ø™∆Ù’‚¿Ô“™÷ÿ–¬ø™∆Ù
+            // ËßÑÂàôÈáçËΩΩÂÜÖÊ†∏‰ºöÂÖ≥Èó≠Ë°å‰∏∫ÁõëÊéß - Â¶ÇÊûú‰πãÂâçÂºÄÂêØËøôÈáåË¶ÅÈáçÊñ∞ÂºÄÂêØ
             if (ioldStatus)
                 SingletonKerMon::instance()->OnBeSnipingMonitor();
             task_array_data.push_back("Success");
         }
         break;
         case 410:
-        {// œﬂ≥Ã◊¢»ÎπÊ‘Ú
+        {// Á∫øÁ®ãÊ≥®ÂÖ•ËßÑÂàô
             task_array_data.clear();
-            // «˝∂ØŒ¥∆Ù∂Ø
+            // È©±Âä®Êú™ÂêØÂä®
             if (false == SingletonKerMon::instance()->GetKerInitStatus())
                 return 0;
             const int ioldStatus = SingletonKerMon::instance()->GetKerBeSnipingStatus();
             OutputDebugString(L"[HadesSvc] ReLoadThreadInjectRuleConfig Send Enable KernelMonitor Command");
             SingletonKerMon::instance()->ReLoadThreadInjectRuleConfig();
             OutputDebugString(L"[HadesSvc] ReLoadThreadInjectRuleConfig Enable KernelMonitor Success");
-            // πÊ‘Ú÷ÿ‘ÿƒ⁄∫Àª·πÿ±’––Œ™º‡øÿ - »Áπ˚÷Æ«∞ø™∆Ù’‚¿Ô“™÷ÿ–¬ø™∆Ù
+            // ËßÑÂàôÈáçËΩΩÂÜÖÊ†∏‰ºöÂÖ≥Èó≠Ë°å‰∏∫ÁõëÊéß - Â¶ÇÊûú‰πãÂâçÂºÄÂêØËøôÈáåË¶ÅÈáçÊñ∞ÂºÄÂêØ
             if (ioldStatus)
                 SingletonKerMon::instance()->OnBeSnipingMonitor();
             task_array_data.push_back("Success");
@@ -679,7 +682,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
 
 #ifdef _X64
         case 411:
-        {// Õ¯¬Á÷˜∑¿ø™∆Ù
+        {// ÁΩëÁªú‰∏ªÈò≤ÂºÄÂêØ
             SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
             if (SingletonDataHandler::instance()->NetCheckStatus()) {
                 if (!SingletonKNetWork::instance()->GetNetNdrStus())
@@ -688,7 +691,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
         }
         break;
         case 412:
-        {// Õ¯¬Á÷˜∑¿πÿ±’
+        {// ÁΩëÁªú‰∏ªÈò≤ÂÖ≥Èó≠
             if (SingletonDataHandler::instance()->NetCheckStatus()) {
                 if (SingletonKNetWork::instance()->GetNetNdrStus())
                     SingletonKNetWork::instance()->NetNdrClose();
@@ -696,7 +699,7 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
         }
         break;
         case 413:
-        {// Õ¯¬∑πÊ‘Ú÷ÿ‘ÿ
+        {// ÁΩëË∑ØËßÑÂàôÈáçËΩΩ
             task_array_data.clear();
             OutputDebugString(L"[HadesSvc] ReLoadIpPortConnectRule Send Enable KernelMonitor Command");
             SingletonKNetWork::instance()->ReLoadIpPortConnectRule();
@@ -769,21 +772,15 @@ static DWORD WINAPI PTaskHandlerThread(LPVOID lpThreadParameter)
 {
     try
     {
-        THREADPA_PARAMETER_NODE* pThreadPara = nullptr;
-        pThreadPara = reinterpret_cast<THREADPA_PARAMETER_NODE*>(lpThreadParameter);
+        std::unique_ptr<THREADPA_PARAMETER_NODE> pThreadPara(reinterpret_cast<THREADPA_PARAMETER_NODE*>(lpThreadParameter));
         if (!pThreadPara || (pThreadPara == nullptr))
             return 0;
         if (g_shutdown)
-        {
-            delete pThreadPara;
             return 0;
-        }
         const int taskid = pThreadPara->nTaskId;
         const std::string sData = pThreadPara->sData.c_str();
         if (pThreadPara->pDataHandler)
             pThreadPara->pDataHandler->PTaskHandlerNotify(taskid, sData);
-
-        delete pThreadPara;
         return 0;
     }
     catch (const std::exception&)
@@ -796,26 +793,31 @@ static DWORD WINAPI PTaskHandlerThread(LPVOID lpThreadParameter)
 void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_t size)
 {
     // filter size
-    if (!data || (data == nullptr) || (size <= 0 && size >= 1024))
+    if (!data || (size < sizeof(int)) || (size >= 1024))
         return;
     try
     {
         const int taskid = *((int*)data.get());
-        // ƒ‰√˚π‹µ¿≤ª»∑∂®“ÚÀÿ∂‡£¨Filter Task id <= 1024
-        if (taskid <= 0 && taskid >= 1024)
+        // ÂåøÂêçÁÆ°ÈÅì‰∏çÁ°ÆÂÆöÂõ†Á¥†Â§öÔºåFilter Task id <= 1024
+        if (taskid <= 0 || taskid >= 1024)
             return;
 
         PTHREADPA_PARAMETER_NODE pThreadPara = nullptr;
         pThreadPara = new THREADPA_PARAMETER_NODE;
         if (pThreadPara) {
             pThreadPara->clear();
-            // ∑¥–Ú¡–ªØ≥…Task
+            // ÂèçÂ∫èÂàóÂåñÊàêTask
             protocol::Task task;
-            task.ParseFromString((char*)(data.get() + 0x4));
+            if (!task.ParseFromArray(data.get() + sizeof(int), static_cast<int>(size - sizeof(int))))
+            {
+                delete pThreadPara;
+                return;
+            }
             pThreadPara->nTaskId = task.data_type();
             pThreadPara->pDataHandler = this;
             pThreadPara->sData = task.data().c_str();
-            QueueUserWorkItem(PTaskHandlerThread, (LPVOID)pThreadPara, WT_EXECUTEDEFAULT);
+            if (!QueueUserWorkItem(PTaskHandlerThread, (LPVOID)pThreadPara, WT_EXECUTEDEFAULT))
+                delete pThreadPara;
         }
     }
     catch (const std::exception&)
@@ -827,14 +829,17 @@ void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_
 // Debug interface
 void DataHandler::DebugTaskInterface(const int taskid)
 {
-    THREADPA_PARAMETER_NODE threadPara;
-    threadPara.clear();
-    threadPara.nTaskId = taskid;
-    threadPara.pDataHandler = this;
-    QueueUserWorkItem(PTaskHandlerThread, (LPVOID)&threadPara, WT_EXECUTEDEFAULT);
+    PTHREADPA_PARAMETER_NODE pThreadPara = new THREADPA_PARAMETER_NODE;
+    if (!pThreadPara)
+        return;
+    pThreadPara->clear();
+    pThreadPara->nTaskId = taskid;
+    pThreadPara->pDataHandler = this;
+    if (!QueueUserWorkItem(PTaskHandlerThread, (LPVOID)pThreadPara, WT_EXECUTEDEFAULT))
+        delete pThreadPara;
 }
 
-// ƒ⁄∫À ˝æ›ConSumer
+// ÂÜÖÊ†∏Êï∞ÊçÆConSumer
 void DataHandler::KerSublthreadProc()
 {
     std::shared_ptr<protocol::Record> record = std::make_shared<protocol::Record>();
@@ -852,14 +857,18 @@ void DataHandler::KerSublthreadProc()
         WaitForSingleObject(g_Ker_Queue_Event, INFINITE);
         if (g_shutdown)
             break;
-        do{
-            std::unique_lock<std::mutex> lock(g_Ker_QueueCs_Ptr);
-            if (g_Ker_SubQueue_Ptr.empty())
-                break;
-            const auto subwrite = g_Ker_SubQueue_Ptr.front();
-            g_Ker_SubQueue_Ptr.pop();
-            if (!subwrite)
-                break;
+        for (;;)
+        {
+            std::shared_ptr<USubNode> subwrite;
+            {
+                std::unique_lock<std::mutex> lock(g_Ker_QueueCs_Ptr);
+                if (g_Ker_SubQueue_Ptr.empty())
+                    break;
+                subwrite = g_Ker_SubQueue_Ptr.front();
+                g_Ker_SubQueue_Ptr.pop();
+            }
+            if (!subwrite || !subwrite->data)
+                continue;
             record->set_data_type(subwrite->taskid);
             record->set_timestamp(GetTickCount64());
             (*MapMessage)["data_type"] = to_string(subwrite->taskid);
@@ -869,7 +878,7 @@ void DataHandler::KerSublthreadProc()
             PipWriteAnonymous(serializbuf, datasize);
             MapMessage->clear();
             serializbuf.clear();
-        } while (false);
+        }
     } while (!g_shutdown);
 }
 static unsigned WINAPI _KerSubthreadProc(void* pData)
@@ -878,7 +887,7 @@ static unsigned WINAPI _KerSubthreadProc(void* pData)
         (reinterpret_cast<DataHandler*>(pData))->KerSublthreadProc();
     return 0;
 }
-// Etw ˝æ›ConSumer
+// EtwÊï∞ÊçÆConSumer
 void DataHandler::EtwSublthreadProc()
 {
     std::shared_ptr<protocol::Record> record = std::make_shared<protocol::Record>();
@@ -896,14 +905,18 @@ void DataHandler::EtwSublthreadProc()
         WaitForSingleObject(g_Etw_Queue_Event, INFINITE);
         if (g_shutdown || !record)
             break;
-        do {
-            std::unique_lock<std::mutex> lock(g_Etw_QueueCs_Ptr);
-            if (g_Etw_SubQueue_Ptr.empty())
-                break;
-            const auto subwrite = g_Etw_SubQueue_Ptr.front();
-            g_Etw_SubQueue_Ptr.pop();
-            if (!subwrite)
-                break;
+        for (;;)
+        {
+            std::shared_ptr<USubNode> subwrite;
+            {
+                std::unique_lock<std::mutex> lock(g_Etw_QueueCs_Ptr);
+                if (g_Etw_SubQueue_Ptr.empty())
+                    break;
+                subwrite = g_Etw_SubQueue_Ptr.front();
+                g_Etw_SubQueue_Ptr.pop();
+            }
+            if (!subwrite || !subwrite->data)
+                continue;
             record->set_data_type(subwrite->taskid);
             record->set_timestamp(GetTickCount64());
             (*MapMessage)["data_type"] = to_string(subwrite->taskid);
@@ -913,7 +926,7 @@ void DataHandler::EtwSublthreadProc()
             PipWriteAnonymous(serializbuf, datasize);
             MapMessage->clear();
             serializbuf.clear();
-        } while (false);
+        }
     } while (!g_shutdown);
 }
 static unsigned WINAPI _EtwSubthreadProc(void* pData)
@@ -923,7 +936,7 @@ static unsigned WINAPI _EtwSubthreadProc(void* pData)
     return 0;
 }
 
-// ≥ı ºªØPip
+// ÂàùÂßãÂåñPip
 bool DataHandler::PipInit()
 {
     g_namedpipe = std::make_shared<NamedPipe>();
@@ -951,14 +964,26 @@ void DataHandler::PipFreeAnonymous()
         g_anonymouspipe->uninPip();
 }
 
-// …Ë÷√ConSumer∂©‘ƒ,≥ı ºªØ∂”¡–œﬂ≥Ã
+// ËÆæÁΩÆConSumerËÆ¢ÈòÖ,ÂàùÂßãÂåñÈòüÂàóÁ∫øÁ®ã
 bool DataHandler::ThreadPool_Init()
 {
+    g_shutdown = false;
     g_Ker_Queue_Event = CreateEvent(NULL, FALSE, FALSE, NULL);
     g_Etw_Queue_Event = CreateEvent(NULL, FALSE, FALSE, NULL);
     this->m_jobAvailableEvnet_WriteTask = CreateEvent(NULL, FALSE, FALSE, NULL);
     if (!g_Etw_Queue_Event || !g_Ker_Queue_Event || !m_jobAvailableEvnet_WriteTask)
+    {
+        if (g_Ker_Queue_Event)
+            CloseHandle(g_Ker_Queue_Event);
+        if (g_Etw_Queue_Event)
+            CloseHandle(g_Etw_Queue_Event);
+        if (m_jobAvailableEvnet_WriteTask)
+            CloseHandle(m_jobAvailableEvnet_WriteTask);
+        g_Ker_Queue_Event = nullptr;
+        g_Etw_Queue_Event = nullptr;
+        m_jobAvailableEvnet_WriteTask = nullptr;
         return false;
+    }
 
     SingletonUMon::instance()->uMsg_SetSubEventPtr(g_Etw_Queue_Event);
     SingletonUMon::instance()->uMsg_SetSubQueueLockPtr(g_Etw_QueueCs_Ptr);
@@ -981,7 +1006,7 @@ bool DataHandler::ThreadPool_Init()
         threadCount = 4;
     }
 
-    // ¥¶¿ÌKernel…œ≈◊
+    // Â§ÑÁêÜKernel‰∏äÊäõ
     for (i = 0; i < threadCount; i++)
     {
         hThread = (HANDLE)_beginthreadex(0, 0,
@@ -996,7 +1021,7 @@ bool DataHandler::ThreadPool_Init()
         }
     }
 
-    // ¥¶¿ÌUetw…œ≈◊
+    // Â§ÑÁêÜUetw‰∏äÊäõ
     for (i = 0; i < threadCount; i++)
     {
         hThread = (HANDLE)_beginthreadex(0, 0,
@@ -1015,11 +1040,11 @@ bool DataHandler::ThreadPool_Init()
 }
 bool DataHandler::ThreadPool_Free()
 {
-    // …Ë÷√±Í÷æ
+    // ËÆæÁΩÆÊ†áÂøó
     g_shutdown = true;
     Sleep(100);
 
-    // —≠ª∑πÿ±’æ‰±˙
+    // Âæ™ÁéØÂÖ≥Èó≠Âè•ÊüÑ
     for (tThreads::iterator it = m_ker_subthreads.begin();
         it != m_ker_subthreads.end();
         it++)
@@ -1030,10 +1055,10 @@ bool DataHandler::ThreadPool_Free()
     }
 
 
-    if (g_Ker_Queue_Event != INVALID_HANDLE_VALUE)
+    if (g_Ker_Queue_Event && g_Ker_Queue_Event != INVALID_HANDLE_VALUE)
     {
         ::CloseHandle(g_Ker_Queue_Event);
-        g_Ker_Queue_Event = INVALID_HANDLE_VALUE;
+        g_Ker_Queue_Event = nullptr;
     }
 
     for (tThreads::iterator it = m_etw_subthreads.begin();
@@ -1045,10 +1070,10 @@ bool DataHandler::ThreadPool_Free()
         CloseHandle(*it);
     }
 
-    if (g_Etw_Queue_Event != INVALID_HANDLE_VALUE)
+    if (g_Etw_Queue_Event && g_Etw_Queue_Event != INVALID_HANDLE_VALUE)
     {
         ::CloseHandle(g_Etw_Queue_Event);
-        g_Etw_Queue_Event = INVALID_HANDLE_VALUE;
+        g_Etw_Queue_Event = nullptr;
     }
 
     for (tThreads::iterator it = m_threads_write.begin();
@@ -1060,15 +1085,27 @@ bool DataHandler::ThreadPool_Free()
         CloseHandle(*it);
     }
 
-    if (m_jobAvailableEvnet_WriteTask != INVALID_HANDLE_VALUE)
+    if (m_jobAvailableEvnet_WriteTask && m_jobAvailableEvnet_WriteTask != INVALID_HANDLE_VALUE)
     {
         ::CloseHandle(m_jobAvailableEvnet_WriteTask);
-        m_jobAvailableEvnet_WriteTask = INVALID_HANDLE_VALUE;
+        m_jobAvailableEvnet_WriteTask = nullptr;
     }
 
     m_ker_subthreads.clear();
     m_etw_subthreads.clear();
     m_threads_write.clear();
 
+    {
+        std::unique_lock<std::mutex> lock(g_Ker_QueueCs_Ptr);
+        while (!g_Ker_SubQueue_Ptr.empty())
+            g_Ker_SubQueue_Ptr.pop();
+    }
+    {
+        std::unique_lock<std::mutex> lock(g_Etw_QueueCs_Ptr);
+        while (!g_Etw_SubQueue_Ptr.empty())
+            g_Etw_SubQueue_Ptr.pop();
+    }
+
     return true;
 }
+

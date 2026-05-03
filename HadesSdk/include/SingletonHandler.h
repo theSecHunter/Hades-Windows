@@ -1,4 +1,4 @@
-#include <mutex>
+﻿#include <mutex>
 namespace ustdex
 {
 	template <typename T>
@@ -32,28 +32,20 @@ namespace ustdex
 	template <class T>
 	T* Singleton<T>::instance()
 	{
+		std::lock_guard<std::mutex> guard(lock_);
 		if (instance_ == nullptr)
-		{
-			lock_.lock();
-			if (instance_ == nullptr)
-				instance_ = new T;
-			lock_.unlock();
-		}
+			instance_ = new T;
 		return instance_;
 	}
 
 	template <class T>
 	void Singleton<T>::release()
 	{
+		std::lock_guard<std::mutex> guard(lock_);
 		if (instance_ != nullptr)
 		{
-			lock_.lock();
-			if (instance_ != nullptr)
-			{
-				delete instance_;
-				instance_ = nullptr;
-			}
-			lock_.unlock();
+			delete instance_;
+			instance_ = nullptr;
 		}
 	}
 

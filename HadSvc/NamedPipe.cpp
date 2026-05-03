@@ -16,7 +16,8 @@
 
 bool NamedPipe::init(const std::wstring& pipe)
 {
-    pipe_name = pipe_name;
+    pipe_name = pipe;
+    m_stopevent = false;
     if (!connect_pipe())
         return false;
     m_readthread = std::thread{ std::bind(&NamedPipe::read_loop, this) };
@@ -28,6 +29,10 @@ void NamedPipe::uninit()
 {
     m_stopevent = true;
     m_write_event.notify_one();
+    if (m_pipe != INVALID_HANDLE_VALUE)
+    {
+        CancelIoEx(m_pipe, nullptr);
+    }
     if (m_readthread.joinable())
     {
         m_readthread.join();
@@ -59,7 +64,7 @@ void NamedPipe::write(const std::shared_ptr<uint8_t>& data, size_t size)
 
 bool NamedPipe::connect_pipe()
 {
-    constexpr int64_t kTimeout = 1000;
+    constexpr int64_t kTimeout = 1000 * 1000;
     const int64_t start_time = common::Timestamp::now().microseconds_since_powerup();
 
     while (!m_stopevent)
@@ -88,7 +93,11 @@ bool NamedPipe::connect_pipe()
                 NULL,       // don't set maximum bytes
                 NULL);       // don't set maximum time
             if (!success)
+            {
+                CloseHandle(m_pipe);
+                m_pipe = INVALID_HANDLE_VALUE;
                 return false;
+            }
             return true;
         }
 
@@ -114,44 +123,64 @@ void NamedPipe::read_loop()
     DWORD dwRead = 0;
     while (!m_stopevent)
     {
-        bool success = ReadFile(
+        ResetEvent(ovlp.hEvent);
+        dwRead = 0;
+        const BOOL success = ReadFile(
             m_pipe,             // pipe handle 
             buffer.data(),      // buffer to receive reply 
             kBufferSize,        // size of buffer 
             &dwRead,            // number of bytes read 
             &ovlp);             // not overlapped 
 
-        DWORD wait = WaitForSingleObject(ovlp.hEvent, INFINITE);
-        if (wait != WAIT_OBJECT_0) {
-            break;
+        if (!success)
+        {
+            const DWORD error = GetLastError();
+            if (error != ERROR_IO_PENDING)
+                break;
+
+            const DWORD wait = WaitForSingleObject(ovlp.hEvent, INFINITE);
+            if (wait != WAIT_OBJECT_0)
+                break;
+
+            if (!GetOverlappedResult(m_pipe, &ovlp, &dwRead, FALSE))
+                break;
         }
 
-        dwRead = (DWORD)ovlp.InternalHigh;
-        if (dwRead <= 0) {
+        if (m_stopevent)
+            break;
+
+        if (dwRead <= 0)
+        {
             continue;
         }
         if (on_readnotify)
         {
-            std::shared_ptr<uint8_t> data{ new uint8_t[dwRead] };
+            std::shared_ptr<uint8_t> data(new uint8_t[dwRead], std::default_delete<uint8_t[]>());
             ::memcpy(data.get(), buffer.data(), dwRead);
             on_readnotify(data, dwRead);
         }
     }
+
+    CloseHandle(ovlp.hEvent);
 }
 
 void NamedPipe::write_loop()
 {
     std::unique_lock<std::mutex> lock{ m_mutex };
-    do {
-        m_write_event.wait(lock);
+    do
+    {
+        m_write_event.wait(lock, [this]() { return m_stopevent || !write_buffer.empty(); });
         if (m_stopevent)
             break;
         while (!write_buffer.empty())
         {
             auto buff = write_buffer.front();
             write_buffer.pop_front();
+            lock.unlock();
             DWORD bytes_written;
-            WriteFile(m_pipe, buff.data.get(), (DWORD)buff.size, &bytes_written, nullptr);
+            if (m_pipe != INVALID_HANDLE_VALUE)
+                WriteFile(m_pipe, buff.data.get(), (DWORD)buff.size, &bytes_written, nullptr);
+            lock.lock();
         }
     } while (!m_stopevent);
 }

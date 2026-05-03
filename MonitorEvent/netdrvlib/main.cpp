@@ -1,4 +1,4 @@
-#include <Windows.h>
+﻿#include <Windows.h>
 #include "workqueue.h"
 #include "EventHandler.h"
 #include "NetApi.h"
@@ -7,8 +7,29 @@
 #include <iostream>
 using namespace std;
 
-// ��ʼ��״̬
+// 初始化状态
 static bool g_bInitStus = false;
+
+namespace
+{
+	void SplitRuleValues(const std::string& source, std::vector<std::string>& output)
+	{
+		size_t start = 0;
+		while (start < source.size())
+		{
+			size_t end = source.find('|', start);
+			if (end == std::string::npos)
+				end = source.size();
+
+			if (end > start)
+				output.emplace_back(source.substr(start, end - start));
+
+			if (end == source.size())
+				break;
+			start = end + 1;
+		}
+	}
+}
 
 int NetNdrInitEx(void) {
 	// Init devctrl
@@ -37,7 +58,7 @@ int NetNdrInitEx(void) {
 			break;
 		}
 
-		// devctrl_workthread ֮ǰ��ʼ�� Work Queue
+		// devctrl_workthread 之前初始化 Work Queue
 		static EventHandler cEventHandle;
 		InitWorkQueue((PVOID64)&cEventHandle);
 
@@ -125,17 +146,7 @@ void NetNdrSetDenyRule(const char* cRuleName, const char* cIpAddress, const char
 	denyRule.strIpAddress = cIpAddress;
 	denyRule.strProtocol = cProtocol;
 	denyRule.strPorts = cPortArray;
-	{
-		std::string strPort = denyRule.strPorts;
-		char* vector_port = strtok((char*)strPort.c_str(), "|");
-		if (vector_port) {
-			while (vector_port != NULL)
-			{
-				denyRule.vecPorts.push_back(vector_port);
-				vector_port = strtok(NULL, "|");
-			}
-		}
-	}
+	SplitRuleValues(denyRule.strPorts, denyRule.vecPorts);
 	denyRule.strAction = cAction;
 	SingletonNetRule::instance()->SetDenyRule(denyRule);
 }
@@ -149,17 +160,7 @@ void NetNdrSetRediRectRule(const char* cRuleName, const char* cRedirectIp, const
 	tRediRectRule.strProtocol = cProtocol;
 	tRediRectRule.iRedirectPort = iRedrectPort;
 	tRediRectRule.strProcessName = cProcessName;
-	{
-		std::string strProcessName = tRediRectRule.strProcessName;
-		char* vector_name= strtok((char*)strProcessName.c_str(), "|");
-		if (vector_name) {
-			while (vector_name != NULL)
-			{
-				tRediRectRule.vecProcessName.push_back(vector_name);
-				vector_name = strtok(NULL, "|");
-			}
-		}
-	}
+	SplitRuleValues(tRediRectRule.strProcessName, tRediRectRule.vecProcessName);
 	SingletonNetRule::instance()->SetRediRectRule(tRediRectRule);
 }
 

@@ -210,7 +210,8 @@ const ULONG CheckTaskSchedulerRun(UTaskSchedulerRun* pTaskRun)
 	//  ------------------------------------------------------
 	//  Create an instance of the Task Service. 
 	ITaskService* pService = NULL;
-	hr = CoCreateInstance(CLSID_TaskScheduler,
+	hr = CoCreateInstance(
+		CLSID_TaskScheduler,
 		NULL,
 		CLSCTX_INPROC_SERVER,
 		IID_ITaskService,

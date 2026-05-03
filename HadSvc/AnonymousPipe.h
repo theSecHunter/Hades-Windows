@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <functional>
 
 class AnonymousPipe
@@ -24,8 +25,8 @@ private:
 	std::thread m_rthread;
 	std::thread m_wthread;
 	std::function<void(const std::shared_ptr<uint8_t>&, size_t)> on_read_notify;
-	HANDLE m_hStdout, m_hStdin;
+	HANDLE m_hStdout = NULL, m_hStdin = NULL;
 
-	bool m_stopevent = false;
+	std::atomic<bool> m_stopevent = false;
 };
 

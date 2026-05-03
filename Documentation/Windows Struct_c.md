@@ -1,14 +1,17 @@
 #### Kernel
 
+以下结构以 `HadesSdk/include/sysinfo.h` 为准，本文只保留主要传输字段，便于审计消息流。
+
 ````
-enum IoctCode
+enum KIoctCode
 {
-	NF_PROCESS_INFO = 1,
+	NF_PROCESS_INFO = 150,
 	NF_THREAD_INFO,
 	NF_IMAGEGMOD_INFO,
 	NF_REGISTERTAB_INFO,
 	NF_FILE_INFO,
-	NF_SESSION_INFO
+	NF_SESSION_INFO,
+	NF_INJECT_INFO
 };
 ````
 
@@ -17,7 +20,8 @@ enum IoctCode
 ```
 typedef struct _PROCESSINFO
 {
-	int processid;
+	int parentprocessid;
+	int pid;
 	int endprocess;
 	wchar_t processpath[260 * 2];
 	wchar_t commandLine[260 * 2];
@@ -135,9 +139,25 @@ typedef enum _USER_REG_NOTIFY_CLASS {
 
 typedef struct _REGISTERINFO
 {
-	int processid;
-    int threadid;
-	int opeararg;
+    ULONG			processid;
+    ULONG			threadid;
+    ULONG			opeararg;
+    PVOID			RootObject;
+    PVOID           Object;
+    ULONG			Type;
+    ULONG			Attributes;
+    ULONG			DesiredAccess;
+    PULONG			Disposition;
+    ULONG			GrantedAccess;
+    ULONG           Options;
+    ULONG           Wow64Flags;
+    ULONG			KeyInformationClass;
+    ULONG			Index;
+    ULONG		    Status;
+    wchar_t			ProcessPath[260 * 2];
+    wchar_t			CompleteName[260 * 2];
+    char			SetData[260 * 2];
+    ULONG			DataSize;
 }REGISTERINFO, * PREGISTERINFO;
 ```
 
@@ -200,6 +220,18 @@ typedef struct _SESSIONINFO
 }SESSIONINFO, * PSESSIONINFO;
 ```
 
+##### NF_INJECT_INFO
+
+```
+typedef struct _INJECTINFO
+{
+    int             srcPid;
+    int             dstPid;
+    wchar_t			srcProcessPath[260 * 2];
+    wchar_t			dstProcessPath[260 * 2];
+}INJECTINFO, *PINJECTINFO;
+```
+
 
 
 #### Rootkit
@@ -207,24 +239,24 @@ typedef struct _SESSIONINFO
 ```
 enum AnRootkitId
 {
-    NF_SSDT_ID,                     // 0
-    NF_IDT_ID,                      // 1
-    NF_GDT_ID,                      // 2
-    NF_DPC_ID,                      // 3
-    NF_SYSCALLBACK_ID,              // 4
-    NF_SYSPROCESSTREE_ID,           // 5
-    NF_OBJ_ID,                      // 6
-    NF_IRP_ID,                      // 7
-    NF_FSD_ID,                      // 8
-    NF_MOUSEKEYBOARD_ID,            // 9
-    NF_NETWORK_ID,                  // 10
-    NF_PROCESS_ENUM,                // 11
-    NF_PROCESS_KILL,                // 12
-    NF_PROCESS_MOD,                 // 13
-    NF_PE_DUMP,                     // 14
-    NF_SYSMOD_ENUM,                 // 15
-    NF_DRIVER_DUMP,                 // 16
-    NF_EXIT = 100       
+    NF_SSDT_ID = 100,               // 100 + 0
+    NF_IDT_ID,                      // 100 + 1
+    NF_GDT_ID,                      // 100 + 2
+    NF_DPC_ID,                      // 100 + 3
+    NF_SYSCALLBACK_ID,              // 100 + 4
+    NF_SYSPROCESSTREE_ID,           // 100 + 5
+    NF_OBJ_ID,                      // 100 + 6
+    NF_IRP_ID,                      // 100 + 7
+    NF_FSD_ID,                      // 100 + 8
+    NF_MOUSEKEYBOARD_ID,            // 100 + 9
+    NF_NETWORK_ID,                  // 100 + 10
+    NF_PROCESS_ENUM,                // 100 + 11
+    NF_PROCESS_KILL,                // 100 + 12
+    NF_PROCESS_MOD,                 // 100 + 13
+    NF_PE_DUMP,                     // 100 + 14
+    NF_SYSMOD_ENUM,                 // 100 + 15
+    NF_DRIVER_DUMP,                 // 100 + 16
+    NF_EXIT = 1000
 };
 ```
 

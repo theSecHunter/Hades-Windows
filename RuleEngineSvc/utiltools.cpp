@@ -1,4 +1,4 @@
-#include "pch.h"
+ï»¿#include "pch.h"
 #include "utiltools.h"
 #include <map>
 #include <set>
@@ -9,6 +9,33 @@
 #pragma comment(lib ,"Shlwapi.lib")
 
 static std::map<const std::string, std::string> g_DevDosMap;
+
+namespace
+{
+	template <typename Container>
+	void SplitWithDelimiterSuffix(Container& output, const std::string& input)
+	{
+		size_t start = 0;
+		while (start < input.size())
+		{
+			size_t end = input.find('|', start);
+			const bool hasDelimiter = (end != std::string::npos);
+			if (!hasDelimiter)
+				end = input.size();
+
+			if (end > start)
+			{
+				std::string token = input.substr(start, end - start);
+				token.push_back('|');
+				output.insert(output.end(), token);
+			}
+
+			if (!hasDelimiter)
+				break;
+			start = end + 1;
+		}
+	}
+}
 
 bool RuleEngineToos::GetCurrentExePath(std::string& Path)
 {
@@ -30,14 +57,14 @@ bool RuleEngineToos::IsFile(const std::string& fileName)
 
 	const HANDLE FileHandle = CreateFileA(
 		strRet.c_str(),
-		GENERIC_READ | GENERIC_WRITE,
-		0,
+		GENERIC_READ,
+		FILE_SHARE_READ,
 		NULL,
 		OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL,
 		NULL
 	);
-	if (FileHandle)
+	if (FileHandle != INVALID_HANDLE_VALUE)
 	{
 		CloseHandle(FileHandle);
 		return true;
@@ -48,15 +75,7 @@ void RuleEngineToos::SplitiStr(std::set<std::string>& vecProcesName, const std::
 {
 	try
 	{
-		static std::string strSp;
-		char* vector_routeip = strtok((char*)sData.data(), "|");
-		while (vector_routeip != NULL)
-		{
-			strSp = vector_routeip;
-			strSp.append("|");
-			vecProcesName.insert(strSp);
-			vector_routeip = strtok(NULL, "|");
-		}
+		SplitWithDelimiterSuffix(vecProcesName, sData);
 	}
 	catch (const std::exception&)
 	{
@@ -66,15 +85,7 @@ void RuleEngineToos::SplitiStr(std::vector<std::string>& vecProcesName, const st
 {
 	try
 	{
-		static std::string strSp;
-		char* vector_routeip = strtok((char*)sData.data(), "|");
-		while (vector_routeip != NULL)
-		{
-			strSp = vector_routeip;
-			strSp.append("|");
-			vecProcesName.emplace_back(strSp);
-			vector_routeip = strtok(NULL, "|");
-		}
+		SplitWithDelimiterSuffix(vecProcesName, sData);
 	}
 	catch (const std::exception&)
 	{
@@ -82,24 +93,30 @@ void RuleEngineToos::SplitiStr(std::vector<std::string>& vecProcesName, const st
 }
 std::string RuleEngineToos::String_ToUtf8(const std::string& str)
 {
-    try
-    {
+	try
+	{
 		wchar_t* pwBuf = nullptr;
 		char* pBuf = nullptr;
 		do
 		{
-			size_t nwLen = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
+			const int nwLen = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
+			if (nwLen <= 0)
+				break;
 			pwBuf = new wchar_t[nwLen + 1];
 			if (!pwBuf)
 				break;
-			RtlSecureZeroMemory(pwBuf, nwLen * 2 + 2);
-			::MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), pwBuf, nwLen);
-			size_t nLen = ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
-			char* pBuf = new char[nLen + 1];
+			RtlSecureZeroMemory(pwBuf, sizeof(wchar_t) * (nwLen + 1));
+			if (::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, pwBuf, nwLen) <= 0)
+				break;
+			const int nLen = ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, NULL, 0, NULL, NULL);
+			if (nLen <= 0)
+				break;
+			pBuf = new char[nLen + 1];
 			if (!pBuf)
 				break;
 			RtlSecureZeroMemory(pBuf, nLen + 1);
-			::WideCharToMultiByte(CP_UTF8, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
+			if (::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, pBuf, nLen, NULL, NULL) <= 0)
+				break;
 		} while (false);
 		std::string retStr = "";
 		if (pBuf)
@@ -119,24 +136,30 @@ std::string RuleEngineToos::String_ToUtf8(const std::string& str)
 }
 std::string RuleEngineToos::UTF8_ToString(const std::string& str)
 {
-    try
-    {
+	try
+	{
 		wchar_t* pwBuf = nullptr;
 		char* pBuf = nullptr;
 		do
 		{
-			size_t nwLen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
+			const int nwLen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
+			if (nwLen <= 0)
+				break;
 			pwBuf = new wchar_t[nwLen + 1];
 			if (!pwBuf)
 				break;
-			memset(pwBuf, 0, nwLen * 2 + 2);
-			MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), pwBuf, nwLen);
-			size_t nLen = WideCharToMultiByte(CP_ACP, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
-			char* pBuf = new char[nLen + 1];
+			memset(pwBuf, 0, sizeof(wchar_t) * (nwLen + 1));
+			if (MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, pwBuf, nwLen) <= 0)
+				break;
+			const int nLen = WideCharToMultiByte(CP_ACP, 0, pwBuf, -1, NULL, 0, NULL, NULL);
+			if (nLen <= 0)
+				break;
+			pBuf = new char[nLen + 1];
 			if (!pBuf)
 				break;
 			memset(pBuf, 0, nLen + 1);
-			WideCharToMultiByte(CP_ACP, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
+			if (WideCharToMultiByte(CP_ACP, 0, pwBuf, -1, pBuf, nLen, NULL, NULL) <= 0)
+				break;
 		} while (false);
 		std::string retStr = "";
 		if (pBuf)
@@ -168,11 +191,12 @@ const bool RuleEngineToos::InitDeviceDosPathToNtPath()
 {
 	try
 	{
+		g_DevDosMap.clear();
 		static TCHAR    szDriveStr[MAX_PATH] = { 0 };
 		static TCHAR    szDevName[MAX_PATH] = { 0 };
 		TCHAR            szDrive[3];
 		INT             i;
-		//»ñÈ¡±¾µØ´ÅÅÌ×Ö·û´®  
+		//èŽ·å–æœ¬åœ°ç£ç›˜å­—ç¬¦ä¸²  
 		ZeroMemory(szDriveStr, ARRAYSIZE(szDriveStr));
 		ZeroMemory(szDevName, ARRAYSIZE(szDevName));
 		if (GetLogicalDriveStrings(sizeof(szDriveStr), szDriveStr))
@@ -184,7 +208,7 @@ const bool RuleEngineToos::InitDeviceDosPathToNtPath()
 				szDrive[0] = szDriveStr[i];
 				szDrive[1] = szDriveStr[i + 1];
 				szDrive[2] = '\0';
-				if (!QueryDosDevice(szDrive, szDevName, MAX_PATH))//²éÑ¯ Dos Éè±¸Ãû  
+				if (!QueryDosDevice(szDrive, szDevName, MAX_PATH))//æŸ¥è¯¢ Dos è®¾å¤‡å  
 					return false;
 				//cchDevName = lstrlen(szDevName);
 				g_DevDosMap[WStr2Str(szDrive)] = WStr2Str(szDevName);
@@ -201,7 +225,7 @@ const bool RuleEngineToos::InitDeviceDosPathToNtPath()
 }
 void RuleEngineToos::ReplayDeviceDosPathToNtPath(_In_ const std::string& paths, _Out_ std::string& newpaths)
 {
-	// ÇÐ¸î
+	// åˆ‡å‰²
 	std::vector<std::string> setDirPath;
 	SplitiStr(setDirPath, paths);
 	if (setDirPath.empty())
@@ -218,7 +242,7 @@ void RuleEngineToos::ReplayDeviceDosPathToNtPath(_In_ const std::string& paths, 
 		const auto& iters = g_DevDosMap.find(strDevName);
 		if (g_DevDosMap.end() == iters)
 			continue;
-		// ÕâÀïÒ»¶¨ÊÇ¿ªÍ·0_·ñÔò¹æÔòÅäÖÃ´íÎó
+		// è¿™é‡Œä¸€å®šæ˜¯å¼€å¤´0_å¦åˆ™è§„åˆ™é…ç½®é”™è¯¯
 		vIter.replace(0, strDevName.size(), iters->second);
 		newpaths.append(vIter.c_str());
 	}

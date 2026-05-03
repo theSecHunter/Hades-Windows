@@ -84,7 +84,9 @@ int main(int argc, char* argv[])
 	if (!IsProcessExist(L"HadesAgent.exe"))
 #endif
 		return 0;
-	CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
+	HANDLE hThread = CreateThread(NULL, NULL, HadesAgentActiveCheckThread, NULL, 0, 0);
+	if (hThread)
+		CloseHandle(hThread);
 #endif
 
 	// HadesSvc Exit Event - HadesSvc
@@ -178,3 +180,4 @@ int main(int argc, char* argv[])
 	SingletonKerMon::instance()->kMsg_Free();
 	return 0;
 }
+

@@ -8,18 +8,18 @@
 
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0.jpg)
 
-**适用Win7/Win11 x32/x64用户态和内核态数据采集，XP未做兼容测试.**
+**适用 Win7/Win11 x86/x64 用户态和内核态数据采集，XP 未做兼容测试。**
 
 ### v1.0： 
 
 单独引擎版本.
 
 ### v2.x： 
-v1.0引擎重构，采集器分离用户态和内核态lib，HadesSvc数据引擎消费lib生产数据，组织格式(json和protobuf)。Duilib界面完善，WWin7/Win11系统兼容性完善。
+v1.0 引擎重构，采集器分离用户态和内核态 lib，HadesSvc 数据引擎消费 lib 生产数据，组织格式为 json 和 protobuf。Duilib 界面完善，Win7/Win11 系统兼容性完善。
 
-Hboat支持Windows插件上报数据解析，GoAgent统一管理和上报，可作为插件下发。
+Hboat 支持 Windows 插件上报数据解析，GoAgent 统一管理和上报，可作为插件下发。
 
-GoAgent负责GRPC和WIN下插件管理(跨平台)：[https://github.com/theSecHunter/Hades-Linux/tree/main](https://github.com/theSecHunter/Hades-Linux/tree/main/agent)
+GoAgent 负责 GRPC 和 Windows 插件管理(跨平台)：[https://github.com/theSecHunter/Hades-Linux/tree/main](https://github.com/theSecHunter/Hades-Linux/tree/main/agent)
 
 GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboat
 
@@ -47,11 +47,11 @@ https://github.com/theSecHunter/Hades-Linux/tree/dev-win-plugins-rs/plugins/wdri
 
 | 文档             | 文件名                             | 版本|
 | ---------------- | ---------------------------------- |----|
-| 内核文档         | win_kernel_event.md                	|v2.0|
-| 应用层文档       | win_user_event.md                  	|v2.0|
-| ETW文档       | etw_event_struct.md                  	|v2.0|
-| WFP文档          | win_wfp_event.md                   	|v1.0|
-| 传输结构(c) | windows struct_c.md(see sysinfo.h) 		|v2.0|
+| 内核文档         | Documentation/Win_Kernel_Event.md                	|v2.0|
+| 应用层文档       | Documentation/Win_User_Event.md                  	|v2.0|
+| ETW文档       | Documentation/Etw_Event_Struct.md                  	|v2.0|
+| WFP文档          | Documentation/Win_Wfp_Event.md                   	|v1.0|
+| 传输结构(c) | Documentation/Windows Struct_c.md(see HadesSdk/include/sysinfo.h) 		|v2.0|
 | Hboat插件管理指令(Windows) | HboatCommand.md 			|v2.0|
 
 ### 框架:
@@ -153,7 +153,7 @@ https://github.com/theSecHunter/Hades-Linux/tree/dev-win-plugins-rs/plugins/wdri
 | 目录保护|  目录和子目录/文件 | 完成| 基于MiniFilter| |
 | 流量拦截/重定向|  TCP | 完成| 基于WFP| |
 | - |  | | |
-| 注入检测 |  CreteRemote/内存 | 进行中| 基于回调 | https://bbs.pediy.com/thread-193437.htm <br> https://github.com/huoji120/CobaltStrikeDetected/ |
+| 注入检测 |  CreateRemote/内存 | 进行中| 基于回调 | https://bbs.pediy.com/thread-193437.htm <br> https://github.com/huoji120/CobaltStrikeDetected/ |
 
 
 ### HIPS
@@ -178,11 +178,11 @@ https://github.com/theSecHunter/Hades-Linux/tree/dev-win-plugins-rs/plugins/wdri
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0_Response.jpg)
 
 #### 注册表黑白名单模式(应用规则匹配)
-**引擎工作方式：匹配processName和registerValuse二元组,多组规则情况下,命中某条成功后不继续匹配,命中规则为准。**
+**引擎工作方式：匹配 processName 和 registerValuse 二元组。多组规则情况下，命中某条规则成功后不继续匹配，以命中规则为准。**
 
  - 举例1) 2) cmd.exe配置冲突，1) 允许cmd.exe访问Run, 2) 不允许cmd.exe规则访问 Run，配置冲突，冲突时顺序靠前为准(1为准)。
 
- - 举列2) 3) cmd.exe既可以是白名单-又可以是黑名单，比如Run注册表不允许cmd.exe访问(黑名单)，Settings允许cmd.exe访问(白名单),registerValuse键值不冲突即可。
+ - 举例2) 3) cmd.exe既可以是白名单-又可以是黑名单，比如Run注册表不允许cmd.exe访问(黑名单)，Settings允许cmd.exe访问(白名单),registerValuse键值不冲突即可。
 
  - 注：打开是 "删除-创建-设置-查询-重命名操作" 前提，比如修改，必须配置成打开修改(1000100)，删除则是打开删除(1010000),如果open为0意味着这个过程中有key_access or key_read标志都会失败。
 
@@ -206,9 +206,9 @@ https://github.com/theSecHunter/Hades-Linux/tree/dev-win-plugins-rs/plugins/wdri
 	}
 
 	{  3)
-		// 仅允许svhost.exe|cmd.exe对regusterValuse修改重命名操作
+		// 仅允许svchost.exe|cmd.exe对regusterValuse修改重命名操作
 		"registerRuleMod": 1,
-		"processName": "cmd.exe|svhost.exe.exe",
+		"processName": "cmd.exe|svchost.exe",
 		"registerValuse": "\Registry\Machine\Software\WOW6432Node\Policies\Microsoft\MUI\Settings",
 		"permissions": 1000101(打开修改重命名操作)
 	}
@@ -240,7 +240,7 @@ https://github.com/theSecHunter/Hades-Linux/tree/dev-win-plugins-rs/plugins/wdri
 
 ### GRPC/Protobuf v2.0
 
-**考虑GRPC编译复杂性和移植编码比较麻烦，v2.0 HadesSvc将Grpc剔除，Go Agent负责Grpc统一管理，Protobuf协议沿用c++ lib链接。**
+**考虑 GRPC 编译复杂性和移植成本，v2.0 VS2019 工程默认不编译 HadesSvc 内的 grpc.cpp/grpc.h，GoAgent 负责 GRPC 统一管理；HadesSvc 当前保留 Protobuf 协议和 C++ lib 链接。**
 
 Windows对于很多第三方生态逐步容纳，Grpc github cmake编译会出现很多问题，如果使用推荐方式:
 
@@ -254,7 +254,7 @@ C++ Grpc请参考官方文档：https://grpc.io/docs/languages/cpp/basics/
 
 **GRPC配置文件: config/client_config**
 
-**See Code: grpc.h grpc.cpp**
+**当前 VS2019 工程默认只编译 transfer.pb.cc，grpc.cpp/grpc.h 为历史保留代码。**
 
 #### Minifilter v3.0
 
@@ -298,7 +298,7 @@ tc:
     #  - 80
     #  - 8079-8080
     processname: "1.exe|2.exe"    # empty means all process.
-    redirectip: "192.168.188.188" # redirect to ipaddrss
+    redirectip: "192.168.188.188" # redirect to ipaddress
     redirectport: "88"            # redirect to port
     action: REDIRECT
     level: INFO
@@ -334,7 +334,7 @@ dns:
 |- |  |  | |
 |v2.x| ETW GUID LOG方式注册，非"NT KERNEL LOG"，复杂环境注册冲突被覆盖 | 中     |待定|
 
-&emsp;&emsp;**致力于稳定健壮深度，插件形式提供lib/dll集成至Windows终端三方产品，提升软件的安全能力和质量。**
+&emsp;&emsp;**致力于提升稳定性和健壮性，以插件形式提供 lib/dll，便于集成至 Windows 终端三方产品，提升软件的安全能力和质量。**
 
 ### 历史版本：
 #### v1.0 实现：主要实现引擎探针和上层数据-上报流程打通。

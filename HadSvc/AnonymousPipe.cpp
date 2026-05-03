@@ -6,6 +6,7 @@
 #include <vector>
 #include <mutex>
 #include <deque>
+#include <limits>
 #include "AnonymousPipe.h"
 
 static std::mutex g_write_mutex;
@@ -14,6 +15,7 @@ static HANDLE g_read_event = NULL;
 
 bool AnonymousPipe::initPip()
 {
+	m_stopevent = false;
 	if (!connect_pipe())
 		return false;
 	m_rthread = std::thread(std::bind(&AnonymousPipe::read_loop, this));
@@ -70,7 +72,6 @@ bool AnonymousPipe::connect_pipe()
 
 void AnonymousPipe::read_loop()
 {
-    BOOL bSuccess = false;
     constexpr size_t kBufferSize = 1024;
     std::vector<uint8_t> buffer;
     DWORD dwRead = 0;
@@ -83,24 +84,38 @@ void AnonymousPipe::read_loop()
     }
     for (;;)
     {
-        ReadFile(m_hStdin, buffer.data(), kBufferSize, &dwRead, &ovlp);
-        DWORD wait = WaitForSingleObject(ovlp.hEvent, INFINITE);
-        if (wait != WAIT_OBJECT_0) {
-            break;
+        ResetEvent(ovlp.hEvent);
+        dwRead = 0;
+        const BOOL success = ReadFile(m_hStdin, buffer.data(), kBufferSize, &dwRead, &ovlp);
+        if (!success)
+        {
+            const DWORD error = GetLastError();
+            if (error != ERROR_IO_PENDING)
+                break;
+
+            const DWORD wait = WaitForSingleObject(ovlp.hEvent, INFINITE);
+            if (wait != WAIT_OBJECT_0)
+                break;
+
+            if (!GetOverlappedResult(m_hStdin, &ovlp, &dwRead, FALSE))
+                break;
         }
-        else if (m_stopevent)
+
+        if (m_stopevent)
             break;
-        dwRead = (DWORD)ovlp.InternalHigh;
+
         if (dwRead <= 0) {
             continue;
         }
         if (on_read_notify)
         {
-            std::shared_ptr<uint8_t> data{ new uint8_t[dwRead] };
+            std::shared_ptr<uint8_t> data(new uint8_t[dwRead], std::default_delete<uint8_t[]>());
             ::memcpy(data.get(), buffer.data(), dwRead);
             on_read_notify(data, dwRead);
         }
     }
+    if (g_read_event == ovlp.hEvent)
+        g_read_event = NULL;
     if (ovlp.hEvent)
         CloseHandle(ovlp.hEvent);
 }
@@ -109,15 +124,18 @@ void AnonymousPipe::write_loop()
 {
     std::unique_lock<std::mutex> lock{ g_write_mutex };
     do {
-        g_write_event.wait(lock);
+        g_write_event.wait(lock, [this]() { return m_stopevent || !write_buffer.empty(); });
         if (m_stopevent)
             break;
         while (!write_buffer.empty())
         {
             auto buff = write_buffer.front();
             write_buffer.pop_front();
+            lock.unlock();
             DWORD dwWirteByte;
-            WriteFile(m_hStdout, buff.data.get(), (DWORD)buff.size, &dwWirteByte, nullptr);
+            if (buff.size <= (std::numeric_limits<DWORD>::max)())
+                WriteFile(m_hStdout, buff.data.get(), static_cast<DWORD>(buff.size), &dwWirteByte, nullptr);
+            lock.lock();
         }
     } while (!m_stopevent);
 }

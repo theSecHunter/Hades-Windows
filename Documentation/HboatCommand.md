@@ -24,8 +24,8 @@ enum KAnRootkitId
 enum USystemCollId
 {
     UF_PROCESS_ENUM = 200,
-    UF_PROCESS_PID_TREE,		    //201
-    UF_SYSAUTO_START,			    //201
+    UF_PROCESS_PID_TREE,		    // 201
+    UF_SYSAUTO_START,			    // 202
     UF_SYSNET_INFO,				    //203
     UF_SYSSESSION_INFO,			    //204
     UF_SYSINFO_ID,				    //205
@@ -44,7 +44,8 @@ enum KIoctCode
     NF_IMAGEGMOD_INFO,
     NF_REGISTERTAB_INFO,
     NF_FILE_INFO,
-    NF_SESSION_INFO
+    NF_SESSION_INFO,
+    NF_INJECT_INFO
 };
 // 主动上报etw id
 enum UEtwId
@@ -54,16 +55,17 @@ enum UEtwId
     UF_ETW_IMAGEMOD,
     UF_ETW_NETWORK,
     UF_ETW_REGISTERTAB,
-    UF_ETW_FILEIO
+    UF_ETW_FILEIO,
+    UF_ETW_NETWORK_DNS
 };
-hboat可以测试下发指令:
+hboat 可以测试下发指令:
 Kernel：
 100 - SSDT数据
 101 - IDT数据
 103 - DPC数据(有硬编码可能蓝屏 - 先别测试)
 108 - FSD数据(IRP)
 109 - MOUSEKEYBOARD(IRP)
-110 - NETWORK 网络六元组，类似于应用层netstata -an
+110 - NETWORK 网络六元组，类似于应用层 netstat -an
 111 - PROCESS 进程
 113 - PROCESSMOD 下发PID-检测进程加载的DLL，用于发掘应用层隐藏DLL
 115 - SYSMOD 系统已加载模块DLL
@@ -73,7 +75,7 @@ User:
 203 - 系统存在的网络
 207 - 系统存在的全部用户
 208 - 系统存在的服务和安装的软件
-209 - 文件目录路径，遍历文件(后面会有内核nfds)
+209 - 文件目录路径，遍历文件
 210 - 文件绝对路径，获取文件完整属性
 管理：
 401 - ETW采集开启

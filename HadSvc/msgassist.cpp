@@ -1,6 +1,49 @@
-#include "msgassist.h"
+ï»¿#include "msgassist.h"
 
-// ÖÇÄÜÖ¸Õë or ÄÚ´æ³Ø or vectory
+// æ™ºèƒ½æŒ‡é’ˆ or å†…å­˜æ±  or vectory
+#include <limits>
+
+namespace {
+
+bool MultiByteToWideString(const std::string& input, UINT codePage, std::wstring& output)
+{
+    output.clear();
+    if (input.empty())
+        return true;
+
+    if (input.size() > static_cast<size_t>((std::numeric_limits<int>::max)()))
+        return false;
+
+    const int inputLen = static_cast<int>(input.size());
+    const int wideLen = ::MultiByteToWideChar(codePage, 0, input.data(), inputLen, nullptr, 0);
+    if (wideLen <= 0)
+        return false;
+
+    output.resize(wideLen);
+    return ::MultiByteToWideChar(codePage, 0, input.data(), inputLen, &output[0], wideLen) == wideLen;
+}
+
+bool WideToMultiByteString(const std::wstring& input, UINT codePage, std::string& output)
+{
+    output.clear();
+    if (input.empty())
+        return true;
+
+    if (input.size() > static_cast<size_t>((std::numeric_limits<int>::max)()))
+        return false;
+
+    const int inputLen = static_cast<int>(input.size());
+    const int multiLen = ::WideCharToMultiByte(codePage, 0, input.data(), inputLen, nullptr, 0, nullptr, nullptr);
+    if (multiLen <= 0)
+        return false;
+
+    output.resize(multiLen);
+    return ::WideCharToMultiByte(codePage, 0, input.data(), inputLen, &output[0], multiLen, nullptr, nullptr) == multiLen;
+}
+
+} // namespace
+
+// æ™ºèƒ½æŒ‡é’ˆ or å†…å­˜æ±  or vectory
 bool Choose_mem(char*& ptr, DWORD& dwAllocateMemSize, const int code)
 {
     dwAllocateMemSize = 0;
@@ -148,145 +191,47 @@ bool Choose_mem(char*& ptr, DWORD& dwAllocateMemSize, const int code)
 }
 std::string String_ToUtf8(const std::string& str)
 {
-    std::string retStr = "";
-    char* pBuf = nullptr;  wchar_t* pwBuf = nullptr;
-    try
-    {
-        const size_t nwLen = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);   
-        do
-        {
-            pwBuf = new wchar_t[nwLen + 1];
-            if (!pwBuf)
-                break;
-            RtlSecureZeroMemory(pwBuf, nwLen * 2 + 2);
-            ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), pwBuf, nwLen);
-            const size_t nLen = ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
-            pBuf = new char[nLen + 1];
-            if (!pBuf)
-                break;
-            RtlSecureZeroMemory(pBuf, nLen + 1);
-            ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
-            retStr = pBuf;
-        } while (false);
-        if (pwBuf) {
-            delete[] pwBuf;
-            pwBuf = NULL;
-        }
-        if (pBuf) {
-            delete[] pBuf;
-            pBuf = NULL;
-        }
+    std::wstring wideStr;
+    std::string retStr;
+    if (!MultiByteToWideString(str, CP_ACP, wideStr))
         return retStr;
-    }
-    catch (const std::exception&)
-    {
-        if (pwBuf) {
-            delete[] pwBuf;
-            pwBuf = NULL;
-        }
-        if (pBuf) {
-            delete[] pBuf;
-            pBuf = NULL;
-        }
-        return retStr;
-    }
+    if (!WideToMultiByteString(wideStr, CP_UTF8, retStr))
+        retStr.clear();
+    return retStr;
 }
 std::string UTF8_ToString(const std::string& str)
 {
-    std::string retStr = "";
-    char* pBuf = nullptr;  wchar_t* pwBuf = nullptr;
-    try
-    {
-        const size_t nwLen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
-        do
-        {
-            pwBuf = new wchar_t[nwLen + 1];
-            if (!pwBuf)
-                break;
-            RtlSecureZeroMemory(pwBuf, nwLen * 2 + 2);
-            MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), pwBuf, nwLen);
-            const size_t nLen = WideCharToMultiByte(CP_ACP, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
-            pBuf = new char[nLen + 1];
-            if (!pBuf)
-                break;
-            RtlSecureZeroMemory(pBuf, nLen + 1);
-            WideCharToMultiByte(CP_ACP, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
-            retStr = pBuf;
-        } while (false);
-        if (pwBuf) {
-            delete[] pwBuf;
-            pwBuf = NULL;
-        }
-        if (pBuf) {
-            delete[] pBuf;
-            pBuf = NULL;
-        }
+    std::wstring wideStr;
+    std::string retStr;
+    if (!MultiByteToWideString(str, CP_UTF8, wideStr))
         return retStr;
-    }
-    catch (const std::exception&)
-    {
-        if (pwBuf) {
-            delete[] pwBuf;
-            pwBuf = NULL;
-        }
-        if (pBuf) {
-            delete[] pBuf;
-            pBuf = NULL;
-        }
-        return retStr;
-    }
+    if (!WideToMultiByteString(wideStr, CP_ACP, retStr))
+        retStr.clear();
+    return retStr;
 }
 std::wstring Str2WStr(const std::string& str)
 {
-    try
-    {
-        USES_CONVERSION;
-        return A2W(str.c_str());
-    }
-    catch (const std::exception&)
-    {
-        return L"";
-    }
+    std::wstring retStr;
+    if (!MultiByteToWideString(str, CP_ACP, retStr))
+        retStr.clear();
+    return retStr;
 } 
 std::string WStr2Str(const std::wstring& wstr)
 {
-    try
-    {
-        USES_CONVERSION;
-        return W2A(wstr.c_str());
-    }
-    catch (const std::exception&)
-    {
-        return "";
-    }
+    std::string retStr;
+    if (!WideToMultiByteString(wstr, CP_ACP, retStr))
+        retStr.clear();
+    return retStr;
 }
 void Wchar_tToString(std::string& szDst, const wchar_t* wchar)
 {
-    try
+    if (!wchar || lstrlenW(wchar) <= 0)
     {
-        if (lstrlenW(wchar) <= 0)
-        {
-            szDst = " ";
-            return;
-        }
-        const wchar_t* wText = wchar;
-        DWORD dwNum = WideCharToMultiByte(CP_ACP, 0, wText, -1, NULL, 0, NULL, FALSE);
-        if (dwNum <= 0)
-        {
-            szDst = " ";
-            return;
-        }
-        char* psText = nullptr;
-        psText = (char*)new char[dwNum + 1];
-        if (psText)
-        {
-            WideCharToMultiByte(CP_ACP, 0, wText, -1, psText, dwNum, NULL, FALSE);
-            psText[dwNum - 1] = 0;
-            szDst = psText;
-            delete[] psText;
-        }
+        szDst = " ";
+        return;
     }
-    catch (const std::exception&)
-    {
-    }
+
+    const std::wstring wideStr(wchar);
+    if (!WideToMultiByteString(wideStr, CP_ACP, szDst) || szDst.empty())
+        szDst = " ";
 }

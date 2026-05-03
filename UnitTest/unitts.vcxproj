@@ -76,7 +76,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\sysmonuser\include;..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;$(IncludePath);..\HadesSdk\include;..\HadesSdk\ruleEngine\include</IncludePath>
+    <IncludePath>..\HadSvc;..\HadesSdk\protobuf\include;..\HadesSdk\sysmonuser\include;..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;$(IncludePath);..\HadesSdk\include;..\HadesSdk\ruleEngine\include</IncludePath>
     <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);..\HadesSdk\sysmondrv\lib;..\HadesSdk\ruleEngine\lib</LibraryPath>
     <OutDir>..\bin\x86\Debug</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
@@ -84,21 +84,21 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\x86\Release</OutDir>
-    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\include;..\HadesSdk\ruleEngine\include</IncludePath>
+    <IncludePath>..\HadSvc;..\HadesSdk\protobuf\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\include;..\HadesSdk\ruleEngine\include</IncludePath>
     <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);..\HadesSdk\ruleEngine\lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\bin\x64\Debug</OutDir>
     <TargetName>$(ProjectName)_d64</TargetName>
-    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include;..\HadesSdk\netdrv\include</IncludePath>
+    <IncludePath>..\HadSvc;..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include;..\HadesSdk\netdrv\include</IncludePath>
     <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\HadesSdk\ruleEngine\lib;..\HadesSdk\netdrv\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\bin\x64\Release</OutDir>
     <TargetName>$(ProjectName)64</TargetName>
-    <IncludePath>..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include;..\HadesSdk\netdrv\include</IncludePath>
+    <IncludePath>..\HadSvc;..\HadesSdk\protobuf\include;..\HadesSdk\include;..\HadesSdk\sysmonuser\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\HadesSdk\sysmondrv\include;..\HadesSdk\rapidjson\include;..\HadesSdk\nlohmannjson\single_include\nlohmann;..\HadesSdk\ruleEngine\include;..\HadesSdk\netdrv\include</IncludePath>
     <LibraryPath>..\HadesSdk\protobuf\lib;..\HadesSdk\sysmonuser\lib;..\HadesSdk\sysmondrv\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\HadesSdk\ruleEngine\lib;..\HadesSdk\netdrv\lib</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

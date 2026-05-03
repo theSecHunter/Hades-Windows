@@ -1,6 +1,6 @@
-// Devctrl.cpp
-//		¸ºÔğºÍÇı¶¯½»»¥
-//		´¦ÀíÇı¶¯´«µİ¹ıÀ´µÄestablished_layer & mac_frame_layer Êı¾İ
+ï»¿// Devctrl.cpp
+//		è´Ÿè´£å’Œé©±åŠ¨äº¤äº’
+//		å¤„ç†é©±åŠ¨ä¼ é€’è¿‡æ¥çš„established_layer & mac_frame_layer æ•°æ®
 #include <Windows.h>
 #include "sync.h"
 #include "nfevents.h"
@@ -25,7 +25,7 @@ static AutoEventHandle		g_ioEvent;
 static AutoEventHandle		g_stopEvent;
 static NF_EventHandler*		g_pEventHandler = NULL;
 static char					g_driverName[MAX_PATH] = { 0 };
-static bool					g_exitthread = false;
+static volatile LONG		g_exitthread = 0;
 static DWORD WINAPI	nf_workThread(LPVOID lpThreadParameter);
 
 static AutoCriticalSection	g_cs;
@@ -59,24 +59,25 @@ int DevctrlIoct::devctrl_init()
 	m_threadobjhandler = NULL;
 	m_alpcthreadobjhandler = NULL;
 	m_dwthreadid = 0;
-	g_exitthread = false;
+	InterlockedExchange(&g_exitthread, 0);
 	return 1;
 }
 void DevctrlIoct::devctrl_stopthread()
 {
-	g_exitthread = true;
-	Sleep(100);
+	InterlockedExchange(&g_exitthread, 1);
+	SetEvent(g_stopEvent);
 	if (m_threadobjhandler)
 	{
-		WaitForSingleObject(m_threadobjhandler, 1000);
-		TerminateThread(m_threadobjhandler, 0);
+		WaitForSingleObject(m_threadobjhandler, 3000);
 		CloseHandle(m_threadobjhandler);
 		m_threadobjhandler = NULL;
 	}
+	InterlockedExchange(&g_exitthread, 0);
 }
 void DevctrlIoct::devctrl_startthread()
 {
-	g_exitthread = false;
+	InterlockedExchange(&g_exitthread, 0);
+	ResetEvent(g_stopEvent);
 	devctrl_workthread(NULL, false);
 }
 void DevctrlIoct::devctrl_free()
@@ -194,7 +195,7 @@ int DevctrlIoct::devctrl_OnMonitor()
 }
 int DevctrlIoct::devctrl_OffMonitor()
 {
-	// ·¢ËÍÔİÍ£I/OÏûÏ¢
+	// å‘é€æš‚åœI/Oæ¶ˆæ¯
 	DWORD InSize = 0;
 	DWORD OutSize = 0;
 	DWORD dwSize = 0;
@@ -464,7 +465,7 @@ static void handleEventDispath(PNF_DATA pData)
 }
 static void handleEventDispath_(PNF_DATA pData)
 {
-	if (pData && (pData->code < 150 || pData->code > 160))
+	if (!pData || (pData->code < 150 || pData->code > 160))
 		return;
 	const int buflens = sizeof(UPubNode) + pData->bufferSize;
 	UPubNode* pubdata = (UPubNode*)new char[buflens];
@@ -477,6 +478,10 @@ static void handleEventDispath_(PNF_DATA pData)
 		std::unique_lock<std::mutex> lock(*g_KernelQueueCs_Ptr);
 		g_KernelQueue_Ptr->push(pubdata);
 		SetEvent(g_KjobQueue_Event);
+	}
+	else if (pubdata)
+	{
+		delete[] pubdata;
 	}
 }
 
@@ -500,9 +505,8 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 	{
 		waitTimeout = 10;
 		abortBatch = false;
-		if (g_exitthread)
+		if (InterlockedCompareExchange(&g_exitthread, 0, 0) != 0)
 		{
-			g_exitthread = false;
 			break;
 		}
 
@@ -560,9 +564,8 @@ static DWORD WINAPI nf_workThread(LPVOID lpThreadParameter)
 			{
 				//handleEventDispath(pData);
 				handleEventDispath_(pData);
-				if (g_exitthread)
+				if (InterlockedCompareExchange(&g_exitthread, 0, 0) != 0)
 				{
-					g_exitthread = false;
 					abortBatch = true;
 					break;
 				}
@@ -619,9 +622,8 @@ static DWORD WINAPI nf_workThread_IOCP(LPVOID lpThreadParameter)
 
 		while (true)
 		{
-			if (g_exitthread)
+			if (InterlockedCompareExchange(&g_exitthread, 0, 0) != 0)
 			{
-				g_exitthread = false;
 				break;
 			}
 
@@ -629,7 +631,6 @@ static DWORD WINAPI nf_workThread_IOCP(LPVOID lpThreadParameter)
 			{
 				if (GetQueuedCompletionStatus(hCompletionPort, &numberOfBytesTransferred, &key, &completedOv, INFINITE) == 0)
 				{
-					g_exitthread = false;
 					break;
 				}
 			}
@@ -654,9 +655,8 @@ static DWORD WINAPI nf_workThread_IOCP(LPVOID lpThreadParameter)
 			{
 				//handleEventDispath(pData);
 				handleEventDispath_(pData);
-				if (g_exitthread)
+				if (InterlockedCompareExchange(&g_exitthread, 0, 0) != 0)
 				{
-					g_exitthread = false;
 					break;
 				}
 				if (readBytes < (sizeof(NF_DATA) - 1 + pData->bufferSize))
