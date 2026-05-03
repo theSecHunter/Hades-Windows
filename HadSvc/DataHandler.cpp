@@ -9,6 +9,7 @@
 #include <vector>
 #include <time.h>
 #include <functional>
+#include <limits>
 #include <atlstr.h>
 
 #include "DataHandler.h"
@@ -37,7 +38,7 @@ static std::mutex                               g_Ker_QueueCs_Ptr;
 static HANDLE                                   g_Ker_Queue_Event = nullptr;
 
 // ExitEvent
-static HANDLE                                   g_ExitEvent;
+static HANDLE                                   g_ExitEvent = nullptr;
 
 // NamedPip|Anonymous
 static const std::wstring PIPE_HADESWIN_NAME = L"\\\\.\\Pipe\\HadesPipe";
@@ -389,7 +390,7 @@ const bool DataHandler::NetCheckStatus()
     case SERVICE_STOP_PENDING:
     {
         PROCESS_INFORMATION pi;
-        std::wstring pszCmd = L"[HadesNetMon] sc start hadesndr";
+        std::wstring pszCmd = L"sc start hadesndr";
         STARTUPINFO si = { sizeof(STARTUPINFO) };
         GetStartupInfo(&si);
         si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
@@ -442,7 +443,7 @@ DataHandler::~DataHandler()
 }
 
 // 管道写
-inline bool PipWriteAnonymous(std::string& serializbuf, const int datasize)
+inline bool PipWriteAnonymous(std::string& serializbuf, const size_t datasize)
 {
     /*
     * |---------------------------------
@@ -451,13 +452,16 @@ inline bool PipWriteAnonymous(std::string& serializbuf, const int datasize)
     * |   4 byte      |    xxx byte    |
     * |---------------------------------
     */
+    if (datasize > (std::numeric_limits<uint32_t>::max)() - sizeof(uint32_t) - 1)
+        return false;
+
     {
         std::lock_guard<std::mutex> lock{ g_pipwritecs };
-        const int sendlens = datasize + sizeof(uint32_t) + 1;
-        std::shared_ptr<uint8_t> data{ new uint8_t[sendlens] };
+        const size_t sendlens = datasize + sizeof(uint32_t) + 1;
+        std::shared_ptr<uint8_t> data(new uint8_t[sendlens], std::default_delete<uint8_t[]>());
         if (data) {
             memset(data.get(), 0, sendlens);
-            *(uint32_t*)(data.get()) = datasize;
+            *(uint32_t*)(data.get()) = static_cast<uint32_t>(datasize);
             ::memcpy(data.get() + 0x4, serializbuf.c_str(), datasize);
             if (g_anonymouspipe)
                 g_anonymouspipe->write(data, sendlens);
@@ -493,7 +497,6 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
         if (g_ExitEvent)
         {
             SetEvent(g_ExitEvent);
-            CloseHandle(g_ExitEvent);
             task_array_data.push_back("Success!");
         }
         else
@@ -769,21 +772,15 @@ static DWORD WINAPI PTaskHandlerThread(LPVOID lpThreadParameter)
 {
     try
     {
-        THREADPA_PARAMETER_NODE* pThreadPara = nullptr;
-        pThreadPara = reinterpret_cast<THREADPA_PARAMETER_NODE*>(lpThreadParameter);
-        if (!pThreadPara || (pThreadPara == nullptr))
+        std::unique_ptr<THREADPA_PARAMETER_NODE> pThreadPara(reinterpret_cast<THREADPA_PARAMETER_NODE*>(lpThreadParameter));
+        if (!pThreadPara)
             return 0;
         if (g_shutdown)
-        {
-            delete pThreadPara;
             return 0;
-        }
         const int taskid = pThreadPara->nTaskId;
         const std::string sData = pThreadPara->sData.c_str();
         if (pThreadPara->pDataHandler)
             pThreadPara->pDataHandler->PTaskHandlerNotify(taskid, sData);
-
-        delete pThreadPara;
         return 0;
     }
     catch (const std::exception&)
@@ -796,13 +793,13 @@ static DWORD WINAPI PTaskHandlerThread(LPVOID lpThreadParameter)
 void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_t size)
 {
     // filter size
-    if (!data || (data == nullptr) || (size <= 0 && size >= 1024))
+    if (!data || (size < sizeof(int)) || (size >= 1024))
         return;
     try
     {
         const int taskid = *((int*)data.get());
         // 匿名管道不确定因素多，Filter Task id <= 1024
-        if (taskid <= 0 && taskid >= 1024)
+        if (taskid <= 0 || taskid >= 1024)
             return;
 
         PTHREADPA_PARAMETER_NODE pThreadPara = nullptr;
@@ -811,11 +808,16 @@ void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_
             pThreadPara->clear();
             // 反序列化成Task
             protocol::Task task;
-            task.ParseFromString((char*)(data.get() + 0x4));
+            if (!task.ParseFromArray(data.get() + sizeof(int), static_cast<int>(size - sizeof(int))))
+            {
+                delete pThreadPara;
+                return;
+            }
             pThreadPara->nTaskId = task.data_type();
             pThreadPara->pDataHandler = this;
             pThreadPara->sData = task.data().c_str();
-            QueueUserWorkItem(PTaskHandlerThread, (LPVOID)pThreadPara, WT_EXECUTEDEFAULT);
+            if (!QueueUserWorkItem(PTaskHandlerThread, (LPVOID)pThreadPara, WT_EXECUTEDEFAULT))
+                delete pThreadPara;
         }
     }
     catch (const std::exception&)
@@ -827,11 +829,14 @@ void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_
 // Debug interface
 void DataHandler::DebugTaskInterface(const int taskid)
 {
-    THREADPA_PARAMETER_NODE threadPara;
-    threadPara.clear();
-    threadPara.nTaskId = taskid;
-    threadPara.pDataHandler = this;
-    QueueUserWorkItem(PTaskHandlerThread, (LPVOID)&threadPara, WT_EXECUTEDEFAULT);
+    PTHREADPA_PARAMETER_NODE pThreadPara = new THREADPA_PARAMETER_NODE;
+    if (!pThreadPara)
+        return;
+    pThreadPara->clear();
+    pThreadPara->nTaskId = taskid;
+    pThreadPara->pDataHandler = this;
+    if (!QueueUserWorkItem(PTaskHandlerThread, (LPVOID)pThreadPara, WT_EXECUTEDEFAULT))
+        delete pThreadPara;
 }
 
 // 内核数据ConSumer
@@ -852,14 +857,18 @@ void DataHandler::KerSublthreadProc()
         WaitForSingleObject(g_Ker_Queue_Event, INFINITE);
         if (g_shutdown)
             break;
-        do{
-            std::unique_lock<std::mutex> lock(g_Ker_QueueCs_Ptr);
-            if (g_Ker_SubQueue_Ptr.empty())
-                break;
-            const auto subwrite = g_Ker_SubQueue_Ptr.front();
-            g_Ker_SubQueue_Ptr.pop();
-            if (!subwrite)
-                break;
+        for (;;)
+        {
+            std::shared_ptr<USubNode> subwrite;
+            {
+                std::unique_lock<std::mutex> lock(g_Ker_QueueCs_Ptr);
+                if (g_Ker_SubQueue_Ptr.empty())
+                    break;
+                subwrite = g_Ker_SubQueue_Ptr.front();
+                g_Ker_SubQueue_Ptr.pop();
+            }
+            if (!subwrite || !subwrite->data)
+                continue;
             record->set_data_type(subwrite->taskid);
             record->set_timestamp(GetTickCount64());
             (*MapMessage)["data_type"] = to_string(subwrite->taskid);
@@ -869,7 +878,7 @@ void DataHandler::KerSublthreadProc()
             PipWriteAnonymous(serializbuf, datasize);
             MapMessage->clear();
             serializbuf.clear();
-        } while (false);
+        }
     } while (!g_shutdown);
 }
 static unsigned WINAPI _KerSubthreadProc(void* pData)
@@ -896,14 +905,18 @@ void DataHandler::EtwSublthreadProc()
         WaitForSingleObject(g_Etw_Queue_Event, INFINITE);
         if (g_shutdown || !record)
             break;
-        do {
-            std::unique_lock<std::mutex> lock(g_Etw_QueueCs_Ptr);
-            if (g_Etw_SubQueue_Ptr.empty())
-                break;
-            const auto subwrite = g_Etw_SubQueue_Ptr.front();
-            g_Etw_SubQueue_Ptr.pop();
-            if (!subwrite)
-                break;
+        for (;;)
+        {
+            std::shared_ptr<USubNode> subwrite;
+            {
+                std::unique_lock<std::mutex> lock(g_Etw_QueueCs_Ptr);
+                if (g_Etw_SubQueue_Ptr.empty())
+                    break;
+                subwrite = g_Etw_SubQueue_Ptr.front();
+                g_Etw_SubQueue_Ptr.pop();
+            }
+            if (!subwrite || !subwrite->data)
+                continue;
             record->set_data_type(subwrite->taskid);
             record->set_timestamp(GetTickCount64());
             (*MapMessage)["data_type"] = to_string(subwrite->taskid);
@@ -913,7 +926,7 @@ void DataHandler::EtwSublthreadProc()
             PipWriteAnonymous(serializbuf, datasize);
             MapMessage->clear();
             serializbuf.clear();
-        } while (false);
+        }
     } while (!g_shutdown);
 }
 static unsigned WINAPI _EtwSubthreadProc(void* pData)
@@ -954,11 +967,23 @@ void DataHandler::PipFreeAnonymous()
 // 设置ConSumer订阅,初始化队列线程
 bool DataHandler::ThreadPool_Init()
 {
+    g_shutdown = false;
     g_Ker_Queue_Event = CreateEvent(NULL, FALSE, FALSE, NULL);
     g_Etw_Queue_Event = CreateEvent(NULL, FALSE, FALSE, NULL);
     this->m_jobAvailableEvnet_WriteTask = CreateEvent(NULL, FALSE, FALSE, NULL);
     if (!g_Etw_Queue_Event || !g_Ker_Queue_Event || !m_jobAvailableEvnet_WriteTask)
+    {
+        if (g_Ker_Queue_Event)
+            CloseHandle(g_Ker_Queue_Event);
+        if (g_Etw_Queue_Event)
+            CloseHandle(g_Etw_Queue_Event);
+        if (m_jobAvailableEvnet_WriteTask)
+            CloseHandle(m_jobAvailableEvnet_WriteTask);
+        g_Ker_Queue_Event = nullptr;
+        g_Etw_Queue_Event = nullptr;
+        m_jobAvailableEvnet_WriteTask = nullptr;
         return false;
+    }
 
     SingletonUMon::instance()->uMsg_SetSubEventPtr(g_Etw_Queue_Event);
     SingletonUMon::instance()->uMsg_SetSubQueueLockPtr(g_Etw_QueueCs_Ptr);
@@ -1030,10 +1055,10 @@ bool DataHandler::ThreadPool_Free()
     }
 
 
-    if (g_Ker_Queue_Event != INVALID_HANDLE_VALUE)
+    if (g_Ker_Queue_Event && g_Ker_Queue_Event != INVALID_HANDLE_VALUE)
     {
         ::CloseHandle(g_Ker_Queue_Event);
-        g_Ker_Queue_Event = INVALID_HANDLE_VALUE;
+        g_Ker_Queue_Event = nullptr;
     }
 
     for (tThreads::iterator it = m_etw_subthreads.begin();
@@ -1045,10 +1070,10 @@ bool DataHandler::ThreadPool_Free()
         CloseHandle(*it);
     }
 
-    if (g_Etw_Queue_Event != INVALID_HANDLE_VALUE)
+    if (g_Etw_Queue_Event && g_Etw_Queue_Event != INVALID_HANDLE_VALUE)
     {
         ::CloseHandle(g_Etw_Queue_Event);
-        g_Etw_Queue_Event = INVALID_HANDLE_VALUE;
+        g_Etw_Queue_Event = nullptr;
     }
 
     for (tThreads::iterator it = m_threads_write.begin();
@@ -1060,10 +1085,10 @@ bool DataHandler::ThreadPool_Free()
         CloseHandle(*it);
     }
 
-    if (m_jobAvailableEvnet_WriteTask != INVALID_HANDLE_VALUE)
+    if (m_jobAvailableEvnet_WriteTask && m_jobAvailableEvnet_WriteTask != INVALID_HANDLE_VALUE)
     {
         ::CloseHandle(m_jobAvailableEvnet_WriteTask);
-        m_jobAvailableEvnet_WriteTask = INVALID_HANDLE_VALUE;
+        m_jobAvailableEvnet_WriteTask = nullptr;
     }
 
     m_ker_subthreads.clear();

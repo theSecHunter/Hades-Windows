@@ -148,117 +148,87 @@ bool Choose_mem(char*& ptr, DWORD& dwAllocateMemSize, const int code)
 }
 std::string String_ToUtf8(const std::string& str)
 {
-    std::string retStr = "";
-    char* pBuf = nullptr;  wchar_t* pwBuf = nullptr;
-    try
-    {
-        const size_t nwLen = ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);   
-        do
-        {
-            pwBuf = new wchar_t[nwLen + 1];
-            if (!pwBuf)
-                break;
-            RtlSecureZeroMemory(pwBuf, nwLen * 2 + 2);
-            ::MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), pwBuf, nwLen);
-            const size_t nLen = ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
-            pBuf = new char[nLen + 1];
-            if (!pBuf)
-                break;
-            RtlSecureZeroMemory(pBuf, nLen + 1);
-            ::WideCharToMultiByte(CP_UTF8, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
-            retStr = pBuf;
-        } while (false);
-        if (pwBuf) {
-            delete[] pwBuf;
-            pwBuf = NULL;
-        }
-        if (pBuf) {
-            delete[] pBuf;
-            pBuf = NULL;
-        }
-        return retStr;
-    }
-    catch (const std::exception&)
-    {
-        if (pwBuf) {
-            delete[] pwBuf;
-            pwBuf = NULL;
-        }
-        if (pBuf) {
-            delete[] pBuf;
-            pBuf = NULL;
-        }
-        return retStr;
-    }
+    if (str.empty())
+        return "";
+
+    const int wideLen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, nullptr, 0);
+    if (wideLen <= 0)
+        return "";
+
+    std::wstring wideText(static_cast<size_t>(wideLen), L'\0');
+    if (MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, &wideText[0], wideLen) <= 0)
+        return "";
+
+    const int utf8Len = WideCharToMultiByte(CP_UTF8, 0, wideText.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (utf8Len <= 0)
+        return "";
+
+    std::string utf8Text(static_cast<size_t>(utf8Len), '\0');
+    if (WideCharToMultiByte(CP_UTF8, 0, wideText.c_str(), -1, &utf8Text[0], utf8Len, nullptr, nullptr) <= 0)
+        return "";
+
+    if (!utf8Text.empty() && utf8Text.back() == '\0')
+        utf8Text.pop_back();
+    return utf8Text;
 }
 std::string UTF8_ToString(const std::string& str)
 {
-    std::string retStr = "";
-    char* pBuf = nullptr;  wchar_t* pwBuf = nullptr;
-    try
-    {
-        const size_t nwLen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
-        do
-        {
-            pwBuf = new wchar_t[nwLen + 1];
-            if (!pwBuf)
-                break;
-            RtlSecureZeroMemory(pwBuf, nwLen * 2 + 2);
-            MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), pwBuf, nwLen);
-            const size_t nLen = WideCharToMultiByte(CP_ACP, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
-            pBuf = new char[nLen + 1];
-            if (!pBuf)
-                break;
-            RtlSecureZeroMemory(pBuf, nLen + 1);
-            WideCharToMultiByte(CP_ACP, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
-            retStr = pBuf;
-        } while (false);
-        if (pwBuf) {
-            delete[] pwBuf;
-            pwBuf = NULL;
-        }
-        if (pBuf) {
-            delete[] pBuf;
-            pBuf = NULL;
-        }
-        return retStr;
-    }
-    catch (const std::exception&)
-    {
-        if (pwBuf) {
-            delete[] pwBuf;
-            pwBuf = NULL;
-        }
-        if (pBuf) {
-            delete[] pBuf;
-            pBuf = NULL;
-        }
-        return retStr;
-    }
+    if (str.empty())
+        return "";
+
+    const int wideLen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
+    if (wideLen <= 0)
+        return "";
+
+    std::wstring wideText(static_cast<size_t>(wideLen), L'\0');
+    if (MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &wideText[0], wideLen) <= 0)
+        return "";
+
+    const int ansiLen = WideCharToMultiByte(CP_ACP, 0, wideText.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (ansiLen <= 0)
+        return "";
+
+    std::string ansiText(static_cast<size_t>(ansiLen), '\0');
+    if (WideCharToMultiByte(CP_ACP, 0, wideText.c_str(), -1, &ansiText[0], ansiLen, nullptr, nullptr) <= 0)
+        return "";
+
+    if (!ansiText.empty() && ansiText.back() == '\0')
+        ansiText.pop_back();
+    return ansiText;
 }
 std::wstring Str2WStr(const std::string& str)
 {
-    try
-    {
-        USES_CONVERSION;
-        return A2W(str.c_str());
-    }
-    catch (const std::exception&)
-    {
+    if (str.empty())
         return L"";
-    }
-} 
+
+    const int wideLen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, nullptr, 0);
+    if (wideLen <= 0)
+        return L"";
+
+    std::wstring wideText(static_cast<size_t>(wideLen), L'\0');
+    if (MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, &wideText[0], wideLen) <= 0)
+        return L"";
+
+    if (!wideText.empty() && wideText.back() == L'\0')
+        wideText.pop_back();
+    return wideText;
+}
 std::string WStr2Str(const std::wstring& wstr)
 {
-    try
-    {
-        USES_CONVERSION;
-        return W2A(wstr.c_str());
-    }
-    catch (const std::exception&)
-    {
+    if (wstr.empty())
         return "";
-    }
+
+    const int ansiLen = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (ansiLen <= 0)
+        return "";
+
+    std::string ansiText(static_cast<size_t>(ansiLen), '\0');
+    if (WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &ansiText[0], ansiLen, nullptr, nullptr) <= 0)
+        return "";
+
+    if (!ansiText.empty() && ansiText.back() == '\0')
+        ansiText.pop_back();
+    return ansiText;
 }
 void Wchar_tToString(std::string& szDst, const wchar_t* wchar)
 {

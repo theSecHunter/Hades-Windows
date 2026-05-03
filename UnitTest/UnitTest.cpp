@@ -1,4 +1,5 @@
-﻿#include <Windows.h>
+#include <Windows.h>
+#include <sysinfo.h>
 #include "uinterface.h"
 
 #ifdef _X64

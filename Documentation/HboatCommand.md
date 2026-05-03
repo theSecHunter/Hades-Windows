@@ -25,7 +25,7 @@ enum USystemCollId
 {
     UF_PROCESS_ENUM = 200,
     UF_PROCESS_PID_TREE,		    //201
-    UF_SYSAUTO_START,			    //201
+    UF_SYSAUTO_START,			    //202
     UF_SYSNET_INFO,				    //203
     UF_SYSSESSION_INFO,			    //204
     UF_SYSINFO_ID,				    //205
@@ -44,7 +44,8 @@ enum KIoctCode
     NF_IMAGEGMOD_INFO,
     NF_REGISTERTAB_INFO,
     NF_FILE_INFO,
-    NF_SESSION_INFO
+    NF_SESSION_INFO,
+    NF_INJECT_INFO
 };
 // 主动上报etw id
 enum UEtwId
@@ -69,6 +70,7 @@ Kernel：
 115 - SYSMOD 系统已加载模块DLL
 User:
 200 - 枚举系统进程
+201 - 枚举进程树
 202 - 计划任务和自动启动项目(注册表)
 203 - 系统存在的网络
 207 - 系统存在的全部用户

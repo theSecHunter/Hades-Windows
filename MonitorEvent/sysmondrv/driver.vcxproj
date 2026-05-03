@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -229,20 +229,19 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <IncludePath>$(IncludePath);$(KMDF_INC_PATH)$(KMDF_VER_PATH);$(CRT_IncludePath);$(KM_IncludePath);$(KIT_SHARED_IncludePath)</IncludePath>
-    <Inf2CatUseLocalTime>
-    </Inf2CatUseLocalTime>
+    <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <OutDir>..\bin\x64\Debug</OutDir>
     <TargetName>sysmondriver</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <Inf2CatUseLocalTime>false</Inf2CatUseLocalTime>
+    <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <OutDir>..\bin\x64\Release</OutDir>
     <TargetName>sysmondriver</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_xp|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <Inf2CatUseLocalTime>false</Inf2CatUseLocalTime>
+    <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
     <OutDir>..\..\bin\</OutDir>
     <TargetName>sysmondriver64</TargetName>
   </PropertyGroup>
@@ -414,9 +413,6 @@
     <ClInclude Include="thread.h" />
     <ClInclude Include="uefi.h" />
     <ClInclude Include="utiltools.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="SysMonDrv.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

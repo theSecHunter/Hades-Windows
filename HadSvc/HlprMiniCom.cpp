@@ -8,12 +8,16 @@
 #include "socketMsg.h"
 
 #include <RegisterRuleAssist.h>
+#include <array>
+#include <memory>
+#include <limits>
 
 #define NOTIFICATION_KEY ((ULONG_PTR)-1)
 
 static HANDLE g_hPort = nullptr;
 static HANDLE g_comPletion = nullptr;
 static BOOL   g_InitPortStatus = FALSE;
+static constexpr size_t HADES_MINIPORT_PENDING_COUNT = 4;
 
 #define HADES_READ_BUFFER_SIZE  4096 
 typedef struct _HADES_NOTIFICATION {
@@ -32,6 +36,13 @@ typedef struct _COMAND_MESSAGE
 	HADES_NOTIFICATION Notification;
 	OVERLAPPED Overlapped;
 } COMMAND_MESSAGE, * PCOMMAND_MESSAGE;
+static std::array<std::shared_ptr<COMMAND_MESSAGE>, HADES_MINIPORT_PENDING_COUNT> g_pendingMessages;
+
+static void ResetPendingMiniPortMessages()
+{
+	for (auto& message : g_pendingMessages)
+		message.reset();
+}
 // Reply
 typedef struct _REPLY_MESSAGE
 {
@@ -41,12 +52,14 @@ typedef struct _REPLY_MESSAGE
 
 static DWORD WINAPI ThreadMiniPortConnectNotify(LPVOID pData)
 {
-	(reinterpret_cast<HlprMiniPortIpc*>(pData))->StartMiniPortWaitConnectWork();
+	if (pData)
+		(reinterpret_cast<HlprMiniPortIpc*>(pData))->StartMiniPortWaitConnectWork();
 	return 0;
 }
 static DWORD WINAPI ThreadMiniPortGetMsgNotify(LPVOID pData)
 {
-	(reinterpret_cast<HlprMiniPortIpc*>(pData))->GetMsgNotifyWork();
+	if (pData)
+		(reinterpret_cast<HlprMiniPortIpc*>(pData))->GetMsgNotifyWork();
 	return 0;
 }
 
@@ -55,46 +68,49 @@ HlprMiniPortIpc::HlprMiniPortIpc()
 	// 线程回调都是静态全局/这里不单独写Init函数了
 	// 如果访问成员变量这里封装成函数调用，别在构造起线程
 	DWORD threadid = 0;
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMiniPortConnectNotify, NULL, 0, &threadid);
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMiniPortGetMsgNotify, NULL, 0, &threadid);
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMiniPortConnectNotify, this, 0, &threadid);
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMiniPortGetMsgNotify, this, 0, &threadid);
 }
 HlprMiniPortIpc::~HlprMiniPortIpc()
 {
+	g_InitPortStatus = false;
 	if (g_hPort)
 		CloseHandle(g_hPort);
 	if (g_comPletion)
 		CloseHandle(g_comPletion);
 	g_hPort = nullptr;
 	g_comPletion = nullptr;
+	ResetPendingMiniPortMessages();
 }
 
 bool HlprMiniPortIpc::SetRuleProcess(PVOID64 rulebuffer, unsigned int buflen, unsigned int processnamelen) {
-	if (FALSE == g_InitPortStatus)
+	UNREFERENCED_PARAMETER(processnamelen);
+
+	if (FALSE == g_InitPortStatus || !g_hPort || !rulebuffer || buflen == 0)
+		return false;
+	if (buflen > (std::numeric_limits<unsigned int>::max)() - sizeof(COMMAND_MESSAGE) - 1)
 		return false;
 	
 	DWORD bytesReturned = 0;
-	DWORD hResult = 0;
+	DWORD hResult = E_FAIL;
 	unsigned int total = sizeof(COMMAND_MESSAGE) + buflen + 1;
 	auto InputBuffer = VirtualAlloc(NULL, total, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (!InputBuffer)
 		return false;
 
-	COMMAND_MESSAGE command_message;
+	RtlSecureZeroMemory(InputBuffer, total);
+	COMMAND_MESSAGE command_message = {};
 	memcpy(InputBuffer, &command_message, sizeof(COMMAND_MESSAGE));
 	memcpy((void*)((DWORD64)InputBuffer + sizeof(COMMAND_MESSAGE)), rulebuffer, buflen);
 
-	if (g_hPort)
+	hResult = FilterSendMessage(g_hPort, InputBuffer, total, NULL, NULL, &bytesReturned);
+
+	if (InputBuffer)
 	{
-		hResult = FilterSendMessage(g_hPort, InputBuffer, total, NULL, NULL, &bytesReturned);
-		if (InputBuffer)
-			VirtualFree(InputBuffer, total, MEM_RESERVE);
-		if (hResult != S_OK)
-		{
-			return hResult;
-		}
+		VirtualFree(InputBuffer, 0, MEM_RELEASE);
 	}
 
-	return true;
+	return hResult == S_OK;
 }
 void HlprMiniPortIpc::StartMiniPortWaitConnectWork()
 {
@@ -124,13 +140,15 @@ void HlprMiniPortIpc::StartMiniPortWaitConnectWork()
 			// 初始化先GetMsg, Notify线程等待处理  
 			// 不要只GetMsg一次，因为IOCP端口可能error会浪费掉，驱动再次SendMsg没有GetMsg就会一直阻塞
 			int iGetMessageCounter = 0;
-			for (size_t idx = 0; idx < 4; ++idx)
+			ResetPendingMiniPortMessages();
+			for (size_t idx = 0; idx < HADES_MINIPORT_PENDING_COUNT; ++idx)
 			{
-				std::shared_ptr<COMMAND_MESSAGE> pCommandMsg = std::make_shared<COMMAND_MESSAGE>();
+				g_pendingMessages[idx] = std::make_shared<COMMAND_MESSAGE>();
+				std::shared_ptr<COMMAND_MESSAGE>& pCommandMsg = g_pendingMessages[idx];
 				if (nullptr == pCommandMsg)
 					break;
 					
-				RtlSecureZeroMemory(&pCommandMsg->Overlapped, sizeof(OVERLAPPED));
+				RtlSecureZeroMemory(pCommandMsg.get(), sizeof(COMMAND_MESSAGE));
 				Status = FilterGetMessage(
 					g_hPort,
 					&pCommandMsg->MessageHeader,
@@ -140,7 +158,10 @@ void HlprMiniPortIpc::StartMiniPortWaitConnectWork()
 
 				// Pending状态成功
 				if (Status != HRESULT_FROM_WIN32(ERROR_IO_PENDING))
+				{
+					g_pendingMessages[idx].reset();
 					break;
+				}
 				iGetMessageCounter++;
 			}
 
@@ -242,10 +263,11 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 			(PFILTER_REPLY_HEADER)&replyMessage,
 			sizeof(replyMessage)
 		);
-		//if (S_OK != result)
-		//{
-		//	break;
-		//}
+		if (FAILED(result))
+		{
+			OutputDebugString(L"[HadesSvc] FilterReplyMessage sysmondriver miniPort Error");
+			break;
+		}
 		memset(&message->Overlapped, 0, sizeof(OVERLAPPED));
 		result = FilterGetMessage(
 			g_hPort,
@@ -254,7 +276,11 @@ void HlprMiniPortIpc::GetMsgNotifyWork()
 			&message->Overlapped
 		);
 		if (result != HRESULT_FROM_WIN32(ERROR_IO_PENDING))
+		{
+			if (FAILED(result))
+				OutputDebugString(L"[HadesSvc] FilterGetMessage sysmondriver miniPort Error");
 			break;
+		}
 #pragma warning(push)
 #pragma warning(disable:4127)
 	} while (TRUE);

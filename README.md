@@ -10,20 +10,22 @@ Elkeid Windows Plugin
 
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/HadesWin_v2.0.jpg)
 
-**适用Win7/Win11 x32/x64用户态和内核态数据采集，XP未做兼容测试.**
+**适用 Win7/Win11 x86/x64 用户态和内核态数据采集，XP 未做兼容测试。**
 
 ### v1.0： 
 
 单独引擎版本.
 
 ### v2.x： 
-v1.0引擎重构，采集器分离用户态和内核态lib，HadesSvc数据引擎消费lib生产数据，组织格式(json和protobuf)。Duilib界面完善，WWin7/Win11系统兼容性完善。
+v1.0 引擎重构，采集器分离为用户态和内核态 lib，HadesSvc 数据引擎消费 lib 生产的数据，并组织为 json 和 protobuf 格式。Duilib 界面完善，Win7/Win11 系统兼容性完善。
 
-Hboat支持Windows插件上报数据解析，GoAgent统一管理和上报，可作为插件下发。
+Hboat 支持 Windows 插件上报数据解析，GoAgent 统一管理和上报，可作为插件下发。
 
-GoAgent负责GRPC和WIN下插件管理(跨平台)：[https://github.com/theSecHunter/Hades-Linux/tree/main](https://github.com/theSecHunter/Hades-Linux/tree/main/agent)
+GoAgent 负责 gRPC 和 Windows 插件管理(跨平台)：[https://github.com/theSecHunter/Hades-Linux/tree/main](https://github.com/theSecHunter/Hades-Linux/tree/main/agent)
 
-GoServer已合并新项目Hboat(跨平台): https://github.com/theSecHunter/Hboat
+GoServer 已合并新项目 Hboat(跨平台): https://github.com/theSecHunter/Hboat
+
+当前 dev-elkeid 分支主链路为：驱动回调、MiniFilter、WFP 与用户态 ETW 作为多生产者采集事件，HadesSvc 作为单消费侧统一读取队列，按 protobuf 协议通过匿名管道交给 GoAgent/Hboat 上报；规则由 Hboat/GoAgent 下发，HadesSvc 解析后热更新到内核、用户态规则引擎或 WFP 驱动，用于采集开关和阻断控制。
 
 ### rust版本
 Windows Rust版本正在开发中
@@ -49,12 +51,12 @@ https://github.com/theSecHunter/Hades-Linux/tree/dev-win-plugins-rs/plugins/wdri
 
 | 文档             | 文件名                             | 版本|
 | ---------------- | ---------------------------------- |----|
-| 内核文档         | win_kernel_event.md                	|v2.0|
-| 应用层文档       | win_user_event.md                  	|v2.0|
-| ETW文档       | etw_event_struct.md                  	|v2.0|
-| WFP文档          | win_wfp_event.md                   	|v1.0|
-| 传输结构(c) | windows struct_c.md(see sysinfo.h) 		|v2.0|
-| Hboat插件管理指令(Windows) | HboatCommand.md 			|v2.0|
+| 内核文档         | Documentation/Win_Kernel_Event.md                	|v2.0|
+| 应用层文档       | Documentation/Win_User_Event.md                  	|v2.0|
+| ETW文档       | Documentation/Etw_Event_Struct.md                  	|v2.0|
+| WFP文档          | Documentation/Win_Wfp_Event.md                   	|v1.0|
+| 传输结构(c) | Documentation/Windows Struct_c.md(see HadesSdk/include/sysinfo.h) 		|v2.0|
+| Hboat插件管理指令(Windows) | Documentation/HboatCommand.md 			|v2.0|
 
 ### 框架:
 ![image](https://github.com/theSecHunter/Hades-Windows/blob/main/Image/image-windows.png)
@@ -119,7 +121,7 @@ https://github.com/theSecHunter/Hades-Linux/tree/dev-win-plugins-rs/plugins/wdri
 | 进程树   | 进程、线程 - 创建/销毁/模块加载 | 完成 |
 | 网络     | tcp/udp五要素                   | 完成 |
 
-**Etw事件结构See: etw_event_struct.md**
+**ETW 事件结构见: Documentation/Etw_Event_Struct.md**
 
 ### Duilib界面展示 v2.0
 | 事件     | 描述                            | 进度  | 
@@ -155,7 +157,7 @@ https://github.com/theSecHunter/Hades-Linux/tree/dev-win-plugins-rs/plugins/wdri
 | 目录保护|  目录和子目录/文件 | 完成| 基于MiniFilter| |
 | 流量拦截/重定向|  TCP | 完成| 基于WFP| |
 | - |  | | |
-| 注入检测 |  CreteRemote/内存 | 进行中| 基于回调 | https://bbs.pediy.com/thread-193437.htm <br> https://github.com/huoji120/CobaltStrikeDetected/ |
+| 注入检测 |  CreateRemote/内存 | 进行中| 基于回调 | https://bbs.pediy.com/thread-193437.htm <br> https://github.com/huoji120/CobaltStrikeDetected/ |
 
 
 ### HIPS
@@ -184,7 +186,7 @@ https://github.com/theSecHunter/Hades-Linux/tree/dev-win-plugins-rs/plugins/wdri
 
  - 举例1) 2) cmd.exe配置冲突，1) 允许cmd.exe访问Run, 2) 不允许cmd.exe规则访问 Run，配置冲突，冲突时顺序靠前为准(1为准)。
 
- - 举列2) 3) cmd.exe既可以是白名单-又可以是黑名单，比如Run注册表不允许cmd.exe访问(黑名单)，Settings允许cmd.exe访问(白名单),registerValuse键值不冲突即可。
+ - 举例2) 3) cmd.exe既可以是白名单-又可以是黑名单，比如Run注册表不允许cmd.exe访问(黑名单)，Settings允许cmd.exe访问(白名单),registerValuse键值不冲突即可。
 
  - 注：打开是 "删除-创建-设置-查询-重命名操作" 前提，比如修改，必须配置成打开修改(1000100)，删除则是打开删除(1010000),如果open为0意味着这个过程中有key_access or key_read标志都会失败。
 
@@ -242,7 +244,7 @@ https://github.com/theSecHunter/Hades-Linux/tree/dev-win-plugins-rs/plugins/wdri
 
 ### GRPC/Protobuf v2.0
 
-**考虑GRPC编译复杂性和移植编码比较麻烦，v2.0 HadesSvc将Grpc剔除，Go Agent负责Grpc统一管理，Protobuf协议沿用c++ lib链接。**
+**考虑 gRPC 编译复杂性和移植成本，v2.0 HadesSvc 将 gRPC 剔除，GoAgent 负责 gRPC 统一管理，Protobuf 协议沿用 C++ lib 链接。**
 
 Windows对于很多第三方生态逐步容纳，Grpc github cmake编译会出现很多问题，如果使用推荐方式:
 
