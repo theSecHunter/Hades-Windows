@@ -113,7 +113,7 @@ bool NamedPipe::connect_pipe()
 
 void NamedPipe::read_loop()
 {
-    constexpr size_t kBufferSize = 1024;
+    constexpr size_t kBufferSize = 64 * 1024;
     std::vector<uint8_t> buffer;
     buffer.resize(kBufferSize);
     OVERLAPPED ovlp = { 0 };

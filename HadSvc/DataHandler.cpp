@@ -452,17 +452,18 @@ inline bool PipWriteAnonymous(std::string& serializbuf, const size_t datasize)
     * |   4 byte      |    xxx byte    |
     * |---------------------------------
     */
-    if (datasize > (std::numeric_limits<uint32_t>::max)() - sizeof(uint32_t) - 1)
+    if (datasize > (std::numeric_limits<uint32_t>::max)() - sizeof(uint32_t))
         return false;
 
     {
         std::lock_guard<std::mutex> lock{ g_pipwritecs };
-        const size_t sendlens = datasize + sizeof(uint32_t) + 1;
+        const size_t sendlens = datasize + sizeof(uint32_t);
         std::shared_ptr<uint8_t> data(new uint8_t[sendlens], std::default_delete<uint8_t[]>());
         if (data) {
             memset(data.get(), 0, sendlens);
-            *(uint32_t*)(data.get()) = static_cast<uint32_t>(datasize);
-            ::memcpy(data.get() + 0x4, serializbuf.c_str(), datasize);
+            const uint32_t payloadSize = static_cast<uint32_t>(datasize);
+            ::memcpy(data.get(), &payloadSize, sizeof(payloadSize));
+            ::memcpy(data.get() + 0x4, serializbuf.data(), datasize);
             if (g_anonymouspipe)
                 g_anonymouspipe->write(data, sendlens);
         }
@@ -742,7 +743,6 @@ bool DataHandler::PTaskHandlerNotify(const DWORD taskid, const std::string& sDat
             serializbuf = record->SerializeAsString();
             const size_t datasize = serializbuf.size();
             PipWriteAnonymous(serializbuf, datasize);
-            Sleep(10);
             MapMessage->clear();
         }
     }
@@ -792,14 +792,13 @@ static DWORD WINAPI PTaskHandlerThread(LPVOID lpThreadParameter)
 // Recv Task
 void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_t size)
 {
-    // filter size
-    if (!data || (size < sizeof(int)) || (size >= 1024))
+    if (!data || (size < sizeof(uint32_t)))
         return;
     try
     {
-        const int taskid = *((int*)data.get());
-        // 匿名管道不确定因素多，Filter Task id <= 1024
-        if (taskid <= 0 || taskid >= 1024)
+        uint32_t payloadSize = 0;
+        ::memcpy(&payloadSize, data.get(), sizeof(payloadSize));
+        if (payloadSize == 0 || payloadSize != size - sizeof(uint32_t))
             return;
 
         PTHREADPA_PARAMETER_NODE pThreadPara = nullptr;
@@ -808,7 +807,12 @@ void DataHandler::OnPipMessageNotify(const std::shared_ptr<uint8_t>& data, size_
             pThreadPara->clear();
             // 反序列化成Task
             protocol::Task task;
-            if (!task.ParseFromArray(data.get() + sizeof(int), static_cast<int>(size - sizeof(int))))
+            if (!task.ParseFromArray(data.get() + sizeof(uint32_t), static_cast<int>(payloadSize)))
+            {
+                delete pThreadPara;
+                return;
+            }
+            if (task.data_type() <= 0 || task.data_type() >= 1024)
             {
                 delete pThreadPara;
                 return;

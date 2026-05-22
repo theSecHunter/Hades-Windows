@@ -102,7 +102,7 @@ void uMsgInterface::uMsgEtwDataHandlerEx()
                 j["win_network_protocol"] = to_string(pEtwNet->protocol);
                 j["win_network_processid"] = to_string(pEtwNet->processId);
                 j["win_network_localaddr"] = to_string(pEtwNet->ipv4LocalAddr);
-                j["win_network_toLocalport"] = to_string(pEtwNet->protocol);
+                j["win_network_toLocalport"] = to_string(pEtwNet->toLocalPort);
                 j["win_network_remoteaddr"] = to_string(pEtwNet->ipv4toRemoteAddr);
                 j["win_network_toremoteport"] = to_string(pEtwNet->toRemotePort);
             }

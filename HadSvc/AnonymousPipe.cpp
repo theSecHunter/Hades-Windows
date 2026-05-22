@@ -72,7 +72,7 @@ bool AnonymousPipe::connect_pipe()
 
 void AnonymousPipe::read_loop()
 {
-    constexpr size_t kBufferSize = 1024;
+    constexpr size_t kBufferSize = 64 * 1024;
     std::vector<uint8_t> buffer;
     DWORD dwRead = 0;
     buffer.resize(kBufferSize);
